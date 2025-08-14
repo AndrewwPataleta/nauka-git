@@ -1,7 +1,8 @@
 import android.text.format.DateUtils
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
@@ -25,6 +26,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatCard(
     dialogId: Long,
@@ -37,7 +39,8 @@ fun ChatCard(
     isRepost: Boolean = false,
     isMedia: Boolean = false,
     isFromMe: Boolean = false,
-    onChatClick: (Long) -> Unit
+    onChatClick: (Long) -> Unit,
+    onChatLongClick: (Long) -> Unit
 ) {
     // Определяем форматирование даты
     val formattedTime = formatMessageTime(time)
@@ -46,9 +49,10 @@ fun ChatCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(0.dp)
-            .clickable {
-                onChatClick(dialogId)
-            },  // Убираем отступы
+            .combinedClickable(
+                onClick = { onChatClick(dialogId) },
+                onLongClick = { onChatLongClick(dialogId) }
+            ),  // Убираем отступы
         colors = CardDefaults.cardColors(containerColor = Color.White)  // Белый фон
     ) {
         Column {
