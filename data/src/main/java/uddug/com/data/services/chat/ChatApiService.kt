@@ -6,6 +6,7 @@ import retrofit2.http.Query
 import uddug.com.data.services.models.response.chat.ChatDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.MessageDto
+import uddug.com.data.services.models.response.chat.SearchUsersDto
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
@@ -31,4 +32,9 @@ interface ChatApiService {
         @Path("dialogId") dialogId: Long,
         @Query("category") category: Int,
     ): List<MediaMessage>
+
+    @GET("chat/v1/users/search")
+    suspend fun searchUsers(
+        @Query("searchField") searchField: String,
+    ): SearchUsersDto
 }
