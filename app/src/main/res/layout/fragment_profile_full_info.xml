@@ -27,7 +27,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="0.5dp"
                 android:layout_marginTop="16dp"
-                android:background="#EAEAF2" />
+                android:background="@color/main_background_input" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -98,7 +98,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="0.5dp"
                 android:layout_marginTop="16dp"
-                android:background="#EAEAF2" />
+                android:background="@color/main_background_input" />
 
             <LinearLayout
                 android:id="@+id/profileLink"
@@ -126,7 +126,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="0.5dp"
-                android:background="#EAEAF2" />
+                android:background="@color/main_background_input" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -203,7 +203,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
                     android:layout_marginTop="16dp"
-                    android:background="#EAEAF2" />
+                    android:background="@color/main_background_input" />
 
                 <LinearLayout
                     android:id="@+id/nauDataContainer"
@@ -292,7 +292,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
-                    android:background="#EAEAF2" />
+                    android:background="@color/main_background_input" />
 
                 <LinearLayout
                     android:id="@+id/careerContainer"
@@ -323,7 +323,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
-                    android:background="#EAEAF2" />
+                    android:background="@color/main_background_input" />
 
                 <LinearLayout
                     android:id="@+id/educationContainer"
@@ -355,7 +355,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
-                    android:background="#EAEAF2" />
+                    android:background="@color/main_background_input" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -485,7 +485,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
-                    android:background="#EAEAF2" />
+                    android:background="@color/main_background_input" />
 
                 <LinearLayout
                     android:layout_width="match_parent"

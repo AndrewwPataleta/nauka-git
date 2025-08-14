@@ -135,7 +135,7 @@
                     android:layout_gravity="end"
                     android:layout_marginTop="12dp"
                     android:background="@drawable/bg_rounded_corners_12dp_enabled"
-                    android:backgroundTint="#2E83D9"
+                    android:backgroundTint="@color/object_main"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="8dp">
 

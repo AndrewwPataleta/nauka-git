@@ -11,7 +11,7 @@
         style="@style/NauTextAppearance.AppCompat.Title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Самарский государственный архитектурно-строительный университет"
+        android:text="@string/education_sample_university"
         android:textSize="16sp" />
 
 
@@ -21,8 +21,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:text="Россия, Самара • В настоящее время"
-        android:textColor="#8083A0"
+        android:text="@string/education_sample_place_with_date"
+        android:textColor="@color/secondary_text"
         android:textSize="16sp" />
 
 
@@ -32,8 +32,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:text="Высшее образование • Бакалавр"
-        android:textColor="#8083A0"
+        android:text="@string/education_sample_speciality"
+        android:textColor="@color/secondary_text"
         android:textSize="16sp" />
 
 </LinearLayout>
