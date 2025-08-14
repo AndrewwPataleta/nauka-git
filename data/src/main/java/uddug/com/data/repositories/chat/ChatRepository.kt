@@ -2,6 +2,7 @@ package uddug.com.data.repositories.chat
 
 import io.reactivex.Single
 import uddug.com.data.mapper.mapChatDtoToDomain
+import uddug.com.data.mapper.mapUserSearchDtoToDomain
 
 import uddug.com.data.services.chat.ChatApiService
 import uddug.com.data.services.models.response.chat.DialogInfoDto
@@ -10,6 +11,7 @@ import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.User
 import uddug.com.domain.entities.chat.updateOwnerInfoFromDialog
 import uddug.com.domain.entities.feed.PostComment
 import javax.inject.Inject
@@ -32,6 +34,8 @@ interface ChatRepository {
     suspend fun getDialogMedia(
         dialogId: Long,
     ): List<MediaMessage>
+
+    suspend fun searchUsers(searchField: String): List<User>
 }
 
 
@@ -96,6 +100,16 @@ class ChatRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             println("Error getting dialog info: ${e.message}")
             throw e // or return default DialogInfo
+        }
+    }
+
+    override suspend fun searchUsers(searchField: String): List<User> {
+        return try {
+            val dto = apiService.searchUsers(searchField)
+            dto.users.map { mapUserSearchDtoToDomain(it) }
+        } catch (e: Exception) {
+            println("Error searching users: ${e.message}")
+            emptyList()
         }
     }
 

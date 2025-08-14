@@ -6,7 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -22,12 +25,9 @@ import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleUiState
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
-import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
-import uddug.com.naukoteka.ui.chat.compose.components.ChatTabBar
-import uddug.com.naukoteka.ui.chat.compose.components.ChatToolbarComponent
 import uddug.com.naukoteka.ui.chat.compose.components.ChatToolbarCreateSingleComponent
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
+import uddug.com.naukoteka.ui.chat.compose.components.UserSearchItem
 
 
 @Composable
@@ -81,14 +81,23 @@ fun ChatCreateSingleScreen(
                         color = Color.Black
                     )
                 }
-                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
-                    Text(
-                        text = stringResource(R.string.subs),
-                        fontSize = 18.sp,
-                        color = Color.Black
-                    )
-                }
 
+                val users = (uiState as ChatCreateSingleUiState.Success).users
+                if (users.isNotEmpty()) {
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        items(users) { user ->
+                            UserSearchItem(user = user)
+                        }
+                    }
+                } else {
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
+                        Text(
+                            text = stringResource(R.string.subs),
+                            fontSize = 18.sp,
+                            color = Color.Black
+                        )
+                    }
+                }
             }
         }
 
