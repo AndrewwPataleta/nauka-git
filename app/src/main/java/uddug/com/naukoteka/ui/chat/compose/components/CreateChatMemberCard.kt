@@ -5,7 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,12 +34,14 @@ fun CreateChatMemberCard(
 ) {
     // Определяем форматирование даты
     val formattedTime = formatMessageTime(time)
+    var isChecked by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(0.dp)
             .clickable {
+                isChecked = !isChecked
                 onMemberClick()
             },  // Убираем отступы
         colors = CardDefaults.cardColors(containerColor = Color.White)  // Белый фон
@@ -100,6 +102,14 @@ fun CreateChatMemberCard(
                     }
 
                 }
+
+                Checkbox(
+                    checked = isChecked,
+                    onCheckedChange = {
+                        isChecked = it
+                        onMemberClick()
+                    }
+                )
             }
             Text(
                 text = formattedTime,
