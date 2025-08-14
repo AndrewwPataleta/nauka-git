@@ -22,11 +22,8 @@ import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleUiState
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
-import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
-import uddug.com.naukoteka.ui.chat.compose.components.ChatTabBar
-import uddug.com.naukoteka.ui.chat.compose.components.ChatToolbarComponent
 import uddug.com.naukoteka.ui.chat.compose.components.ChatToolbarCreateSingleComponent
+import uddug.com.naukoteka.ui.chat.compose.components.CreateChatMemberCard
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
 
 
@@ -87,6 +84,17 @@ fun ChatCreateSingleScreen(
                         fontSize = 18.sp,
                         color = Color.Black
                     )
+                    val state = uiState as ChatCreateSingleUiState.Success
+                    state.users.forEach { user ->
+                        CreateChatMemberCard(
+                            name = user.fullName.orEmpty(),
+                            avatarUrl = user.image?.path.orEmpty(),
+                            time = "",
+                            onMemberClick = {
+                                user.id?.toLongOrNull()?.let { viewModel.onUserClick(it) }
+                            }
+                        )
+                    }
                 }
 
             }

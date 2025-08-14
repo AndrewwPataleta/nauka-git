@@ -15,20 +15,12 @@ import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import uddug.com.domain.entities.chat.Chat
-import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleEvent
-import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleUiState
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatListEvents
-import uddug.com.naukoteka.mvvm.chat.ChatListUiState
-import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.ChatDialogFragment.Companion.DIALOG_ID
 import uddug.com.naukoteka.ui.chat.compose.ChatCreateSingleScreen
-import uddug.com.naukoteka.ui.chat.compose.ChatListComponent
 
 @AndroidEntryPoint
 class ChatCreateSingleFragment : Fragment() {
@@ -68,6 +60,13 @@ class ChatCreateSingleFragment : Fragment() {
                                 putLong(DIALOG_ID, state.dialogId)
                             }
                         )
+                    }
+                    is ChatCreateSingleEvent.DialogCreated -> {
+                        findNavController().previousBackStackEntry?.savedStateHandle?.set(
+                            "refreshChats",
+                            true
+                        )
+                        findNavController().popBackStack()
                     }
                 }
             }

@@ -11,14 +11,13 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.observe
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.Chat
-import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.R
-import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatListEvents
 import uddug.com.naukoteka.mvvm.chat.ChatListUiState
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
@@ -43,6 +42,15 @@ class ChatListFragment : Fragment() {
 
         setupObservers()
         viewModel.loadChats()
+
+        findNavController().currentBackStackEntry?.savedStateHandle
+            ?.getLiveData<Boolean>("refreshChats")
+            ?.observe(viewLifecycleOwner) { shouldRefresh ->
+                if (shouldRefresh) {
+                    viewModel.refreshChats()
+                    findNavController().currentBackStackEntry?.savedStateHandle?.remove<Boolean>("refreshChats")
+                }
+            }
     }
 
 
