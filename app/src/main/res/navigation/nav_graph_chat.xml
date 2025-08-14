@@ -32,4 +32,10 @@
 
     </fragment>
 
+    <fragment
+        android:id="@+id/chatCreateMultiFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatCreateMultiFragment">
+
+    </fragment>
+
 </navigation>
