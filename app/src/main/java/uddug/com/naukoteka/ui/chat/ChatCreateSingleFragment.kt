@@ -73,7 +73,9 @@ class ChatCreateSingleFragment : Fragment() {
                         findNavController().popBackStack()
                     }
                     ChatCreateSingleEvent.OpenGroupCreate -> {
-                        // Navigation to group chat creation will be added later
+                        findNavController().navigate(
+                            R.id.chatCreateMultiFragment,
+                        )
                     }
                 }
             }
