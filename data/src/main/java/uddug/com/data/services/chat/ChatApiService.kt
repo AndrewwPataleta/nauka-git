@@ -1,6 +1,7 @@
 package uddug.com.data.services.chat
 
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 import uddug.com.data.services.models.response.chat.ChatDto
@@ -31,4 +32,9 @@ interface ChatApiService {
         @Path("dialogId") dialogId: Long,
         @Query("category") category: Int,
     ): List<MediaMessage>
+
+    @POST("chat/v1/dialogs/{userId}")
+    suspend fun createDialog(
+        @Path("userId") userId: Long,
+    ): DialogInfoDto
 }

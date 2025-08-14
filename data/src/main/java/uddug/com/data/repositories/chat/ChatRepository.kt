@@ -32,6 +32,8 @@ interface ChatRepository {
     suspend fun getDialogMedia(
         dialogId: Long,
     ): List<MediaMessage>
+
+    suspend fun createDialog(userId: Long): Long
 }
 
 
@@ -96,6 +98,16 @@ class ChatRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             println("Error getting dialog info: ${e.message}")
             throw e // or return default DialogInfo
+        }
+    }
+
+    override suspend fun createDialog(userId: Long): Long {
+        return try {
+            val dialog = apiService.createDialog(userId)
+            dialog.id
+        } catch (e: Exception) {
+            println("Error creating dialog: ${e.message}")
+            throw e
         }
     }
 
