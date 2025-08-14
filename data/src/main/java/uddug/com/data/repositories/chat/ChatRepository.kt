@@ -5,6 +5,7 @@ import uddug.com.data.mapper.mapChatDtoToDomain
 import uddug.com.data.mapper.mapUserSearchDtoToDomain
 
 import uddug.com.data.services.chat.ChatApiService
+import uddug.com.data.services.models.request.chat.CreateDialogRequest
 import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
 import uddug.com.domain.entities.chat.Chat
@@ -36,6 +37,8 @@ interface ChatRepository {
     ): List<MediaMessage>
 
     suspend fun searchUsers(searchField: String): List<User>
+
+    suspend fun createDialog(id: Long)
 }
 
 
@@ -110,6 +113,14 @@ class ChatRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             println("Error searching users: ${e.message}")
             emptyList()
+        }
+    }
+
+    override suspend fun createDialog(id: Long) {
+        try {
+            apiService.createDialog(CreateDialogRequest(id))
+        } catch (e: Exception) {
+            println("Error creating dialog: ${e.message}")
         }
     }
 

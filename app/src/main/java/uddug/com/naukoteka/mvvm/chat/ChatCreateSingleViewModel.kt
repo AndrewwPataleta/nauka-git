@@ -50,10 +50,20 @@ class ChatCreateSingleViewModel @Inject constructor(
             }
         }
     }
+
+    fun onUserClick(user: User) {
+        viewModelScope.launch {
+            user.userId?.toLongOrNull()?.let { id ->
+                chatRepository.createDialog(id)
+                _events.emit(ChatCreateSingleEvent.CloseAndRefresh)
+            }
+        }
+    }
 }
 
 sealed class ChatCreateSingleEvent {
     data class OpenDialogDetail(val dialogId: Long) : ChatCreateSingleEvent()
+    data object CloseAndRefresh : ChatCreateSingleEvent()
 }
 
 sealed class ChatCreateSingleUiState {
