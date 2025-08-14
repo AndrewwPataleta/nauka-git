@@ -23,18 +23,21 @@ fun ChatTabBar(
 ) {
     var selectedTabIndex by remember { mutableStateOf(0) }
 
+    var showOptions by remember { mutableStateOf(false) }
+
     val tabTitles = listOf("Все", "Люди", "Работа", "Наука", "Учеба")
 
     val uiState by viewModel.uiState.collectAsState()
 
     val selectedTabContent = TabContent.values()[selectedTabIndex]
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Box {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         TabRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -118,6 +121,9 @@ fun ChatTabBar(
                                         isFromMe = chat.lastMessage.ownerId == "",
                                         onChatClick = {
                                             viewModel.onChatClick(it)
+                                        },
+                                        onChatLongClick = {
+                                            showOptions = true
                                         }
                                     )
                                 }
@@ -143,7 +149,11 @@ fun ChatTabBar(
                 }
             }
         }
-
+        if (showOptions) {
+            ChatFunctionsBottomSheetDialog(
+                onDismissRequest = { showOptions = false }
+            )
+        }
     }
 }
 
