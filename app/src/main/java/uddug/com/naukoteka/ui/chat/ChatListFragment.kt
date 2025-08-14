@@ -50,6 +50,7 @@ class ChatListFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        viewModel.refreshChats()
         navigationView?.showNavigationBottomBar(true)
     }
 

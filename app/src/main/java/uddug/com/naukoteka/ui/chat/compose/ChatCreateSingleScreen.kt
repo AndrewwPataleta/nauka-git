@@ -86,7 +86,7 @@ fun ChatCreateSingleScreen(
                 if (users.isNotEmpty()) {
                     LazyColumn(modifier = Modifier.fillMaxWidth()) {
                         items(users) { user ->
-                            UserSearchItem(user = user)
+                            UserSearchItem(user = user, onClick = { viewModel.onUserClick(it) })
                         }
                     }
                 } else {

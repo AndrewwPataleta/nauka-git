@@ -69,6 +69,9 @@ class ChatCreateSingleFragment : Fragment() {
                             }
                         )
                     }
+                    ChatCreateSingleEvent.CloseAndRefresh -> {
+                        findNavController().popBackStack()
+                    }
                 }
             }
         }
