@@ -12,6 +12,6 @@
         android:maxLines="6"
         android:padding="10dp"
         android:background="@drawable/background_interest_tag"
-        android:text="Бла-бла, будет очень ин" />
+        android:text="@string/interest_tag_placeholder" />
 
 </LinearLayout>
