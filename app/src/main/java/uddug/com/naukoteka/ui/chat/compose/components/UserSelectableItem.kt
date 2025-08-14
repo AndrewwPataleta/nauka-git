@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.RadioButton
+import androidx.compose.material.Checkbox
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,6 +29,11 @@ fun UserSelectableItem(
             .padding(horizontal = 20.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Checkbox(
+            checked = selected,
+            onCheckedChange = { onCheckedChange(it) }
+        )
+        Spacer(modifier = Modifier.width(16.dp))
         Avatar(url = user.image)
         Spacer(modifier = Modifier.width(16.dp))
         Text(
@@ -37,6 +42,5 @@ fun UserSelectableItem(
             color = Color.Black,
             modifier = Modifier.weight(1f)
         )
-        RadioButton(selected = selected, onClick = { onCheckedChange(!selected) })
     }
 }
