@@ -10,6 +10,7 @@ import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.MessageDto
 import uddug.com.data.services.models.response.chat.SearchUsersDto
 import uddug.com.data.services.models.request.chat.CreateDialogRequest
+import uddug.com.data.services.models.request.chat.CreateGroupDialogRequest
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
@@ -44,5 +45,10 @@ interface ChatApiService {
     @POST("chat/v1/dialogs/create")
     suspend fun createDialog(
         @Body body: CreateDialogRequest,
+    )
+
+    @POST("chat/v1/dialogs/group/create")
+    suspend fun createGroupDialog(
+        @Body body: CreateGroupDialogRequest,
     )
 }
