@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/main_background_rounded"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        style="@style/NauTextAppearance.AppCompat.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/delete_banner_title" />
+
+    <TextView
+        style="@style/NauTextAppearance.AppCompat.SubTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/are_you_sure_delete_banner" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/cancelDeleteBtn"
+            style="@style/NauTextAppearance.AppCompat.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="20dp"
+            android:text="@string/cancel_button"
+            android:textColor="@color/text_link"
+            android:textSize="16dp" />
+
+        <TextView
+            android:id="@+id/deleteConfirmBtn"
+            style="@style/NauTextAppearance.AppCompat.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="20dp"
+            android:text="@string/delete_button"
+            android:textColor="@color/color_red_light"
+            android:textSize="16dp" />
+
+    </LinearLayout>
+
+
+</LinearLayout>

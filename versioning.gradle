@@ -1,0 +1,77 @@
+ext {
+
+    getVersionMajor = {
+        def versionProps = getVersionCodeProperties()
+        return versionProps['VERSION_MAJOR'].toInteger()
+    }
+
+    getVersionMinor = {
+        def versionProps = getVersionCodeProperties()
+        return versionProps['VERSION_MINOR'].toInteger()
+    }
+
+    getVersionPatch = {
+        def versionProps = getVersionCodeProperties()
+        return versionProps['VERSION_PATCH'].toInteger()
+    }
+
+    getVersionBuild = {
+        def versionProps = getVersionCodeProperties()
+        return versionProps['VERSION_BUILD'].toInteger()
+    }
+
+    getVersionCodeProperties = {
+        def versionCodeFile = new File("${project.projectDir}/version.properties")
+        if (!versionCodeFile.canRead()) {
+            throw new InvalidUserDataException('Check out version.properties')
+        }
+        def versionProps = new Properties()
+        versionProps.load(new FileInputStream(versionCodeFile))
+        return versionProps
+    }
+
+    setupNewVersionCode = { ->
+        def versionMajor = getVersionMajor()
+        def versionMinor = getVersionMinor()
+        def versionPatch = getVersionPatch()
+        def versionBuild = getVersionBuild()
+
+        if (versionBuild == 9) {
+            versionBuild = 0
+            if (versionPatch == 9) {
+                versionPatch = 0
+                if (versionMinor == 9) {
+                    versionMinor = 0
+                    versionMajor = versionMajor + 1
+                }
+            } else {
+                versionPatch = versionPatch + 1
+            }
+        } else {
+            versionBuild = versionBuild + 1
+        }
+        println("${versionMajor}.${versionMinor}.${versionPatch}.${versionBuild}")
+        return new VersionProperties(versionMajor, versionMinor, versionPatch, versionBuild)
+    }
+
+
+}
+
+class VersionProperties {
+    public int majorVersion
+    public int majorMinor
+    public int majorPatch
+    public int majorBuild
+
+    VersionProperties(int version, int minor, int patch, int build) {
+        this.majorVersion = version
+        this.majorMinor = minor
+        this.majorPatch = patch
+        this.majorBuild = build
+    }
+
+    String getVersionCode() {
+        return "${majorVersion}.${majorMinor}.${majorPatch}.${majorBuild}"
+    }
+
+}

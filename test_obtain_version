@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# How to use:
+# Publish app: ./firebase-publish
+
+appFolder=app
+username=$(whoami)
+previous="p"
+
+echo -n "Type whats new in this version (p - prints previous): "
+read releaseNotes
+
+if [ "$releaseNotes" != "$previous" ]; then
+	echo "$releaseNotes from $username" > releasenotes.txt
+	echo "release notes : $releaseNotes from $username"
+fi
+
+echo "Publishing app..."
+
+echo "$releaseNotes from $username -staging" > releasenotes.txt
+
+
+file="./version.properties"
+
+while IFS='=' read -r key value
+do
+  key=$(echo $key | tr '.' '_')
+  eval ${key}=\${value}
+done < "$file"
+
+echo "VERSION_MINOR = " ${VERSION_MINOR}
+echo "VERSION_MAJOR = " ${VERSION_MAJOR}
+echo "VERSION_PATCH = " ${VERSION_PATCH}
+echo "VERSION_BUILD = " ${VERSION_BUILD}

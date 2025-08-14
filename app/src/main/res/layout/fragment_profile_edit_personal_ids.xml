@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:src="http://schemas.android.com/tools"
+    xmlns:tools="http://schemas.android.com/tools">
+
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/toolbarContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/main_background"
+                android:orientation="horizontal"
+
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:id="@+id/back"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:src="@drawable/ic_back"
+                    app:tint="@color/back_icon_color" />
+
+                <TextView
+                    android:id="@+id/toolbar"
+                    style="@style/NauTextAppearance.AppCompat.Title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="@string/personal_ids_title"
+                    android:textSize="20sp" />
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <ImageView
+                    android:id="@+id/done"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:src="@drawable/ic_done"
+                    app:tint="@color/back_icon_color" />
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/main_background"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/toolbarContainer">
+
+                <TextView
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/spin_code_title" />
+
+                <com.vicmikhailau.maskededittext.MaskedEditText
+                    android:id="@+id/spinCodeValue"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/background_input"
+                    android:gravity="center_vertical"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:lines="1"
+                    app:mask="####-####"
+                    android:paddingHorizontal="13dp"
+                    android:paddingVertical="14dp"
+                    android:singleLine="true"
+                    android:textColor="@color/main_text"
+                    android:textSize="15sp" />
+
+                <TextView
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="start"
+                    android:text="@string/you_can_enter_personal_code_author"
+                    android:textSize="15sp" />
+
+                <TextView
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:text="@string/orcid_title" />
+
+                <com.vicmikhailau.maskededittext.MaskedEditText
+                    android:id="@+id/orchidCodeValue"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/background_input"
+                    android:gravity="center_vertical"
+                    android:inputType="number"
+                    android:lines="1"
+                    app:mask="####-####-####-####"
+                    android:paddingHorizontal="13dp"
+                    android:paddingVertical="14dp"
+                    android:singleLine="true"
+                    android:textColor="@color/main_text"
+                    android:textSize="15sp" />
+
+                <TextView
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="start"
+                    android:text="@string/you_can_enter_orchid_code"
+                    android:textSize="15sp" />
+
+                <TextView
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:text="@string/researcherid_title" />
+
+                <com.vicmikhailau.maskededittext.MaskedEditText
+                    android:id="@+id/researcerCodeValue"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/background_input"
+                    android:gravity="center_vertical"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:lines="1"
+                    app:mask="c-###-####"
+                    android:paddingHorizontal="13dp"
+                    android:paddingVertical="14dp"
+                    android:singleLine="true"
+                    android:textColor="@color/main_text"
+                    android:textSize="15sp" />
+
+                <TextView
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="start"
+                    android:text="@string/you_can_enter_world_code"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/editIdError"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/incorrect_address"
+                    android:textColor="@color/color_red_light"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/editIdSuccess"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/address_is_available"
+                    android:textColor="@android:color/holo_green_light"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</layout>
+

@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# How to use:
+# Publish app: ./firebase-publish
+
+appFolder=app
+
+echo -n "Type whats new in this version (optional): "
+read releaseNotes
+
+echo "release notes : $releaseNotes"
+
+echo "$releaseNotes" > releasenotes.txt
+echo "Publishing app..."
+
+./gradlew incrementVersionCode --console=plain
+./gradlew $appFolder:assembleRelease $appFolder:appDistributionUploadRelease
+
+
+curl --location --request POST 'https://hooks.slack.com/services/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' \
+--header 'Content-type: application/json' \
+--data-raw '{
+	"blocks": [
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Naukoteka Android - new version  is available",
+				"emoji": true
+			}
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "plain_text",
+				"text": "Get on Firebase app distribution",
+				"emoji": true
+			}
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Download new version link :ghost: *<https://appdistribution.firebase.google.com/testerapps/1:611944487654:android:817630d544715414677927|click here>* to download from mobile\n"
+			}
+		}
+	]
+}'

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/main_background_rounded"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        style="@style/NauTextAppearance.AppCompat.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/are_you_sure_to_delete_account" />
+
+    <TextView
+        style="@style/NauTextAppearance.AppCompat.SubTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/you_account_will_frozen" />
+
+    <TextView
+        style="@style/NauTextAppearance.AppCompat.SubTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/what_is_reason_to_delete_account" />
+
+
+    <EditText
+        android:id="@+id/reason"
+        style="@style/NauTextAppearance.AppCompat.SubTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/background_input"
+        android:gravity="center_vertical"
+        android:lines="4"
+        android:layout_marginTop="16dp"
+        android:paddingHorizontal="13dp"
+        android:paddingVertical="14dp"
+        android:singleLine="false"
+        android:maxLines="4"
+        android:textColor="@color/main_text"
+        android:textSize="15sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/cancelDeleteBtn"
+            style="@style/NauTextAppearance.AppCompat.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="20dp"
+            android:text="@string/cancel_button"
+            android:textColor="@color/text_link"
+            android:textSize="16dp" />
+
+        <TextView
+            android:id="@+id/deleteConfirmBtn"
+            style="@style/NauTextAppearance.AppCompat.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="20dp"
+            android:text="@string/delete_account_confirm"
+            android:textColor="@color/color_red_light"
+            android:textSize="@dimen/delete_account_text_size" />
+
+    </LinearLayout>
+
+
+</LinearLayout>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "991509605576",
+    "project_id": "nauchat-3d781",
+    "storage_bucket": "nauchat-3d781.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:991509605576:android:509e7525b3416cb513c9fd",
+        "android_client_info": {
+          "package_name": "com.nauchat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7YHsnJhQc9QkJGHTIrt-5MDJRJaOrz1Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

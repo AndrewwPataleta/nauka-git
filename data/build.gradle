@@ -1,0 +1,33 @@
+apply from: "../default_core_module.gradle"
+
+android {
+    namespace 'uddug.com.data'
+}
+
+dependencies {
+
+    implementation data.retrofit
+    implementation data.retrofitRxJava
+    implementation data.gsonConverter
+    implementation data.gson
+    implementation data.retrofitLogging
+    implementation ui.gmsPlayServicesLocation
+
+    implementation lib.domain
+
+
+    implementation "com.google.dagger:hilt-android:2.55"
+    kapt "com.google.dagger:hilt-android-compiler:2.55"
+    implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
+    implementation 'androidx.hilt:hilt-navigation-fragment:1.2.0'
+    kapt 'androidx.hilt:hilt-compiler:1.2.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    implementation 'androidx.activity:activity-ktx:1.8.0'
+    implementation 'androidx.fragment:fragment-ktx:1.6.2'
+    implementation "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.5.0"
+
+
+}

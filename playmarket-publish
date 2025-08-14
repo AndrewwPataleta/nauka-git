@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# How to use:
+# Publish app: ./playmarket-publish
+
+appFolder=app
+dirName=app/src/main/play/release-notes/ru-RU
+
+echo -n "Type release-notes : "
+read releaseNotes
+
+echo "release notes : $releaseNotes"
+echo "appFolder : $appFolder"
+
+echo "$releaseNotes" >${dirName}/production.txt
+echo "Publishing app..."
+
+./gradlew incrementVersionCode --console=plain
+./gradlew $appFolder:publishApkRelease

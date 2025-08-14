@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme" parent="BaseTheme" />
+
+    <style name="ContainerAppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/dark_main_background</item>
+    </style>
+
+    <style name="NauWidget.BottomNavigationView" parent="Widget.Design.BottomNavigationView">
+        <item name="fontFamily">@font/golos_text_medium</item>
+        <item name="android:textSize">10sp</item>
+    </style>
+
+    <style name="NauTextAppearance.AppCompat.Title" parent="ContainerAppTheme">
+        <item name="fontFamily">@font/golos_text_medium</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/main_text</item>
+    </style>
+
+    <style name="NauTextAppearance.AppCompat.SubTitle" parent="ContainerAppTheme">
+        <item name="fontFamily">@font/golos_text_regular</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/secondary_text</item>
+    </style>
+
+    <style name="NauTextAppearance.AppCompat.MainSubTitle" parent="ContainerAppTheme">
+        <item name="fontFamily">@font/golos_text_regular</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/main_text</item>
+    </style>
+
+    <style name="NauTextAppearance.AppCompat.Link" parent="ContainerAppTheme">
+
+        <item name="android:textColor">@color/text_link</item>
+    </style>
+
+    <style name="NauDSBottomSheetDialogTheme" parent="Theme.Design.BottomSheetDialog">
+
+    </style>
+
+    <style name="NauTab" parent="TextAppearance.Design.Tab">
+        <item name="textAllCaps">false</item>
+        <item name="fontFamily">@font/golos_text_medium</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="NauTextAppearance.AppCompat.SubTitleDark" parent="ContainerAppTheme">
+        <item name="fontFamily">@font/golos_text_regular</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/main_text</item>
+    </style>
+
+    <style name="TextViewStyle" parent="Widget.AppCompat.TextView">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">?attr/design_hintColor</item>
+        <item name="android:fontFamily">@font/golos_black</item>
+    </style>
+
+    <style name="TextViewStyle.Header">
+        <item name="android:textSize">32sp</item>
+        <item name="android:textColor">?attr/design_textColor</item>
+        <item name="android:fontFamily">@font/golos_black</item>
+    </style>
+
+    <style name="TextViewStyle.Usual">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">?attr/design_textColor</item>
+        <item name="android:fontFamily">@font/golos_black</item>
+    </style>
+
+    <style name="TextViewStyle.Usual.Regular">
+        <item name="android:fontFamily">@font/golos_black</item>
+    </style>
+
+    <style name="TextViewStyle.Subtitle">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">?attr/design_textColor</item>
+        <item name="android:fontFamily">@font/golos_black</item>
+    </style>
+
+    <style name="TextViewStyle.Usual.EditText">
+        <item name="android:textColor">@color/text_main</item>
+        <item name="android:fontFamily">@font/golos_text_medium</item>
+    </style>
+
+    <style name="Button" parent="Widget.AppCompat.Button">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">64dp</item>
+        <item name="android:background">@drawable/button_states</item>
+        <item name="android:textColor">@color/color_state</item>
+        <item name="android:padding">0dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:paddingTop">15dp</item>
+        <item name="paddingStart">16dp</item>
+        <item name="paddingEnd">16dp</item>
+        <item name="android:fontFamily">@font/golos_text_medium</item>
+        <item name="android:paddingBottom">15dp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="Button.Dialog">
+        <item name="android:layout_height">48dp</item>
+    </style>
+
+    <style name="CustomAlertDialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <style name="Button.Registration">
+        <item name="android:background">@drawable/button_states_registration</item>
+    </style>
+
+    <style name="Button.Link">
+        <item name="android:background">@drawable/button_states_registration</item>
+    </style>
+
+    <style name="FadeInFadeOutAnimation" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/fade_in</item>
+        <item name="android:windowExitAnimation">@anim/fade_out</item>
+    </style>
+
+
+    <style name="Theme_Dialog" parent="android:Theme.Holo.Dialog">
+        <item name="android:windowMinWidthMajor">90%</item>
+        <item name="android:windowMinWidthMinor">90%</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay.App.CornerSize50Percent" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+        <item name="backgroundTint">@android:color/white</item>
+    </style>
+
+</resources>

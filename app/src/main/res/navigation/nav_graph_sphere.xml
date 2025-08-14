@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph_naushpere"
+    app:startDestination="@id/nauSphereFragment">
+
+    <fragment
+        android:id="@+id/nauSphereFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.nausphere.NauSphereFragment"
+        tools:layout="@layout/fragment_naushpere">
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/wallFeedDetail"
+        android:name="uddug.com.naukoteka.ui.fragments.wall.WallDetailFragment"
+        tools:layout="@layout/fragment_wall_detail">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.feed.FeedContainer" />
+
+    </fragment>
+
+
+</navigation>

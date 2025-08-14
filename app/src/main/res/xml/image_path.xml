@@ -1,0 +1,6 @@
+<paths>
+    <external-path
+        name="images"
+        path="Android/data/com.nauchat/files/Pictures" />
+    <external-path name="external_files" path="."/>
+</paths>

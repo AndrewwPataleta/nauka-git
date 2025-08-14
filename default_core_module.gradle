@@ -1,0 +1,51 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+apply plugin: 'kotlin-parcelize'
+
+android {
+    compileSdkVersion COMPILE_SDK_VERSION
+    buildToolsVersion BUILD_TOOLS_VERSION
+
+    defaultConfig {
+        minSdkVersion MIN_SDK_VERSION
+        targetSdkVersion TARGET_SDK_VERSION
+        versionCode getVersionMajor() * 10000 + getVersionMinor() * 1000 + getVersionPatch() * 100 + getVersionBuild()
+        versionName "${getVersionMajor()}.${getVersionMinor()}.${getVersionPatch()}"
+
+        multiDexEnabled true
+        consumerProguardFiles "consumer-rules.pro"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation presentation.kotlin
+    implementation presentation.ktxCore
+    implementation presentation.rxJava
+    implementation presentation.rxJavaAndroid
+    implementation presentation.rxJavaKotlin
+
+    implementation presentation.inject
+    implementation presentation.toothpick
+    implementation presentation.toothpickX
+    implementation presentation.toothpickLifeCycle
+    implementation presentation.toothpickKtp
+    kapt presentation.toothpickCompiler
+}

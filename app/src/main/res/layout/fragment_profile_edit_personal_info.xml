@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:src="http://schemas.android.com/tools"
+    xmlns:tools="http://schemas.android.com/tools">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/main_background"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/toolbarContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/main_background"
+            android:orientation="horizontal"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:src="@drawable/ic_back"
+                app:tint="@color/back_icon_color" />
+
+            <TextView
+                android:id="@+id/toolbar"
+                style="@style/NauTextAppearance.AppCompat.Title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:text="@string/personal_info_title"
+                android:textSize="20sp" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <ImageView
+                android:id="@+id/done"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:src="@drawable/ic_done"
+                app:tint="@color/back_icon_color" />
+
+        </LinearLayout>
+
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="20dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/toolbarContainer">
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/name_edit_title" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/nameFromTo"
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp" />
+
+                </LinearLayout>
+
+
+                <EditText
+                    android:id="@+id/nameValue"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/background_input"
+                    android:gravity="center_vertical"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:lines="1"
+                    android:paddingHorizontal="13dp"
+                    android:paddingVertical="14dp"
+                    android:singleLine="true"
+                    android:textColor="@color/main_text"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/editNameError"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/incorrect_address"
+                    android:textColor="@color/color_red_light"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/second_name_title" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/seconaNameFromTo"
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp" />
+
+                </LinearLayout>
+
+
+                <EditText
+                    android:id="@+id/secondNameValue"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/background_input"
+                    android:gravity="center_vertical"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:lines="1"
+                    android:paddingHorizontal="13dp"
+                    android:paddingVertical="14dp"
+                    android:singleLine="true"
+                    android:textColor="@color/main_text"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/editSecondNameError"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/incorrect_address"
+                    android:textColor="@color/color_red_light"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/thind_name_title" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/thirdFromTo"
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp" />
+
+                </LinearLayout>
+
+
+                <EditText
+                    android:id="@+id/thirdNameValue"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/background_input"
+                    android:gravity="center_vertical"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:lines="1"
+                    android:paddingHorizontal="13dp"
+                    android:paddingVertical="14dp"
+                    android:singleLine="true"
+                    android:textColor="@color/main_text"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/editThhirddNameError"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/incorrect_address"
+                    android:textColor="@color/color_red_light"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/gender_title" />
+
+
+                </LinearLayout>
+
+
+                <Spinner
+                    android:id="@+id/genderChoose"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/background_input"
+                    android:gravity="center_vertical"
+                    android:inputType="text"
+                    android:lines="1"
+                    android:paddingHorizontal="13dp"
+                    android:paddingVertical="14dp"
+                    android:singleLine="true"
+                    android:textColor="@color/main_text"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/editGenderError"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/incorrect_address"
+                    android:textColor="@color/color_red_light"
+                    android:visibility="gone" />
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/date_birthdat_title" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+
+                </LinearLayout>
+
+
+                <TextView
+                    android:id="@+id/dateBirhdayValue"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/background_input"
+                    android:gravity="center_vertical"
+                    android:lines="1"
+                    android:paddingHorizontal="13dp"
+                    android:paddingVertical="14dp"
+                    android:singleLine="true"
+                    android:textColor="@color/main_text"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/editDateBirthdayError"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/incorrect_address"
+                    android:textColor="@color/color_red_light"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/description_for_profile_title" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/descriptionFromTo"
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp" />
+
+                    <TextView
+                        android:id="@+id/descriptionProfile"
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp" />
+
+                </LinearLayout>
+
+
+                <EditText
+                    android:id="@+id/descriptionProfileValue"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start|top"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/background_input"
+                    android:gravity="start|top"
+                    android:lines="5"
+                    android:paddingHorizontal="13dp"
+                    android:paddingVertical="14dp"
+                    android:textColor="@color/main_text"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/editProfileDescriptionError"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/incorrect_address"
+                    android:textColor="@color/color_red_light"
+                    android:visibility="gone" />
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/profile_intrestings" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/profileIntrestingsFrom"
+                        style="@style/NauTextAppearance.AppCompat.SubTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/no_more_than_5" />
+
+
+                </LinearLayout>
+
+                <AutoCompleteTextView
+                    android:id="@+id/interestsChoose"
+                    style="@style/NauTextAppearance.AppCompat.SubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+
+                    android:background="@drawable/background_input"
+                    android:gravity="center_vertical"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:lines="1"
+                    android:paddingHorizontal="13dp"
+                    android:paddingVertical="14dp"
+                    android:singleLine="true"
+                    android:textColor="@color/main_text"
+                    android:textSize="15sp" />
+
+            </LinearLayout>
+
+
+        </ScrollView>
+
+    </LinearLayout>
+
+</layout>
+

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="text_main">#1A1B2B</color>
+
+    <color name="back_blue">#0C1F5D</color>
+
+    <color name="color_error">#D92E4D</color>
+
+    <color name="object_main">#2E83D9</color>
+
+    <color name="object_disabled">#2D2E41</color>
+
+    <color name="object_inactive">#8083A0</color>
+
+    <color name="back_darkgrey">#2D2E41</color>
+
+    <color name="notification_error">#D92E4D</color>
+
+    <color name="text_inactive">#8083A0</color>
+    <color name="text_active">#FFFFFFFF</color>
+
+    <color name="object_inactive_2">#4A4C67</color>
+
+    <color name="transparent">#00000000</color>
+    <color name="manatee">#888A94</color>
+    <color name="mine_shaft">#333333</color>
+    <color name="ghost">#C7CBDB</color>
+    <color name="background_toast">#E6333333</color>
+    <color name="background_toast_success">#63AA55</color>
+    <color name="background_toast_error">#D92E4D</color>
+
+    <color name="main_background">#FFFFFF</color>
+    <color name="main_background_input">#EAEAF2</color>
+    <color name="main_background_input_stroke">#DBDEE9</color>
+    <color name="dark_main_background">#EAEAF2</color>
+    <color name="secondary_text">#8083A0</color>
+    <color name="main_text">#10101C</color>
+    <color name="text_link">#2E83D9</color>
+    <color name="background_more_info">#EAEAF2</color>
+    <color name="color_more">#10101C</color>
+    <color name="color_red_light">#EB5545</color>
+    <color name="back_icon_color">#2E83D9</color>
+    <color name="delete_education_gray">#8083A0</color>
+    <color name="red_color_exit">#EB5757</color>
+    <color name="password_button_disabled_color">#8083A0</color>
+
+
+</resources>

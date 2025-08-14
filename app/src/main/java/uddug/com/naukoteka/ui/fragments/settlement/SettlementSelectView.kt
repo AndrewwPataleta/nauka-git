@@ -1,0 +1,19 @@
+package uddug.com.naukoteka.ui.fragments.settlement
+
+import uddug.com.naukoteka.global.views.InformativeView
+import uddug.com.naukoteka.global.views.LoadingView
+import moxy.MvpView
+import moxy.viewstate.strategy.OneExecutionStateStrategy
+import moxy.viewstate.strategy.StateStrategyType
+import uddug.com.domain.entities.country.Country
+import uddug.com.domain.entities.country.Settlement
+import uddug.com.naukoteka.presentation.profile.edit.models.CountryType
+import uddug.com.naukoteka.presentation.profile.edit.models.SettlementType
+
+@StateStrategyType(OneExecutionStateStrategy::class)
+interface SettlementSelectView : MvpView, LoadingView, InformativeView {
+
+    fun setSettlements(countries: List<Settlement>)
+
+    fun sendResult(city: String?, updateType: SettlementType?)
+}

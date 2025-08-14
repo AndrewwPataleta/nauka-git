@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# How to use:
+# Publish app: ./firebase-publish
+
+appFolder=app
+
+echo -n "Type whats new in this version (optional): "
+read releaseNotes
+
+echo "release notes : $releaseNotes"
+
+echo "$releaseNotes" > releasenotes.txt
+echo "Publishing app..."
+
+./gradlew incrementVersionCode --console=plain
+./gradlew $appFolder:assembleRelease $appFolder:appDistributionUploadRelease

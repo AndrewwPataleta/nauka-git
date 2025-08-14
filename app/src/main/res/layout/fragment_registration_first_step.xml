@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/back_darkgrey">
+
+    <ImageView
+        android:id="@+id/iv_back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="26dp"
+        android:padding="15dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_back" />
+
+    <TextView
+        android:id="@+id/tv_third_step"
+        style="@style/TextViewStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="41dp"
+        android:layout_marginEnd="32dp"
+        android:fontFamily="@font/golos_text_regular"
+        android:text="3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_second_step"
+        style="@style/TextViewStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="41dp"
+        android:layout_marginEnd="8dp"
+        android:fontFamily="@font/golos_text_regular"
+        android:text="2"
+        app:layout_constraintEnd_toStartOf="@id/tv_third_step"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_first_step"
+        style="@style/TextViewStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="39dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/background_ellipse"
+        android:fontFamily="@font/golos_text_regular"
+        android:paddingStart="7dp"
+        android:paddingTop="2dp"
+        android:paddingEnd="7dp"
+        android:paddingBottom="2dp"
+        android:text="1"
+        android:textColor="@color/white"
+        app:layout_constraintEnd_toStartOf="@id/tv_second_step"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_new_user"
+        style="@style/TextViewStyle.Header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="87dp"
+        android:layout_marginEnd="32dp"
+        android:fontFamily="@font/golos_text_demi_bold"
+        android:gravity="start"
+        android:text="@string/registration_new_user"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_address_for_registration"
+        style="@style/TextViewStyle.Usual"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="48dp"
+        android:fontFamily="@font/golos_text_regular"
+        android:gravity="start"
+        android:text="@string/registration_address_for_registration"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_new_user" />
+
+    <TextView
+        android:id="@+id/tv_error"
+        style="@style/TextViewStyle.Usual"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="16dp"
+        android:fontFamily="@font/golos_text_regular"
+        android:text="@string/error_email_format"
+        android:textColor="@color/color_error"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_address_for_registration"
+        tools:visibility="visible" />
+
+    <uddug.com.naukoteka.ui.widgets.CustomizedTextInput
+        android:id="@+id/cti_email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="32dp"
+        app:hint="@string/login_email"
+        app:layout_constraintTop_toBottomOf="@id/tv_error"
+        app:typeInput="type_input_email" />
+
+    <Button
+        android:id="@+id/btn_registration_next"
+        style="@style/Button.Registration"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="50dp"
+        android:layout_marginEnd="32dp"
+        android:enabled="false"
+        android:text="@string/next"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cti_email" />
+
+    <ImageButton
+        android:id="@+id/ib_google"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:background="@drawable/ic_google_registration"
+        app:layout_constraintEnd_toStartOf="@+id/ib_facebook"
+        app:layout_constraintStart_toStartOf="@id/btn_registration_next"
+        app:layout_constraintTop_toBottomOf="@id/btn_registration_next" />
+
+    <ImageButton
+        android:id="@+id/ib_facebook"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="15dp"
+        android:background="@drawable/ic_facebook_registration"
+        app:layout_constraintEnd_toStartOf="@+id/ib_vkontakte"
+        app:layout_constraintStart_toEndOf="@+id/ib_google"
+        app:layout_constraintTop_toBottomOf="@id/btn_registration_next" />
+
+    <ImageButton
+        android:id="@+id/ib_vkontakte"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="15dp"
+        android:background="@drawable/ic_vkontakte_registration"
+        app:layout_constraintEnd_toStartOf="@+id/ib_ok"
+        app:layout_constraintStart_toEndOf="@+id/ib_facebook"
+        app:layout_constraintTop_toBottomOf="@id/btn_registration_next" />
+
+    <ImageButton
+        android:id="@+id/ib_ok"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="15dp"
+        android:background="@drawable/ic_ok_registration"
+        app:layout_constraintEnd_toStartOf="@+id/ib_mail"
+        app:layout_constraintStart_toEndOf="@+id/ib_vkontakte"
+        app:layout_constraintTop_toBottomOf="@id/btn_registration_next" />
+
+    <ImageButton
+        android:id="@+id/ib_mail"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="15dp"
+        android:background="@drawable/ic_mail_registration"
+        app:layout_constraintEnd_toEndOf="@id/btn_registration_next"
+        app:layout_constraintStart_toEndOf="@+id/ib_ok"
+        app:layout_constraintTop_toBottomOf="@id/btn_registration_next" />
+
+    <com.google.android.flexbox.FlexboxLayout
+        android:id="@+id/tagsContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:alignContent="stretch"
+        app:alignItems="center"
+        app:flexWrap="wrap"
+        app:justifyContent="center"
+        app:layout_constraintEnd_toEndOf="@+id/ib_mail"
+        app:layout_constraintStart_toStartOf="@+id/ib_google"
+        app:layout_constraintTop_toBottomOf="@id/ib_mail">
+
+        <TextView
+            style="@style/TextViewStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/golos_text_regular"
+            android:text="@string/click_on_button_you_accept" />
+
+        <TextView
+            android:id="@+id/userAgreement"
+            style="@style/TextViewStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/golos_text_regular"
+            android:paddingEnd="5dp"
+            android:text="@string/userAgreement"
+            android:textColor="@color/text_link" />
+
+        <TextView
+            style="@style/TextViewStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/golos_text_regular"
+            android:text="@string/and_agree_with" />
+
+        <TextView
+            android:id="@+id/userPrivacy"
+            style="@style/TextViewStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/golos_text_regular"
+            android:text="@string/user_privacy"
+            android:textColor="@color/text_link" />
+
+        <TextView
+            style="@style/TextViewStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/golos_text_regular"
+            android:paddingHorizontal="5dp"
+            android:text="@string/common_and" />
+
+        <TextView
+            android:id="@+id/serviceRules"
+            style="@style/TextViewStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/golos_text_regular"
+            android:paddingEnd="5dp"
+            android:text="@string/service_rules"
+            android:textColor="@color/text_link" />
+
+
+    </com.google.android.flexbox.FlexboxLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

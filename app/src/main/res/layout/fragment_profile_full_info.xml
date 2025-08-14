@@ -1,0 +1,583 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/main_background_top_rounded"
+        android:fillViewport="true"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="20dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/NauTextAppearance.AppCompat.Title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/more"
+                android:textSize="22sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:layout_marginTop="16dp"
+                android:background="#EAEAF2" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_description" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/mainDescription"
+                        style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxLines="6"
+                        tools:text="Бла-бла, будет очень интересно конечно совсем другое. Диплом Национальной театральной премии за лучший спектакль 2013 года. Бла-бла, будет очень интересно конечно совсем др... еще" />
+
+                    <com.google.android.flexbox.FlexboxLayout
+                        android:id="@+id/tagsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp">
+
+                        <TextView
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/background_interest_tag"
+                            android:maxLines="6"
+                            android:padding="10dp"
+                            android:text="IT-специалист" />
+
+                        <TextView
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/background_interest_tag"
+                            android:maxLines="6"
+                            android:padding="10dp"
+                            android:text="Разработчик" />
+
+
+                    </com.google.android.flexbox.FlexboxLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:layout_marginTop="16dp"
+                android:background="#EAEAF2" />
+
+            <LinearLayout
+                android:id="@+id/profileLink"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:orientation="horizontal"
+                android:paddingVertical="18dp">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_link_email" />
+
+                <TextView
+                    android:id="@+id/link"
+                    style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="15dp"
+                    android:textColor="@color/text_link" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:background="#EAEAF2" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingVertical="16dp">
+
+                <TextView
+                    style="@style/NauTextAppearance.AppCompat.Title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/subs_subscr"
+                    android:textSize="18sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/subs"
+                            style="@style/NauTextAppearance.AppCompat.Title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="999"
+                            android:textColor="@color/text_link"
+                            android:textSize="18sp" />
+
+                        <TextView
+
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxLines="6"
+                            android:text="@string/profile_full_subs" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:layout_marginTop="16dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/subr"
+                            style="@style/NauTextAppearance.AppCompat.Title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="999"
+                            android:textColor="@color/text_link"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxLines="6"
+                            android:text="@string/profile_full_subr" />
+
+                    </LinearLayout>
+
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginTop="16dp"
+                    android:background="#EAEAF2" />
+
+                <LinearLayout
+                    android:id="@+id/nauDataContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingVertical="18dp">
+
+                    <TextView
+                        style="@style/NauTextAppearance.AppCompat.Title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/science_data"
+                        android:textSize="18sp" />
+
+                    <LinearLayout
+                        android:id="@+id/spinCodeContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/spin_code" />
+
+                        <TextView
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="1234-1234" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/orcidCodeContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/orcidCode"
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/orcid" />
+
+                        <TextView
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="0000 - 0001 - 2345 - 678X" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/researcerIdContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/researcerId"
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/researcherid" />
+
+                        <TextView
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="0000 - 0001 - 2345 - 678X" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:background="#EAEAF2" />
+
+                <LinearLayout
+                    android:id="@+id/careerContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingVertical="16dp">
+
+                    <TextView
+                        style="@style/NauTextAppearance.AppCompat.Title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/carrer"
+                        android:textSize="18sp" />
+
+                    <LinearLayout
+                        android:id="@+id/careerDetailContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="vertical">
+
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:background="#EAEAF2" />
+
+                <LinearLayout
+                    android:id="@+id/educationContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingVertical="18dp">
+
+                    <TextView
+                        style="@style/NauTextAppearance.AppCompat.Title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/study"
+                        android:textSize="18sp" />
+
+                    <LinearLayout
+                        android:id="@+id/educationDetailContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="vertical">
+
+
+                    </LinearLayout>
+
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:background="#EAEAF2" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingVertical="18dp">
+
+                    <LinearLayout
+                        android:id="@+id/birthdayContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_birthday" />
+
+                        <TextView
+                            android:id="@+id/birthday"
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="15dp"
+                            android:text="14 сентября 1984" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/genderContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_profile_info" />
+
+                        <TextView
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="15dp"
+                            android:text="@string/genre"
+                            android:textColor="@color/text_inactive" />
+
+
+                        <TextView
+                            android:id="@+id/gender"
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="Мужской" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/placeBornContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:gravity="top"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_location_info" />
+
+                        <TextView
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="15dp"
+                            android:text="@string/place_birthday"
+                            android:textColor="@color/text_inactive" />
+
+
+                        <TextView
+                            android:id="@+id/placeBorn"
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="г. Самара, Самарская област" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/placeLiveContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_location_info" />
+
+                        <TextView
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="15dp"
+                            android:text="@string/place_live"
+                            android:textColor="@color/text_inactive" />
+
+                        <TextView
+                            android:id="@+id/placeLive"
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="г. Самара, Самарская област" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:background="#EAEAF2" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingVertical="18dp">
+
+                    <TextView
+                        style="@style/NauTextAppearance.AppCompat.Title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/personal_info"
+                        android:textSize="18sp" />
+
+                    <LinearLayout
+                        android:id="@+id/emailContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_email" />
+
+                        <TextView
+                            android:id="@+id/email"
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="15dp"
+                            android:text="markovskaya.1977@yandex.ru"
+                            android:textColor="@color/text_link" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/phoneContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_phone" />
+
+                        <TextView
+                            android:id="@+id/phone"
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="15dp"
+                            android:text="+ 7 (915) 333-91-19"
+                            android:textColor="@color/text_inactive" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/socialMediaContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_link_info" />
+
+                        <TextView
+                            android:id="@+id/socialMedia"
+                            style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="15dp"
+                            android:textColor="@color/text_link"
+                            tools:text="markovskaya.ru" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+</layout>
+

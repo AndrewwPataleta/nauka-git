@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="profile_securty_padding_horizontal">18dp</dimen>
+    <dimen name="delete_account_text_size">16sp</dimen>
+</resources>

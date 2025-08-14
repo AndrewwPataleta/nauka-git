@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/back_gradient_drawable">
+
+    <ImageView
+        android:id="@+id/iv_logo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="32dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_logo" />
+
+    <LinearLayout
+        android:id="@+id/ll_language"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="17dp"
+        android:layout_marginEnd="12dp"
+        android:padding="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tv_language"
+            style="@style/TextViewStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:fontFamily="@font/golos_text_regular"
+            android:text="Russian" />
+
+        <ImageView
+            android:id="@+id/iv_arrow_down"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:src="@drawable/ic_arrow_down" />
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/iv_illustration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="84dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_illustration" />
+
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/welcome_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.15" />
+
+    <TextView
+        android:id="@+id/tv_welcome"
+        style="@style/TextViewStyle.Header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:fontFamily="@font/golos_text_demi_bold"
+        android:gravity="start"
+        android:text="@string/login_welcome"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/welcome_guideline" />
+
+    <TextView
+        android:id="@+id/tv_error"
+        style="@style/TextViewStyle.Usual"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginBottom="16dp"
+        android:fontFamily="@font/golos_text_regular"
+        android:text="@string/error_incorrect_credentials"
+        android:textColor="@color/color_error"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/fields_guideline"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:visibility="visible" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/fields_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.37" />
+
+    <uddug.com.naukoteka.ui.widgets.CustomizedTextInput
+        android:id="@+id/cti_email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="3dp"
+        android:layout_marginEnd="32dp"
+        app:hint="@string/login_email"
+        app:layout_constraintTop_toBottomOf="@id/fields_guideline"
+        app:typeInput="type_input_email" />
+
+    <uddug.com.naukoteka.ui.widgets.CustomizedTextInput
+        android:id="@+id/cti_pass"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="32dp"
+        app:hint="@string/login_password"
+        app:layout_constraintTop_toBottomOf="@id/cti_email"
+        app:typeInput="type_input_password" />
+
+    <CheckBox
+        android:id="@+id/cb_remember_me"
+        style="@style/TextViewStyle.Usual"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:button="@drawable/checkbox_background"
+        android:fontFamily="@font/golos_text_regular"
+        android:paddingStart="8dp"
+        android:text="@string/login_remember_me"
+        android:textColor="@color/object_inactive"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/tv_forget_password"
+        app:layout_constraintTop_toBottomOf="@id/cti_pass" />
+
+    <TextView
+        android:id="@+id/tv_forget_password"
+        style="@style/TextViewStyle.Usual"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="32dp"
+        android:paddingBottom="8dp"
+        android:paddingStart="10dp"
+        android:fontFamily="@font/golos_text_regular"
+        android:text="@string/login_forget_password"
+        android:textColor="@color/object_inactive"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cti_pass" />
+
+    <Button
+        android:id="@+id/btn_enter"
+        style="@style/Button"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginBottom="16dp"
+        android:enabled="false"
+        android:text="@string/login_enter"
+        app:layout_constraintBottom_toTopOf="@+id/social_guideline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/social_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.84" />
+
+    <ImageButton
+        android:id="@+id/ib_google"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/ic_google"
+        android:foreground="?selectableItemBackground"
+        app:layout_constraintEnd_toStartOf="@+id/ib_facebook"
+        app:layout_constraintStart_toStartOf="@id/btn_enter"
+        app:layout_constraintTop_toBottomOf="@id/social_guideline" />
+
+    <ImageButton
+        android:id="@+id/ib_facebook"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/ic_facebook"
+        android:foreground="?selectableItemBackground"
+        app:layout_constraintEnd_toStartOf="@+id/ib_vkontakte"
+        app:layout_constraintStart_toEndOf="@+id/ib_google"
+        app:layout_constraintTop_toBottomOf="@id/social_guideline" />
+
+    <ImageButton
+        android:id="@+id/ib_vkontakte"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/ic_vkontakte"
+        android:foreground="?selectableItemBackground"
+        app:layout_constraintEnd_toStartOf="@+id/ib_ok"
+        app:layout_constraintStart_toEndOf="@+id/ib_facebook"
+        app:layout_constraintTop_toBottomOf="@id/social_guideline" />
+
+    <ImageButton
+        android:id="@+id/ib_ok"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/ic_ok"
+        android:foreground="?selectableItemBackground"
+        app:layout_constraintEnd_toStartOf="@+id/ib_mail"
+        app:layout_constraintStart_toEndOf="@+id/ib_vkontakte"
+        app:layout_constraintTop_toBottomOf="@id/social_guideline" />
+
+    <ImageButton
+        android:id="@+id/ib_mail"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/ic_mail"
+        android:foreground="?selectableItemBackground"
+        app:layout_constraintEnd_toEndOf="@id/btn_enter"
+        app:layout_constraintStart_toEndOf="@+id/ib_ok"
+        app:layout_constraintTop_toBottomOf="@id/social_guideline" />
+
+    <uddug.com.naukoteka.ui.custom.HtmlTextView
+        android:id="@+id/tv_registration"
+        style="@style/TextViewStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="17dp"
+        android:padding="15dp"
+        android:fontFamily="@font/golos_text_regular"
+        android:gravity="center"
+        android:text="@string/login_registration"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

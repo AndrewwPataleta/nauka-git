@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph_profile"
+    app:startDestination="@id/profileFragment">
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.ProfileFragment"
+        tools:layout="@layout/fragment_profile">
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profilePhotoViewFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.ProfilePhotoViewFragment"
+        tools:layout="@layout/fragment_profile_photo_view">
+
+        <argument
+            android:name="image"
+            app:argType="string" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileEditFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.edit.ProfileEditFragment"
+        tools:layout="@layout/fragment_profile_edit">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/appSettingsFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.settings.AppSettingsFragment"
+        tools:layout="@layout/fragment_app_settings">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/supportWithHelpFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.ProfileHelpSupportFragment"
+        tools:layout="@layout/fragment_profile_help_support">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileEditId"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.edit.ProfileEditIdFragment"
+        tools:layout="@layout/fragment_profile_edit_id">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileEditPersonalData"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.edit.ProfileEditPersonalInfoFragment"
+        tools:layout="@layout/fragment_profile_edit_id">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileEditAcademicDegreeFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.edit.ProfileEditAcademicDegreeFragment"
+        tools:layout="@layout/fragment_profile_edit_id">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileEditEducationFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.edit.ProfileEditEducationContainerFragment"
+        tools:layout="@layout/fragment_profile_edit_education_container">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/countrySelect"
+        android:name="uddug.com.naukoteka.ui.fragments.county.CountrySelectFragment"
+        tools:layout="@layout/fragment_country_select">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/settlementSelect"
+        android:name="uddug.com.naukoteka.ui.fragments.settlement.SettlementSelectFragment"
+        tools:layout="@layout/fragment_settlement_select">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/educationMiddleActionFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.create.education.EducationMiddleActionFragment"
+        tools:layout="@layout/fragment_education_middle_action">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/educationHighActionFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.create.education.EducationHighActionFragment"
+        tools:layout="@layout/fragment_education_high_action">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/educationAdditionalActionFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.create.education.EducationAdditionalActionFragment"
+        tools:layout="@layout/fragment_education_high_action">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/editProfilePersonalIds"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.edit.ProfileEditPersonalIdsFragment"
+        tools:layout="@layout/fragment_profile_edit_personal_ids">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileCarrierList"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.edit.ProfileCarrierListFragment"
+        tools:layout="@layout/fragment_profile_carrier_list">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileCarrierAction"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.create.carrier.CarrierActionFragment"
+        tools:layout="@layout/fragment_carrier_action">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileEditAddressList"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.edit.ProfileEditAddressesListFragment"
+        tools:layout="@layout/fragment_profile_edit_addresses_list">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileEditContacts"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.edit.ProfileEditContactsFragment"
+        tools:layout="@layout/fragment_profile_edit_contacts">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileSecure"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.settings.ProfileSecurityFragment"
+        tools:layout="@layout/fragment_profile_security">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileEditSettingsPersonalFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.settings.ProfileEditSettingsPersonalFragment"
+        tools:layout="@layout/fragment_profile_edit_settings_personal">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/actionWithMyProfileContainer"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.settings.ProfileEditSettingsActionProfileFragment"
+        tools:layout="@layout/fragment_profile_edit_settings_personal">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileEditSettingsNotificationsFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.settings.ProfileEditSettingsNotificationsFragment"
+        tools:layout="@layout/fragment_profile_edit_settings_personal">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileEditSettingsSystemFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.settings.ProfileEditSettingsSystemFragment"
+        tools:layout="@layout/fragment_profile_edit_settings_personal">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileSecurityPasswordChangeFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.settings.ProfileSecurityPasswordChangeFragment"
+        tools:layout="@layout/fragment_profile_edit_settings_personal">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/dynamicSettingsFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.settings.DynamicSettingsFragment"
+        tools:layout="@layout/fragment_dynamic_settings">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/wallFeedDetail"
+        android:name="uddug.com.naukoteka.ui.fragments.wall.WallDetailFragment"
+        tools:layout="@layout/fragment_wall_detail">
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.profile.UserProfileFullInfo" />
+
+        <argument
+            android:name="model"
+            app:argType="uddug.com.domain.entities.feed.FeedContainer" />
+
+    </fragment>
+
+</navigation>

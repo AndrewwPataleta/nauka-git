@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Naukoteka</string>
+  <string name="errors_timeout_error">Таймаут</string>
+  <string name="errors_network_error">Сеть недоступна</string>
+  <string name="errors_email_is_busy">Почта занята</string>
+  <string name="errors_something_went_wrong">Что-то пошло не так</string>
+  <string name="error_passwords_not_equals">Указанная пара паролей не совпадает. Проверьте введенные данные и повторите попытку.</string>
+  <string name="error_incorrect_credentials">Не получается войти, проверьте указанные данные</string>
+  <string name="error_nickname_is_busy">Никнейм занят</string>
+  <string name="error_password_policy">Пароль не соответствует ряду требований</string>
+  <string name="error_email_not_exist">Пользователь с указанным адресом электронной почты ранее не был зарегистрирован. Пожалуйста, проверьте корректность указанных данных.</string>
+  <string name="error_email_format">Ошибка ввода email</string>
+  <string name="next">Далее</string>
+  <string name="ready">Готово</string>
+  <string name="the_best_scientific_works">Лучшие научные работы в одном месте</string>
+  <string name="smart_community">Вступайте в умное сообщество</string>
+  <string name="new_ideas">Сервис самых новых идей</string>
+  <string name="skip">Пропустить</string>
+  <string name="login_welcome">Добро пожаловать в Наукотеку</string>
+  <string name="login_email">Электронная почта</string>
+  <string name="login_password">Пароль</string>
+  <string name="login_remember_me">Запомнить меня</string>
+  <string name="login_forget_password">Забыли пароль?</string>
+  <string name="login_enter">Войти</string>
+  <string name="login_registration">&lt;font color=#8083A0&gt;Нет аккаунта?&lt;/font&gt; &lt;font color=#2E83D9&gt;Зарегистрируйтесь&lt;/font&gt;</string>
+  <string name="registration_new_user">Регистрация нового пользователя</string>
+  <string name="registration_address_for_registration">Ваш адрес электронной почты будет
+ 
+  использован для регистрации</string>
+  <string name="registration_agreement">&lt;font color=#8083A0&gt;Нажимая на кнопку &amp;quot;Далее&amp;quot;, вы соглашаетесь &lt;br&gt;с&lt;/font&gt; &lt;font color=#2E83D9&gt;Правилами сервиса&lt;/font&gt; &lt;font color=#8083A0&gt;и подтверждаете&lt;/font&gt; &lt;font color=#2E83D9&gt;Политику &lt;br&gt; обработки персональных данных&lt;/font&gt;</string>
+  <string name="registration_new_password">Создание надежного пароля</string>
+  <string name="registration_password_requirements">&lt;font color=#FFFFFFFF&gt;Теперь необходимо придумать надежный &lt;br&gt; пароль. Он должен соответствовать ряду &lt;br&gt; наших&lt;/font&gt; &lt;font color=#2E83D9&gt;требований&lt;/font&gt;&lt;font color=#FFFFFFFF&gt;.&lt;/font&gt;</string>
+  <string name="registration_password_confirmation">Подтвердите пароль</string>
+  <string name="registration_error">Указанная пара паролей не совпадает. Проверьте введенные данные и повторите попытку.</string>
+  <string name="registration_confirmation">Подтверждение регистрации</string>
+  <string name="registration_checking_mail">Проверьте свою электронную почту, мы отправили туда письмо со ссылкой.</string>
+  <string name="registration_send_letter">&lt;font color=#8083A0&gt;Не получили письмо? Проверьте папку &amp;quot;спам&amp;quot; &lt;br&gt;или&lt;/font&gt; &lt;font color=#2E83D9&gt;отправьте письмо еще раз&lt;/font&gt; &lt;font color=#8083A0&gt;%s&lt;/font&gt;</string>
+  <string name="enter_has_successfully_passed">Вход успешно выполнен!</string>
+  <string name="signed_up_registered_successfully">Вы успешно зарегистрированы!</string>
+  <string name="signed_up_fill_in_the_form">Загрузите свою фотографию и заполните небольшую анкету о вашем образовании, карьере и интересах</string>
+  <string name="signed_up_fill_in_profile">Заполнить профиль</string>
+  <string name="short_info_profile_complete_registration">Завершите регистрацию</string>
+  <string name="short_info_profile_minimum_information">Нам нужна минимальная информация о вас</string>
+  <string name="short_info_profile_name">Как вас зовут</string>
+  <string name="short_info_profile_surname">Фамилия</string>
+  <string name="short_info_profile_field_name">Имя</string>
+  <string name="short_info_profile_patronymic">Отчество</string>
+  <string name="short_info_profile_without_patronymic">Без отчества</string>
+  <string name="short_info_profile_link">Ссылка на профиль</string>
+  <string name="short_info_profile_personal_address">Вы можете задать для своего профиля персональный адрес</string>
+  <string name="short_info_profile_field_link">Ссылка</string>
+  <string name="short_info_profile_button_complete_registration">Завершить регистрацию</string>
+  <string name="password_recovery">Восстановление пароля</string>
+  <string name="password_recovery_send_link">Мы отправим ссылку на указанный Вами адрес электронной почты для подтверждения наличия доступа к Вашему аккаунту</string>
+  <string name="password_recovery_send">Отправить</string>
+  <string name="password_recovery_verification_send_link">Мы отправили ссылку на указанный Вами адрес электронной почты. Пожалуйста, проверьте Вашу почту и нажмите на ссылку, находящуюся в письме</string>
+  <string name="password_recovery_verification_not_receive_letter">Не получили письмо?</string>
+  <string name="password_recovery_verification_send_again">&lt;font color=#2E83D9&gt;Отправить еще раз&lt;/font&gt; &lt;font color=#8083A0&gt;%s&lt;/font&gt;</string>
+  <string name="password_recovery_support">&lt;font color=#8083A0&gt;Нужна помощь?&lt;/font&gt; &lt;font color=#2E83D9&gt;Обратитесь в поддержку&lt;/font&gt;</string>
+  <string name="password_recovery_requirements">&lt;font color=#FFFFFFFF&gt;Теперь придумайте себе новый надежный &lt;br&gt; пароль. Он должен соответствовать ряду &lt;br&gt; наших&lt;/font&gt; &lt;font color=#2E83D9&gt;требований&lt;/font&gt;&lt;font color=#FFFFFFFF&gt;.&lt;/font&gt;</string>
+  <string name="password_recovery_new_pass">Новый пароль</string>
+  <string name="password_recovery_new_pass_confirmation">Подтвердите новый пароль</string>
+  <string name="password_recovery_save_password">Сохранить пароль</string>
+  <string name="password_recovery_by_phone_number">Восстановление пароля по номеру телефона</string>
+  <string name="password_recovery_send_sms">Мы отправим вам смс с кодом для подтверждения доступа к вашему аккаунту</string>
+  <string name="password_recovery_phone_number">Номер телефона</string>
+  <string name="password_recovery_send_code">Отправить код</string>
+  <string name="password_recovery_help">Нужна помощь? Попробуйте восстановить через электронный адрес или обратитесь в поддержку</string>
+  <string name="password_recovery_sent_the_code_to_the_specified_number">Отправили смс с кодом на указанный номер телефона</string>
+  <string name="password_recovery_received_code">Полученный код</string>
+  <string name="password_recovery_accept">Подтвердить</string>
+  <string name="dialog_password_recovery_cancel_no">Нет</string>
+  <string name="dialog_password_recovery_cancel_yes">Да</string>
+  <string name="are_you_sure_want_to_interrupt_the_password_recovery">Вы действительно хотите прервать процесс восстановления пароля?</string>
+  <string name="dialog_password_requirements_accessibly">Понятно</string>
+  <string name="dialog_password_requirements_count_of_symbols">Пароль должен состоять из 8 или более символов латинского алфавита…</string>
+  <string name="dialog_password_requirements_capital_letters">Cодержать заглавные и строчные буквы</string>
+  <string name="dialog_password_requirements_digits">Cодержать цифры</string>
+  <string name="dialog_password_requirements_symbols">Содержать неалфавитные символы «–», «_» и т.п.</string>
+  <string name="dialog_password_recovery_new_password_save">Новый пароль сохранен</string>
+  <string name="dialog_password_recovery_successful">Восстановление прошло успешно</string>
+  <string name="invalid_idp">Выбран неправильный провайдер аутентификации</string>
+  <string name="session_not_found">Сессия пользователя не найдена. Попробуйте войти заново</string>
+  <string name="user_already_authenticated">Пользователь уже аутентифицирован</string>
+  <string name="user_already_exists">Пользователь уже существует</string>
+  <string name="user_password_policy_not_met">Пароль не удовлетворяет правилам безопасности</string>
+  <string name="unsupported_action">Неподдерживаемое действие</string>
+  <string name="action_token_expired">Токен истек</string>
+  <string name="authorization_request_not_found">Запрос на вход не найден. Попробуйте войти заново</string>
+  <string name="client_registration_not_found">Для данного приложения не разрешен вход в систему</string>
+  <string name="idp_exception">Ошибка входа с помощью провайдера идентификации</string>
+  <string name="sphere">НауСфера</string>
+  <string name="nau_search">НауПоиск</string>
+  <string name="my_territory">Моя территория</string>
+  <string name="nau_chat">НауЧат</string>
+  <string name="nau_profile">НауПрофиль</string>
+  <string name="create_note">Создать запись</string>
+  <string name="know_more">Узнать подробнее</string>
+  <string name="actual_title">Актуальное</string>
+  <string name="popular_title">Популярное</string>
+  <string name="functions_title">Функции</string>
+  <string name="share_profile">Поделиться профилем</string>
+  <string name="link_to_profile">Ссылка на профиль</string>
+  <string name="complain">Пожаловаться</string>
+  <string name="block_account">Заблокировать аккаунт</string>
+  <string name="exit_from_profile">Выйти из профиля</string>
+  <string name="edit_profile">Редактировать профиль</string>
+  <string name="app_settings">Настройки приложения</string>
+  <string name="help_and_support">Помощь и поддержка</string>
+  <string name="delete_photo">Удалить фотографию</string>
+  <string name="change_photo">Изменить фотографию</string>
+  <string name="open_photo">Открыть фотографию</string>
+  <string name="amount_followers_following">%s подписчиков ∙ %s подписок</string>
+  <string name="labor_activity_name">%s в <font color="##2E83D9">%s</font></string>
+</resources>

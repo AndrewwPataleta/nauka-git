@@ -1,0 +1,9 @@
+
+rootProject.name = "naukoteka"
+
+include ':domain'
+include ':data'
+//include ':core'
+include ':app'
+
+

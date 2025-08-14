@@ -1,0 +1,221 @@
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+apply plugin: 'com.google.firebase.appdistribution'
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics'
+apply plugin: 'kotlin-parcelize'
+apply plugin: 'com.google.firebase.firebase-perf'
+apply plugin: 'dagger.hilt.android.plugin'
+
+android {
+    lintOptions {
+        abortOnError false
+    }
+
+    packagingOptions {
+        exclude("META-INF/*.kotlin_module")
+    }
+
+
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+        stabilityConfigurationFile = rootProject.layout.projectDirectory.file("stability_config.conf")
+    }
+
+    compileSdkVersion rootProject.ext.TARGET_SDK_VERSION
+
+    defaultConfig {
+        applicationId rootProject.ext.application_id
+        minSdkVersion rootProject.ext.MIN_SDK_VERSION
+        targetSdkVersion rootProject.ext.TARGET_SDK_VERSION
+        versionCode getVersionMajor() * 10000 + getVersionMinor() * 1000 + getVersionPatch() * 100 + getVersionBuild()
+        versionName "${getVersionMajor()}.${getVersionMinor()}.${getVersionPatch()}"
+
+        multiDexEnabled true
+        vectorDrawables.useSupportLibrary = true
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        debug {
+        }
+
+        release {
+        }
+    }
+
+    buildTypes {
+        debug {
+            firebaseAppDistribution {
+                serviceCredentialsFile = "$project.rootDir/nauchat-app-distribution.json"
+                groupsFile = "$project.rootDir/tester_groups.txt"
+                releaseNotesFile = "$project.rootDir/releasenotes.txt"
+            }
+            versionNameSuffix "-DEBUG"
+            buildConfigField "String", "SERVER_URL", "\"https://stage.naukotheka.ru/api/\""
+            buildConfigField "String", "IMAGE_SERVER_URL", "\"https://stage.naukotheka.ru/api/core\""
+            signingConfig signingConfigs.debug
+            debuggable true
+        }
+        release {
+            firebaseAppDistribution {
+                serviceCredentialsFile = "$project.rootDir/nauchat-app-distribution.json"
+                groupsFile = "$project.rootDir/tester_groups.txt"
+                releaseNotesFile = "$project.rootDir/releasenotes.txt"
+            }
+            buildConfigField "String", "SERVER_URL", "\"https://stage.naukotheka.ru/api/\""
+            buildConfigField "String", "IMAGE_SERVER_URL", "\"https://stage.naukotheka.ru/api/core\""
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+
+    buildFeatures {
+        viewBinding true
+        dataBinding true
+        compose true // Включаем поддержку Compose
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion '1.5.3' // Используйте актуальную версию
+    }
+
+    namespace 'uddug.com.naukoteka'
+}
+
+configurations {
+    cleanedAnnotations
+    implementation.exclude group: 'org.jetbrains', module: 'annotations'
+}
+
+dependencies {
+    // Основные зависимости
+    implementation presentation.kotlin
+    implementation presentation.ktxCore
+    implementation ui.appcompat
+    implementation ui.googleMaterial
+    implementation ui.constraintLayout
+    implementation ui.lifecycle
+    implementation ui.lifecycleCommon
+    implementation ui.localeChanger
+
+    // MVVM и Compose зависимости
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2"
+    implementation "androidx.activity:activity-compose:1.8.0"
+    implementation "androidx.compose.ui:ui:1.5.4"
+    implementation "androidx.compose.ui:ui-tooling:1.5.4"
+    implementation "androidx.compose.foundation:foundation:1.5.4"
+    implementation "androidx.compose.material:material:1.5.4"
+    implementation "androidx.compose.material3:material3:1.1.2"
+    implementation "androidx.compose.runtime:runtime-livedata:1.5.4"
+    implementation "androidx.navigation:navigation-compose:2.7.4"
+
+    // Остальные зависимости
+    implementation ui.glide
+    implementation ui.glideAnnotation
+    kapt ui.glideProcessor
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.8.6'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.8.6'
+    implementation 'com.google.firebase:firebase-analytics:22.2.0'
+    implementation 'com.google.firebase:firebase-crashlytics:19.4.0'
+    implementation 'com.google.firebase:firebase-perf:21.0.4'
+    implementation 'com.google.firebase:firebase-messaging:24.1.0'
+    implementation 'com.google.firebase:firebase-inappmessaging-display:21.0.1'
+    implementation 'com.google.firebase:firebase-config:22.1.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+
+    implementation ui.cicerone
+    implementation ui.firebaseCrashlytics
+    implementation ui.keyboardVisibility
+    implementation ui.circleImageView
+
+    implementation ui.gmsPlayServicesAuth
+    implementation ui.permissionX
+    implementation ui.photoView
+    implementation ui.flexBox
+
+    implementation presentation.moxy
+    implementation presentation.moxyAndroid
+    implementation presentation.moxyKtx
+    kapt presentation.moxyCompiler
+
+    implementation presentation.inject
+    implementation presentation.toothpick
+    implementation presentation.toothpickX
+    implementation presentation.toothpickKtp
+    implementation presentation.toothpickLifeCycle
+    kapt presentation.toothpickCompiler
+
+    implementation data.gson
+    implementation data.retrofit
+    implementation data.retrofitLogging
+    implementation data.gsonConverter
+    implementation data.retrofitRxJava
+
+    implementation presentation.rxJavaKotlin
+    implementation presentation.rxJava
+    implementation presentation.rxJavaAndroid
+
+    implementation lib.domain
+    implementation lib.data
+    implementation("com.github.dhaval2404:imagepicker:2.1")
+    debugImplementation "com.github.chuckerteam.chucker:library:4.0.0"
+    releaseImplementation "com.github.chuckerteam.chucker:library-no-op:4.0.0"
+    implementation("com.vanniktech:android-image-cropper:4.6.0")
+    implementation "com.github.StephenVinouze:MaterialNumberPicker:1.1.0"
+    implementation 'com.github.yalantis:ucrop:2.2.8'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.9.23'
+    implementation 'androidx.datastore:datastore-preferences-core:1.1.1'
+    implementation 'io.github.vicmikhailau:MaskedEditText:5.0.3'
+
+    implementation 'androidx.paging:paging-runtime-ktx:3.1.1'
+    implementation 'androidx.paging:paging-rxjava2-ktx:3.1.1'
+    implementation("androidx.browser:browser:1.4.0")
+
+    testImplementation unitTest.junit
+    testImplementation unitTest.testCore
+    testImplementation unitTest.coreTesting
+    testImplementation unitTest.toothpickTesting
+    testImplementation unitTest.mockitoCore
+    testImplementation unitTest.mockitoInline
+    testImplementation unitTest.powerMockCore
+    testImplementation unitTest.powerMockJUnit
+    testImplementation unitTest.powerMockMockito2
+    testImplementation unitTest.robolectric
+
+    implementation "com.google.dagger:hilt-android:2.55"
+    kapt "com.google.dagger:hilt-android-compiler:2.55"
+    implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
+    implementation 'androidx.hilt:hilt-navigation-fragment:1.2.0'
+    kapt 'androidx.hilt:hilt-compiler:1.2.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    implementation 'androidx.activity:activity-ktx:1.8.0'
+    implementation 'androidx.fragment:fragment-ktx:1.6.2'
+    implementation "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.5.0"
+    implementation("io.coil-kt:coil-compose:2.1.0")
+    implementation("io.socket:socket.io-client:2.1.2") {
+        exclude group: "org.json", module: "json"
+    }
+
+}
+
+kapt {
+    correctErrorTypes = true  // Важно для корректной работы Hilt
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="deep_link_verify_email" translatable="false">/login-actions/verify-email</string>
+    <string name="deep_link_social_login" translatable="false">/login-actions/social-login</string>
+    <string name="deep_link_reset_credentials" translatable="false">/login-actions/reset-credentials</string>
+</resources>

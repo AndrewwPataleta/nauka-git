@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/sphere"
+        android:icon="@drawable/ic_nau_sphere"
+        android:title="@string/sphere"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/search"
+        android:icon="@drawable/ic_search"
+        android:title="@string/nau_search"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/myTerritory"
+        android:icon="@drawable/ic_book"
+        android:title="@string/my_territory"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/nauChat"
+        android:icon="@drawable/ic_chat"
+        android:title="@string/nau_chat"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/nauProfile"
+        android:icon="@drawable/ic_user_profile"
+        android:title="@string/nau_profile"
+        app:showAsAction="ifRoom" />
+
+</menu>

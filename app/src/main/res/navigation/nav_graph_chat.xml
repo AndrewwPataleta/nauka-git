@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph_chat"
+    app:startDestination="@id/chatListFragment">
+
+    <fragment
+        android:id="@+id/chatListFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatListFragment"
+        tools:layout="@layout/fragment_chat_list">
+
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/chatDialogFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatDialogFragment">
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/chatDetailDialog"
+        android:name="uddug.com.naukoteka.ui.chat.ChatDetailDialogFragment">
+
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/chatCreateSingleFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatCreateSingleFragment">
+
+    </fragment>
+
+</navigation>

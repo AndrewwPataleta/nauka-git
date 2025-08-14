@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="main_background">#242535</color>
+    <color name="main_background_input">#242535</color>
+    <color name="main_background_input_stroke">#4D4D67</color>
+    <color name="main_text">#FFFFFF</color>
+    <color name="secondary_text">#8083A0</color>
+    <color name="dark_main_background">#1A1B2B</color>
+    <color name="background_more_info">#363850</color>
+    <color name="color_more">#FFFFFF</color>
+    <color name="back_icon_color">#2E83D9</color>
+</resources>

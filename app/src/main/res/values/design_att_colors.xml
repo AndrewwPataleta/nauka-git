@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <attr name="design_hintColor" format="color"/>
+    <attr name="design_textColor" format="color"/>
+    <attr name="design_mainTextColor" format="color"/>
+    <attr name="design_iconColor" format="color"/>
+
+</resources>

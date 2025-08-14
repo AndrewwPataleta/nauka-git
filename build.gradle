@@ -1,0 +1,77 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    ext {
+        COMPILE_SDK_VERSION = 34
+        BUILD_TOOLS_VERSION = "30.0.2"
+        MIN_SDK_VERSION = 26
+        TARGET_SDK_VERSION = 34
+
+        application_id = "com.nauchat"
+
+        kotlin_version = '2.1.10'
+        compose_version = '1.6.0-beta03' // Актуальная версия Compose для Kotlin 2.0
+        compose_compiler_version = '1.5.7' // Версия компилятора Compose
+        hilt_version = '2.51'
+    }
+    repositories {
+        google()
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        apply from: 'dependencies.gradle'
+        apply from: 'versioning.gradle'
+
+        classpath 'com.android.tools.build:gradle:8.2.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.gms:google-services:4.4.2'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.2'
+        classpath 'com.google.firebase:firebase-appdistribution-gradle:5.1.0'
+        classpath 'com.google.firebase:perf-plugin:1.4.2'
+        classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
+        classpath "com.google.dagger:hilt-android-gradle-plugin:$hilt_version"
+    }
+}
+
+plugins {
+    id 'org.jetbrains.kotlin.plugin.compose' version '2.1.10' apply false
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+        maven { url "https://jitpack.io" }
+        maven { url "https://maven.google.com/" }
+        google()
+        jcenter()
+        maven { url 'https://androidx.dev/storage/compose-compiler/repository/' }
+    }
+}
+
+task getVersionCode {
+    doLast {
+        def version = "${getVersionMajor()}.${getVersionMinor()}.${getVersionPatch()}.${getVersionBuild()}"
+        return version
+    }
+}
+
+task incrementVersionCode {
+    doLast {
+        def propFile = new File("${project.projectDir}/version.properties")
+        def versionProps = new Properties()
+        versionProps.load(new FileInputStream(propFile))
+        def updatedVersionCode = setupNewVersionCode()
+
+        def updatedCode = updatedVersionCode.getVersionCode()
+        println('Version code has been incremented to ' + updatedCode)
+        versionProps['VERSION_MAJOR'] = updatedVersionCode.majorVersion.toString()
+        versionProps['VERSION_MINOR'] = updatedVersionCode.majorMinor.toString()
+        versionProps['VERSION_PATCH'] = updatedVersionCode.majorPatch.toString()
+        versionProps['VERSION_BUILD'] = updatedVersionCode.majorBuild.toString()
+        versionProps.store(propFile.newWriter(), null)
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

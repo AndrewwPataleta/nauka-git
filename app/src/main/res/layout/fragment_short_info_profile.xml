@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@drawable/back_gradient_drawable">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/iv_logo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="40dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_logo" />
+
+        <TextView
+            android:id="@+id/tv_complete_registration"
+            style="@style/TextViewStyle.Header"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="15dp"
+            android:layout_marginEnd="56dp"
+            android:fontFamily="@font/golos_text_demi_bold"
+            android:gravity="start"
+            android:text="@string/short_info_profile_complete_registration"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/iv_logo" />
+
+        <TextView
+            android:id="@+id/tv_minimum_information"
+            style="@style/TextViewStyle.Usual"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="16dp"
+            android:fontFamily="@font/golos_text_regular"
+            android:text="@string/short_info_profile_minimum_information"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_complete_registration" />
+
+        <TextView
+            android:id="@+id/tv_name"
+            style="@style/TextViewStyle.Subtitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="20dp"
+            android:fontFamily="@font/golos_text_regular"
+            android:text="@string/short_info_profile_name"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_minimum_information" />
+
+        <uddug.com.naukoteka.ui.widgets.CustomizedTextInput
+            android:id="@+id/cti_surname"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            app:hint="@string/short_info_profile_surname"
+            app:layout_constraintTop_toBottomOf="@id/tv_name"
+            app:typeInput="type_input_text" />
+
+        <uddug.com.naukoteka.ui.widgets.CustomizedTextInput
+            android:id="@+id/cti_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="16dp"
+            app:hint="@string/short_info_profile_field_name"
+            app:layout_constraintTop_toBottomOf="@id/cti_surname"
+            app:typeInput="type_input_text" />
+
+        <uddug.com.naukoteka.ui.widgets.CustomizedTextInput
+            android:id="@+id/cti_patronymic"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="16dp"
+            app:hint="@string/short_info_profile_patronymic"
+            app:layout_constraintTop_toBottomOf="@id/cti_name"
+            app:typeInput="type_input_text" />
+
+        <CheckBox
+            android:id="@+id/cb_without_patronymic"
+            style="@style/TextViewStyle.Usual"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="21dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginBottom="21dp"
+            android:button="@drawable/checkbox_background"
+            android:fontFamily="@font/golos_text_regular"
+            android:paddingStart="8dp"
+            android:text="@string/short_info_profile_without_patronymic"
+            android:textColor="@color/object_inactive"
+            app:layout_constraintBottom_toBottomOf="@id/cti_patronymic"
+            app:layout_constraintEnd_toEndOf="@id/cti_patronymic"
+            app:layout_constraintTop_toTopOf="@id/cti_patronymic" />
+
+        <TextView
+            android:id="@+id/tv_profile_link"
+            style="@style/TextViewStyle.Subtitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="24dp"
+            android:fontFamily="@font/golos_text_regular"
+            android:text="@string/short_info_profile_link"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cti_patronymic" />
+
+        <TextView
+            android:id="@+id/tv_personal_address"
+            style="@style/TextViewStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="15dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="80dp"
+            android:fontFamily="@font/golos_text_regular"
+            android:gravity="start"
+            android:text="@string/short_info_profile_personal_address"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_profile_link" />
+
+        <uddug.com.naukoteka.ui.widgets.CustomizedTextInput
+            android:id="@+id/cti_link"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            app:hint="@string/short_info_profile_field_link"
+            app:layout_constraintTop_toBottomOf="@id/tv_personal_address"
+            app:typeInput="type_input_text" />
+
+        <TextView
+            android:id="@+id/tv_error_nickname"
+            style="@style/TextViewStyle.Usual"
+            tools:visibility="visible"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="@font/golos_text_regular"
+            android:text="@string/error_nickname_is_busy"
+            android:textColor="@color/color_error"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@+id/cti_link"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <Button
+            android:id="@+id/btn_complete_registration"
+            style="@style/Button"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="32dp"
+            android:layout_marginEnd="16dp"
+            android:enabled="false"
+            android:text="@string/short_info_profile_button_complete_registration"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cti_link" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>
