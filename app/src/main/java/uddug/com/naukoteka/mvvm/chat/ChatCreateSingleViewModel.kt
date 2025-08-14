@@ -33,7 +33,9 @@ class ChatCreateSingleViewModel @Inject constructor(
     }
 
     fun onGroupCreateClick() {
-
+        viewModelScope.launch {
+            _events.emit(ChatCreateSingleEvent.OpenGroupCreate)
+        }
     }
 
     fun onCurrentSearchChange(query: String) {
@@ -64,6 +66,7 @@ class ChatCreateSingleViewModel @Inject constructor(
 sealed class ChatCreateSingleEvent {
     data class OpenDialogDetail(val dialogId: Long) : ChatCreateSingleEvent()
     data object CloseAndRefresh : ChatCreateSingleEvent()
+    data object OpenGroupCreate : ChatCreateSingleEvent()
 }
 
 sealed class ChatCreateSingleUiState {

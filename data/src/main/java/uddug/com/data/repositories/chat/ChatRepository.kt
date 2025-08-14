@@ -6,6 +6,7 @@ import uddug.com.data.mapper.mapUserSearchDtoToDomain
 
 import uddug.com.data.services.chat.ChatApiService
 import uddug.com.data.services.models.request.chat.CreateDialogRequest
+import uddug.com.data.services.models.request.chat.CreateGroupDialogRequest
 import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
 import uddug.com.domain.entities.chat.Chat
@@ -39,6 +40,8 @@ interface ChatRepository {
     suspend fun searchUsers(searchField: String): List<User>
 
     suspend fun createDialog(id: Long)
+
+    suspend fun createGroupDialog(ids: List<Long>)
 }
 
 
@@ -121,6 +124,14 @@ class ChatRepositoryImpl @Inject constructor(
             apiService.createDialog(CreateDialogRequest(id))
         } catch (e: Exception) {
             println("Error creating dialog: ${e.message}")
+        }
+    }
+
+    override suspend fun createGroupDialog(ids: List<Long>) {
+        try {
+            apiService.createGroupDialog(CreateGroupDialogRequest(ids))
+        } catch (e: Exception) {
+            println("Error creating group dialog: ${e.message}")
         }
     }
 
