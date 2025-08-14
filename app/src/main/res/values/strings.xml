@@ -374,5 +374,13 @@
     <string name="find_chat_message">Поиск чатов и сообщений</string>
    <string name="create_group_chat">Создать групповой чат</string>
     <string name="subs">Подписки</string>
+    <string name="education_sample_university">Самарский государственный архитектурно-строительный университет</string>
+    <string name="education_sample_place_with_date">Россия, Самара • В настоящее время</string>
+    <string name="education_sample_speciality">Высшее образование • Бакалавр</string>
+    <string name="career_responsible_worker">Ответственный работник</string>
+    <string name="language_english">English</string>
+    <string name="language_arabic">Arabic</string>
+    <string name="language_russian">Русский</string>
+    <string name="interest_tag_placeholder">Бла-бла, будет очень ин</string>
 
 </resources>
