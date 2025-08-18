@@ -1,6 +1,7 @@
 package uddug.com.data.repositories.chat
 
 import uddug.com.data.mapper.mapChatDtoToDomain
+import uddug.com.data.mapper.mapFolderDtoToDomain
 import uddug.com.data.services.chat.ChatApiService
 import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
@@ -11,6 +12,7 @@ import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
 import uddug.com.domain.entities.chat.Chat
+import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
@@ -29,12 +31,21 @@ class ChatRepositoryImpl @Inject constructor(
     private val apiService: ChatApiService,
 ) : ChatRepository {
 
-    override suspend fun getChats(): List<Chat> {
+    override suspend fun getChats(folderId: Long?): List<Chat> {
         return try {
-            val chatDto = apiService.getDialogs()
+            val chatDto = apiService.getDialogs(folderId)
             mapChatDtoToDomain(chatDto)
         } catch (e: Exception) {
             println("mapping error ${e.message}")
+            emptyList()
+        }
+    }
+
+    override suspend fun getFolders(): List<ChatFolder> {
+        return try {
+            apiService.getFolders().folders.map { mapFolderDtoToDomain(it) }
+        } catch (e: Exception) {
+            println("get folders error ${e.message}")
             emptyList()
         }
     }

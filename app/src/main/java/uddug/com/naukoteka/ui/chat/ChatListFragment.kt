@@ -41,7 +41,7 @@ class ChatListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupObservers()
-        viewModel.loadChats()
+        viewModel.loadFolders()
 
         findNavController().currentBackStackEntry?.savedStateHandle
             ?.getLiveData<Boolean>("refreshChats")

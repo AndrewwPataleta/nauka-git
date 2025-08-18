@@ -18,6 +18,7 @@ import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.response.chat.ChatDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
+import uddug.com.data.services.models.response.chat.FoldersDto
 import uddug.com.data.services.models.response.chat.MessageDto
 import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.user_profile.UserProfileFullInfoDto
@@ -26,7 +27,10 @@ import uddug.com.domain.entities.chat.MediaMessage
 interface ChatApiService {
 
     @GET("chat/v1/dialogs")
-    suspend fun getDialogs(): ChatDto
+    suspend fun getDialogs(@Query("folderId") folderId: Long? = null): ChatDto
+
+    @GET("chat/v1/dialogs/folder")
+    suspend fun getFolders(): FoldersDto
 
     @GET("chat/v1/dialogs/{dialogId}")
     suspend fun getMessages(

@@ -1,6 +1,7 @@
 package uddug.com.domain.interactors.chat
 
 import uddug.com.domain.entities.chat.Chat
+import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
@@ -14,7 +15,9 @@ class ChatInteractor @Inject constructor(
     private val chatRepository: ChatRepository,
 ) {
 
-    suspend fun getDialogs(): List<Chat> = chatRepository.getChats()
+    suspend fun getDialogs(folderId: Long? = null): List<Chat> = chatRepository.getChats(folderId)
+
+    suspend fun getFolders(): List<ChatFolder> = chatRepository.getFolders()
 
     suspend fun getMessages(
         currentUserId: String,
