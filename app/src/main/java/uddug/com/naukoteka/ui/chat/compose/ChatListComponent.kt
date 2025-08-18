@@ -5,11 +5,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
+import uddug.com.naukoteka.ui.chat.compose.components.ChatFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTabBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatToolbarComponent
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
@@ -22,6 +27,8 @@ fun ChatListComponent(
     onBackPressed: () -> Unit,
     onCreateChatClick: () -> Unit
 ) {
+    var showOptions by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier.fillMaxSize().background(color = Color.White)
     ) {
@@ -41,6 +48,17 @@ fun ChatListComponent(
 
             }
         )
-        ChatTabBar(viewModel)
+        ChatTabBar(
+            viewModel = viewModel,
+            onChatLongClick = {
+                showOptions = true
+            }
+        )
+    }
+
+    if (showOptions) {
+        ChatFunctionsBottomSheetDialog(
+            onDismissRequest = { showOptions = false }
+        )
     }
 }
