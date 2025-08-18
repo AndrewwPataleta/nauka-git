@@ -62,7 +62,7 @@ fun ChatCreateMultiScreen(
                             avatarUrl = user.image?.path.orEmpty(),
                             time = "",
                             onMemberClick = {
-                                user.id?.toLongOrNull()?.let { viewModel.onUserClick(it) }
+                                user.id?.let { viewModel.onUserClick(it) }
                             },
                             showCheckbox = true,
                             checkboxOnLeft = true

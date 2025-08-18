@@ -39,7 +39,7 @@ class ChatCreateMultiViewModel @Inject constructor(
                 _uiState.value = ChatCreateMultiUiState.Success(
                     query = "",
                     users = users,
-                    selected = emptySet()
+                    selected = emptySet<String>()
                 )
             } catch (e: Exception) {
                 _uiState.value = ChatCreateMultiUiState.Error(e.message ?: "Unknown error")
@@ -70,11 +70,15 @@ class ChatCreateMultiViewModel @Inject constructor(
                 }
             }
         } else {
-            _uiState.value = ChatCreateMultiUiState.Success(query = query, users = emptyList(), selected = emptySet())
+            _uiState.value = ChatCreateMultiUiState.Success(
+                query = query,
+                users = emptyList(),
+                selected = emptySet<String>()
+            )
         }
     }
 
-    fun onUserClick(userId: Long) {
+    fun onUserClick(userId: String) {
         val current = _uiState.value
         if (current is ChatCreateMultiUiState.Success) {
             val newSelected = current.selected.toMutableSet()
@@ -88,7 +92,12 @@ class ChatCreateMultiViewModel @Inject constructor(
         if (current is ChatCreateMultiUiState.Success) {
             viewModelScope.launch {
                 try {
-                    val dialogId = chatInteractor.createGroupDialog(current.selected.toList())
+                    val userRoles = current.users
+                        .mapNotNull { user ->
+                            user.id?.let { id -> id to if (current.selected.contains(id)) "37:202" else null }
+                        }
+                        .toMap()
+                    val dialogId = chatInteractor.createGroupDialog(userRoles)
                     _events.emit(ChatCreateMultiEvent.GroupCreated(dialogId))
                 } catch (e: Exception) {
                     _uiState.value = ChatCreateMultiUiState.Error(e.message ?: "Unknown error")
@@ -107,7 +116,7 @@ sealed class ChatCreateMultiUiState {
     data class Success(
         val query: String,
         val users: List<UserProfileFullInfo>,
-        val selected: Set<Long>,
+        val selected: Set<String>,
     ) : ChatCreateMultiUiState()
 
     data class Error(val message: String) : ChatCreateMultiUiState()

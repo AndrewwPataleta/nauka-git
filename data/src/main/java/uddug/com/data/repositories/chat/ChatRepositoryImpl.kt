@@ -110,12 +110,16 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun createGroupDialog(dialogName: String?, userIds: List<Long>, imageId: String?): Long {
+    override suspend fun createGroupDialog(
+        dialogName: String?,
+        userRoles: Map<String, String?>,
+        imageId: String?,
+    ): Long {
         return try {
             val request = CreateDialogRequestDto(
                 dialogName = dialogName,
                 dialogImage = imageId?.let { DialogImageRequestDto(it) },
-                userRoles = userIds.associate { it.toString() to "37:202" }
+                userRoles = userRoles,
             )
             val dialog = apiService.createGroupDialog(request)
             dialog.id
