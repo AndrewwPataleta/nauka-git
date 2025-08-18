@@ -27,6 +27,8 @@ import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +41,9 @@ import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
 import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
 import uddug.com.naukoteka.ui.chat.compose.components.ChatInputBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageItem
+import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
+import uddug.com.domain.entities.chat.MessageChat
 import java.io.File
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -50,6 +54,7 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
     val context = LocalContext.current
+    var selectedMessage by remember { mutableStateOf<MessageChat?>(null) }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
@@ -120,7 +125,11 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                             reverseLayout = true,
                         ) {
                             items(messages) { message ->
-                                ChatMessageItem(message, isMine = message.isMine)
+                                ChatMessageItem(
+                                    message,
+                                    isMine = message.isMine,
+                                    onLongPress = { selectedMessage = it }
+                                )
                             }
                         }
                     }
@@ -144,6 +153,11 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                     )
                 }
             }
+        }
+        selectedMessage?.let {
+            MessageFunctionsBottomSheetDialog(
+                onDismissRequest = { selectedMessage = null }
+            )
         }
     }
 }
