@@ -44,7 +44,7 @@ fun ChatMessageItem(
     selectionMode: Boolean = false,
     isSelected: Boolean = false,
     onSelectChange: () -> Unit = {},
-    onLongPress: (MessageChat) -> Unit
+    onLongPress: (MessageChat) -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -167,7 +167,9 @@ fun ChatMessageItem(
                     modifier = Modifier.align(Alignment.End)
                 )
             }
+
         }
     }
 }
+
 

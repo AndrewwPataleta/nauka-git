@@ -35,7 +35,7 @@ interface ChatApiService {
     @GET("chat/v1/dialogs/folder")
     suspend fun getFolders(): FoldersDto
 
-    @GET("api/v1/dialogs/{dialogId}")
+    @GET("chat/v1/dialogs/{dialogId}")
     suspend fun getMessages(
         @Path("dialogId") dialogId: Long,
         @Query("limit") limit: Int,

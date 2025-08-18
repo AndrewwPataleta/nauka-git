@@ -134,16 +134,6 @@ fun ChatCard(
                                 name
                             }, style = TextStyle(fontSize = 16.sp, color = Color.Black)
                         )
-                        if (notificationsDisable) {
-                            Icon(
-                                modifier = Modifier
-                                    .padding(start = 2.dp)
-                                    .size(18.dp),
-                                painter = painterResource(id = R.drawable.ic_mute),
-                                contentDescription = "Media",
-                                tint = Color.Gray
-                            )
-                        }
                         if (isMuted) {
                             Icon(
                                 modifier = Modifier
