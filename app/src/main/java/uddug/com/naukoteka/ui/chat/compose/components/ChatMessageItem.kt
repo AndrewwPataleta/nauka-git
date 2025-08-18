@@ -1,8 +1,19 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
@@ -28,14 +39,23 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalTime // если toLocalTime() возвращает LocalTime
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ChatMessageItem(message: MessageChat, isMine: Boolean) {
+fun ChatMessageItem(
+    message: MessageChat,
+    isMine: Boolean,
+    onLongPress: (MessageChat) -> Unit
+) {
     Row(
         modifier = Modifier
             .padding(horizontal = 10.dp)
             .fillMaxWidth()
             .defaultMinSize(minWidth = 150.dp)
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .combinedClickable(
+                onClick = {},
+                onLongClick = { onLongPress(message) }
+            ),
         horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
