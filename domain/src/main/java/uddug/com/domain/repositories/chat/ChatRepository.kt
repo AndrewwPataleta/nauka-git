@@ -5,6 +5,7 @@ import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.UserStatus
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.entities.chat.File as ChatFile
 import java.io.File as JavaFile
@@ -79,4 +80,6 @@ interface ChatRepository {
     suspend fun deleteMessages(messages: List<Long>, forMe: Boolean = false)
 
     suspend fun uploadFiles(files: List<JavaFile>, raw: Boolean = false): List<ChatFile>
+
+    suspend fun getUsersStatus(userIds: List<String>): List<UserStatus>
 }

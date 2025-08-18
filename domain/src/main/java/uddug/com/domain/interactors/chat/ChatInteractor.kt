@@ -5,6 +5,7 @@ import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.UserStatus
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.chat.ChatRepository
 import uddug.com.domain.entities.chat.File as ChatFile
@@ -78,4 +79,7 @@ class ChatInteractor @Inject constructor(
 
     suspend fun uploadFiles(files: List<JavaFile>, raw: Boolean = false): List<ChatFile> =
         chatRepository.uploadFiles(files, raw)
+
+    suspend fun getUsersStatus(userIds: List<String>): List<UserStatus> =
+        chatRepository.getUsersStatus(userIds)
 }

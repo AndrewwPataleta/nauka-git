@@ -9,13 +9,16 @@ import uddug.com.data.services.models.request.chat.DialogImageRequestDto
 import uddug.com.data.services.models.request.chat.PinMessageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
+import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
 import uddug.com.data.services.models.response.chat.FileDto
+import uddug.com.data.services.models.response.chat.UserStatusDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.UserStatus
 import uddug.com.domain.entities.chat.updateOwnerInfoFromDialog
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.chat.ChatRepository
@@ -223,6 +226,16 @@ class ChatRepositoryImpl @Inject constructor(
             emptyList()
         }
     }
+
+    override suspend fun getUsersStatus(userIds: List<String>): List<UserStatus> {
+        return try {
+            val request = UsersStatusRequestDto(userIds)
+            apiService.getUsersStatus(request).map { it.toDomain() }
+        } catch (e: Exception) {
+            println("get users status error ${e.message}")
+            emptyList()
+        }
+    }
 }
 
 private fun FileDto.toDomain(): ChatFile = ChatFile(
@@ -236,3 +249,6 @@ private fun FileDto.toDomain(): ChatFile = ChatFile(
     duration = duration,
     viewCount = viewCount,
 )
+
+private fun UserStatusDto.toDomain(): UserStatus =
+    UserStatus(userId = userId, isOnline = status.isOnline, lastSeen = status.lastSeen)
