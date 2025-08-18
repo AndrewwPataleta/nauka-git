@@ -78,6 +78,13 @@ fun ChatCard(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (selectionMode) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = { onSelectChange(it) },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
                 if (avatarUrl.isNullOrEmpty()) {
 
                     val initials = name.split(" ").let {
@@ -195,13 +202,6 @@ fun ChatCard(
                             }
                         }
                     }
-                }
-                if (selectionMode) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Checkbox(
-                        checked = isSelected,
-                        onCheckedChange = { onSelectChange(it) }
-                    )
                 }
                 // Время
 
