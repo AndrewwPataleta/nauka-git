@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -197,7 +198,10 @@ fun ChatDetailDialogComponent(
                                         shape = RoundedCornerShape(8.dp),
                                         color = Color(0xFFF5F5F9)
                                     )
-                                    .clickable {
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) {
 
                                     }
                                     .padding(12.dp),
@@ -225,7 +229,10 @@ fun ChatDetailDialogComponent(
                                         shape = RoundedCornerShape(8.dp),
                                         color = Color(0xFFF5F5F9)
                                     )
-                                    .clickable {
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) {
 
                                     }
                                     .padding(12.dp),
@@ -253,7 +260,10 @@ fun ChatDetailDialogComponent(
                                         shape = RoundedCornerShape(8.dp),
                                         color = Color(0xFFF5F5F9)
                                     )
-                                    .clickable { showMoreDialog = true }
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) { showMoreDialog = true }
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
