@@ -1,9 +1,9 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,22 +14,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Checkbox
+import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
-
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -37,8 +35,6 @@ import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.naukoteka.BuildConfig
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.time.LocalTime // если toLocalTime() возвращает LocalTime
-
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -61,7 +57,11 @@ fun ChatMessageItem(
         if (selectionMode) {
             Checkbox(
                 checked = isSelected,
-                onCheckedChange = { onSelectChange() }
+                onCheckedChange = { onSelectChange() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = Color(0xFF2E83D9),
+                    uncheckedColor = Color(0xFF2E83D9)
+                )
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
@@ -69,6 +69,8 @@ fun ChatMessageItem(
             modifier = Modifier
                 .weight(1f)
                 .combinedClickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
                     onClick = {
                         if (selectionMode) onSelectChange()
                     },
@@ -77,7 +79,7 @@ fun ChatMessageItem(
                     }
                 ),
             horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             if (!isMine) {
                 // Аватарка
@@ -94,67 +96,67 @@ fun ChatMessageItem(
                     .padding(8.dp)
                     .widthIn(max = 300.dp)
             ) {
-            if (!isMine && message.ownerName?.isNotEmpty() == true) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = message.ownerName.orEmpty(),
-                        color = Color(0xFF2E83D9),
-                        fontSize = 14.sp
-                    )
-                    if (message.ownerIsAdmin) {
-                        Spacer(modifier = Modifier.width(6.dp))
+                if (!isMine && message.ownerName?.isNotEmpty() == true) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "админ",
-                            fontSize = 10.sp,
-                            color = Color.Gray
+                            text = message.ownerName.orEmpty(),
+                            color = Color(0xFF2E83D9),
+                            fontSize = 14.sp
                         )
-                    }
-                }
-            }
-
-            if (message.replyTo != null) {
-                ReplyBlock(message.replyTo!!)
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-            if (!message.text.isNullOrBlank()) {
-                Text(
-                    text = message.text.orEmpty(),
-                    color = if (isMine) Color.White else Color.Black,
-                    fontSize = 14.sp
-                )
-            }
-
-            message.files.firstOrNull()?.let { file ->
-                Spacer(modifier = Modifier.height(6.dp))
-                if (file.contentType?.startsWith("image") == true) {
-                    Column {
-                        AsyncImage(
-                            model = BuildConfig.IMAGE_SERVER_URL.plus(file.path),
-                            contentDescription = "image",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .fillMaxWidth()
-                                .height(140.dp)
-                        )
-                        if (file.fileName != null) {
+                        if (message.ownerIsAdmin) {
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                modifier = Modifier.padding(top = 4.dp),
-                                text = file.fileName.orEmpty(),
-                                fontSize = 12.sp,
-                                color = Color.White
+                                text = "админ",
+                                fontSize = 10.sp,
+                                color = Color.Gray
                             )
                         }
                     }
-                } else {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Menu, contentDescription = "PDF", tint = Color.White)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Медиа Сообщение", fontSize = 12.sp, color = Color.White)
+                }
+
+                if (message.replyTo != null) {
+                    ReplyBlock(message.replyTo!!)
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+                if (!message.text.isNullOrBlank()) {
+                    Text(
+                        text = message.text.orEmpty(),
+                        color = if (isMine) Color.White else Color.Black,
+                        fontSize = 14.sp
+                    )
+                }
+
+                message.files.firstOrNull()?.let { file ->
+                    Spacer(modifier = Modifier.height(6.dp))
+                    if (file.contentType?.startsWith("image") == true) {
+                        Column {
+                            AsyncImage(
+                                model = BuildConfig.IMAGE_SERVER_URL.plus(file.path),
+                                contentDescription = "image",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .fillMaxWidth()
+                                    .height(140.dp)
+                            )
+                            file.fileName?.let { name ->
+                                Text(
+                                    modifier = Modifier.padding(top = 4.dp),
+                                    text = name,
+                                    fontSize = 12.sp,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Menu, contentDescription = "PDF", tint = Color.White)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Медиа Сообщение", fontSize = 12.sp, color = Color.White)
+                        }
                     }
                 }
-            }
-            if (message.ownerName?.isNotEmpty() == true) {
+
                 Text(
                     text = LocalDateTime.parse(
                         message.createdAt.toString().substringBeforeLast('.'),
@@ -165,7 +167,7 @@ fun ChatMessageItem(
                     modifier = Modifier.align(Alignment.End)
                 )
             }
-
         }
     }
 }
+
