@@ -4,15 +4,21 @@ import io.reactivex.Single
 import uddug.com.data.mapper.mapChatDtoToDomain
 
 import uddug.com.data.services.chat.ChatApiService
+import uddug.com.data.services.FileApiService
 import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.updateOwnerInfoFromDialog
+import java.io.File
 import uddug.com.domain.entities.feed.PostComment
 import javax.inject.Inject
+import okhttp3.MultipartBody
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.asRequestBody
 
 interface ChatRepository {
     suspend fun getChats(): List<Chat>
@@ -33,11 +39,14 @@ interface ChatRepository {
         dialogId: Long,
         category: Int,
     ): List<MediaMessage>
+
+    suspend fun uploadFiles(files: List<File>): List<FileDescriptor>
 }
 
 
 class ChatRepositoryImpl @Inject constructor(
     private val apiService: ChatApiService,
+    private val fileApiService: FileApiService,
 ) : ChatRepository {
 
     override suspend fun getChats(): List<Chat> {
@@ -96,6 +105,16 @@ class ChatRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             println("Error getting dialog media: ${e.message}")
             throw e // or return default DialogInfo
+        }
+    }
+
+    override suspend fun uploadFiles(files: List<File>): List<FileDescriptor> {
+        val parts = files.map { file ->
+            val requestBody = file.asRequestBody("image/*".toMediaType())
+            MultipartBody.Part.createFormData("files", file.name, requestBody)
+        }
+        return fileApiService.uploadFiles(parts).map {
+            FileDescriptor(id = it.id, fileType = (it.fileType ?: 1).toString())
         }
     }
 

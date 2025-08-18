@@ -1,18 +1,22 @@
 package uddug.com.naukoteka.mvvm.chat
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import uddug.com.data.repositories.chat.ChatRepository
 import uddug.com.data.repositories.user_profile.UserProfileRepositoryImpl
@@ -25,6 +29,7 @@ import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.ui.chat.di.SocketService
 import java.time.Instant
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -46,6 +51,9 @@ class ChatDialogViewModel @Inject constructor(
     private var currentDialogInfo: DialogInfo? = null
 
     private var attachedFiles: MutableList<FileDescriptor> = mutableListOf()
+
+    private val _attachedImages = MutableStateFlow<List<Uri>>(emptyList())
+    val attachedImages: StateFlow<List<Uri>> = _attachedImages
 
     private var currentUser: UserProfileFullInfo? = null
 
@@ -127,12 +135,41 @@ class ChatDialogViewModel @Inject constructor(
 
     }
 
-    fun attachFile(file: FileDescriptor) {
-        attachedFiles.add(file)
+    fun attachImages(context: Context, uris: List<Uri>) {
+        viewModelScope.launch {
+            val files = withContext(Dispatchers.IO) {
+                uris.map { uri -> uriToFile(context, uri) }
+            }
+            try {
+                val descriptors = chatRepository.uploadFiles(files)
+                attachedFiles.addAll(descriptors)
+                _attachedImages.value = _attachedImages.value + uris
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "upload error", e)
+            }
+        }
+    }
+
+    fun removeAttachment(uri: Uri) {
+        val index = _attachedImages.value.indexOf(uri)
+        if (index >= 0) {
+            _attachedImages.value = _attachedImages.value.toMutableList().also { it.removeAt(index) }
+            if (index < attachedFiles.size) {
+                attachedFiles.removeAt(index)
+            }
+        }
+    }
+
+    private suspend fun uriToFile(context: Context, uri: Uri): File = withContext(Dispatchers.IO) {
+        val input = context.contentResolver.openInputStream(uri) ?: throw IllegalArgumentException("cant open uri")
+        val tempFile = File.createTempFile("upload", "", context.cacheDir)
+        tempFile.outputStream().use { output -> input.copyTo(it) }
+        tempFile
     }
 
     fun clearAttachedFiles() {
         attachedFiles.clear()
+        _attachedImages.value = emptyList()
     }
 
     fun sendMessage(text: String) {
@@ -145,9 +182,10 @@ class ChatDialogViewModel @Inject constructor(
 
             val message = ChatSocketMessage(
                 dialog = dialog.id,
+                cType = 1,
                 text = text,
                 owner = currentUser?.id.orEmpty(),
-                // files = attachedFiles.toList()
+                files = attachedFiles.toList()
             )
             val currentState = _uiState.value
             if (currentState is ChatDialogUiState.Success) {

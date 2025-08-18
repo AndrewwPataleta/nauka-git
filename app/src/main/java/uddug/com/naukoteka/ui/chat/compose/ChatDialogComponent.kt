@@ -46,14 +46,25 @@ import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.material.Scaffold
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
+    val attachments by viewModel.attachedImages.collectAsState()
     val scrollState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
+
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        if (uris.isNotEmpty()) {
+            viewModel.attachImages(context, uris)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -125,9 +136,10 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                                 // keyboardController?.hide()
                             }
                         },
-
-
-                        )
+                        attachments = attachments,
+                        onAttachmentClick = { uri -> viewModel.removeAttachment(uri) },
+                        onAttachClick = { imagePicker.launch("image/*") }
+                    )
                 }
             }
         }

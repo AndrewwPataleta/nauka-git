@@ -10,6 +10,7 @@ import uddug.com.data.cache.cookies.CookiesCache
 import uddug.com.data.repositories.chat.ChatRepository
 import uddug.com.data.repositories.chat.ChatRepositoryImpl
 import uddug.com.data.services.chat.ChatApiService
+import uddug.com.data.services.FileApiService
 
 @Module
 @InstallIn(ViewModelComponent::class)
@@ -22,8 +23,13 @@ object ChatModule {
 
 
     @Provides
-    fun provideChatRepository(apiService: ChatApiService): ChatRepository {
-        return ChatRepositoryImpl(apiService)
+    fun provideFileApiService(retrofit: Retrofit): FileApiService {
+        return retrofit.create(FileApiService::class.java)
+    }
+
+    @Provides
+    fun provideChatRepository(apiService: ChatApiService, fileApiService: FileApiService): ChatRepository {
+        return ChatRepositoryImpl(apiService, fileApiService)
     }
 
     @Provides
