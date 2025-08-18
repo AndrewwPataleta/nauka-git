@@ -151,6 +151,16 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    private fun determineFileType(file: File): Int {
+        return when (file.extension.lowercase()) {
+            "jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif" -> 1
+            "mp4", "mkv", "mov", "avi", "wmv", "flv", "webm" -> 30
+            "m4a", "aac", "amr", "3gp" -> 21
+            "mp3", "wav", "flac", "ogg", "oga", "opus" -> 20
+            else -> 100
+        }
+    }
+
     fun sendMessage(text: String) {
         viewModelScope.launch {
             val dialog = currentDialogInfo ?: return@launch
@@ -167,10 +177,11 @@ class ChatDialogViewModel @Inject constructor(
                 }
             } else emptyList()
 
-            val fileDescriptors = uploaded.map {
+            val fileDescriptors = uploaded.mapIndexed { index, uploadedFile ->
+                val type = attachedFiles.getOrNull(index)?.let { determineFileType(it) } ?: 100
                 ChatSocketMessage.FileDescriptor(
-                    id = it.id,
-                    fileType = it.fileType ?: 100
+                    id = uploadedFile.id,
+                    fileType = type
                 )
             }
 
