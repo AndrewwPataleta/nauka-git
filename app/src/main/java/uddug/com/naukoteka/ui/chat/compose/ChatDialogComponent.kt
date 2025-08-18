@@ -149,29 +149,24 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                             }
                         )
                     }
-                    // LazyColumn будет использовать оставшееся пространство
-                    Box(
+                    // Список сообщений занимает всё оставшееся пространство экрана
+                    LazyColumn(
+                        state = scrollState,
                         modifier = Modifier
+                            .weight(1f)
                             .fillMaxWidth()
-                            .weight(1f) // Занимает оставшееся место
+                            .padding(vertical = 10.dp),
+                        reverseLayout = true,
                     ) {
-                        LazyColumn(
-                            state = scrollState,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 10.dp),
-                            reverseLayout = true,
-                        ) {
-                            items(messages) { message ->
-                                ChatMessageItem(
-                                    message = message,
-                                    isMine = message.isMine,
+                        items(messages) { message ->
+                            ChatMessageItem(
+                                message = message,
+                                isMine = message.isMine,
                                     selectionMode = isSelectionMode,
                                     isSelected = selectedMessages.contains(message.id),
                                     onSelectChange = { viewModel.toggleMessageSelection(message.id) },
-                                    onLongPress = { selectedMessage = it }
-                                )
-                            }
+                                onLongPress = { selectedMessage = it }
+                            )
                         }
                     }
 
