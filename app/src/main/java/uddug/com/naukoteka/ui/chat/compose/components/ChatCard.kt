@@ -40,6 +40,8 @@ fun ChatCard(
     isRepost: Boolean = false,
     isMedia: Boolean = false,
     isFromMe: Boolean = false,
+    notificationsDisable: Boolean = false,
+    isPinned: Boolean = false,
     selectionMode: Boolean = false,
     isSelected: Boolean = false,
     onSelectChange: (Boolean) -> Unit = {},
@@ -124,14 +126,16 @@ fun ChatCard(
                                 name
                             }, style = TextStyle(fontSize = 16.sp, color = Color.Black)
                         )
-                        Icon(
-                            modifier = Modifier
-                                .padding(start = 2.dp)
-                                .size(18.dp),
-                            painter = painterResource(id = R.drawable.ic_mute),
-                            contentDescription = "Media",
-                            tint = Color.Gray
-                        )
+                        if (notificationsDisable) {
+                            Icon(
+                                modifier = Modifier
+                                    .padding(start = 2.dp)
+                                    .size(18.dp),
+                                painter = painterResource(id = R.drawable.ic_mute),
+                                contentDescription = "Media",
+                                tint = Color.Gray
+                            )
+                        }
                     }
 
 
@@ -169,22 +173,33 @@ fun ChatCard(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.End
                 ) {
-                    Text(
-                        text = formattedTime,
-                        style = TextStyle(fontSize = 12.sp, color = Color.Gray),
-                        modifier = Modifier
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isPinned) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_chat_pin),
+                                contentDescription = "Pinned",
+                                tint = Color(0xFF2E83D9),
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .padding(end = 2.dp)
+                            )
+                        }
+                        Text(
+                            text = formattedTime,
+                            style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+                        )
+                    }
 
                     // Число новых сообщений
                     newMessagesCount?.let {
                         if (it > 0) {
+                            val circleColor = if (notificationsDisable) Color.Gray else Color(0xFF2E83D9)
                             Box(
-
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
                                     .padding(top = 4.dp)
                                     .size(24.dp)
-                                    .background(Color(0xFF2E83D9), CircleShape)
+                                    .background(circleColor, CircleShape)
                             ) {
                                 Text(
                                     text = it.toString(),
