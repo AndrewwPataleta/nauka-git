@@ -15,7 +15,7 @@ data class MediaFile(
     val fileKind: Int,
     val fileName: String,
     val fileType: Int,
-    val contentType: String,
+    val contentType: String? = null,
     // Опциональные поля (если их нет в JSON, будет null)
     val fileSize: Int? = null,
     val duration: String? = null,

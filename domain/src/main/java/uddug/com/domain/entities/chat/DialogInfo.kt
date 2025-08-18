@@ -26,7 +26,7 @@ data class File(
     val id: String,
     val path: String,
     val fileName: String? = null,
-    val contentType: String,
+    val contentType: String? = null,
     val fileSize: Int? = null,
     val fileType: Int? = null,
     val fileKind: Int? = null,
