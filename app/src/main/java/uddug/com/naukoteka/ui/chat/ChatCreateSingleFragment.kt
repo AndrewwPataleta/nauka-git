@@ -69,6 +69,9 @@ class ChatCreateSingleFragment : Fragment() {
                         )
                         findNavController().popBackStack()
                     }
+                    ChatCreateSingleEvent.OpenMultiCreate -> {
+                        findNavController().navigate(R.id.chatCreateMultiFragment)
+                    }
                 }
             }
         }
