@@ -20,5 +20,5 @@ data class FileDto(
     val fileKind: Int,
     val fileName: String,
     val fileType: Int,
-    val contentType: String,
+    val contentType: String? = null,
 )

@@ -25,7 +25,7 @@ data class Attachment(
     val kind: FileKind,
     val name: String,
     val type: FileType,
-    val contentType: String
+    val contentType: String?
 )
 
 enum class MessageType {

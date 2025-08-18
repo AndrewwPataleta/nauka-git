@@ -106,7 +106,7 @@ fun ChatMessageItem(
 
             message.files.firstOrNull()?.let { file ->
                 Spacer(modifier = Modifier.height(6.dp))
-                if (file.contentType.startsWith("image")) {
+                if (file.contentType?.startsWith("image") == true) {
                     Column {
                         AsyncImage(
                             model = BuildConfig.IMAGE_SERVER_URL.plus(file.path),
