@@ -82,6 +82,9 @@ class ChatDetailDialogFragment : Fragment() {
                         viewModel = viewModel,
                         onBackPressed = {
                             requireActivity().onBackPressed()
+                        },
+                        onNavigateToProfile = {
+                            viewModel.getCurrentUser()?.let { navigationView?.selectShowEditFragment(it) }
                         }
                     )
                 }

@@ -65,7 +65,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                         )
                         val voices = chatInteractor.getDialogMedia(
                             dialogInfo.id,
-                            category = 6,
+                            category = 4,
                             limit = 50,
                             page = 1,
                             query = null,
@@ -74,7 +74,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                         )
                         val notes = chatInteractor.getDialogMedia(
                             dialogInfo.id,
-                            category = 7,
+                            category = 2,
                             limit = 50,
                             page = 1,
                             query = null,
@@ -90,7 +90,8 @@ class ChatDialogDetailViewModel @Inject constructor(
                             media = media,
                             files = files,
                             voices = voices,
-                            notes = notes
+                            notes = notes,
+                            dialogId = dialogInfo.id
                         )
                     }
 
@@ -99,6 +100,7 @@ class ChatDialogDetailViewModel @Inject constructor(
         }
     }
 
+    fun getCurrentUser(): UserProfileFullInfo? = currentUser
 }
 
 sealed class ChatDetailUiState {
@@ -109,6 +111,7 @@ sealed class ChatDetailUiState {
         val files: List<MediaMessage>,
         val voices: List<MediaMessage>,
         val notes: List<MediaMessage>,
+        val dialogId: Long,
     ) : ChatDetailUiState()
 
     data class Error(val message: String) : ChatDetailUiState()
