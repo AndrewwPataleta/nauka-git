@@ -67,13 +67,13 @@ class ChatDialogFragment : Fragment() {
             viewModel.events.collectLatest { state ->
                 when (state) {
                     is ChatDialogEvents.OpenChatProfileDetail -> {
-//                        findNavController().navigate(
-//                            R.id.chatDetailDialog,
-//                            args = Bundle().apply {
-//                                putLong(DIALOG_ID, state.dialogId)
-//                                putParcelable(DIALOG_DETAIL, state.dialogInfo)
-//                            }
-//                        )
+                        findNavController().navigate(
+                            R.id.chatDetailDialog,
+                            args = Bundle().apply {
+                                putLong(DIALOG_ID, state.dialogId)
+                                putParcelable(DIALOG_DETAIL, state.dialogInfo)
+                            }
+                        )
                     }
                 }
             }
