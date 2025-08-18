@@ -4,9 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,18 +27,21 @@ fun ChatListComponent(
     onCreateChatClick: () -> Unit
 ) {
     var selectedDialogId by remember { mutableStateOf<Long?>(null) }
+    val isSelectionMode by viewModel.isSelectionMode.collectAsState()
+    val selectedChats by viewModel.selectedChats.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxSize().background(color = Color.White)
     ) {
         ChatToolbarComponent(
             viewModel = viewModel,
-            onCreateChatClick = {
-                onCreateChatClick()
-            },
-            onBackPressed = {
-                onBackPressed()
-            }
+            onCreateChatClick = { onCreateChatClick() },
+            onBackPressed = { onBackPressed() },
+            isSelectionMode = isSelectionMode,
+            selectedCount = selectedChats.size,
+            onCloseSelection = { viewModel.clearSelection() },
+            onDeleteSelected = { viewModel.deleteSelectedChats() },
+            onMoreClick = { }
         )
         SearchField(
             title = stringResource(R.string.find_chat_message),
@@ -48,16 +52,21 @@ fun ChatListComponent(
         )
         ChatTabBar(
             viewModel = viewModel,
-            onChatLongClick = { id ->
-                selectedDialogId = id
-            }
+            onChatLongClick = { id -> selectedDialogId = id },
+            isSelectionMode = isSelectionMode,
+            selectedChats = selectedChats,
+            onChatSelect = { viewModel.toggleChatSelection(it) }
         )
     }
 
     selectedDialogId?.let { id ->
         ChatFunctionsBottomSheetDialog(
             dialogId = id,
-            onDismissRequest = { selectedDialogId = null }
+            onDismissRequest = { selectedDialogId = null },
+            onSelectMessages = {
+                viewModel.startSelection(id)
+                selectedDialogId = null
+            }
         )
     }
 }

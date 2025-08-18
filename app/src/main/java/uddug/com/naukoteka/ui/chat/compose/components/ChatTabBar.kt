@@ -21,6 +21,9 @@ import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 fun ChatTabBar(
     viewModel: ChatListViewModel,
     onChatLongClick: (Long) -> Unit,
+    isSelectionMode: Boolean,
+    selectedChats: Set<Long>,
+    onChatSelect: (Long) -> Unit,
 ) {
     var selectedTabIndex by remember { mutableStateOf(0) }
 
@@ -102,11 +105,14 @@ fun ChatTabBar(
                                 isRepost = chat.lastMessage.type == 5,
                                 isMedia = chat.lastMessage.files?.isNotEmpty() == true,
                                 isFromMe = chat.lastMessage.ownerId == "",
+                                selectionMode = isSelectionMode,
+                                isSelected = selectedChats.contains(chat.dialogId),
+                                onSelectChange = { onChatSelect(chat.dialogId) },
                                 onChatClick = {
                                     viewModel.onChatClick(it)
                                 },
                                 onChatLongClick = {
-                                    onChatLongClick(it)
+                                    if (!isSelectionMode) onChatLongClick(it) else onChatSelect(it)
                                 }
                             )
                         }

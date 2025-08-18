@@ -29,6 +29,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatFunctionsViewModel
 fun ChatFunctionsBottomSheetDialog(
     dialogId: Long,
     onDismissRequest: () -> Unit,
+    onSelectMessages: () -> Unit,
     viewModel: ChatFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -52,7 +53,10 @@ fun ChatFunctionsBottomSheetDialog(
                 Triple(R.drawable.ic_attach, R.string.chat_show_attachments) { viewModel.showAttachments(dialogId) },
                 Triple(R.drawable.ic_save_post, R.string.chat_pin) { viewModel.pinChat(dialogId) },
                 Triple(R.drawable.ic_mute, R.string.chat_disable_notifications) { viewModel.disableNotifications(dialogId) },
-                Triple(R.drawable.ic_checkbox_unchecked, R.string.chat_select_messages) { viewModel.selectMessages(dialogId) },
+                Triple(R.drawable.ic_checkbox_unchecked, R.string.chat_select_messages) {
+                    viewModel.selectMessages(dialogId)
+                    onSelectMessages()
+                },
                 Triple(R.drawable.ic_lock, R.string.chat_block_chat) { viewModel.blockChat(dialogId) },
                 Triple(R.drawable.ic_trash, R.string.chat_delete_chat) { viewModel.deleteChat(dialogId) }
             )

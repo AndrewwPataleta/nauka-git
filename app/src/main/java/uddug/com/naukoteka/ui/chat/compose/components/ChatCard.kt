@@ -39,6 +39,9 @@ fun ChatCard(
     isRepost: Boolean = false,
     isMedia: Boolean = false,
     isFromMe: Boolean = false,
+    selectionMode: Boolean = false,
+    isSelected: Boolean = false,
+    onSelectChange: (Boolean) -> Unit = {},
     onChatClick: (Long) -> Unit,
     onChatLongClick: (Long) -> Unit
 ) {
@@ -50,8 +53,20 @@ fun ChatCard(
             .fillMaxWidth()
             .padding(0.dp)
             .combinedClickable(
-                onClick = { onChatClick(dialogId) },
-                onLongClick = { onChatLongClick(dialogId) }
+                onClick = {
+                    if (selectionMode) {
+                        onSelectChange(!isSelected)
+                    } else {
+                        onChatClick(dialogId)
+                    }
+                },
+                onLongClick = {
+                    if (selectionMode) {
+                        onSelectChange(!isSelected)
+                    } else {
+                        onChatLongClick(dialogId)
+                    }
+                }
             ),  // Убираем отступы
         colors = CardDefaults.cardColors(containerColor = Color.White)  // Белый фон
     ) {
@@ -179,6 +194,13 @@ fun ChatCard(
                             }
                         }
                     }
+                }
+                if (selectionMode) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = { onSelectChange(it) }
+                    )
                 }
                 // Время
 
