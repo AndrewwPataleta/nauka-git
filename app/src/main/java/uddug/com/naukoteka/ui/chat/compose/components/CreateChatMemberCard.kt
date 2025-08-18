@@ -40,7 +40,7 @@ fun CreateChatMemberCard(
     checkboxOnLeft: Boolean = false,
 ) {
     // Определяем форматирование даты
-    val formattedTime = formatMessageTime(time)
+  //  val formattedTime = formatMessageTime(time)
     var isChecked by remember { mutableStateOf(false) }
 
     Card(
@@ -139,11 +139,11 @@ fun CreateChatMemberCard(
                       )
                   }
             }
-            Text(
-                text = formattedTime,
-                style = TextStyle(fontSize = 12.sp, color = Color.Gray),
-                modifier = Modifier
-            )
+//            Text(
+//                text = formattedTime,
+//                style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+//                modifier = Modifier
+//            )
         }
     }
 }

@@ -8,7 +8,7 @@ data class ChatSocketMessage(
     val files: List<FileDescriptor>? = null
 )
 
-data class FileDescriptor(
+public data class FileDescriptor(
     val id: String,
     val fileType: Int
 )

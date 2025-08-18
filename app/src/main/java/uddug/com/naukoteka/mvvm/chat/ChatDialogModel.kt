@@ -18,6 +18,7 @@ import org.json.JSONObject
 import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.entities.chat.DialogInfo
+import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
 import uddug.com.domain.entities.profile.UserProfileFullInfo
@@ -198,7 +199,7 @@ class ChatDialogViewModel @Inject constructor(
 
             val fileDescriptors = uploaded.mapIndexed { index, uploadedFile ->
                 val type = attachedFiles.getOrNull(index)?.let { determineFileType(it) } ?: 100
-                ChatSocketMessage.FileDescriptor(
+                FileDescriptor(
                     id = uploadedFile.id,
                     fileType = type
                 )
