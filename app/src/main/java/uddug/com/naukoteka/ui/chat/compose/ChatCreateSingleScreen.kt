@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.ui.chat.compose
 
 
+import CreateChatMemberCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -23,7 +24,6 @@ import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleUiState
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleViewModel
 import uddug.com.naukoteka.ui.chat.compose.components.ChatToolbarCreateSingleComponent
-import uddug.com.naukoteka.ui.chat.compose.components.CreateChatMemberCard
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
 
 

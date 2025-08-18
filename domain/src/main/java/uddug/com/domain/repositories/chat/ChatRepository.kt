@@ -24,7 +24,15 @@ interface ChatRepository {
 
     suspend fun getDialogInfo(dialogId: Long): DialogInfo
 
-    suspend fun getDialogMedia(dialogId: Long): List<MediaMessage>
+    suspend fun getDialogMedia(
+        dialogId: Long,
+        category: Int,
+        limit: Int,
+        page: Int,
+        query: String?,
+        sd: String?,
+        ed: String?,
+    ): List<MediaMessage>
 
     suspend fun createDialog(userId: Long): Long
 

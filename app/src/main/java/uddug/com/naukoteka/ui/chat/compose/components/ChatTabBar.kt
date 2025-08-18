@@ -17,6 +17,22 @@ import androidx.compose.ui.text.font.FontWeight
 import uddug.com.naukoteka.mvvm.chat.ChatListUiState
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 
+
+enum class MessageState {
+    REPOST,  // Репост
+    MEDIA,   // Медиа-вложение
+    FROM_ME, // Сообщение от меня
+    NORMAL   // Обычное сообщение
+}
+
+enum class TabContent(val content: String) {
+    ALL("Все сообщения"),
+    PEOPLE("Сообщения от людей"),
+    WORK("Сообщения по работе"),
+    SCIENCE("Научные сообщения"),
+    STUDY("Учебные сообщения")
+}
+
 @Composable
 fun ChatTabBar(
     viewModel: ChatListViewModel,
@@ -38,37 +54,37 @@ fun ChatTabBar(
                 .background(Color.White),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-        TabRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White),
-            selectedTabIndex = selectedTabIndex,
-            indicator = { tabPositions ->
-                TabRowDefaults.Indicator(
-                    Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                    color = Color(0xFF2E83D9)
-                )
-            },
-            divider = {}
-        ) {
-            tabTitles.forEachIndexed { index, title ->
-                Tab(
-                    modifier = Modifier.background(Color.White),
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index },
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = title,
-                                maxLines = 1,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Bold,
-                                    color = if (selectedTabIndex == index) Color.Black else Color(
-                                        0xFF8083A0
+            TabRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White),
+                selectedTabIndex = selectedTabIndex,
+                indicator = { tabPositions ->
+                    TabRowDefaults.Indicator(
+                        Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        color = Color(0xFF2E83D9)
+                    )
+                },
+                divider = {}
+            ) {
+                tabTitles.forEachIndexed { index, title ->
+                    Tab(
+                        modifier = Modifier.background(Color.White),
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = title,
+                                    maxLines = 1,
+                                    style = TextStyle(
+                                        fontSize = 14.sp,
+                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Bold,
+                                        color = if (selectedTabIndex == index) Color.Black else Color(
+                                            0xFF8083A0
+                                        )
                                     )
                                 )
-                            )
 //                            Spacer(modifier = Modifier.width(4.dp))
 //                            if (tabCounts[index].isNotEmpty()) {
 //                                Box(
@@ -85,90 +101,81 @@ fun ChatTabBar(
 //                                    )
 //                                }
 //                            }
+                            }
+                        }
+                    )
+                }
+            }
+
+
+            when (uiState) {
+                is ChatListUiState.Error -> {
+
+                }
+
+                ChatListUiState.Loading -> {
+
+                }
+
+                is ChatListUiState.Success -> {
+
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        when (selectedTabContent) {
+                            TabContent.ALL -> {
+                                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                    items((uiState as ChatListUiState.Success).chats) { chat ->
+                                        ChatCard(
+                                            dialogId = chat.dialogId,
+                                            avatarUrl = chat.interlocutor.image,
+                                            name = chat.interlocutor.fullName ?: "Неизвестный",
+                                            message = chat.lastMessage.text ?: "Нет сообщений",
+                                            time = chat.lastMessage.createdAt ?: "Неизвестно",
+                                            newMessagesCount = chat.unreadMessages,
+                                            attachment = chat.lastMessage.files?.firstOrNull()?.path,
+                                            isRepost = chat.lastMessage.type == 5,
+                                            isMedia = chat.lastMessage.files?.isNotEmpty() == true,
+                                            isFromMe = chat.lastMessage.ownerId == "",
+                                            onChatClick = {
+                                                viewModel.onChatClick(it)
+                                            },
+                                            onChatLongClick = {
+                                                showOptions = true
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            TabContent.PEOPLE -> {
+
+                            }
+
+                            TabContent.WORK -> {
+
+                            }
+
+                            TabContent.SCIENCE -> {
+
+                            }
+
+                            TabContent.STUDY -> {
+
+                            }
                         }
                     }
+                }
+            }
+            if (showOptions) {
+                ChatFunctionsBottomSheetDialog(
+                    onDismissRequest = { showOptions = false }
                 )
             }
         }
 
 
-        when (uiState) {
-            is ChatListUiState.Error -> {
 
-            }
-
-            ChatListUiState.Loading -> {
-
-            }
-
-            is ChatListUiState.Success -> {
-
-                Box(modifier = Modifier.fillMaxSize()) {
-                    when (selectedTabContent) {
-                        TabContent.ALL -> {
-                            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                items((uiState as ChatListUiState.Success).chats) { chat ->
-                                    ChatCard(
-                                        dialogId = chat.dialogId,
-                                        avatarUrl = chat.interlocutor.image,
-                                        name = chat.interlocutor.fullName ?: "Неизвестный",
-                                        message = chat.lastMessage.text ?: "Нет сообщений",
-                                        time = chat.lastMessage.createdAt ?: "Неизвестно",
-                                        newMessagesCount = chat.unreadMessages,
-                                        attachment = chat.lastMessage.files?.firstOrNull()?.path,
-                                        isRepost = chat.lastMessage.type == 5,
-                                        isMedia = chat.lastMessage.files?.isNotEmpty() == true,
-                                        isFromMe = chat.lastMessage.ownerId == "",
-                                        onChatClick = {
-                                            viewModel.onChatClick(it)
-                                        },
-                                        onChatLongClick = {
-                                            showOptions = true
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        TabContent.PEOPLE -> {
-
-                        }
-
-                        TabContent.WORK -> {
-
-                        }
-
-                        TabContent.SCIENCE -> {
-
-                        }
-
-                        TabContent.STUDY -> {
-
-                        }
-                    }
-                }
-            }
-        }
-        if (showOptions) {
-            ChatFunctionsBottomSheetDialog(
-                onDismissRequest = { showOptions = false }
-            )
-        }
     }
-}
 
-enum class MessageState {
-    REPOST,  // Репост
-    MEDIA,   // Медиа-вложение
-    FROM_ME, // Сообщение от меня
-    NORMAL   // Обычное сообщение
-}
 
-enum class TabContent(val content: String) {
-    ALL("Все сообщения"),
-    PEOPLE("Сообщения от людей"),
-    WORK("Сообщения по работе"),
-    SCIENCE("Научные сообщения"),
-    STUDY("Учебные сообщения")
-}
 
+}

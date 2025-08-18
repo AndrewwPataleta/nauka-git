@@ -15,6 +15,7 @@ import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import uddug.com.domain.entities.chat.Chat
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleEvent
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleViewModel

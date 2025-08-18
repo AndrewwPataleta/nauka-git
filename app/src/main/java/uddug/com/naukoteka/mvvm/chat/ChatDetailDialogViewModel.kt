@@ -45,9 +45,9 @@ class ChatDialogDetailViewModel @Inject constructor(
                 .subscribe({
                     currentUser = it
                     viewModelScope.launch {
-                        val media = chatRepository.getDialogMedia(dialogInfo.id, category = 1)
-                        val files = chatRepository.getDialogMedia(dialogInfo.id, category = 3)
-                        val voices = chatRepository.getDialogMedia(dialogInfo.id, category = 6)
+                        val media = chatInteractor.getDialogMedia(dialogInfo.id, category = 1)
+                        val files = chatInteractor.getDialogMedia(dialogInfo.id, category = 3)
+                        val voices = chatInteractor.getDialogMedia(dialogInfo.id, category = 6)
                         val notes = chatInteractor.getDialogMedia(dialogInfo.id, category = 7)
                         _uiState.value = ChatDetailUiState.Success(
                             profile = User(
