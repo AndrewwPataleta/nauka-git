@@ -67,14 +67,13 @@ class ChatDialogViewModel @Inject constructor(
                         viewModelScope.launch {
                             val info = chatInteractor.getDialogInfo(dialogId)
                             currentDialogInfo = info
-                            val chats = it.id?.let { it1 ->
-                                chatInteractor.getMessagesWithOwnerInfo(
-                                    currentUserId = it1,
+                            it.id?.let { currentUserId ->
+                                val messages = chatInteractor.getMessagesWithOwnerInfo(
+                                    currentUserId = currentUserId,
                                     dialogId = dialogId,
                                     limit = 50,
                                     lastMessageId = null,
                                 )
-                            }?.let {
                                 currentDialogID = dialogId
                                 val name: String = when {
                                     info.interlocutor != null -> info.interlocutor?.fullName.orEmpty()
@@ -85,11 +84,12 @@ class ChatDialogViewModel @Inject constructor(
                                     else -> info.name.orEmpty()
                                 }
                                 _uiState.value = ChatDialogUiState.Success(
-                                    chats = it,
+                                    chats = messages,
                                     chatName = name,
                                     chatImage = image,
                                     isGroup = (info.users?.size ?: 0) > 2
                                 )
+                                markMessagesRead(dialogId, messages)
                             }
                         }
                     }, {
@@ -159,6 +159,18 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    private fun markMessagesRead(dialogId: Long, messages: List<MessageChat>) {
+        val messageIds = messages.filter { !it.isMine && (it.readCount ?: 0) == 0 }.map { it.id }
+        if (messageIds.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                chatInteractor.markMessagesRead(dialogId, messageIds, READ_STATUS)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     private fun handleIncomingMessage(message: Any) {
         viewModelScope.launch {
             try {
@@ -203,6 +215,8 @@ class ChatDialogViewModel @Inject constructor(
     }
 
 }
+
+private const val READ_STATUS = 2
 
 sealed class ChatDialogEvents {
     data class OpenChatProfileDetail(val dialogId: Long, val dialogInfo: DialogInfo) :
