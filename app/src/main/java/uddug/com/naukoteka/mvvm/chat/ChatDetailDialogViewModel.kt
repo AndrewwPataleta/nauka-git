@@ -38,6 +38,18 @@ class ChatDialogDetailViewModel @Inject constructor(
 
     fun selectTab(index: Int) {
         _selectedTabIndex.value = index
+        currentDialogInfo?.let { dialogInfo ->
+            viewModelScope.launch {
+                val media = chatRepository.getDialogMedia(
+                    dialogId = dialogInfo.id,
+                    category = index + 1,
+                )
+                val state = _uiState.value
+                if (state is ChatDetailUiState.Success) {
+                    _uiState.value = state.copy(currentMedia = media)
+                }
+            }
+        }
     }
 
     fun setDialogInfo(dialogInfo: DialogInfo) {
@@ -48,7 +60,10 @@ class ChatDialogDetailViewModel @Inject constructor(
                 .subscribe({
                     currentUser = it
                     viewModelScope.launch {
-                        val currentMedia = chatRepository.getDialogMedia(dialogId = dialogInfo.id)
+                        val currentMedia = chatRepository.getDialogMedia(
+                            dialogId = dialogInfo.id,
+                            category = _selectedTabIndex.value + 1,
+                        )
                         _uiState.value = ChatDetailUiState.Success(
                             profile = User(
                                 image = dialogInfo.interlocutor?.image.orEmpty(),

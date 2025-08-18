@@ -31,6 +31,7 @@ interface ChatRepository {
 
     suspend fun getDialogMedia(
         dialogId: Long,
+        category: Int,
     ): List<MediaMessage>
 }
 
@@ -89,12 +90,11 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getDialogMedia(dialogId: Long): List<MediaMessage> {
+    override suspend fun getDialogMedia(dialogId: Long, category: Int): List<MediaMessage> {
         return try {
-            val dialogInfoDto = apiService.getDialogMedia(dialogId, category = 1)
-            return dialogInfoDto
+            apiService.getDialogMedia(dialogId, category)
         } catch (e: Exception) {
-            println("Error getting dialog info: ${e.message}")
+            println("Error getting dialog media: ${e.message}")
             throw e // or return default DialogInfo
         }
     }
