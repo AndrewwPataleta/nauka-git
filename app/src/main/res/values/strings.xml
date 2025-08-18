@@ -380,6 +380,7 @@
     <string name="chat_disable_notifications">Отключить уведомления</string>
     <string name="chat_select_messages">Выделить сообщения</string>
     <string name="chat_block_chat">Заблокировать чат</string>
+    <string name="chat_unblock_chat">Разблокировать чат</string>
     <string name="chat_delete_chat">Удалить чат</string>
     <string name="message_functions_title">Действия с сообщением</string>
     <string name="chat_message_reply">Ответить</string>

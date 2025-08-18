@@ -66,6 +66,16 @@ class ChatFunctionsViewModel @Inject constructor(
         }
     }
 
+    fun unblockChat(dialogId: Long) {
+        viewModelScope.launch {
+            try {
+                chatRepository.unblockDialog(dialogId)
+            } catch (e: Exception) {
+                // handle error if needed
+            }
+        }
+    }
+
     fun deleteChat(dialogId: Long) {
         viewModelScope.launch {
             try {

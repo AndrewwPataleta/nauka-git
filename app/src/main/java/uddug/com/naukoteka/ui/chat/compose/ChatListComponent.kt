@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
+import uddug.com.naukoteka.mvvm.chat.ChatListUiState
 import uddug.com.naukoteka.ui.chat.compose.components.ChatFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTabBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatToolbarComponent
@@ -30,6 +31,7 @@ fun ChatListComponent(
     var selectedDialogId by remember { mutableStateOf<Long?>(null) }
     val isSelectionMode by viewModel.isSelectionMode.collectAsState()
     val selectedChats by viewModel.selectedChats.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxSize().background(color = Color.White)
@@ -61,8 +63,10 @@ fun ChatListComponent(
     }
 
     selectedDialogId?.let { id ->
+        val isBlocked = (uiState as? ChatListUiState.Success)?.chats?.firstOrNull { it.dialogId == id }?.isBlocked ?: false
         ChatFunctionsBottomSheetDialog(
             dialogId = id,
+            isBlocked = isBlocked,
             onDismissRequest = { selectedDialogId = null },
             onShowAttachments = onShowAttachments,
             onSelectMessages = {
