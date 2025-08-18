@@ -22,10 +22,6 @@ class ChatFunctionsViewModel @Inject constructor(
         }
     }
 
-    fun showAttachments(dialogId: Long) {
-        // TODO: implement when API is available
-    }
-
     fun pinChat(dialogId: Long) {
         viewModelScope.launch {
             try {
@@ -37,7 +33,23 @@ class ChatFunctionsViewModel @Inject constructor(
     }
 
     fun disableNotifications(dialogId: Long) {
-        // TODO: implement when API is available
+        viewModelScope.launch {
+            try {
+                chatRepository.disableNotifications(dialogId)
+            } catch (e: Exception) {
+                // handle error if needed
+            }
+        }
+    }
+
+    fun enableNotifications(dialogId: Long) {
+        viewModelScope.launch {
+            try {
+                chatRepository.enableNotifications(dialogId)
+            } catch (e: Exception) {
+                // handle error if needed
+            }
+        }
     }
 
     fun selectMessages(dialogId: Long) {

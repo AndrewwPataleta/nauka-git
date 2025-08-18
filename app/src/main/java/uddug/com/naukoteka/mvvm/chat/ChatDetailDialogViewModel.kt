@@ -7,7 +7,6 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import uddug.com.domain.repositories.chat.ChatRepository
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.User
@@ -35,6 +34,17 @@ class ChatDialogDetailViewModel @Inject constructor(
 
     fun selectTab(index: Int) {
         _selectedTabIndex.value = index
+    }
+
+    fun loadDialogInfo(dialogId: Long) {
+        viewModelScope.launch {
+            try {
+                val info = chatInteractor.getDialogInfo(dialogId)
+                setDialogInfo(info)
+            } catch (e: Exception) {
+                _uiState.value = ChatDetailUiState.Error(e.message ?: "Error")
+            }
+        }
     }
 
     fun setDialogInfo(dialogInfo: DialogInfo) {

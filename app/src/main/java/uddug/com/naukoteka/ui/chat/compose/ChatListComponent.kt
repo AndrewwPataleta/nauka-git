@@ -23,7 +23,8 @@ fun ChatListComponent(
     modifier: Modifier = Modifier,
     viewModel: ChatListViewModel,
     onBackPressed: () -> Unit,
-    onCreateChatClick: () -> Unit
+    onCreateChatClick: () -> Unit,
+    onShowAttachments: (Long) -> Unit,
 ) {
     var selectedDialogId by remember { mutableStateOf<Long?>(null) }
 
@@ -57,7 +58,8 @@ fun ChatListComponent(
     selectedDialogId?.let { id ->
         ChatFunctionsBottomSheetDialog(
             dialogId = id,
-            onDismissRequest = { selectedDialogId = null }
+            onDismissRequest = { selectedDialogId = null },
+            onShowAttachments = onShowAttachments
         )
     }
 }

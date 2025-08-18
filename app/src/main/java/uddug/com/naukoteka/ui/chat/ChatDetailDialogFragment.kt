@@ -14,19 +14,10 @@ import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.DialogInfo
-import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
-import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatListUiState
-import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
-import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.PROFILE_ARGS
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
-import uddug.com.naukoteka.ui.chat.compose.ChatDialogComponent
-import uddug.com.naukoteka.ui.chat.compose.ChatListComponent
 
 @AndroidEntryPoint
 class ChatDetailDialogFragment : Fragment() {
@@ -74,6 +65,7 @@ class ChatDetailDialogFragment : Fragment() {
 
         arguments?.getParcelable<DialogInfo>(DIALOG_DETAIL)
             ?.let { viewModel.setDialogInfo(it) }
+            ?: arguments?.getLong(DIALOG_ID)?.let { viewModel.loadDialogInfo(it) }
 
         return ComposeView(requireContext()).apply {
             setContent {

@@ -23,6 +23,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatListUiState
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.ChatDialogFragment.Companion.DIALOG_ID
+import uddug.com.naukoteka.ui.chat.ChatDetailDialogFragment
 import uddug.com.naukoteka.ui.chat.compose.ChatListComponent
 
 @AndroidEntryPoint
@@ -113,6 +114,14 @@ class ChatListFragment : Fragment() {
                         },
                         onBackPressed = {
                             findNavController().popBackStack()
+                        },
+                        onShowAttachments = { dialogId ->
+                            findNavController().navigate(
+                                R.id.chatDetailDialog,
+                                args = Bundle().apply {
+                                    putLong(ChatDetailDialogFragment.DIALOG_ID, dialogId)
+                                }
+                            )
                         }
                     )
                 }
