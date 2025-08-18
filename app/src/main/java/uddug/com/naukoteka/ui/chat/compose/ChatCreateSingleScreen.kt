@@ -42,10 +42,7 @@ fun ChatCreateSingleScreen(
             .background(color = Color.White)
     ) {
         ChatToolbarCreateSingleComponent(
-            viewModel = viewModel,
-            onBackPressed = {
-
-            }
+            onBackPressed = onBackPressed
         )
 
         when (uiState) {
