@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.repositories.chat.ChatRepository
@@ -28,6 +29,12 @@ class ChatListViewModel @Inject constructor(
 
     private val _events = MutableSharedFlow<ChatListEvents>()
     val events: SharedFlow<ChatListEvents> = _events.asSharedFlow()
+
+    private val _isSelectionMode = MutableStateFlow(false)
+    val isSelectionMode: StateFlow<Boolean> = _isSelectionMode
+
+    private val _selectedChats = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedChats: StateFlow<Set<Long>> = _selectedChats
 
     fun loadFolders() {
         viewModelScope.launch {
@@ -72,6 +79,38 @@ class ChatListViewModel @Inject constructor(
     fun onClickCreateDialog() {
         viewModelScope.launch {
             _events.emit(ChatListEvents.OpenCreateDialog)
+        }
+    }
+
+    fun startSelection(dialogId: Long) {
+        _isSelectionMode.value = true
+        _selectedChats.value = setOf(dialogId)
+    }
+
+    fun toggleChatSelection(dialogId: Long) {
+        _selectedChats.update { current ->
+            val mutable = current.toMutableSet()
+            if (!mutable.add(dialogId)) mutable.remove(dialogId)
+            mutable
+        }
+    }
+
+    fun clearSelection() {
+        _selectedChats.value = emptySet()
+        _isSelectionMode.value = false
+    }
+
+    fun deleteSelectedChats() {
+        val ids = _selectedChats.value
+        viewModelScope.launch {
+            ids.forEach { id ->
+                try {
+                    chatRepository.deleteDialog(id)
+                } catch (_: Exception) {
+                }
+            }
+            clearSelection()
+            loadChats(currentFolderId)
         }
     }
 }

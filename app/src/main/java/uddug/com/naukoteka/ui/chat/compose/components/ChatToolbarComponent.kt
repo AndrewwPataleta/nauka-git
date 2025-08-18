@@ -27,40 +27,78 @@ fun ChatToolbarComponent(
     modifier: Modifier = Modifier,
     viewModel: ChatListViewModel,
     onBackPressed: () -> Unit,
-    onCreateChatClick: () -> Unit
+    onCreateChatClick: () -> Unit,
+    isSelectionMode: Boolean,
+    selectedCount: Int,
+    onCloseSelection: () -> Unit,
+    onDeleteSelected: () -> Unit,
+    onMoreClick: () -> Unit
 ) {
-    TopAppBar(
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(id = R.drawable.mock_avatar),
-                    contentDescription = "User Icon",
-                    modifier = Modifier.size(36.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "НауЧат", fontSize = 20.sp, color = Color.Black)
-            }
-        },
-        actions = {
-            IconButton(onClick = {
-                onCreateChatClick()
-            }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_create_chat),
-                    contentDescription = "Edit Icon",
-                    tint = Color.Black
-                )
-            }
-            IconButton(onClick = { }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_more_chat),
-                    contentDescription = "Edit Icon",
-                    tint = Color.Black
-                )
-            }
-        },
-        navigationIcon = null,
-        backgroundColor = Color.White,
-        elevation = 0.dp
-    )
+    if (isSelectionMode) {
+        TopAppBar(
+            title = { Text(text = selectedCount.toString(), fontSize = 20.sp, color = Color.Black) },
+            navigationIcon = {
+                IconButton(onClick = onCloseSelection) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_close),
+                        contentDescription = "Close",
+                        tint = Color.Black
+                    )
+                }
+            },
+            actions = {
+                IconButton(onClick = onDeleteSelected) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_trash),
+                        contentDescription = "Delete",
+                        tint = Color.Black
+                    )
+                }
+                IconButton(onClick = onMoreClick) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_more_chat),
+                        contentDescription = "More",
+                        tint = Color.Black
+                    )
+                }
+            },
+            backgroundColor = Color.White,
+            elevation = 0.dp
+        )
+    } else {
+        TopAppBar(
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.mock_avatar),
+                        contentDescription = "User Icon",
+                        modifier = Modifier.size(36.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "НауЧат", fontSize = 20.sp, color = Color.Black)
+                }
+            },
+            actions = {
+                IconButton(onClick = {
+                    onCreateChatClick()
+                }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_create_chat),
+                        contentDescription = "Edit Icon",
+                        tint = Color.Black
+                    )
+                }
+                IconButton(onClick = { }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_more_chat),
+                        contentDescription = "Edit Icon",
+                        tint = Color.Black
+                    )
+                }
+            },
+            navigationIcon = null,
+            backgroundColor = Color.White,
+            elevation = 0.dp
+        )
+    }
 }
