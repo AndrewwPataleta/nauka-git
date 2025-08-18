@@ -75,7 +75,15 @@ class ChatRepositoryImpl @Inject constructor(
         ed: String?,
     ): List<MediaMessage> {
         return try {
-            apiService.getDialogMedia(dialogId, category = 1)
+            apiService.getDialogMedia(
+                dialogId,
+                category = category,
+                limit = limit,
+                page = page,
+                query = query,
+                sd = sd,
+                ed = ed,
+            )
         } catch (e: Exception) {
             println("Error getting dialog media: ${e.message}")
             throw e
