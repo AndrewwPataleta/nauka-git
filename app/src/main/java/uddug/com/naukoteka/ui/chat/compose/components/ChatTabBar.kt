@@ -78,7 +78,7 @@ fun ChatTabBar(
                 }
             }
 
-            when (uiState) {
+            when (val state = uiState) {
                 is ChatListUiState.Error -> {
 
                 }
@@ -88,8 +88,9 @@ fun ChatTabBar(
                 }
 
                 is ChatListUiState.Success -> {
+                    val chats = state.chats
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items((uiState as ChatListUiState.Success).chats) { chat ->
+                        items(chats) { chat ->
                             ChatCard(
                                 dialogId = chat.dialogId,
                                 avatarUrl = chat.interlocutor.image,
