@@ -78,7 +78,7 @@ interface ChatApiService {
         @Query("forMe") forMe: Boolean = false,
     )
 
-    @GET("users/search")
+    @GET("chat/v1/users/search")
     suspend fun searchUsers(
         @Query("searchField") searchField: String,
         @Query("limit") limit: Int = 10,
