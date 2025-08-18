@@ -62,7 +62,7 @@ class ChatListFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.uiState.collectLatest { state ->
                 when (state) {
                     is ChatListUiState.Loading -> showLoading()
@@ -72,7 +72,7 @@ class ChatListFragment : Fragment() {
                 }
             }
         }
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.events.collectLatest { state ->
                 when (state) {
                     is ChatListEvents.OpenDialogDetail -> {
