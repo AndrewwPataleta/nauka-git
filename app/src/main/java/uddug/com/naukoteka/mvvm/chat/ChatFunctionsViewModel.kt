@@ -13,7 +13,13 @@ class ChatFunctionsViewModel @Inject constructor(
 ) : ViewModel() {
 
     fun markUnread(dialogId: Long) {
-        // TODO: implement when API is available
+        viewModelScope.launch {
+            try {
+                chatRepository.setDialogUnread(dialogId)
+            } catch (e: Exception) {
+                // handle error if needed
+            }
+        }
     }
 
     fun showAttachments(dialogId: Long) {
@@ -39,10 +45,22 @@ class ChatFunctionsViewModel @Inject constructor(
     }
 
     fun blockChat(dialogId: Long) {
-        // TODO: implement when API is available
+        viewModelScope.launch {
+            try {
+                chatRepository.blockDialog(dialogId)
+            } catch (e: Exception) {
+                // handle error if needed
+            }
+        }
     }
 
     fun deleteChat(dialogId: Long) {
-        // TODO: implement when API is available
+        viewModelScope.launch {
+            try {
+                chatRepository.deleteDialog(dialogId)
+            } catch (e: Exception) {
+                // handle error if needed
+            }
+        }
     }
 }

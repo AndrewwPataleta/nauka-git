@@ -53,6 +53,18 @@ interface ChatRepository {
 
     suspend fun unpinDialog(dialogId: Long)
 
+    suspend fun setDialogUnread(dialogId: Long)
+
+    suspend fun unsetDialogUnread(dialogId: Long)
+
+    suspend fun blockDialog(dialogId: Long)
+
+    suspend fun unblockDialog(dialogId: Long)
+
+    suspend fun clearDialog(dialogId: Long)
+
+    suspend fun deleteDialog(dialogId: Long)
+
     suspend fun pinMessage(dialogId: Long, messageId: Long)
 
     suspend fun unpinMessage(dialogId: Long, messageId: Long)

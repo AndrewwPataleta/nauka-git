@@ -67,6 +67,24 @@ interface ChatApiService {
     @POST("chat/v1/dialogs/unpin/{dialogId}")
     suspend fun unpinDialog(@Path("dialogId") dialogId: Long)
 
+    @POST("chat/v1/dialogs/set_unread/{dialogId}")
+    suspend fun setDialogUnread(@Path("dialogId") dialogId: Long)
+
+    @POST("chat/v1/dialogs/unset_unread/{dialogId}")
+    suspend fun unsetDialogUnread(@Path("dialogId") dialogId: Long)
+
+    @POST("chat/v1/dialogs/block/{dialogId}")
+    suspend fun blockDialog(@Path("dialogId") dialogId: Long)
+
+    @POST("chat/v1/dialogs/unblock/{dialogId}")
+    suspend fun unblockDialog(@Path("dialogId") dialogId: Long)
+
+    @DELETE("chat/v1/dialogs/clear/{dialogId}")
+    suspend fun clearDialog(@Path("dialogId") dialogId: Long)
+
+    @DELETE("chat/v1/dialogs/{dialogId}")
+    suspend fun deleteDialog(@Path("dialogId") dialogId: Long)
+
     @PATCH("chat/v1/messages/update")
     suspend fun updateMessage(@Body request: UpdateMessageRequestDto): MessageDto
 

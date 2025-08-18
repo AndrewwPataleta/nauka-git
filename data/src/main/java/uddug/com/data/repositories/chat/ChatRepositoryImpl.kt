@@ -143,6 +143,30 @@ class ChatRepositoryImpl @Inject constructor(
         apiService.unpinDialog(dialogId)
     }
 
+    override suspend fun setDialogUnread(dialogId: Long) {
+        apiService.setDialogUnread(dialogId)
+    }
+
+    override suspend fun unsetDialogUnread(dialogId: Long) {
+        apiService.unsetDialogUnread(dialogId)
+    }
+
+    override suspend fun blockDialog(dialogId: Long) {
+        apiService.blockDialog(dialogId)
+    }
+
+    override suspend fun unblockDialog(dialogId: Long) {
+        apiService.unblockDialog(dialogId)
+    }
+
+    override suspend fun clearDialog(dialogId: Long) {
+        apiService.clearDialog(dialogId)
+    }
+
+    override suspend fun deleteDialog(dialogId: Long) {
+        apiService.deleteDialog(dialogId)
+    }
+
     override suspend fun pinMessage(dialogId: Long, messageId: Long) {
         apiService.pinMessage(PinMessageRequestDto(dialogId, messageId))
     }
