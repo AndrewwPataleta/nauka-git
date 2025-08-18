@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -49,21 +50,16 @@ class ChatCreateSingleFragment : Fragment() {
 
     private fun setupObservers() {
         lifecycleScope.launch {
-
-        }
-        lifecycleScope.launch {
             viewModel.events.collectLatest { state ->
                 when (state) {
                     is ChatCreateSingleEvent.OpenDialogDetail -> {
-                        findNavController().previousBackStackEntry?.savedStateHandle?.set(
-                            "refreshChats",
-                            true
-                        )
-                        findNavController().popBackStack()
-                        findNavController().navigate(
+                        val navController = findNavController()
+                        navController.getBackStackEntry(R.id.chatListFragment).savedStateHandle["refreshChats"] = true
+                        navController.navigate(
                             R.id.chatDialogFragment,
-                            args = Bundle().apply {
-                                putLong(DIALOG_ID, state.dialogId)
+                            Bundle().apply { putLong(DIALOG_ID, state.dialogId) },
+                            navOptions {
+                                popUpTo(R.id.chatCreateSingleFragment) { inclusive = true }
                             }
                         )
                     }
