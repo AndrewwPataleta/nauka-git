@@ -34,8 +34,10 @@ import uddug.com.naukoteka.BuildConfig
 
 @Composable
 fun ChatTopBar(
-    name: String, image: String,
+    name: String,
+    image: String,
     isGroup: Boolean,
+    status: String,
     onDetailClick: () -> Unit,
     onBackPressed: () -> Unit,
 ) {
@@ -71,11 +73,13 @@ fun ChatTopBar(
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
-                Text(
-                    text = "Онлайн",
-                    color = Color(0xFF8083A0),
-                    fontSize = 16.sp
-                )
+                if (!isGroup) {
+                    Text(
+                        text = status,
+                        color = Color(0xFF8083A0),
+                        fontSize = 16.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
