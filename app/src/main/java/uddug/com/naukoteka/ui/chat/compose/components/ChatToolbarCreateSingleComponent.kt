@@ -31,11 +31,13 @@ fun ChatToolbarCreateSingleComponent(
             }
         },
         actions = {
-            IconButton(onClick = { onActionClick?.invoke() }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_chat_create_apply),
-                    contentDescription = "Edit Icon",
-                )
+            if (onActionClick != null) {
+                IconButton(onClick = { onActionClick() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_chat_create_apply),
+                        contentDescription = "Edit Icon",
+                    )
+                }
             }
         },
         navigationIcon = {

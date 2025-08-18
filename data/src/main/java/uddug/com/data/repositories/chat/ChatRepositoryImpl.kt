@@ -2,7 +2,9 @@ package uddug.com.data.repositories.chat
 
 import uddug.com.data.mapper.mapChatDtoToDomain
 import uddug.com.data.services.chat.ChatApiService
+import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
+import uddug.com.data.services.models.request.chat.DialogImageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
@@ -11,7 +13,9 @@ import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.updateOwnerInfoFromDialog
+import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.chat.ChatRepository
+import uddug.com.data.utils.toDomain
 import javax.inject.Inject
 
 class ChatRepositoryImpl @Inject constructor(
@@ -100,6 +104,21 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun createGroupDialog(dialogName: String?, userIds: List<Long>, imageId: String?): Long {
+        return try {
+            val request = CreateDialogRequestDto(
+                dialogName = dialogName,
+                dialogImage = imageId?.let { DialogImageRequestDto(it) },
+                userRoles = userIds.associate { it.toString() to "37:202" }
+            )
+            val dialog = apiService.createGroupDialog(request)
+            dialog.id
+        } catch (e: Exception) {
+            println("Error creating group dialog: ${e.message}")
+            throw e
+        }
+    }
+
     override suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int) {
         val request = ReadMessagesRequestDto(dialogId, messages, status)
         apiService.markMessagesRead(request)
@@ -116,5 +135,14 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun deleteMessages(messages: List<Long>, forMe: Boolean) {
         apiService.deleteMessages(DeleteMessagesRequestDto(messages), forMe)
+    }
+
+    override suspend fun searchUsers(searchField: String, limit: Int, page: Int): List<UserProfileFullInfo> {
+        return try {
+            apiService.searchUsers(searchField, limit, page).map { it.toDomain() }
+        } catch (e: Exception) {
+            println("search users error ${e.message}")
+            emptyList()
+        }
     }
 }
