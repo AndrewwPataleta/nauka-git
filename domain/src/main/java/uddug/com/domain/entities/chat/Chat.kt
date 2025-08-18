@@ -17,6 +17,7 @@ data class Chat(
     val lastMessage: Message,
     val unreadMessages: Int,
     val notificationsDisable: Boolean,
+    val isBlocked: Boolean,
 )
 
 @Parcelize

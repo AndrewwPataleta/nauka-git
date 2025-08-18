@@ -40,13 +40,15 @@ fun MessageFunctionsBottomSheetDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 20.dp)
         ) {
             Text(
                 text = stringResource(R.string.message_functions_title),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = MaterialTheme.typography.titleMedium.fontSize * 1.3f
+                )
             )
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             val items = listOf(
                 R.string.chat_message_reply to { viewModel.reply(message.id) },
                 R.string.chat_message_forward to { viewModel.forward(message.id) },

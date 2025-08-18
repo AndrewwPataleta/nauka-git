@@ -33,7 +33,8 @@ fun mapChatDtoToDomain(chatDto: ChatDto): List<Chat> {
                 )
             ),
             unreadMessages = dialog?.unreadMessages ?: 0,
-            notificationsDisable = dialog?.notificationsDisable ?: false
+            notificationsDisable = dialog?.notificationsDisable ?: false,
+            isBlocked = dialog?.isBlocked ?: false
         )
     }
 }

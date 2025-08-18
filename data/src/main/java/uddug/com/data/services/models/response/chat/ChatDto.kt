@@ -30,6 +30,7 @@ data class DialogDto(
     val lastMessage: MessageDto,
     val unreadMessages: Int,
     val notificationsDisable: Boolean,
+    val isBlocked: Boolean = false,
 )
 
 data class UserDto(

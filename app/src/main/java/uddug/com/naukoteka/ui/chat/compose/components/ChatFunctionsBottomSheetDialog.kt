@@ -27,6 +27,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatFunctionsViewModel
 @Composable
 fun ChatFunctionsBottomSheetDialog(
     dialogId: Long,
+    isBlocked: Boolean = false,
     onDismissRequest: () -> Unit,
     onShowAttachments: (Long) -> Unit,
     onSelectMessages: () -> Unit,
@@ -41,13 +42,20 @@ fun ChatFunctionsBottomSheetDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 20.dp)
         ) {
             Text(
                 text = stringResource(R.string.chat_functions_title),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = MaterialTheme.typography.titleMedium.fontSize * 1.3f
+                )
             )
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+            val blockItem = if (isBlocked) {
+                R.string.chat_unblock_chat to { viewModel.unblockChat(dialogId) }
+            } else {
+                R.string.chat_block_chat to { viewModel.blockChat(dialogId) }
+            }
             val items = listOf(
                 R.string.chat_mark_unread to { viewModel.markUnread(dialogId) },
                 R.string.chat_show_attachments to { onShowAttachments(dialogId) },
@@ -57,7 +65,7 @@ fun ChatFunctionsBottomSheetDialog(
                     viewModel.selectMessages(dialogId)
                     onSelectMessages()
                 },
-                R.string.chat_block_chat to { viewModel.blockChat(dialogId) },
+                blockItem,
                 R.string.chat_delete_chat to { viewModel.deleteChat(dialogId) }
             )
             items.forEach { (textRes, action) ->
