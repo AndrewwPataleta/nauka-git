@@ -212,7 +212,7 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun searchUsers(searchField: String, limit: Int, page: Int): List<UserProfileFullInfo> {
         return try {
-            apiService.searchUsers(searchField, limit, page).map { it.toDomain() }
+            apiService.searchUsers(searchField, limit, page).users.map { it.toDomain() }
         } catch (e: Exception) {
             println("search users error ${e.message}")
             emptyList()
