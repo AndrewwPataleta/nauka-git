@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,29 +51,26 @@ fun ChatMessageItem(
             .padding(horizontal = 10.dp)
             .fillMaxWidth()
             .defaultMinSize(minWidth = 150.dp)
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 4.dp)
+            .animateContentSize(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
     ) {
-        if (selectionMode) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .padding(end = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = { onSelectChange() },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = Color(0xFF2E83D9),
-                        uncheckedColor = Color(0xFF2E83D9)
-                    )
+        if (!isMine && selectionMode) {
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onSelectChange() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = Color(0xFF2E83D9),
+                    uncheckedColor = Color(0xFF2E83D9),
+                    checkmarkColor = Color.White
                 )
-            }
+            )
+            Spacer(modifier = Modifier.width(8.dp))
         }
         Row(
             modifier = Modifier
-                .weight(1f)
+                .weight(1f, fill = false)
                 .combinedClickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -175,6 +171,18 @@ fun ChatMessageItem(
                 )
             }
 
+        }
+        if (isMine && selectionMode) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onSelectChange() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = Color(0xFF2E83D9),
+                    uncheckedColor = Color(0xFF2E83D9),
+                    checkmarkColor = Color.White
+                )
+            )
         }
     }
 }

@@ -90,7 +90,12 @@ fun ChatCard(
                     ) {
                         Checkbox(
                             checked = isSelected,
-                            onCheckedChange = { onSelectChange(it) }
+                            onCheckedChange = { onSelectChange(it) },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = Color(0xFF2E83D9),
+                                uncheckedColor = Color(0xFF2E83D9),
+                                checkmarkColor = Color.White
+                            )
                         )
                     }
                 }
