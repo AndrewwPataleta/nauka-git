@@ -31,6 +31,12 @@ interface ChatRepository {
 
     suspend fun getDialogMedia(
         dialogId: Long,
+        category: Int,
+        limit: Int = 10,
+        page: Int = 1,
+        query: String? = null,
+        sd: String? = null,
+        ed: String? = null,
     ): List<MediaMessage>
 
     suspend fun createDialog(userId: Long): Long
@@ -91,10 +97,25 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getDialogMedia(dialogId: Long): List<MediaMessage> {
+    override suspend fun getDialogMedia(
+        dialogId: Long,
+        category: Int,
+        limit: Int,
+        page: Int,
+        query: String?,
+        sd: String?,
+        ed: String?,
+    ): List<MediaMessage> {
         return try {
-            val dialogInfoDto = apiService.getDialogMedia(dialogId, category = 1)
-            return dialogInfoDto
+            apiService.getDialogMedia(
+                dialogId = dialogId,
+                category = category,
+                limit = limit,
+                page = page,
+                query = query,
+                sd = sd,
+                ed = ed
+            )
         } catch (e: Exception) {
             println("Error getting dialog info: ${e.message}")
             throw e // or return default DialogInfo

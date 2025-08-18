@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -21,9 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import androidx.compose.foundation.border
@@ -321,10 +320,10 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
 
                     // Контент табов
                     when (selectedTabIndex) {
-                        0 -> MediaContent(state.currentMedia)
-                        1 -> FilesContent()
-                        2 -> VoiceContent()
-                        3 -> NotesContent()
+                        0 -> MediaContent(state.media)
+                        1 -> FilesContent(state.files)
+                        2 -> VoiceContent(state.voices)
+                        3 -> NotesContent(state.notes)
                     }
                 }
             }
@@ -364,31 +363,49 @@ fun MediaContent(items: List<MediaMessage>) {
 }
 
 @Composable
-fun FilesContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+fun FilesContent(items: List<MediaMessage>) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
     ) {
-
+        items(items) { item ->
+            Text(
+                text = item.file.fileName,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
     }
 }
 
 @Composable
-fun VoiceContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+fun VoiceContent(items: List<MediaMessage>) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
     ) {
-        Text("Голосовые сообщения")
+        items(items) { item ->
+            Text(
+                text = item.file.fileName,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
     }
 }
 
 @Composable
-fun NotesContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+fun NotesContent(items: List<MediaMessage>) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
     ) {
-        Text("Записи")
+        items(items) { item ->
+            Text(
+                text = item.file.fileName,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
     }
 }

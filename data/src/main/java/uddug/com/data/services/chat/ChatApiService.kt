@@ -31,6 +31,11 @@ interface ChatApiService {
     suspend fun getDialogMedia(
         @Path("dialogId") dialogId: Long,
         @Query("category") category: Int,
+        @Query("limit") limit: Int? = null,
+        @Query("page") page: Int? = null,
+        @Query("q") query: String? = null,
+        @Query("sd") sd: String? = null,
+        @Query("ed") ed: String? = null,
     ): List<MediaMessage>
 
     @POST("chat/v1/dialogs/{userId}")

@@ -8,9 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import uddug.com.data.repositories.chat.ChatRepository
-import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.entities.chat.DialogInfo
-import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.User
 import uddug.com.domain.entities.profile.UserProfileFullInfo
@@ -32,8 +30,6 @@ class ChatDialogDetailViewModel @Inject constructor(
     val selectedTabIndex: StateFlow<Int> = _selectedTabIndex
 
     private var currentDialogInfo: DialogInfo? = null
-    private var attachedFiles: MutableList<FileDescriptor> = mutableListOf()
-
     private var currentUser: UserProfileFullInfo? = null
 
     fun selectTab(index: Int) {
@@ -48,14 +44,20 @@ class ChatDialogDetailViewModel @Inject constructor(
                 .subscribe({
                     currentUser = it
                     viewModelScope.launch {
-                        val currentMedia = chatRepository.getDialogMedia(dialogId = dialogInfo.id)
+                        val media = chatRepository.getDialogMedia(dialogInfo.id, category = 1)
+                        val files = chatRepository.getDialogMedia(dialogInfo.id, category = 3)
+                        val voices = chatRepository.getDialogMedia(dialogInfo.id, category = 6)
+                        val notes = chatRepository.getDialogMedia(dialogInfo.id, category = 7)
                         _uiState.value = ChatDetailUiState.Success(
                             profile = User(
                                 image = dialogInfo.interlocutor?.image.orEmpty(),
                                 fullName = dialogInfo.interlocutor?.fullName.orEmpty(),
                                 nickname = dialogInfo.interlocutor?.nickname.orEmpty()
                             ),
-                            currentMedia = currentMedia
+                            media = media,
+                            files = files,
+                            voices = voices,
+                            notes = notes
                         )
                     }
 
@@ -70,7 +72,10 @@ sealed class ChatDetailUiState {
     object Loading : ChatDetailUiState()
     data class Success(
         val profile: User,
-        val currentMedia: List<MediaMessage>,
+        val media: List<MediaMessage>,
+        val files: List<MediaMessage>,
+        val voices: List<MediaMessage>,
+        val notes: List<MediaMessage>,
     ) : ChatDetailUiState()
 
     data class Error(val message: String) : ChatDetailUiState()
