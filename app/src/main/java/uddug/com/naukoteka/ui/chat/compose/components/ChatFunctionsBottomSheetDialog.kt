@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -17,7 +15,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,15 +45,15 @@ fun ChatFunctionsBottomSheetDialog(
             )
             Spacer(modifier = Modifier.height(20.dp))
             val items = listOf(
-                Triple(R.drawable.ic_mail, R.string.chat_mark_unread) { viewModel.markUnread(dialogId) },
-                Triple(R.drawable.ic_attach, R.string.chat_show_attachments) { viewModel.showAttachments(dialogId) },
-                Triple(R.drawable.ic_save_post, R.string.chat_pin) { viewModel.pinChat(dialogId) },
-                Triple(R.drawable.ic_mute, R.string.chat_disable_notifications) { viewModel.disableNotifications(dialogId) },
-                Triple(R.drawable.ic_checkbox_unchecked, R.string.chat_select_messages) { viewModel.selectMessages(dialogId) },
-                Triple(R.drawable.ic_lock, R.string.chat_block_chat) { viewModel.blockChat(dialogId) },
-                Triple(R.drawable.ic_trash, R.string.chat_delete_chat) { viewModel.deleteChat(dialogId) }
+                R.string.chat_mark_unread to { viewModel.markUnread(dialogId) },
+                R.string.chat_show_attachments to { viewModel.showAttachments(dialogId) },
+                R.string.chat_pin to { viewModel.pinChat(dialogId) },
+                R.string.chat_disable_notifications to { viewModel.disableNotifications(dialogId) },
+                R.string.chat_select_messages to { viewModel.selectMessages(dialogId) },
+                R.string.chat_block_chat to { viewModel.blockChat(dialogId) },
+                R.string.chat_delete_chat to { viewModel.deleteChat(dialogId) }
             )
-            items.forEach { (iconRes, textRes, action) ->
+            items.forEach { (textRes, action) ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -67,14 +64,9 @@ fun ChatFunctionsBottomSheetDialog(
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        painter = painterResource(id = iconRes),
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.width(14.dp))
                     Text(
                         text = stringResource(id = textRes),
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                 }
             }
