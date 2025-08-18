@@ -61,6 +61,10 @@ interface ChatRepository {
 
     suspend fun unsetDialogUnread(dialogId: Long)
 
+    suspend fun disableNotifications(dialogId: Long)
+
+    suspend fun enableNotifications(dialogId: Long)
+
     suspend fun blockDialog(dialogId: Long)
 
     suspend fun unblockDialog(dialogId: Long)

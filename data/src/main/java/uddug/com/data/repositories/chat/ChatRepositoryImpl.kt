@@ -165,6 +165,14 @@ class ChatRepositoryImpl @Inject constructor(
         apiService.unsetDialogUnread(dialogId)
     }
 
+    override suspend fun disableNotifications(dialogId: Long) {
+        apiService.disableNotifications(dialogId)
+    }
+
+    override suspend fun enableNotifications(dialogId: Long) {
+        apiService.enableNotifications(dialogId)
+    }
+
     override suspend fun blockDialog(dialogId: Long) {
         apiService.blockDialog(dialogId)
     }

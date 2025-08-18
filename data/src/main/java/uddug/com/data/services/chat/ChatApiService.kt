@@ -34,7 +34,7 @@ interface ChatApiService {
     @GET("chat/v1/dialogs/folder")
     suspend fun getFolders(): FoldersDto
 
-    @GET("chat/v1/dialogs/{dialogId}")
+    @GET("api/v1/dialogs/{dialogId}")
     suspend fun getMessages(
         @Path("dialogId") dialogId: Long,
         @Query("limit") limit: Int,
@@ -79,16 +79,22 @@ interface ChatApiService {
     @POST("chat/v1/dialogs/unset_unread/{dialogId}")
     suspend fun unsetDialogUnread(@Path("dialogId") dialogId: Long)
 
+    @POST("api/v1/dialogs/disable-notifications/{dialogId}")
+    suspend fun disableNotifications(@Path("dialogId") dialogId: Long)
+
+    @POST("api/v1/dialogs/enable-notifications/{dialogId}")
+    suspend fun enableNotifications(@Path("dialogId") dialogId: Long)
+
     @POST("chat/v1/dialogs/block/{dialogId}")
     suspend fun blockDialog(@Path("dialogId") dialogId: Long)
 
     @POST("chat/v1/dialogs/unblock/{dialogId}")
     suspend fun unblockDialog(@Path("dialogId") dialogId: Long)
 
-    @DELETE("chat/v1/dialogs/clear/{dialogId}")
+    @DELETE("api/v1/dialogs/clear/{dialogId}")
     suspend fun clearDialog(@Path("dialogId") dialogId: Long)
 
-    @DELETE("chat/v1/dialogs/{dialogId}")
+    @DELETE("api/v1/dialogs/{dialogId}")
     suspend fun deleteDialog(@Path("dialogId") dialogId: Long)
 
     @PATCH("chat/v1/messages/update")

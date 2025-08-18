@@ -24,7 +24,8 @@ fun ChatListComponent(
     modifier: Modifier = Modifier,
     viewModel: ChatListViewModel,
     onBackPressed: () -> Unit,
-    onCreateChatClick: () -> Unit
+    onCreateChatClick: () -> Unit,
+    onShowAttachments: (Long) -> Unit,
 ) {
     var selectedDialogId by remember { mutableStateOf<Long?>(null) }
     val isSelectionMode by viewModel.isSelectionMode.collectAsState()
@@ -63,6 +64,7 @@ fun ChatListComponent(
         ChatFunctionsBottomSheetDialog(
             dialogId = id,
             onDismissRequest = { selectedDialogId = null },
+            onShowAttachments = onShowAttachments,
             onSelectMessages = {
                 viewModel.startSelection(id)
                 selectedDialogId = null
