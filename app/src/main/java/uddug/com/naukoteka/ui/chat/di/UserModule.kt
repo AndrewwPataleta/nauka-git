@@ -10,12 +10,9 @@ import dagger.hilt.android.components.ViewModelComponent
 import retrofit2.Retrofit
 import uddug.com.data.cache.user_id.UserIdCache
 import uddug.com.data.cache.user_uuid.UserUUIDCache
-import uddug.com.data.repositories.chat.ChatRepository
-import uddug.com.data.repositories.chat.ChatRepositoryImpl
 import uddug.com.data.repositories.user_profile.UserProfileMapper
 import uddug.com.data.repositories.user_profile.UserProfileRepositoryImpl
 import uddug.com.data.services.UserProfileApiService
-import uddug.com.data.services.chat.ChatApiService
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 
 @Module
