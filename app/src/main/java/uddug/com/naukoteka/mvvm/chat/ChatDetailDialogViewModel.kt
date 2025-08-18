@@ -13,10 +13,14 @@ import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.User
+import uddug.com.domain.entities.chat.UserStatus
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.ui.chat.di.SocketService
 import javax.inject.Inject
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @HiltViewModel
 class ChatDialogDetailViewModel @Inject constructor(
@@ -64,18 +68,44 @@ class ChatDialogDetailViewModel @Inject constructor(
                             dialogId = dialogInfo.id,
                             category = _selectedTabIndex.value + 1,
                         )
+                        val status = dialogInfo.interlocutor?.userId?.let { userId ->
+                            chatRepository.getUserStatuses(listOf(userId)).firstOrNull()
+                        }
+                        val statusText = formatStatus(status)
                         _uiState.value = ChatDetailUiState.Success(
                             profile = User(
                                 image = dialogInfo.interlocutor?.image.orEmpty(),
                                 fullName = dialogInfo.interlocutor?.fullName.orEmpty(),
                                 nickname = dialogInfo.interlocutor?.nickname.orEmpty()
                             ),
-                            currentMedia = currentMedia
+                            currentMedia = currentMedia,
+                            status = statusText
                         )
                     }
 
                 }, {})
 
+        }
+    }
+
+    private fun formatStatus(status: UserStatus?): String {
+        return if (status == null) {
+            ""
+        } else if (status.isOnline) {
+            "Онлайн"
+        } else {
+            status.lastSeen?.let { "Был в сети ${formatLastSeen(it)}" } ?: ""
+        }
+    }
+
+    private fun formatLastSeen(lastSeen: String): String {
+        return try {
+            val instant = Instant.parse(lastSeen)
+            val localDateTime = instant.atZone(ZoneId.systemDefault()).toLocalDateTime()
+            val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+            localDateTime.format(formatter)
+        } catch (e: Exception) {
+            ""
         }
     }
 
@@ -86,6 +116,7 @@ sealed class ChatDetailUiState {
     data class Success(
         val profile: User,
         val currentMedia: List<MediaMessage>,
+        val status: String,
     ) : ChatDetailUiState()
 
     data class Error(val message: String) : ChatDetailUiState()

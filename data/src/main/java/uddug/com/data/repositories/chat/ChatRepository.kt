@@ -2,6 +2,7 @@ package uddug.com.data.repositories.chat
 
 import io.reactivex.Single
 import uddug.com.data.mapper.mapChatDtoToDomain
+import uddug.com.data.mapper.mapUserStatusDtoToDomain
 
 import uddug.com.data.services.chat.ChatApiService
 import uddug.com.data.services.models.response.chat.DialogInfoDto
@@ -10,6 +11,7 @@ import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.UserStatus
 import uddug.com.domain.entities.chat.updateOwnerInfoFromDialog
 import uddug.com.domain.entities.feed.PostComment
 import javax.inject.Inject
@@ -33,6 +35,8 @@ interface ChatRepository {
         dialogId: Long,
         category: Int,
     ): List<MediaMessage>
+
+    suspend fun getUserStatuses(userIds: List<String>): List<UserStatus>
 }
 
 
@@ -96,6 +100,16 @@ class ChatRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             println("Error getting dialog media: ${e.message}")
             throw e // or return default DialogInfo
+        }
+    }
+
+    override suspend fun getUserStatuses(userIds: List<String>): List<UserStatus> {
+        return try {
+            val dtoList = apiService.getUsersStatus(userIds.joinToString(","))
+            dtoList.map { mapUserStatusDtoToDomain(it) }
+        } catch (e: Exception) {
+            println("Error getting user status: ${e.message}")
+            emptyList()
         }
     }
 

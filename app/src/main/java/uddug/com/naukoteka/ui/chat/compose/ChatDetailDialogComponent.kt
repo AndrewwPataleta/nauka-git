@@ -178,6 +178,13 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
+                        if (state.status.isNotBlank()) {
+                            Text(
+                                text = state.status,
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
                         Row {

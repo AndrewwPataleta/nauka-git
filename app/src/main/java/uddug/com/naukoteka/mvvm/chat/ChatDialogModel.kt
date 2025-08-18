@@ -21,10 +21,13 @@ import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
+import uddug.com.domain.entities.chat.UserStatus
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.ui.chat.di.SocketService
 import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -84,11 +87,16 @@ class ChatDialogViewModel @Inject constructor(
                                     info.interlocutor != null -> info.interlocutor?.image.orEmpty()
                                     else -> info.name.orEmpty()
                                 }
+                                val status = info.interlocutor?.userId?.let { userId ->
+                                    chatRepository.getUserStatuses(listOf(userId)).firstOrNull()
+                                }
+                                val statusText = formatStatus(status)
                                 _uiState.value = ChatDialogUiState.Success(
                                     chats = it,
                                     chatName = name,
                                     chatImage = image,
-                                    isGroup = (info.users?.size ?: 0) > 2
+                                    isGroup = (info.users?.size ?: 0) > 2,
+                                    status = statusText
                                 )
                             }
                         }
@@ -133,6 +141,27 @@ class ChatDialogViewModel @Inject constructor(
 
     fun clearAttachedFiles() {
         attachedFiles.clear()
+    }
+
+    private fun formatStatus(status: UserStatus?): String {
+        return if (status == null) {
+            ""
+        } else if (status.isOnline) {
+            "Онлайн"
+        } else {
+            status.lastSeen?.let { "Был в сети ${formatLastSeen(it)}" } ?: ""
+        }
+    }
+
+    private fun formatLastSeen(lastSeen: String): String {
+        return try {
+            val instant = Instant.parse(lastSeen)
+            val localDateTime = instant.atZone(ZoneId.systemDefault()).toLocalDateTime()
+            val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+            localDateTime.format(formatter)
+        } catch (e: Exception) {
+            ""
+        }
     }
 
     fun sendMessage(text: String) {
@@ -217,6 +246,7 @@ sealed class ChatDialogUiState {
         val chatImage: String,
         val isGroup: Boolean,
         val currentMessage: String = "",
+        val status: String = "",
     ) : ChatDialogUiState()
 
     data class Error(val message: String) : ChatDialogUiState()
