@@ -118,7 +118,7 @@ class ChatDialogViewModel @Inject constructor(
             viewModelScope.launch {
                 _events.emit(
                     ChatDialogEvents.OpenChatProfileDetail(
-                        dialogId = 0,
+                        dialogId = currentDialogID ?: 0,
                         dialogInfo = info
                     )
                 )
