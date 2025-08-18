@@ -40,6 +40,7 @@ fun ChatCard(
     isRepost: Boolean = false,
     isMedia: Boolean = false,
     isFromMe: Boolean = false,
+    isMuted: Boolean = false,
     selectionMode: Boolean = false,
     isSelected: Boolean = false,
     onSelectChange: (Boolean) -> Unit = {},
@@ -124,14 +125,16 @@ fun ChatCard(
                                 name
                             }, style = TextStyle(fontSize = 16.sp, color = Color.Black)
                         )
-                        Icon(
-                            modifier = Modifier
-                                .padding(start = 2.dp)
-                                .size(18.dp),
-                            painter = painterResource(id = R.drawable.ic_mute),
-                            contentDescription = "Media",
-                            tint = Color.Gray
-                        )
+                        if (isMuted) {
+                            Icon(
+                                modifier = Modifier
+                                    .padding(start = 2.dp)
+                                    .size(18.dp),
+                                painter = painterResource(id = R.drawable.ic_mute),
+                                contentDescription = "Muted",
+                                tint = Color.Gray
+                            )
+                        }
                     }
 
 

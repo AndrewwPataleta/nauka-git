@@ -105,6 +105,7 @@ fun ChatTabBar(
                                 isRepost = chat.lastMessage.type == 5,
                                 isMedia = chat.lastMessage.files?.isNotEmpty() == true,
                                 isFromMe = chat.lastMessage.ownerId == "",
+                                isMuted = chat.notificationsDisable,
                                 selectionMode = isSelectionMode,
                                 isSelected = selectedChats.contains(chat.dialogId),
                                 onSelectChange = { onChatSelect(chat.dialogId) },
