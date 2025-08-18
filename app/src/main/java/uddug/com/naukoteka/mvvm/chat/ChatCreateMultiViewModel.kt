@@ -96,7 +96,11 @@ class ChatCreateMultiViewModel @Inject constructor(
                             user.id?.let { id -> id to if (current.selected.contains(id)) "37:202" else null }
                         }
                         .toMap()
-                    val dialogId = chatInteractor.createGroupDialog(userRoles)
+                    val dialogName = allUsers
+                        .filter { user -> user.id?.let { current.selected.contains(it) } == true }
+                        .mapNotNull { it.fullName }
+                        .joinToString(", ")
+                    val dialogId = chatInteractor.createGroupDialog(dialogName, userRoles)
                     _events.emit(ChatCreateMultiEvent.GroupCreated(dialogId))
                 } catch (e: Exception) {
                     _uiState.value = ChatCreateMultiUiState.Error(e.message ?: "Unknown error")
