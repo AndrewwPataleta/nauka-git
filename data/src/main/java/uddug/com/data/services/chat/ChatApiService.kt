@@ -11,9 +11,11 @@ import retrofit2.http.Query
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
+import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.response.chat.ChatDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.MessageDto
+import uddug.com.data.services.models.response.user_profile.UserProfileFullInfoDto
 import uddug.com.domain.entities.chat.MediaMessage
 
 interface ChatApiService {
@@ -49,6 +51,11 @@ interface ChatApiService {
         @Path("userId") userId: Long,
     ): DialogInfoDto
 
+    @POST("chat/v2/dialogs/create")
+    suspend fun createGroupDialog(
+        @Body request: CreateDialogRequestDto,
+    ): DialogInfoDto
+
     @PATCH("chat/v1/messages/update")
     suspend fun updateMessage(@Body request: UpdateMessageRequestDto): MessageDto
 
@@ -66,4 +73,11 @@ interface ChatApiService {
         @Body request: DeleteMessagesRequestDto,
         @Query("forMe") forMe: Boolean = false,
     )
+
+    @GET("users/search")
+    suspend fun searchUsers(
+        @Query("searchField") searchField: String,
+        @Query("limit") limit: Int = 10,
+        @Query("page") page: Int = 1,
+    ): List<UserProfileFullInfoDto>
 }

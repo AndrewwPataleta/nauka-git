@@ -45,7 +45,7 @@ class ChatCreateMultiFragment : Fragment() {
         lifecycleScope.launch {
             viewModel.events.collectLatest { event ->
                 when (event) {
-                    ChatCreateMultiEvent.GroupCreated -> {
+                    is ChatCreateMultiEvent.GroupCreated -> {
                         findNavController().previousBackStackEntry?.savedStateHandle?.set(
                             "refreshChats",
                             true

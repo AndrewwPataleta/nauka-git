@@ -4,6 +4,7 @@ import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.chat.ChatRepository
 import javax.inject.Inject
 
@@ -41,6 +42,12 @@ class ChatInteractor @Inject constructor(
         chatRepository.getDialogMedia(dialogId, category, limit, page, query, sd, ed)
 
     suspend fun createDialog(userId: Long): Long = chatRepository.createDialog(userId)
+
+    suspend fun createGroupDialog(userIds: List<Long>): Long =
+        chatRepository.createGroupDialog(dialogName = null, userIds = userIds)
+
+    suspend fun searchUsers(query: String, limit: Int = 10, page: Int = 1): List<UserProfileFullInfo> =
+        chatRepository.searchUsers(query, limit, page)
 
     suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int) =
         chatRepository.markMessagesRead(dialogId, messages, status)

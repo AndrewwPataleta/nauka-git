@@ -4,6 +4,7 @@ import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.profile.UserProfileFullInfo
 
 interface ChatRepository {
     suspend fun getChats(): List<Chat>
@@ -35,6 +36,10 @@ interface ChatRepository {
     ): List<MediaMessage>
 
     suspend fun createDialog(userId: Long): Long
+
+    suspend fun createGroupDialog(dialogName: String?, userIds: List<Long>, imageId: String? = null): Long
+
+    suspend fun searchUsers(searchField: String, limit: Int = 10, page: Int = 1): List<UserProfileFullInfo>
 
     suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int)
 

@@ -48,9 +48,29 @@ class ChatCreateMultiViewModel @Inject constructor(
     }
 
     fun onCurrentSearchChange(query: String) {
-        _uiState.value = when (val current = _uiState.value) {
-            is ChatCreateMultiUiState.Success -> current.copy(query = query)
-            else -> ChatCreateMultiUiState.Success(query = query, users = emptyList(), selected = emptySet())
+        val currentState = _uiState.value
+        if (currentState is ChatCreateMultiUiState.Success) {
+            _uiState.value = currentState.copy(query = query)
+            viewModelScope.launch {
+                try {
+                    val result = if (query.isNotBlank()) {
+                        chatInteractor.searchUsers(query)
+                    } else {
+                        chatInteractor.getDialogs().map { chat ->
+                            UserProfileFullInfo(
+                                id = chat.interlocutor.userId,
+                                fullName = chat.interlocutor.fullName,
+                                image = Image(path = chat.interlocutor.image)
+                            )
+                        }
+                    }
+                    _uiState.value = (_uiState.value as ChatCreateMultiUiState.Success).copy(users = result)
+                } catch (e: Exception) {
+                    _uiState.value = ChatCreateMultiUiState.Error(e.message ?: "Unknown error")
+                }
+            }
+        } else {
+            _uiState.value = ChatCreateMultiUiState.Success(query = query, users = emptyList(), selected = emptySet())
         }
     }
 
@@ -64,14 +84,22 @@ class ChatCreateMultiViewModel @Inject constructor(
     }
 
     fun onCreateGroupClick() {
-        viewModelScope.launch {
-            _events.emit(ChatCreateMultiEvent.GroupCreated)
+        val current = _uiState.value
+        if (current is ChatCreateMultiUiState.Success) {
+            viewModelScope.launch {
+                try {
+                    val dialogId = chatInteractor.createGroupDialog(current.selected.toList())
+                    _events.emit(ChatCreateMultiEvent.GroupCreated(dialogId))
+                } catch (e: Exception) {
+                    _uiState.value = ChatCreateMultiUiState.Error(e.message ?: "Unknown error")
+                }
+            }
         }
     }
 }
 
 sealed class ChatCreateMultiEvent {
-    object GroupCreated : ChatCreateMultiEvent()
+    data class GroupCreated(val dialogId: Long) : ChatCreateMultiEvent()
 }
 
 sealed class ChatCreateMultiUiState {

@@ -61,15 +61,7 @@ class ChatCreateSingleViewModel @Inject constructor(
             viewModelScope.launch {
                 if (query.isNotBlank()) {
                     try {
-                        val result = chatInteractor.getDialogs().map { chat ->
-                            UserProfileFullInfo(
-                                id = chat.interlocutor.userId,
-                                fullName = chat.interlocutor.fullName,
-                                image = Image(path = chat.interlocutor.image)
-                            )
-                        }.filter { user ->
-                            user.fullName.orEmpty().contains(query, ignoreCase = true)
-                        }
+                        val result = chatInteractor.searchUsers(query)
                         _uiState.value = (_uiState.value as ChatCreateSingleUiState.Success).copy(
                             searchResults = result,
                         )
