@@ -82,11 +82,17 @@ fun ChatCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (selectionMode) {
-                    Checkbox(
-                        checked = isSelected,
-                        onCheckedChange = { onSelectChange(it) },
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .padding(end = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Checkbox(
+                            checked = isSelected,
+                            onCheckedChange = { onSelectChange(it) }
+                        )
+                    }
                 }
                 if (avatarUrl.isNullOrEmpty()) {
 

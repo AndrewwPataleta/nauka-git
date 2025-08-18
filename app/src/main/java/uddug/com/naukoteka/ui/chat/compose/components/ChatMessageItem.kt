@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -55,15 +56,21 @@ fun ChatMessageItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (selectionMode) {
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = { onSelectChange() },
-                colors = CheckboxDefaults.colors(
-                    checkedColor = Color(0xFF2E83D9),
-                    uncheckedColor = Color(0xFF2E83D9)
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .padding(end = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onSelectChange() },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = Color(0xFF2E83D9),
+                        uncheckedColor = Color(0xFF2E83D9)
+                    )
                 )
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+            }
         }
         Row(
             modifier = Modifier
