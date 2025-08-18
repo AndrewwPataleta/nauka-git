@@ -39,7 +39,11 @@ interface ChatRepository {
 
     suspend fun createDialog(userId: Long): Long
 
-    suspend fun createGroupDialog(dialogName: String?, userIds: List<Long>, imageId: String? = null): Long
+    suspend fun createGroupDialog(
+        dialogName: String?,
+        userRoles: Map<String, String?>,
+        imageId: String? = null,
+    ): Long
 
     suspend fun searchUsers(searchField: String, limit: Int = 10, page: Int = 1): List<UserProfileFullInfo>
 
