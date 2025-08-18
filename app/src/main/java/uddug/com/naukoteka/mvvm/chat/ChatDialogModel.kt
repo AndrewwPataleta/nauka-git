@@ -177,7 +177,7 @@ class ChatDialogViewModel @Inject constructor(
             "mp4", "mkv", "mov", "avi", "wmv", "flv", "webm" -> 30
             "m4a", "aac", "amr", "3gp" -> 21
             "mp3", "wav", "flac", "ogg", "oga", "opus" -> 20
-            else -> 100
+            else -> 1
         }
     }
 
@@ -245,10 +245,10 @@ class ChatDialogViewModel @Inject constructor(
             val days = duration.toDays()
             val weeks = days / 7
             when {
-                minutes < 60 -> "был ${minutes} мин назад"
-                hours < 24 -> "был ${hours} ч назад"
-                days < 7 -> "был ${days} д назад"
-                else -> "был ${weeks} нед назад"
+                minutes < 60 -> "был ${minutes} мин. назад"
+                hours < 24 -> "был ${hours} ч. назад"
+                days < 7 -> "был ${days} д. назад"
+                else -> "был ${weeks} нед. назад"
             }
         } catch (e: Exception) {
             ""

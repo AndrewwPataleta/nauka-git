@@ -79,10 +79,10 @@ interface ChatApiService {
     @POST("chat/v1/dialogs/unset_unread/{dialogId}")
     suspend fun unsetDialogUnread(@Path("dialogId") dialogId: Long)
 
-    @POST("api/v1/dialogs/disable-notifications/{dialogId}")
+    @POST("chat/v1/dialogs/disable-notifications/{dialogId}")
     suspend fun disableNotifications(@Path("dialogId") dialogId: Long)
 
-    @POST("api/v1/dialogs/enable-notifications/{dialogId}")
+    @POST("chat/v1/dialogs/enable-notifications/{dialogId}")
     suspend fun enableNotifications(@Path("dialogId") dialogId: Long)
 
     @POST("chat/v1/dialogs/block/{dialogId}")
@@ -91,10 +91,10 @@ interface ChatApiService {
     @POST("chat/v1/dialogs/unblock/{dialogId}")
     suspend fun unblockDialog(@Path("dialogId") dialogId: Long)
 
-    @DELETE("api/v1/dialogs/clear/{dialogId}")
+    @DELETE("chat/v1/dialogs/clear/{dialogId}")
     suspend fun clearDialog(@Path("dialogId") dialogId: Long)
 
-    @DELETE("api/v1/dialogs/{dialogId}")
+    @DELETE("chat/v1/dialogs/{dialogId}")
     suspend fun deleteDialog(@Path("dialogId") dialogId: Long)
 
     @PATCH("chat/v1/messages/update")
@@ -128,7 +128,7 @@ interface ChatApiService {
         @Query("page") page: Int = 1,
     ): List<UserProfileFullInfoDto>
 
-    @POST("api/v1/users/status")
+    @POST("chat/v1/users/status")
     suspend fun getUsersStatus(@Body request: UsersStatusRequestDto): List<UserStatusDto>
 
     @Multipart
