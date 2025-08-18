@@ -27,9 +27,18 @@ class ChatInteractor @Inject constructor(
         dialogId: Long,
         limit: Int = 50,
         lastMessageId: Long? = null,
-    ): List<MessageChat> = chatRepository.getMessagesWithOwnerInfo(currentUserId, dialogId, limit, lastMessageId)
+    ): List<MessageChat> =
+        chatRepository.getMessagesWithOwnerInfo(currentUserId, dialogId, limit, lastMessageId)
 
-    suspend fun getDialogMedia(dialogId: Long): List<MediaMessage> = chatRepository.getDialogMedia(dialogId)
+    suspend fun getDialogMedia(
+        dialogId: Long, category: Int,
+        limit: Int,
+        page: Int,
+        query: String?,
+        sd: String?,
+        ed: String?,
+    ): List<MediaMessage> =
+        chatRepository.getDialogMedia(dialogId, category, limit, page, query, sd, ed)
 
     suspend fun createDialog(userId: Long): Long = chatRepository.createDialog(userId)
 
