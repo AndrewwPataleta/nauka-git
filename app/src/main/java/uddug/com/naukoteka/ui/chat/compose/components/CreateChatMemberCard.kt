@@ -31,6 +31,8 @@ fun CreateChatMemberCard(
     avatarUrl: String,
     time: String,
     onMemberClick: () -> Unit,
+    showCheckbox: Boolean = true,
+    checkboxOnLeft: Boolean = false,
 ) {
     // Определяем форматирование даты
     val formattedTime = formatMessageTime(time)
@@ -41,19 +43,39 @@ fun CreateChatMemberCard(
             .fillMaxWidth()
             .padding(0.dp)
             .clickable {
-                isChecked = !isChecked
+                if (showCheckbox) {
+                    isChecked = !isChecked
+                }
                 onMemberClick()
             },  // Убираем отступы
         colors = CardDefaults.cardColors(containerColor = Color.White)  // Белый фон
     ) {
         Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (avatarUrl.isNullOrEmpty()) {
+              Row(
+                  modifier = Modifier
+                      .fillMaxWidth()
+                      .padding(16.dp),
+                  verticalAlignment = Alignment.CenterVertically
+              ) {
+                  if (showCheckbox && checkboxOnLeft) {
+                      Checkbox(
+                          checked = isChecked,
+                          onCheckedChange = {
+                              isChecked = it
+                              onMemberClick()
+                          },
+                          modifier = Modifier
+                              .size(24.dp)
+                              .clip(CircleShape),
+                          colors = CheckboxDefaults.colors(
+                              checkedColor = Color(0xFF2E83D9),
+                              uncheckedColor = Color(0xFFB0BEC5),
+                              checkmarkColor = Color.White
+                          )
+                      )
+                      Spacer(modifier = Modifier.width(16.dp))
+                  }
+                  if (avatarUrl.isNullOrEmpty()) {
 
                     val initials = name.split(" ").let {
                         (it.firstOrNull()?.firstOrNull()?.toString() ?: "") +
@@ -85,8 +107,8 @@ fun CreateChatMemberCard(
                             .size(40.dp)
                             .clip(CircleShape)
                     )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
+                  }
+                  Spacer(modifier = Modifier.width(16.dp))
 
                 // Основной контент
                 Column(modifier = Modifier.weight(1f)) {
@@ -103,13 +125,20 @@ fun CreateChatMemberCard(
 
                 }
 
-                Checkbox(
-                    checked = isChecked,
-                    onCheckedChange = {
-                        isChecked = it
-                        onMemberClick()
-                    }
-                )
+                  if (showCheckbox && !checkboxOnLeft) {
+                      Checkbox(
+                          checked = isChecked,
+                          onCheckedChange = {
+                              isChecked = it
+                              onMemberClick()
+                          },
+                          colors = CheckboxDefaults.colors(
+                              checkedColor = Color(0xFF2E83D9),
+                              uncheckedColor = Color(0xFFB0BEC5),
+                              checkmarkColor = Color.White
+                          )
+                      )
+                  }
             }
             Text(
                 text = formattedTime,

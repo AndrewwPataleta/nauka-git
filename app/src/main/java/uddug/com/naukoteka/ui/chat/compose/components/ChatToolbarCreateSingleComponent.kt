@@ -22,6 +22,7 @@ import uddug.com.naukoteka.R
 fun ChatToolbarCreateSingleComponent(
     modifier: Modifier = Modifier,
     onBackPressed: () -> Unit,
+    onActionClick: (() -> Unit)? = null,
 ) {
     TopAppBar(
         title = {
@@ -30,7 +31,7 @@ fun ChatToolbarCreateSingleComponent(
             }
         },
         actions = {
-            IconButton(onClick = { }) {
+            IconButton(onClick = { onActionClick?.invoke() }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_chat_create_apply),
                     contentDescription = "Edit Icon",
