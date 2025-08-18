@@ -135,7 +135,7 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                                 }
                             },
                             backgroundColor = Color.White,
-                            elevation = 0.dp
+                            elevation = 4.dp
                         )
                     } else {
                         ChatTopBar(
@@ -155,8 +155,7 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .padding(vertical = 10.dp),
-                        reverseLayout = true,
+                            .padding(vertical = 10.dp)
                     ) {
                         items(messages) { message ->
                             ChatMessageItem(
@@ -180,7 +179,7 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                         onSendClick = {
                             scope.launch {
                                 viewModel.sendMessage(state.currentMessage)
-                                scrollState.animateScrollToItem(0)
+                                scrollState.animateScrollToItem(messages.size - 1)
                                 // keyboardController?.hide()
                             }
                         },

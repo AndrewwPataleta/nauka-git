@@ -12,11 +12,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
@@ -27,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,89 +41,93 @@ fun ChatTopBar(
     onDetailClick: () -> Unit,
     onBackPressed: () -> Unit,
 ) {
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { onBackPressed() }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF2E83D9))
-            }
-            if (image.isNotEmpty()) {
-                AsyncImage(
-                    model = BuildConfig.IMAGE_SERVER_URL.plus(image),
-                    contentDescription = "image",
-                    contentScale = ContentScale.Crop,
+    Surface(elevation = 4.dp) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp, horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { onBackPressed() }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF2E83D9))
+                }
+                if (image.isNotEmpty()) {
+                    AsyncImage(
+                        model = BuildConfig.IMAGE_SERVER_URL.plus(image),
+                        contentDescription = "image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .size(36.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                onDetailClick()
+                            }
+                    )
+                } else {
+                    val firstLetter = name.firstOrNull()?.uppercase() ?: ""
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF2E83D9))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                onDetailClick()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = firstLetter,
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Column(
                     modifier = Modifier
-                        .clip(CircleShape)
-                        .size(36.dp)
+                        .padding(start = 16.dp)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
                             onDetailClick()
                         }
-                )
-            } else {
-                val firstLetter = name.firstOrNull()?.uppercase() ?: ""
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF2E83D9))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            onDetailClick()
-                        },
-                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = firstLetter,
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            Column(modifier = Modifier
-                .padding(start = 16.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) {
-                    onDetailClick()
-                }) {
-                Text(
-                    text = name,
-                    color = Color.Black,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                status?.let {
-                    Text(
-                        text = it,
-                        color = Color(0xFF8083A0),
+                        text = name,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
+                    status?.let {
+                        Text(
+                            text = it,
+                            color = Color(0xFF8083A0),
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                IconButton(onClick = { }) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color(0xFF2E83D9))
                 }
             }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            IconButton(onClick = { }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color(0xFF2E83D9))
-            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0xFFEAEAF2))
+            )
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(Color(0xFFEAEAF2))
-        )
     }
-
 }
+
