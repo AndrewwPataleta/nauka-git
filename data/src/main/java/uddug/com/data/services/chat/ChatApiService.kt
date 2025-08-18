@@ -1,11 +1,14 @@
 package uddug.com.data.services.chat
 
+import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.HTTP
+import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
@@ -15,6 +18,7 @@ import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.response.chat.ChatDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.MessageDto
+import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.user_profile.UserProfileFullInfoDto
 import uddug.com.domain.entities.chat.MediaMessage
 
@@ -80,4 +84,11 @@ interface ChatApiService {
         @Query("limit") limit: Int = 10,
         @Query("page") page: Int = 1,
     ): List<UserProfileFullInfoDto>
+
+    @Multipart
+    @POST("core/files")
+    suspend fun uploadFiles(
+        @Part files: List<MultipartBody.Part>,
+        @Query("raw") raw: Boolean = false,
+    ): List<FileDto>
 }

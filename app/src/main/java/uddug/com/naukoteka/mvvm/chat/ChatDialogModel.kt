@@ -158,12 +158,27 @@ class ChatDialogViewModel @Inject constructor(
                 Log.d("ChatViewModel", "Message is blank and no files attached — skipping")
                 return@launch
             }
+            val uploaded = if (attachedFiles.isNotEmpty()) {
+                try {
+                    chatInteractor.uploadFiles(attachedFiles)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    emptyList()
+                }
+            } else emptyList()
+
+            val fileDescriptors = uploaded.map {
+                ChatSocketMessage.FileDescriptor(
+                    id = it.id,
+                    fileType = (it.fileType ?: 1).toString()
+                )
+            }
 
             val message = ChatSocketMessage(
                 dialog = dialog.id,
                 text = text,
                 owner = currentUser?.id.orEmpty(),
-                // files = attachedFiles.toList()
+                files = fileDescriptors.ifEmpty { null }
             )
             val currentState = _uiState.value
             if (currentState is ChatDialogUiState.Success) {

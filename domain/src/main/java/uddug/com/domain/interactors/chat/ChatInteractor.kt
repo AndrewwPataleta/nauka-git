@@ -6,6 +6,8 @@ import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.chat.ChatRepository
+import uddug.com.domain.entities.chat.File as ChatFile
+import java.io.File as JavaFile
 import javax.inject.Inject
 
 class ChatInteractor @Inject constructor(
@@ -60,4 +62,7 @@ class ChatInteractor @Inject constructor(
 
     suspend fun deleteMessages(messages: List<Long>, forMe: Boolean = false) =
         chatRepository.deleteMessages(messages, forMe)
+
+    suspend fun uploadFiles(files: List<JavaFile>, raw: Boolean = false): List<ChatFile> =
+        chatRepository.uploadFiles(files, raw)
 }

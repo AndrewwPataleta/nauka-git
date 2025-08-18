@@ -7,6 +7,7 @@ import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.DialogImageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
+import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.DialogInfo
@@ -16,6 +17,11 @@ import uddug.com.domain.entities.chat.updateOwnerInfoFromDialog
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.chat.ChatRepository
 import uddug.com.data.utils.toDomain
+import uddug.com.domain.entities.chat.File as ChatFile
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File as JavaFile
 import javax.inject.Inject
 
 class ChatRepositoryImpl @Inject constructor(
@@ -145,4 +151,32 @@ class ChatRepositoryImpl @Inject constructor(
             emptyList()
         }
     }
+
+    override suspend fun uploadFiles(files: List<JavaFile>, raw: Boolean): List<ChatFile> {
+        val parts = files.map { file ->
+            MultipartBody.Part.createFormData(
+                name = "files",
+                filename = file.name,
+                body = file.asRequestBody("image/*".toMediaTypeOrNull())
+            )
+        }
+        return try {
+            apiService.uploadFiles(parts, raw).map { it.toDomain() }
+        } catch (e: Exception) {
+            println("upload files error ${e.message}")
+            emptyList()
+        }
+    }
 }
+
+private fun FileDto.toDomain(): ChatFile = ChatFile(
+    id = id,
+    path = path,
+    fileName = fileName,
+    contentType = contentType,
+    fileSize = fileSize,
+    fileType = fileType,
+    fileKind = fileKind,
+    duration = duration,
+    viewCount = viewCount,
+)

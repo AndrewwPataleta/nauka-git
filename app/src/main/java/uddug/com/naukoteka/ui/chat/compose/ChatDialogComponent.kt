@@ -150,6 +150,9 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                         },
                         onAttachClick = {
                             permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                        },
+                        onRemoveFile = { file ->
+                            viewModel.removeAttachedFile(file)
                         }
                     )
                 }
