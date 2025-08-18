@@ -2,9 +2,6 @@ package uddug.com.naukoteka.ui.chat.compose.components
 
 
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
@@ -18,15 +15,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
-import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatToolbarCreateSingleComponent(
     modifier: Modifier = Modifier,
-    viewModel: ChatCreateSingleViewModel,
     onBackPressed: () -> Unit,
 ) {
     TopAppBar(
@@ -44,12 +38,11 @@ fun ChatToolbarCreateSingleComponent(
             }
         },
         navigationIcon = {
-            IconButton(onClick = {
-                onBackPressed()
-            }) {
+            IconButton(onClick = { onBackPressed() }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_chat_back),
                     contentDescription = "Edit Icon",
+                    tint = Color(0xFF2E83D9)
                 )
             }
         },

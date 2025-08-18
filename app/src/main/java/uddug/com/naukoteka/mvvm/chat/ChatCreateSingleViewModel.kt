@@ -1,6 +1,5 @@
 package uddug.com.naukoteka.mvvm.chat
 
-import android.annotation.SuppressLint
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -10,16 +9,14 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import uddug.com.domain.repositories.chat.ChatRepository
+import uddug.com.domain.entities.profile.Image
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.chat.ChatInteractor
-import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatCreateSingleViewModel @Inject constructor(
     private val chatInteractor: ChatInteractor,
-    private val userProfileRepository: UserProfileRepository,
 ) : ViewModel() {
 
     private val _uiState =
@@ -31,7 +28,20 @@ class ChatCreateSingleViewModel @Inject constructor(
     val events: SharedFlow<ChatCreateSingleEvent> = _events.asSharedFlow()
 
     init {
-        _uiState.value = ChatCreateSingleUiState.Success(query = "", users = emptyList())
+        viewModelScope.launch {
+            try {
+                val users = chatInteractor.getDialogs().map { chat ->
+                    UserProfileFullInfo(
+                        id = chat.interlocutor.userId,
+                        fullName = chat.interlocutor.fullName,
+                        image = Image(path = chat.interlocutor.image)
+                    )
+                }
+                _uiState.value = ChatCreateSingleUiState.Success(query = "", users = users)
+            } catch (e: Exception) {
+                _uiState.value = ChatCreateSingleUiState.Error(e.message ?: "Unknown error")
+            }
+        }
     }
 
     fun onGroupCreateClick() {
