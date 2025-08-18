@@ -15,16 +15,15 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import uddug.com.data.repositories.chat.ChatRepository
-import uddug.com.data.repositories.user_profile.UserProfileRepositoryImpl
 import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.entities.chat.DialogInfo
-import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.ui.chat.di.SocketService
 import java.time.Instant
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -45,7 +44,7 @@ class ChatDialogViewModel @Inject constructor(
 
     private var currentDialogInfo: DialogInfo? = null
 
-    private var attachedFiles: MutableList<FileDescriptor> = mutableListOf()
+    private var attachedFiles: MutableList<File> = mutableListOf()
 
     private var currentUser: UserProfileFullInfo? = null
 
@@ -127,8 +126,8 @@ class ChatDialogViewModel @Inject constructor(
 
     }
 
-    fun attachFile(file: FileDescriptor) {
-        attachedFiles.add(file)
+    fun attachFiles(files: List<File>) {
+        attachedFiles.addAll(files)
     }
 
     fun clearAttachedFiles() {
