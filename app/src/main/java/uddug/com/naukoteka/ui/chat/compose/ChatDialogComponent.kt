@@ -137,6 +137,7 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                     // ChatInputBar остается внизу экрана
                     ChatInputBar(
                         currentMessage = state.currentMessage,
+                        attachedFiles = state.attachedFiles,
                         onMessageChange = { newMessage ->
                             viewModel.updateCurrentMessage(newMessage)
                         },

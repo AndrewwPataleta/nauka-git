@@ -129,10 +129,26 @@ class ChatDialogViewModel @Inject constructor(
 
     fun attachFiles(files: List<File>) {
         attachedFiles.addAll(files)
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(attachedFiles = attachedFiles.toList())
+        }
     }
 
     fun clearAttachedFiles() {
         attachedFiles.clear()
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(attachedFiles = emptyList())
+        }
+    }
+
+    fun removeAttachedFile(file: File) {
+        attachedFiles.remove(file)
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(attachedFiles = attachedFiles.toList())
+        }
     }
 
     fun sendMessage(text: String) {
@@ -231,6 +247,7 @@ sealed class ChatDialogUiState {
         val chatImage: String,
         val isGroup: Boolean,
         val currentMessage: String = "",
+        val attachedFiles: List<File> = emptyList(),
     ) : ChatDialogUiState()
 
     data class Error(val message: String) : ChatDialogUiState()

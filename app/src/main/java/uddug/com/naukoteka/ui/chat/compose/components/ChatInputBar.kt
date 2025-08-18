@@ -3,6 +3,8 @@ package uddug.com.naukoteka.ui.chat.compose.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -10,16 +12,21 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import uddug.com.naukoteka.R
+import java.io.File
 
 
 @Composable
 fun ChatInputBar(
     modifier: Modifier = Modifier,
     currentMessage: String,
+    attachedFiles: List<File>,
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
     onAttachClick: () -> Unit,
@@ -35,6 +42,27 @@ fun ChatInputBar(
                 .background(Color(0xFFEAEAF2))
                 .height(1.dp)
         )
+
+        if (attachedFiles.isNotEmpty()) {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(attachedFiles) { file ->
+                    AsyncImage(
+                        model = file,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
+                }
+            }
+        }
 
         Row(
             modifier = Modifier
