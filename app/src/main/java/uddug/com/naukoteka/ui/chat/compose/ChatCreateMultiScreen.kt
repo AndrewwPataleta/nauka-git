@@ -5,6 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -48,17 +51,22 @@ fun ChatCreateMultiScreen(
                     query = state.query,
                     onSearchChanged = {
                         viewModel.onCurrentSearchChange(it)
-                    }
+                    },
                 )
 
-                if (state.searchResults.isNotEmpty()) {
-                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
-                        Text(
-                            text = stringResource(R.string.search_country),
-                            fontSize = 18.sp,
-                            color = Color.Black
-                        )
-                        state.searchResults.forEach { user ->
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+                ) {
+                    if (state.searchResults.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(R.string.search_country),
+                                fontSize = 18.sp,
+                                color = Color.Black,
+                            )
+                        }
+                        items(state.searchResults) { user ->
                             CreateChatMemberCard(
                                 name = user.fullName.orEmpty(),
                                 avatarUrl = user.image?.path.orEmpty(),
@@ -67,19 +75,20 @@ fun ChatCreateMultiScreen(
                                     user.id?.let { viewModel.onUserClick(it) }
                                 },
                                 showCheckbox = true,
-                                checkboxOnLeft = true
+                                checkboxOnLeft = true,
                             )
                         }
                     }
-                }
 
-                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
-                    Text(
-                        text = stringResource(R.string.subs),
-                        fontSize = 18.sp,
-                        color = Color.Black
-                    )
-                    state.users.forEach { user ->
+                    item {
+                        Text(
+                            text = stringResource(R.string.subs),
+                            fontSize = 18.sp,
+                            color = Color.Black,
+                            modifier = Modifier.padding(vertical = 10.dp)
+                        )
+                    }
+                    items(state.users) { user ->
                         CreateChatMemberCard(
                             name = user.fullName.orEmpty(),
                             avatarUrl = user.image?.path.orEmpty(),
@@ -88,7 +97,7 @@ fun ChatCreateMultiScreen(
                                 user.id?.let { viewModel.onUserClick(it) }
                             },
                             showCheckbox = true,
-                            checkboxOnLeft = true
+                            checkboxOnLeft = true,
                         )
                     }
                 }
