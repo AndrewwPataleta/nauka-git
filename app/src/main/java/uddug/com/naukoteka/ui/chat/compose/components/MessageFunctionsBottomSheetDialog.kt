@@ -38,35 +38,37 @@ fun MessageFunctionsBottomSheetDialog(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_settings),
-                    contentDescription = null,
-                )
-                Spacer(modifier = Modifier.width(14.dp))
-                Text(
-                    text = stringResource(R.string.message_functions_title),
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
+            Text(
+                text = stringResource(R.string.message_functions_title),
+                style = MaterialTheme.typography.titleMedium
+            )
             Spacer(modifier = Modifier.height(20.dp))
             val items = listOf(
-                R.string.chat_message_reply,
-                R.string.chat_message_forward,
-                R.string.chat_message_copy,
-                R.string.chat_message_select,
-                R.string.chat_message_show_original,
-                R.string.chat_message_delete
+                R.drawable.ic_send to R.string.chat_message_reply,
+                R.drawable.ic_share to R.string.chat_message_forward,
+                R.drawable.ic_copy to R.string.chat_message_copy,
+                R.drawable.ic_checkbox_unchecked to R.string.chat_message_select,
+                R.drawable.ic_more_info to R.string.chat_message_show_original,
+                R.drawable.ic_trash to R.string.chat_message_delete
             )
-            items.forEach { itemRes ->
-                Text(
-                    text = stringResource(id = itemRes),
+            items.forEach { (iconRes, textRes) ->
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { }
                         .padding(vertical = 12.dp),
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = iconRes),
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Text(
+                        text = stringResource(id = textRes),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
             }
         }
     }
