@@ -20,12 +20,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.MessageFunctionsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessageFunctionsBottomSheetDialog(
+    message: MessageChat,
     onDismissRequest: () -> Unit,
+    viewModel: MessageFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -44,18 +49,21 @@ fun MessageFunctionsBottomSheetDialog(
             )
             Spacer(modifier = Modifier.height(20.dp))
             val items = listOf(
-                R.drawable.ic_send to R.string.chat_message_reply,
-                R.drawable.ic_share to R.string.chat_message_forward,
-                R.drawable.ic_copy to R.string.chat_message_copy,
-                R.drawable.ic_checkbox_unchecked to R.string.chat_message_select,
-                R.drawable.ic_more_info to R.string.chat_message_show_original,
-                R.drawable.ic_trash to R.string.chat_message_delete
+                Triple(R.drawable.ic_send, R.string.chat_message_reply) { viewModel.reply(message.id) },
+                Triple(R.drawable.ic_share, R.string.chat_message_forward) { viewModel.forward(message.id) },
+                Triple(R.drawable.ic_copy, R.string.chat_message_copy) { viewModel.copy(message.id) },
+                Triple(R.drawable.ic_checkbox_unchecked, R.string.chat_message_select) { viewModel.select(message.id) },
+                Triple(R.drawable.ic_more_info, R.string.chat_message_show_original) { viewModel.showOriginal(message.id) },
+                Triple(R.drawable.ic_trash, R.string.chat_message_delete) { viewModel.delete(message.id) }
             )
-            items.forEach { (iconRes, textRes) ->
+            items.forEach { (iconRes, textRes, action) ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { }
+                        .clickable {
+                            action()
+                            onDismissRequest()
+                        }
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -73,4 +81,3 @@ fun MessageFunctionsBottomSheetDialog(
         }
     }
 }
-

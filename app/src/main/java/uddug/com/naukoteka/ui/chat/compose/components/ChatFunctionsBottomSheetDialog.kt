@@ -20,12 +20,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.ChatFunctionsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatFunctionsBottomSheetDialog(
+    dialogId: Long,
     onDismissRequest: () -> Unit,
+    viewModel: ChatFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -44,19 +48,22 @@ fun ChatFunctionsBottomSheetDialog(
             )
             Spacer(modifier = Modifier.height(20.dp))
             val items = listOf(
-                R.drawable.ic_mail to R.string.chat_mark_unread,
-                R.drawable.ic_attach to R.string.chat_show_attachments,
-                R.drawable.ic_save_post to R.string.chat_pin,
-                R.drawable.ic_mute to R.string.chat_disable_notifications,
-                R.drawable.ic_checkbox_unchecked to R.string.chat_select_messages,
-                R.drawable.ic_lock to R.string.chat_block_chat,
-                R.drawable.ic_trash to R.string.chat_delete_chat
+                Triple(R.drawable.ic_mail, R.string.chat_mark_unread) { viewModel.markUnread(dialogId) },
+                Triple(R.drawable.ic_attach, R.string.chat_show_attachments) { viewModel.showAttachments(dialogId) },
+                Triple(R.drawable.ic_save_post, R.string.chat_pin) { viewModel.pinChat(dialogId) },
+                Triple(R.drawable.ic_mute, R.string.chat_disable_notifications) { viewModel.disableNotifications(dialogId) },
+                Triple(R.drawable.ic_checkbox_unchecked, R.string.chat_select_messages) { viewModel.selectMessages(dialogId) },
+                Triple(R.drawable.ic_lock, R.string.chat_block_chat) { viewModel.blockChat(dialogId) },
+                Triple(R.drawable.ic_trash, R.string.chat_delete_chat) { viewModel.deleteChat(dialogId) }
             )
-            items.forEach { (iconRes, textRes) ->
+            items.forEach { (iconRes, textRes, action) ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { }
+                        .clickable {
+                            action()
+                            onDismissRequest()
+                        }
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
