@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -55,16 +58,22 @@ fun ChatCreateSingleScreen(
                     query = state.query,
                     onSearchChanged = {
                         viewModel.onCurrentSearchChange(it)
-                    }
+                    },
                 )
-                if (state.searchResults.isNotEmpty()) {
-                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
-                        Text(
-                            text = stringResource(R.string.search_country),
-                            fontSize = 18.sp,
-                            color = Color.Black
-                        )
-                        state.searchResults.forEach { user ->
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+                ) {
+                    if (state.searchResults.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(R.string.search_country),
+                                fontSize = 18.sp,
+                                color = Color.Black,
+                            )
+                        }
+                        items(state.searchResults) { user ->
                             CreateChatMemberCard(
                                 name = user.fullName.orEmpty(),
                                 avatarUrl = user.image?.path.orEmpty(),
@@ -72,37 +81,40 @@ fun ChatCreateSingleScreen(
                                 onMemberClick = {
                                     user.id?.toLongOrNull()?.let { viewModel.onUserClick(it) }
                                 },
-                                showCheckbox = false
+                                showCheckbox = false,
                             )
                         }
                     }
-                }
-                Row(
-                    modifier = Modifier
-                        .padding(20.dp)
-                        .clickable {
-                            onGroupCreateClick()
-                        },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_add_users_chat),
-                        contentDescription = "Edit Icon",
-                    )
-                    Text(
-                        modifier = Modifier.padding(start = 16.dp),
-                        text = stringResource(R.string.create_group_chat),
-                        fontSize = 18.sp,
-                        color = Color.Black
-                    )
-                }
-                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
-                    Text(
-                        text = stringResource(R.string.subs),
-                        fontSize = 18.sp,
-                        color = Color.Black
-                    )
-                    state.users.forEach { user ->
+
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .padding(vertical = 10.dp)
+                                .clickable { onGroupCreateClick() },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_add_users_chat),
+                                contentDescription = "Edit Icon",
+                            )
+                            Text(
+                                modifier = Modifier.padding(start = 16.dp),
+                                text = stringResource(R.string.create_group_chat),
+                                fontSize = 18.sp,
+                                color = Color.Black,
+                            )
+                        }
+                    }
+
+                    item {
+                        Text(
+                            text = stringResource(R.string.subs),
+                            fontSize = 18.sp,
+                            color = Color.Black,
+                            modifier = Modifier.padding(vertical = 10.dp)
+                        )
+                    }
+                    items(state.users) { user ->
                         CreateChatMemberCard(
                             name = user.fullName.orEmpty(),
                             avatarUrl = user.image?.path.orEmpty(),
@@ -110,7 +122,7 @@ fun ChatCreateSingleScreen(
                             onMemberClick = {
                                 user.id?.toLongOrNull()?.let { viewModel.onUserClick(it) }
                             },
-                            showCheckbox = false
+                            showCheckbox = false,
                         )
                     }
                 }
