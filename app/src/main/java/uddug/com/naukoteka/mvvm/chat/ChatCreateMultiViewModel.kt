@@ -39,6 +39,7 @@ class ChatCreateMultiViewModel @Inject constructor(
                 _uiState.value = ChatCreateMultiUiState.Success(
                     query = "",
                     users = users,
+                    searchResults = emptyList(),
                     selected = emptySet<String>()
                 )
             } catch (e: Exception) {
@@ -53,18 +54,14 @@ class ChatCreateMultiViewModel @Inject constructor(
             _uiState.value = currentState.copy(query = query)
             viewModelScope.launch {
                 try {
-                    val result = if (query.isNotBlank()) {
-                        chatInteractor.searchUsers(query)
+                    if (query.isNotBlank()) {
+                        val result = chatInteractor.searchUsers(query)
+                        _uiState.value =
+                            (_uiState.value as ChatCreateMultiUiState.Success).copy(searchResults = result)
                     } else {
-                        chatInteractor.getDialogs().map { chat ->
-                            UserProfileFullInfo(
-                                id = chat.interlocutor.userId,
-                                fullName = chat.interlocutor.fullName,
-                                image = Image(path = chat.interlocutor.image)
-                            )
-                        }
+                        _uiState.value =
+                            (_uiState.value as ChatCreateMultiUiState.Success).copy(searchResults = emptyList())
                     }
-                    _uiState.value = (_uiState.value as ChatCreateMultiUiState.Success).copy(users = result)
                 } catch (e: Exception) {
                     _uiState.value = ChatCreateMultiUiState.Error(e.message ?: "Unknown error")
                 }
@@ -73,6 +70,7 @@ class ChatCreateMultiViewModel @Inject constructor(
             _uiState.value = ChatCreateMultiUiState.Success(
                 query = query,
                 users = emptyList(),
+                searchResults = emptyList(),
                 selected = emptySet<String>()
             )
         }
@@ -92,7 +90,8 @@ class ChatCreateMultiViewModel @Inject constructor(
         if (current is ChatCreateMultiUiState.Success) {
             viewModelScope.launch {
                 try {
-                    val userRoles = current.users
+                    val allUsers = current.users + current.searchResults
+                    val userRoles = allUsers
                         .mapNotNull { user ->
                             user.id?.let { id -> id to if (current.selected.contains(id)) "37:202" else null }
                         }
@@ -116,6 +115,7 @@ sealed class ChatCreateMultiUiState {
     data class Success(
         val query: String,
         val users: List<UserProfileFullInfo>,
+        val searchResults: List<UserProfileFullInfo>,
         val selected: Set<String>,
     ) : ChatCreateMultiUiState()
 

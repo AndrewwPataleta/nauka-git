@@ -42,20 +42,43 @@ fun ChatCreateMultiScreen(
             is ChatCreateMultiUiState.Error -> Unit
             ChatCreateMultiUiState.Loading -> Unit
             is ChatCreateMultiUiState.Success -> {
+                val state = uiState as ChatCreateMultiUiState.Success
                 SearchField(
                     title = stringResource(R.string.find_chat_message),
-                    query = (uiState as ChatCreateMultiUiState.Success).query,
+                    query = state.query,
                     onSearchChanged = {
                         viewModel.onCurrentSearchChange(it)
                     }
                 )
+
+                if (state.searchResults.isNotEmpty()) {
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
+                        Text(
+                            text = stringResource(R.string.search_country),
+                            fontSize = 18.sp,
+                            color = Color.Black
+                        )
+                        state.searchResults.forEach { user ->
+                            CreateChatMemberCard(
+                                name = user.fullName.orEmpty(),
+                                avatarUrl = user.image?.path.orEmpty(),
+                                time = "",
+                                onMemberClick = {
+                                    user.id?.let { viewModel.onUserClick(it) }
+                                },
+                                showCheckbox = true,
+                                checkboxOnLeft = true
+                            )
+                        }
+                    }
+                }
+
                 Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
                     Text(
                         text = stringResource(R.string.subs),
                         fontSize = 18.sp,
                         color = Color.Black
                     )
-                    val state = uiState as ChatCreateMultiUiState.Success
                     state.users.forEach { user ->
                         CreateChatMemberCard(
                             name = user.fullName.orEmpty(),
