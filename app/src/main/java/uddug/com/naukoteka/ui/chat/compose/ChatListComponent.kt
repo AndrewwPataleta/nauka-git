@@ -72,6 +72,9 @@ fun ChatListComponent(
             onSelectMessages = {
                 viewModel.startSelection(id)
                 selectedDialogId = null
+            },
+            onNotificationsChange = { dialogId, disabled ->
+                viewModel.updateDialogNotifications(dialogId, disabled)
             }
         )
     }

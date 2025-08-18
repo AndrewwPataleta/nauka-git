@@ -31,6 +31,7 @@ fun ChatFunctionsBottomSheetDialog(
     onDismissRequest: () -> Unit,
     onShowAttachments: (Long) -> Unit,
     onSelectMessages: () -> Unit,
+    onNotificationsChange: (Long, Boolean) -> Unit = { _, _ -> },
     viewModel: ChatFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -60,7 +61,10 @@ fun ChatFunctionsBottomSheetDialog(
                 R.string.chat_mark_unread to { viewModel.markUnread(dialogId) },
                 R.string.chat_show_attachments to { onShowAttachments(dialogId) },
                 R.string.chat_pin to { viewModel.pinChat(dialogId) },
-                R.string.chat_disable_notifications to { viewModel.disableNotifications(dialogId) },
+                R.string.chat_disable_notifications to {
+                    viewModel.disableNotifications(dialogId)
+                    onNotificationsChange(dialogId, true)
+                },
                 R.string.chat_select_messages to {
                     viewModel.selectMessages(dialogId)
                     onSelectMessages()
