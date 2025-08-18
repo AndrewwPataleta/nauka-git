@@ -17,7 +17,10 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -70,10 +73,15 @@ import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatDetailUiState
+import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPressed: () -> Unit) {
+fun ChatDetailDialogComponent(
+    viewModel: ChatDialogDetailViewModel,
+    onBackPressed: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+) {
     val scrollState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -141,6 +149,7 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
             }
 
             is ChatDetailUiState.Success -> {
+                var showMoreDialog by remember { mutableStateOf(false) }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -244,7 +253,7 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
                                         shape = RoundedCornerShape(8.dp),
                                         color = Color(0xFFF5F5F9)
                                     )
-                                    .clickable { }
+                                    .clickable { showMoreDialog = true }
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
@@ -324,6 +333,13 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
                         1 -> FilesContent(state.files)
                         2 -> VoiceContent(state.voices)
                         3 -> NotesContent(state.notes)
+                    }
+                    if (showMoreDialog) {
+                        ChatDetailMoreSheetDialog(
+                            dialogId = state.dialogId,
+                            onNavigateToProfile = onNavigateToProfile,
+                            onDismissRequest = { showMoreDialog = false },
+                        )
                     }
                 }
             }

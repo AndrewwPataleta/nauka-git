@@ -376,6 +376,7 @@
     <string name="chat_mark_unread">Отметить непрочитанным</string>
     <string name="chat_show_attachments">Показать вложения</string>
     <string name="chat_pin">Закрепить в списке</string>
+    <string name="chat_go_to_profile">Перейти в профиль</string>
     <string name="chat_disable_notifications">Отключить уведомления</string>
     <string name="chat_select_messages">Выделить сообщения</string>
     <string name="chat_block_chat">Заблокировать чат</string>
