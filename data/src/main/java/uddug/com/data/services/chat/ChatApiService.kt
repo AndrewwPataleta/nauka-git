@@ -24,6 +24,7 @@ import uddug.com.data.services.models.response.chat.UserStatusDto
 import uddug.com.data.services.models.response.chat.MessageDto
 import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.user_profile.UserProfileFullInfoDto
+import uddug.com.data.services.models.response.chat.SearchUsersDto
 import uddug.com.domain.entities.chat.MediaMessage
 
 interface ChatApiService {
@@ -126,7 +127,7 @@ interface ChatApiService {
         @Query("searchField") searchField: String,
         @Query("limit") limit: Int = 10,
         @Query("page") page: Int = 1,
-    ): List<UserProfileFullInfoDto>
+    ): SearchUsersDto
 
     @POST("chat/v1/users/status")
     suspend fun getUsersStatus(@Body request: UsersStatusRequestDto): List<UserStatusDto>
