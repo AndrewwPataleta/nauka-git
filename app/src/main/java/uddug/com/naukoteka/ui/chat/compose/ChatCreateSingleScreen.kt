@@ -49,13 +49,34 @@ fun ChatCreateSingleScreen(
             is ChatCreateSingleUiState.Error -> Unit
             ChatCreateSingleUiState.Loading -> Unit
             is ChatCreateSingleUiState.Success -> {
+                val state = uiState as ChatCreateSingleUiState.Success
                 SearchField(
                     title = stringResource(R.string.find_chat_message),
-                    query = (uiState as ChatCreateSingleUiState.Success).query,
+                    query = state.query,
                     onSearchChanged = {
                         viewModel.onCurrentSearchChange(it)
                     }
                 )
+                if (state.searchResults.isNotEmpty()) {
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
+                        Text(
+                            text = stringResource(R.string.search_country),
+                            fontSize = 18.sp,
+                            color = Color.Black
+                        )
+                        state.searchResults.forEach { user ->
+                            CreateChatMemberCard(
+                                name = user.fullName.orEmpty(),
+                                avatarUrl = user.image?.path.orEmpty(),
+                                time = "",
+                                onMemberClick = {
+                                    user.id?.toLongOrNull()?.let { viewModel.onUserClick(it) }
+                                },
+                                showCheckbox = false
+                            )
+                        }
+                    }
+                }
                 Row(
                     modifier = Modifier
                         .padding(20.dp)
@@ -81,7 +102,6 @@ fun ChatCreateSingleScreen(
                         fontSize = 18.sp,
                         color = Color.Black
                     )
-                    val state = uiState as ChatCreateSingleUiState.Success
                     state.users.forEach { user ->
                         CreateChatMemberCard(
                             name = user.fullName.orEmpty(),
@@ -94,7 +114,6 @@ fun ChatCreateSingleScreen(
                         )
                     }
                 }
-
             }
         }
 

@@ -37,7 +37,11 @@ class ChatCreateSingleViewModel @Inject constructor(
                         image = Image(path = chat.interlocutor.image)
                     )
                 }
-                _uiState.value = ChatCreateSingleUiState.Success(query = "", users = users)
+                _uiState.value = ChatCreateSingleUiState.Success(
+                    query = "",
+                    users = users,
+                    searchResults = emptyList()
+                )
             } catch (e: Exception) {
                 _uiState.value = ChatCreateSingleUiState.Error(e.message ?: "Unknown error")
             }
@@ -51,9 +55,39 @@ class ChatCreateSingleViewModel @Inject constructor(
     }
 
     fun onCurrentSearchChange(query: String) {
-        _uiState.value = when (val currentState = _uiState.value) {
-            is ChatCreateSingleUiState.Success -> currentState.copy(query = query)
-            else -> ChatCreateSingleUiState.Success(query = query, users = emptyList())
+        val currentState = _uiState.value
+        if (currentState is ChatCreateSingleUiState.Success) {
+            _uiState.value = currentState.copy(query = query)
+            viewModelScope.launch {
+                if (query.isNotBlank()) {
+                    try {
+                        val result = chatInteractor.getDialogs().map { chat ->
+                            UserProfileFullInfo(
+                                id = chat.interlocutor.userId,
+                                fullName = chat.interlocutor.fullName,
+                                image = Image(path = chat.interlocutor.image)
+                            )
+                        }.filter { user ->
+                            user.fullName.orEmpty().contains(query, ignoreCase = true)
+                        }
+                        _uiState.value = (_uiState.value as ChatCreateSingleUiState.Success).copy(
+                            searchResults = result,
+                        )
+                    } catch (e: Exception) {
+                        _uiState.value = ChatCreateSingleUiState.Error(e.message ?: "Unknown error")
+                    }
+                } else {
+                    _uiState.value = (_uiState.value as ChatCreateSingleUiState.Success).copy(
+                        searchResults = emptyList(),
+                    )
+                }
+            }
+        } else {
+            _uiState.value = ChatCreateSingleUiState.Success(
+                query = query,
+                users = emptyList(),
+                searchResults = emptyList()
+            )
         }
     }
 
@@ -61,7 +95,7 @@ class ChatCreateSingleViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val dialogId = chatInteractor.createDialog(userId)
-                _events.emit(ChatCreateSingleEvent.DialogCreated(dialogId))
+                _events.emit(ChatCreateSingleEvent.OpenDialogDetail(dialogId))
             } catch (e: Exception) {
                 _uiState.value = ChatCreateSingleUiState.Error(e.message ?: "Unknown error")
             }
@@ -71,7 +105,6 @@ class ChatCreateSingleViewModel @Inject constructor(
 
 sealed class ChatCreateSingleEvent {
     data class OpenDialogDetail(val dialogId: Long) : ChatCreateSingleEvent()
-    data class DialogCreated(val dialogId: Long) : ChatCreateSingleEvent()
     object OpenMultiCreate : ChatCreateSingleEvent()
 }
 
@@ -80,6 +113,7 @@ sealed class ChatCreateSingleUiState {
     data class Success(
         val query: String,
         val users: List<UserProfileFullInfo>,
+        val searchResults: List<UserProfileFullInfo>,
     ) : ChatCreateSingleUiState()
 
     data class Error(val message: String) : ChatCreateSingleUiState()

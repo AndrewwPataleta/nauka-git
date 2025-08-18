@@ -55,19 +55,17 @@ class ChatCreateSingleFragment : Fragment() {
             viewModel.events.collectLatest { state ->
                 when (state) {
                     is ChatCreateSingleEvent.OpenDialogDetail -> {
+                        findNavController().previousBackStackEntry?.savedStateHandle?.set(
+                            "refreshChats",
+                            true
+                        )
+                        findNavController().popBackStack()
                         findNavController().navigate(
                             R.id.chatDialogFragment,
                             args = Bundle().apply {
                                 putLong(DIALOG_ID, state.dialogId)
                             }
                         )
-                    }
-                    is ChatCreateSingleEvent.DialogCreated -> {
-                        findNavController().previousBackStackEntry?.savedStateHandle?.set(
-                            "refreshChats",
-                            true
-                        )
-                        findNavController().popBackStack()
                     }
                     ChatCreateSingleEvent.OpenMultiCreate -> {
                         findNavController().navigate(R.id.chatCreateMultiFragment)

@@ -4,7 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,20 +61,15 @@ fun CreateChatMemberCard(
                   verticalAlignment = Alignment.CenterVertically
               ) {
                   if (showCheckbox && checkboxOnLeft) {
-                      Checkbox(
-                          checked = isChecked,
-                          onCheckedChange = {
-                              isChecked = it
-                              onMemberClick()
-                          },
+                      Icon(
+                          painter = painterResource(id = if (isChecked) R.drawable.ic_checkbox_checked else R.drawable.ic_checkbox_unchecked),
+                          contentDescription = null,
                           modifier = Modifier
                               .size(24.dp)
-                              .clip(CircleShape),
-                          colors = CheckboxDefaults.colors(
-                              checkedColor = Color(0xFF2E83D9),
-                              uncheckedColor = Color(0xFFB0BEC5),
-                              checkmarkColor = Color.White
-                          )
+                              .clickable {
+                                  isChecked = !isChecked
+                                  onMemberClick()
+                              }
                       )
                       Spacer(modifier = Modifier.width(16.dp))
                   }
@@ -126,17 +124,15 @@ fun CreateChatMemberCard(
                 }
 
                   if (showCheckbox && !checkboxOnLeft) {
-                      Checkbox(
-                          checked = isChecked,
-                          onCheckedChange = {
-                              isChecked = it
-                              onMemberClick()
-                          },
-                          colors = CheckboxDefaults.colors(
-                              checkedColor = Color(0xFF2E83D9),
-                              uncheckedColor = Color(0xFFB0BEC5),
-                              checkmarkColor = Color.White
-                          )
+                      Icon(
+                          painter = painterResource(id = if (isChecked) R.drawable.ic_checkbox_checked else R.drawable.ic_checkbox_unchecked),
+                          contentDescription = null,
+                          modifier = Modifier
+                              .size(24.dp)
+                              .clickable {
+                                  isChecked = !isChecked
+                                  onMemberClick()
+                              }
                       )
                   }
             }
