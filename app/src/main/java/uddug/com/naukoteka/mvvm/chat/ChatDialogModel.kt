@@ -170,12 +170,15 @@ class ChatDialogViewModel @Inject constructor(
             val fileDescriptors = uploaded.map {
                 ChatSocketMessage.FileDescriptor(
                     id = it.id,
-                    fileType = (it.fileType ?: 1).toString()
+                    fileType = it.fileType ?: 100
                 )
             }
 
+            val cType = if (fileDescriptors.isEmpty()) 1 else 3
+
             val message = ChatSocketMessage(
                 dialog = dialog.id,
+                cType = cType,
                 text = text,
                 owner = currentUser?.id.orEmpty(),
                 files = fileDescriptors.ifEmpty { null }
