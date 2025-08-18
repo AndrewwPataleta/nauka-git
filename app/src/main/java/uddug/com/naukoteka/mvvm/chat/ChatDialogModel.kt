@@ -24,6 +24,7 @@ import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.ui.chat.di.SocketService
 import java.time.Instant
+import java.time.Duration
 import java.io.File
 import javax.inject.Inject
 
@@ -83,11 +84,29 @@ class ChatDialogViewModel @Inject constructor(
                                     info.interlocutor != null -> info.interlocutor?.image.orEmpty()
                                     else -> info.name.orEmpty()
                                 }
+                                var status: String? = null
+                                val isGroup = (info.users?.size ?: 0) > 2
+                                if (!isGroup) {
+                                    val userId = info.interlocutor?.userId
+                                    if (userId != null) {
+                                        try {
+                                            val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
+                                            status = if (userStatus?.isOnline == true) {
+                                                "Онлайн"
+                                            } else {
+                                                userStatus?.lastSeen?.let { formatLastSeen(it) }
+                                            }
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                        }
+                                    }
+                                }
                                 _uiState.value = ChatDialogUiState.Success(
                                     chats = messages,
                                     chatName = name,
                                     chatImage = image,
-                                    isGroup = (info.users?.size ?: 0) > 2
+                                    isGroup = isGroup,
+                                    status = status
                                 )
                                 markMessagesRead(dialogId, messages)
                             }
@@ -205,6 +224,25 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    private fun formatLastSeen(lastSeen: String): String {
+        return try {
+            val instant = Instant.parse(lastSeen)
+            val duration = Duration.between(instant, Instant.now())
+            val minutes = duration.toMinutes()
+            val hours = duration.toHours()
+            val days = duration.toDays()
+            val weeks = days / 7
+            when {
+                minutes < 60 -> "был ${minutes} мин назад"
+                hours < 24 -> "был ${hours} ч назад"
+                days < 7 -> "был ${days} д назад"
+                else -> "был ${weeks} нед назад"
+            }
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
     private fun handleIncomingMessage(message: Any) {
         viewModelScope.launch {
             try {
@@ -266,6 +304,7 @@ sealed class ChatDialogUiState {
         val isGroup: Boolean,
         val currentMessage: String = "",
         val attachedFiles: List<File> = emptyList(),
+        val status: String? = null,
     ) : ChatDialogUiState()
 
     data class Error(val message: String) : ChatDialogUiState()

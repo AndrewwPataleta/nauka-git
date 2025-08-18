@@ -19,6 +19,8 @@ import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.response.chat.ChatDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.FoldersDto
+import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
+import uddug.com.data.services.models.response.chat.UserStatusDto
 import uddug.com.data.services.models.response.chat.MessageDto
 import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.user_profile.UserProfileFullInfoDto
@@ -119,6 +121,9 @@ interface ChatApiService {
         @Query("limit") limit: Int = 10,
         @Query("page") page: Int = 1,
     ): List<UserProfileFullInfoDto>
+
+    @POST("api/v1/users/status")
+    suspend fun getUsersStatus(@Body request: UsersStatusRequestDto): List<UserStatusDto>
 
     @Multipart
     @POST("core/files")
