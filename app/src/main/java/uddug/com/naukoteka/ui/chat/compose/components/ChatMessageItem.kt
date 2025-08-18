@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Checkbox
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -44,6 +45,9 @@ import java.time.LocalTime // если toLocalTime() возвращает LocalT
 fun ChatMessageItem(
     message: MessageChat,
     isMine: Boolean,
+    selectionMode: Boolean = false,
+    isSelected: Boolean = false,
+    onSelectChange: () -> Unit = {},
     onLongPress: (MessageChat) -> Unit
 ) {
     Row(
@@ -51,29 +55,45 @@ fun ChatMessageItem(
             .padding(horizontal = 10.dp)
             .fillMaxWidth()
             .defaultMinSize(minWidth = 150.dp)
-            .padding(vertical = 4.dp)
-            .combinedClickable(
-                onClick = {},
-                onLongClick = { onLongPress(message) }
-            ),
-        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
+            .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (!isMine) {
-            // Аватарка
-            Avatar(message.ownerAvatarUrl)
+        if (selectionMode) {
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onSelectChange() }
+            )
             Spacer(modifier = Modifier.width(8.dp))
         }
-
-        Column(
+        Row(
             modifier = Modifier
-                .background(
-                    color = if (isMine) Color(0xFF2E83D9) else Color(0xFFF5F5F9),
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .padding(8.dp)
-                .widthIn(max = 300.dp)
+                .weight(1f)
+                .combinedClickable(
+                    onClick = {
+                        if (selectionMode) onSelectChange()
+                    },
+                    onLongClick = {
+                        if (selectionMode) onSelectChange() else onLongPress(message)
+                    }
+                ),
+            horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            if (!isMine) {
+                // Аватарка
+                Avatar(message.ownerAvatarUrl)
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+            Column(
+                modifier = Modifier
+                    .background(
+                        color = if (isMine) Color(0xFF2E83D9) else Color(0xFFF5F5F9),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .padding(8.dp)
+                    .widthIn(max = 300.dp)
+            ) {
             if (!isMine && message.ownerName?.isNotEmpty() == true) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(

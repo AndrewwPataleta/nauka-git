@@ -24,6 +24,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.material.Scaffold
+import androidx.compose.material.TopAppBar
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,12 +37,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
 import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.ui.chat.compose.components.ChatInputBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageItem
 import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
@@ -56,6 +62,8 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
     val keyboardController = LocalSoftwareKeyboardController.current
     val context = LocalContext.current
     var selectedMessage by remember { mutableStateOf<MessageChat?>(null) }
+    val isSelectionMode by viewModel.isSelectionMode.collectAsState()
+    val selectedMessages by viewModel.selectedMessages.collectAsState()
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
@@ -103,16 +111,44 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                 is ChatDialogUiState.Success -> {
                     val state = uiState as ChatDialogUiState.Success
                     val messages = state.chats
-                    ChatTopBar(
-                        name = state.chatName,
-                        image = state.chatImage,
-                        isGroup = state.isGroup,
-                        status = state.status,
-                        onBackPressed = { onBackPressed() },
-                        onDetailClick = {
-                            viewModel.onChatDetailClick()
-                        }
-                    )
+                    if (isSelectionMode) {
+                        TopAppBar(
+                            title = {
+                                Text(text = selectedMessages.size.toString(), fontSize = 20.sp, color = Color.Black)
+                            },
+                            navigationIcon = {
+                                IconButton(onClick = { viewModel.clearSelection() }) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_close),
+                                        contentDescription = "Close",
+                                        tint = Color.Black
+                                    )
+                                }
+                            },
+                            actions = {
+                                IconButton(onClick = { viewModel.deleteSelectedMessages() }) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_trash),
+                                        contentDescription = "Delete",
+                                        tint = Color.Black
+                                    )
+                                }
+                            },
+                            backgroundColor = Color.White,
+                            elevation = 0.dp
+                        )
+                    } else {
+                        ChatTopBar(
+                            name = state.chatName,
+                            image = state.chatImage,
+                            isGroup = state.isGroup,
+                            status = state.status,
+                            onBackPressed = { onBackPressed() },
+                            onDetailClick = {
+                                viewModel.onChatDetailClick()
+                            }
+                        )
+                    }
                     // LazyColumn будет использовать оставшееся пространство
                     Box(
                         modifier = Modifier
@@ -128,8 +164,11 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                         ) {
                             items(messages) { message ->
                                 ChatMessageItem(
-                                    message,
+                                    message = message,
                                     isMine = message.isMine,
+                                    selectionMode = isSelectionMode,
+                                    isSelected = selectedMessages.contains(message.id),
+                                    onSelectChange = { viewModel.toggleMessageSelection(message.id) },
                                     onLongPress = { selectedMessage = it }
                                 )
                             }
@@ -163,7 +202,11 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
         selectedMessage?.let { message ->
             MessageFunctionsBottomSheetDialog(
                 message = message,
-                onDismissRequest = { selectedMessage = null }
+                onDismissRequest = { selectedMessage = null },
+                onSelectMessage = {
+                    viewModel.startSelection(message.id)
+                    selectedMessage = null
+                }
             )
         }
     }

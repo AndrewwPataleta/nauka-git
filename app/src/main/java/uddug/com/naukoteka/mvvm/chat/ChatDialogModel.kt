@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -41,6 +42,12 @@ class ChatDialogViewModel @Inject constructor(
 
     private val _events = MutableSharedFlow<ChatDialogEvents>()
     val events: SharedFlow<ChatDialogEvents> = _events.asSharedFlow()
+
+    private val _isSelectionMode = MutableStateFlow(false)
+    val isSelectionMode: StateFlow<Boolean> = _isSelectionMode
+
+    private val _selectedMessages = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedMessages: StateFlow<Set<Long>> = _selectedMessages
 
     private var currentDialogID: Long? = null
 
@@ -168,6 +175,40 @@ class ChatDialogViewModel @Inject constructor(
         val currentState = _uiState.value
         if (currentState is ChatDialogUiState.Success) {
             _uiState.value = currentState.copy(attachedFiles = attachedFiles.toList())
+        }
+    }
+
+    fun startSelection(messageId: Long) {
+        _isSelectionMode.value = true
+        _selectedMessages.value = setOf(messageId)
+    }
+
+    fun toggleMessageSelection(messageId: Long) {
+        _selectedMessages.update { current ->
+            val mutable = current.toMutableSet()
+            if (!mutable.add(messageId)) mutable.remove(messageId)
+            mutable
+        }
+    }
+
+    fun clearSelection() {
+        _selectedMessages.value = emptySet()
+        _isSelectionMode.value = false
+    }
+
+    fun deleteSelectedMessages() {
+        val ids = _selectedMessages.value
+        viewModelScope.launch {
+            try {
+                chatInteractor.deleteMessages(ids.toList())
+                val currentState = _uiState.value
+                if (currentState is ChatDialogUiState.Success) {
+                    val updated = currentState.chats.filterNot { ids.contains(it.id) }
+                    _uiState.value = currentState.copy(chats = updated)
+                }
+            } catch (_: Exception) {
+            }
+            clearSelection()
         }
     }
 

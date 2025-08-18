@@ -29,6 +29,7 @@ import uddug.com.naukoteka.mvvm.chat.MessageFunctionsViewModel
 fun MessageFunctionsBottomSheetDialog(
     message: MessageChat,
     onDismissRequest: () -> Unit,
+    onSelectMessage: () -> Unit,
     viewModel: MessageFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -51,7 +52,10 @@ fun MessageFunctionsBottomSheetDialog(
                 R.string.chat_message_reply to { viewModel.reply(message.id) },
                 R.string.chat_message_forward to { viewModel.forward(message.id) },
                 R.string.chat_message_copy to { viewModel.copy(message.id) },
-                R.string.chat_message_select to { viewModel.select(message.id) },
+                R.string.chat_message_select to {
+                    viewModel.select(message.id)
+                    onSelectMessage()
+                },
                 R.string.chat_message_show_original to { viewModel.showOriginal(message.id) },
                 R.string.chat_message_delete to { viewModel.delete(message.id) }
             )
