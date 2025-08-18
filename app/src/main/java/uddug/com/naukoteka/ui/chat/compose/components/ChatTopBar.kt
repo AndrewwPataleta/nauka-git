@@ -53,20 +53,44 @@ fun ChatTopBar(
             IconButton(onClick = { onBackPressed() }) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF2E83D9))
             }
-            AsyncImage(
-                model = BuildConfig.IMAGE_SERVER_URL.plus(image),
-                contentDescription = "image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .size(36.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        onDetailClick()
-                    }
-            )
+            if (image.isNotEmpty()) {
+                AsyncImage(
+                    model = BuildConfig.IMAGE_SERVER_URL.plus(image),
+                    contentDescription = "image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .size(36.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            onDetailClick()
+                        }
+                )
+            } else {
+                val firstLetter = name.firstOrNull()?.uppercase() ?: ""
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF2E83D9))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            onDetailClick()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = firstLetter,
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
             Column(modifier = Modifier
                 .padding(start = 16.dp)
                 .clickable(
