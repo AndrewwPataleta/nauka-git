@@ -36,10 +36,9 @@ enum class TabContent(val content: String) {
 @Composable
 fun ChatTabBar(
     viewModel: ChatListViewModel,
+    onChatLongClick: (Long) -> Unit,
 ) {
     var selectedTabIndex by remember { mutableStateOf(0) }
-
-    var showOptions by remember { mutableStateOf(false) }
 
     val tabTitles = listOf("Все", "Люди", "Работа", "Наука", "Учеба")
 
@@ -139,7 +138,7 @@ fun ChatTabBar(
                                                 viewModel.onChatClick(it)
                                             },
                                             onChatLongClick = {
-                                                showOptions = true
+                                                onChatLongClick(it)
                                             }
                                         )
                                     }
@@ -164,11 +163,6 @@ fun ChatTabBar(
                         }
                     }
                 }
-            }
-            if (showOptions) {
-                ChatFunctionsBottomSheetDialog(
-                    onDismissRequest = { showOptions = false }
-                )
             }
         }
 
