@@ -1,6 +1,5 @@
 package uddug.com.naukoteka.ui.chat.compose
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +18,6 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatTabBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatToolbarComponent
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
 
-
 @Composable
 fun ChatListComponent(
     modifier: Modifier = Modifier,
@@ -27,7 +25,7 @@ fun ChatListComponent(
     onBackPressed: () -> Unit,
     onCreateChatClick: () -> Unit
 ) {
-    var showOptions by remember { mutableStateOf(false) }
+    var selectedDialogId by remember { mutableStateOf<Long?>(null) }
 
     Column(
         modifier = Modifier.fillMaxSize().background(color = Color.White)
@@ -50,15 +48,16 @@ fun ChatListComponent(
         )
         ChatTabBar(
             viewModel = viewModel,
-            onChatLongClick = {
-                showOptions = true
+            onChatLongClick = { id ->
+                selectedDialogId = id
             }
         )
     }
 
-    if (showOptions) {
+    selectedDialogId?.let { id ->
         ChatFunctionsBottomSheetDialog(
-            onDismissRequest = { showOptions = false }
+            dialogId = id,
+            onDismissRequest = { selectedDialogId = null }
         )
     }
 }

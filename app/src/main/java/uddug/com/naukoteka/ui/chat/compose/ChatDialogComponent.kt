@@ -158,8 +158,9 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                 }
             }
         }
-        selectedMessage?.let {
+        selectedMessage?.let { message ->
             MessageFunctionsBottomSheetDialog(
+                message = message,
                 onDismissRequest = { selectedMessage = null }
             )
         }
