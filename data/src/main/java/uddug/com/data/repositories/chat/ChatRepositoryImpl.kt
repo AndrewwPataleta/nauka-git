@@ -5,6 +5,7 @@ import uddug.com.data.services.chat.ChatApiService
 import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.DialogImageRequestDto
+import uddug.com.data.services.models.request.chat.PinMessageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.response.chat.FileDto
@@ -128,6 +129,22 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int) {
         val request = ReadMessagesRequestDto(dialogId, messages, status)
         apiService.markMessagesRead(request)
+    }
+
+    override suspend fun pinDialog(dialogId: Long) {
+        apiService.pinDialog(dialogId)
+    }
+
+    override suspend fun unpinDialog(dialogId: Long) {
+        apiService.unpinDialog(dialogId)
+    }
+
+    override suspend fun pinMessage(dialogId: Long, messageId: Long) {
+        apiService.pinMessage(PinMessageRequestDto(dialogId, messageId))
+    }
+
+    override suspend fun unpinMessage(dialogId: Long, messageId: Long) {
+        apiService.unpinMessage(PinMessageRequestDto(dialogId, messageId))
     }
 
     override suspend fun updateMessage(messageId: Long, text: String): MessageChat {

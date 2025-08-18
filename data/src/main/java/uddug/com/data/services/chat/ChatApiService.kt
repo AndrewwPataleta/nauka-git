@@ -11,10 +11,11 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
+import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
+import uddug.com.data.services.models.request.chat.PinMessageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
-import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.response.chat.ChatDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.MessageDto
@@ -60,11 +61,23 @@ interface ChatApiService {
         @Body request: CreateDialogRequestDto,
     ): DialogInfoDto
 
+    @POST("chat/v1/dialogs/pin/{dialogId}")
+    suspend fun pinDialog(@Path("dialogId") dialogId: Long)
+
+    @POST("chat/v1/dialogs/unpin/{dialogId}")
+    suspend fun unpinDialog(@Path("dialogId") dialogId: Long)
+
     @PATCH("chat/v1/messages/update")
     suspend fun updateMessage(@Body request: UpdateMessageRequestDto): MessageDto
 
     @PATCH("chat/v1/messages/read")
     suspend fun markMessagesRead(@Body request: ReadMessagesRequestDto)
+
+    @PATCH("chat/v1/messages/pin")
+    suspend fun pinMessage(@Body request: PinMessageRequestDto)
+
+    @PATCH("chat/v1/messages/unpin")
+    suspend fun unpinMessage(@Body request: PinMessageRequestDto)
 
     @DELETE("chat/v1/messages/{messageId}")
     suspend fun deleteMessage(

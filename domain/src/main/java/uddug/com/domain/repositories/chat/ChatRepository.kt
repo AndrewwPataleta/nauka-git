@@ -45,6 +45,14 @@ interface ChatRepository {
 
     suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int)
 
+    suspend fun pinDialog(dialogId: Long)
+
+    suspend fun unpinDialog(dialogId: Long)
+
+    suspend fun pinMessage(dialogId: Long, messageId: Long)
+
+    suspend fun unpinMessage(dialogId: Long, messageId: Long)
+
     suspend fun updateMessage(messageId: Long, text: String): MessageChat
 
     suspend fun deleteMessage(messageId: Long, forMe: Boolean = false)

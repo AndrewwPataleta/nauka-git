@@ -54,6 +54,16 @@ class ChatInteractor @Inject constructor(
     suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int) =
         chatRepository.markMessagesRead(dialogId, messages, status)
 
+    suspend fun pinDialog(dialogId: Long) = chatRepository.pinDialog(dialogId)
+
+    suspend fun unpinDialog(dialogId: Long) = chatRepository.unpinDialog(dialogId)
+
+    suspend fun pinMessage(dialogId: Long, messageId: Long) =
+        chatRepository.pinMessage(dialogId, messageId)
+
+    suspend fun unpinMessage(dialogId: Long, messageId: Long) =
+        chatRepository.unpinMessage(dialogId, messageId)
+
     suspend fun updateMessage(messageId: Long, text: String): MessageChat =
         chatRepository.updateMessage(messageId, text)
 
