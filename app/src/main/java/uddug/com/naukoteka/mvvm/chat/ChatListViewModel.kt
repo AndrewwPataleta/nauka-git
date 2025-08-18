@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import uddug.com.data.repositories.chat.ChatRepository
+import uddug.com.domain.repositories.chat.ChatRepository
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import javax.inject.Inject
 

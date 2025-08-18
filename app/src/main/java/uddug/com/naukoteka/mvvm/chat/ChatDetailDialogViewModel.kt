@@ -7,7 +7,7 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import uddug.com.data.repositories.chat.ChatRepository
+import uddug.com.domain.repositories.chat.ChatRepository
 import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
@@ -16,12 +16,13 @@ import uddug.com.domain.entities.chat.User
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.ui.chat.di.SocketService
+import uddug.com.domain.interactors.chat.ChatInteractor
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatDialogDetailViewModel @Inject constructor(
     private val userRepository: UserProfileRepository,
-    private val chatRepository: ChatRepository,
+    private val chatInteractor: ChatInteractor,
     private val socketService: SocketService
 ) : ViewModel() {
 
@@ -48,7 +49,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                 .subscribe({
                     currentUser = it
                     viewModelScope.launch {
-                        val currentMedia = chatRepository.getDialogMedia(dialogId = dialogInfo.id)
+                        val currentMedia = chatInteractor.getDialogMedia(dialogId = dialogInfo.id)
                         _uiState.value = ChatDetailUiState.Success(
                             profile = User(
                                 image = dialogInfo.interlocutor?.image.orEmpty(),
