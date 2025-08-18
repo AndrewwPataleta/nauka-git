@@ -1,6 +1,7 @@
 package uddug.com.domain.repositories.chat
 
 import uddug.com.domain.entities.chat.Chat
+import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
@@ -9,7 +10,9 @@ import uddug.com.domain.entities.chat.File as ChatFile
 import java.io.File as JavaFile
 
 interface ChatRepository {
-    suspend fun getChats(): List<Chat>
+    suspend fun getChats(folderId: Long? = null): List<Chat>
+
+    suspend fun getFolders(): List<ChatFolder>
 
     suspend fun getMessages(
         currentUserId: String,
