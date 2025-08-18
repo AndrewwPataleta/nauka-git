@@ -2,6 +2,9 @@ package uddug.com.data.repositories.chat
 
 import uddug.com.data.mapper.mapChatDtoToDomain
 import uddug.com.data.services.chat.ChatApiService
+import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
+import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
+import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.DialogInfo
@@ -16,30 +19,39 @@ class ChatRepositoryImpl @Inject constructor(
 ) : ChatRepository {
 
     override suspend fun getChats(): List<Chat> {
-        try {
+        return try {
             val chatDto = apiService.getDialogs()
-            return mapChatDtoToDomain(chatDto)
+            mapChatDtoToDomain(chatDto)
         } catch (e: Exception) {
             println("mapping error ${e.message}")
-            return emptyList()
+            emptyList()
         }
-
     }
 
     override suspend fun getMessages(
         currentUserId: String,
         dialogId: Long,
         limit: Int,
+        lastMessageId: Long?,
     ): List<MessageChat> {
-        try {
-            val messages = apiService.getMessages(dialogId, limit)
-            return messages.map {
-                it.toDomain(currentUserId)
-            }
+        return try {
+            val messages = apiService.getMessages(dialogId, limit, lastMessageId)
+            messages.map { it.toDomain(currentUserId) }
         } catch (e: Exception) {
             println("mapping error ${e.message}")
-            return emptyList()
+            emptyList()
         }
+    }
+
+    override suspend fun getMessagesWithOwnerInfo(
+        currentUserId: String,
+        dialogId: Long,
+        limit: Int,
+        lastMessageId: Long?,
+    ): List<MessageChat> {
+        val messages = getMessages(currentUserId, dialogId, limit, lastMessageId)
+        val dialogInfo = getDialogInfo(dialogId)
+        return messages.map { message -> message.updateOwnerInfoFromDialog(dialogInfo) }
     }
 
     override suspend fun getDialogInfo(dialogId: Long): DialogInfo {
@@ -48,30 +60,16 @@ class ChatRepositoryImpl @Inject constructor(
             mapDialogInfoDtoToDomain(dialogInfoDto)
         } catch (e: Exception) {
             println("Error getting dialog info: ${e.message}")
-            throw e // or return default DialogInfo
-        }
-    }
-
-    override suspend fun getMessagesWithOwnerInfo(
-        currentUserId: String,
-        dialogId: Long,
-        limit: Int,
-    ): List<MessageChat> {
-        val messages = getMessages(currentUserId, dialogId, limit)
-        val dialogInfo = getDialogInfo(dialogId)
-
-        return messages.map { message ->
-            message.updateOwnerInfoFromDialog(dialogInfo)
+            throw e
         }
     }
 
     override suspend fun getDialogMedia(dialogId: Long): List<MediaMessage> {
         return try {
-            val dialogInfoDto = apiService.getDialogMedia(dialogId, category = 1)
-            return dialogInfoDto
+            apiService.getDialogMedia(dialogId, category = 1)
         } catch (e: Exception) {
-            println("Error getting dialog info: ${e.message}")
-            throw e // or return default DialogInfo
+            println("Error getting dialog media: ${e.message}")
+            throw e
         }
     }
 
@@ -85,5 +83,21 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int) {
+        val request = ReadMessagesRequestDto(dialogId, messages, status)
+        apiService.markMessagesRead(request)
+    }
 
+    override suspend fun updateMessage(messageId: Long, text: String): MessageChat {
+        val dto = apiService.updateMessage(UpdateMessageRequestDto(messageId, text))
+        return dto.toDomain(dto.ownerId)
+    }
+
+    override suspend fun deleteMessage(messageId: Long, forMe: Boolean) {
+        apiService.deleteMessage(messageId, forMe)
+    }
+
+    override suspend fun deleteMessages(messages: List<Long>, forMe: Boolean) {
+        apiService.deleteMessages(DeleteMessagesRequestDto(messages), forMe)
+    }
 }

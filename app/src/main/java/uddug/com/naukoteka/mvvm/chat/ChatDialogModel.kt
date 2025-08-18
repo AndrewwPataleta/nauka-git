@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import uddug.com.domain.repositories.chat.ChatRepository
+import uddug.com.data.repositories.user_profile.UserProfileRepositoryImpl
 import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.entities.chat.DialogInfo
@@ -69,8 +71,9 @@ class ChatDialogViewModel @Inject constructor(
                             val chats = it.id?.let { it1 ->
                                 chatInteractor.getMessagesWithOwnerInfo(
                                     currentUserId = it1,
-                                    dialogId,
-                                    50
+                                    dialogId = dialogId,
+                                    limit = 50,
+                                    lastMessageId = null,
                                 )
                             }?.let {
                                 currentDialogID = dialogId
