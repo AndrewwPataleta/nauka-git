@@ -14,6 +14,7 @@ import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatCreateMultiEvent
 import uddug.com.naukoteka.mvvm.chat.ChatCreateMultiViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
@@ -46,11 +47,9 @@ class ChatCreateMultiFragment : Fragment() {
             viewModel.events.collectLatest { event ->
                 when (event) {
                     is ChatCreateMultiEvent.GroupCreated -> {
-                        findNavController().previousBackStackEntry?.savedStateHandle?.set(
-                            "refreshChats",
-                            true
-                        )
-                        findNavController().popBackStack()
+                        findNavController().getBackStackEntry(R.id.chatListFragment)
+                            .savedStateHandle["refreshChats"] = true
+                        findNavController().popBackStack(R.id.chatListFragment, false)
                     }
                 }
             }
