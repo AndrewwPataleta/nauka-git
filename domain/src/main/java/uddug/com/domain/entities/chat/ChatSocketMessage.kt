@@ -10,5 +10,5 @@ data class ChatSocketMessage(
 
 data class FileDescriptor(
     val id: String,
-    val fileType: String
+    val fileType: Int
 )
