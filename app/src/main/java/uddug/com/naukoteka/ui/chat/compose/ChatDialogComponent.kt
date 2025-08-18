@@ -113,26 +113,21 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                             viewModel.onChatDetailClick()
                         }
                     )
-                    // LazyColumn будет использовать оставшееся пространство
-                    Box(
+                    // Список сообщений занимает всё оставшееся пространство экрана
+                    LazyColumn(
+                        state = scrollState,
                         modifier = Modifier
+                            .weight(1f)
                             .fillMaxWidth()
-                            .weight(1f) // Занимает оставшееся место
+                            .padding(vertical = 10.dp),
+                        reverseLayout = true,
                     ) {
-                        LazyColumn(
-                            state = scrollState,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 10.dp),
-                            reverseLayout = true,
-                        ) {
-                            items(messages) { message ->
-                                ChatMessageItem(
-                                    message,
-                                    isMine = message.isMine,
-                                    onLongPress = { selectedMessage = it }
-                                )
-                            }
+                        items(messages) { message ->
+                            ChatMessageItem(
+                                message,
+                                isMine = message.isMine,
+                                onLongPress = { selectedMessage = it }
+                            )
                         }
                     }
 
