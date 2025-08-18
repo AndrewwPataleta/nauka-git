@@ -10,14 +10,12 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import uddug.com.data.repositories.chat.ChatRepository
-import uddug.com.domain.entities.profile.UserProfileFullInfo
+import uddug.com.domain.interactors.chat.ChatInteractor
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatListViewModel @Inject constructor(
-    private val chatRepository: ChatRepository,
-
+    private val chatInteractor: ChatInteractor,
     ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ChatListUiState>(ChatListUiState.Loading)
@@ -34,7 +32,7 @@ class ChatListViewModel @Inject constructor(
 
             try {
                 viewModelScope.launch {
-                    val chats = chatRepository.getChats()
+                    val chats = chatInteractor.getChats()
                     println("chat count ${chats.size}")
                     _uiState.value = ChatListUiState.Success(chats)
                 }

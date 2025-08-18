@@ -14,8 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import uddug.com.data.repositories.chat.ChatRepository
-import uddug.com.data.repositories.user_profile.UserProfileRepositoryImpl
+import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
@@ -30,9 +29,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatDialogViewModel @Inject constructor(
     private val userRepository: UserProfileRepository,
-    private val chatRepository: ChatRepository,
+    private val chatInteractor: ChatInteractor,
     private val socketService: SocketService,
-
     ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ChatDialogUiState>(ChatDialogUiState.Loading)
@@ -66,10 +64,10 @@ class ChatDialogViewModel @Inject constructor(
                     .subscribe({
                         currentUser = it
                         viewModelScope.launch {
-                            val info = chatRepository.getDialogInfo(dialogId)
+                            val info = chatInteractor.getDialogInfo(dialogId)
                             currentDialogInfo = info
                             val chats = it.id?.let { it1 ->
-                                chatRepository.getMessagesWithOwnerInfo(
+                                chatInteractor.getMessagesWithOwnerInfo(
                                     currentUserId = it1,
                                     dialogId,
                                     50
