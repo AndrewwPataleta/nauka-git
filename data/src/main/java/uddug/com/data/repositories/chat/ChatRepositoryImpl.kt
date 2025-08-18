@@ -64,7 +64,16 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getDialogMedia(dialogId: Long): List<MediaMessage> {
+
+    override suspend fun getDialogMedia(
+        dialogId: Long,
+        category: Int,
+        limit: Int,
+        page: Int,
+        query: String?,
+        sd: String?,
+        ed: String?,
+    ): List<MediaMessage> {
         return try {
             apiService.getDialogMedia(dialogId, category = 1)
         } catch (e: Exception) {
