@@ -81,7 +81,7 @@ fun ChatCreateSingleScreen(
                                 avatarUrl = user.image?.path.orEmpty(),
                                 time = "",
                                 onMemberClick = {
-                                    user.id?.let { viewModel.onUserClick(it) }
+                                    user.id?.toLongOrNull()?.let { viewModel.onUserClick(it) }
                                 },
                                 showCheckbox = false,
                             )
@@ -125,7 +125,7 @@ fun ChatCreateSingleScreen(
                             avatarUrl = user.image?.path.orEmpty(),
                             time = "",
                             onMemberClick = {
-                                user.id?.let { viewModel.onUserClick(it) }
+                                user.id?.toLongOrNull()?.let { viewModel.onUserClick(it) }
                             },
                             showCheckbox = false,
                         )
