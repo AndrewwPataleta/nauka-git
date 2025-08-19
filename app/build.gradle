@@ -95,11 +95,6 @@ android {
     namespace 'uddug.com.naukoteka'
 }
 
-configurations {
-    cleanedAnnotations
-    implementation.exclude group: 'org.jetbrains', module: 'annotations'
-}
-
 dependencies {
     // Основные зависимости
     implementation presentation.kotlin
