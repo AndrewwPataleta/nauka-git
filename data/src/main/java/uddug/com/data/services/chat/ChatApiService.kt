@@ -58,9 +58,9 @@ interface ChatApiService {
         @Query("ed") ed: String? = null,
     ): List<MediaMessage>
 
-    @POST("chat/v1/dialogs/{userId}")
+    @POST("chat/v1/dialogs")
     suspend fun createDialog(
-        @Path("userId") userId: String,
+        @Body request: CreateDialogRequestDto,
     ): DialogInfoDto
 
     @POST("chat/v2/dialogs/create")

@@ -41,7 +41,11 @@ interface ChatRepository {
         ed: String?,
     ): List<MediaMessage>
 
-    suspend fun createDialog(userId: String): Long
+    suspend fun createDialog(
+        dialogName: String?,
+        userRoles: Map<String, String?>,
+        imageId: String? = null,
+    ): Long
 
     suspend fun createGroupDialog(
         dialogName: String?,
