@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.naukoteka.BuildConfig
-import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -163,10 +163,10 @@ fun ChatMessageItem(
                 }
 
                 Text(
-                    text = LocalDateTime.parse(
-                        message.createdAt.toString().substringBeforeLast('.'),
-                        DateTimeFormatter.ISO_LOCAL_DATE_TIME
-                    ).format(DateTimeFormatter.ofPattern("HH:mm")),
+                    text = DateTimeFormatter
+                        .ofPattern("HH:mm")
+                        .withZone(ZoneId.systemDefault())
+                        .format(message.createdAt),
                     fontSize = 10.sp,
                     color = if (isMine) Color.White.copy(alpha = 0.8f) else Color.Gray,
                     modifier = Modifier.align(Alignment.End)
