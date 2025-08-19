@@ -11,10 +11,8 @@ import androidx.core.content.ContextCompat
 import uddug.com.naukoteka.R
 import java.net.URLDecoder
 import java.net.URLEncoder
-import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
 private const val ENCODING_SYSTEM = "utf-8"
@@ -50,7 +48,8 @@ fun Context.launchCustomTabsByUrl(
 
 fun formatMessageTime(time: String): String {
     val messageDate = ZonedDateTime.parse(time, DateTimeFormatter.ISO_DATE_TIME)
-    val currentDate = ZonedDateTime.now(ZoneOffset.UTC)
+        .withZoneSameInstant(ZoneId.systemDefault())
+    val currentDate = ZonedDateTime.now(ZoneId.systemDefault())
 
     return when {
         messageDate.toLocalDate().isEqual(currentDate.toLocalDate()) -> {
