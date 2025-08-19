@@ -47,7 +47,8 @@ class ChatInteractor @Inject constructor(
     ): List<MediaMessage> =
         chatRepository.getDialogMedia(dialogId, category, limit, page, query, sd, ed)
 
-    suspend fun createDialog(userId: String): Long = chatRepository.createDialog(userId)
+    suspend fun createDialog(dialogName: String?, userRoles: Map<String, String?>): Long =
+        chatRepository.createDialog(dialogName = dialogName, userRoles = userRoles)
 
     suspend fun createGroupDialog(dialogName: String, userRoles: Map<String, String?>): Long =
         chatRepository.createGroupDialog(dialogName = dialogName, userRoles = userRoles)

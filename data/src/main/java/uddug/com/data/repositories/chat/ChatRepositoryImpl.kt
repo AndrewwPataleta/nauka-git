@@ -115,9 +115,18 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun createDialog(userId: String): Long {
+    override suspend fun createDialog(
+        dialogName: String?,
+        userRoles: Map<String, String?>,
+        imageId: String?,
+    ): Long {
         return try {
-            val dialog = apiService.createDialog(userId)
+            val request = CreateDialogRequestDto(
+                dialogName = dialogName,
+                dialogImage = imageId?.let { DialogImageRequestDto(it) },
+                userRoles = userRoles,
+            )
+            val dialog = apiService.createDialog(request)
             dialog.id
         } catch (e: Exception) {
             println("Error creating dialog: ${e.message}")

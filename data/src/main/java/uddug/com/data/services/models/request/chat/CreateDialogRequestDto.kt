@@ -9,5 +9,6 @@ data class CreateDialogRequestDto(
 )
 
 data class DialogImageRequestDto(
-    @SerializedName("id") val id: String
+    @SerializedName("id") val id: String,
+    @SerializedName("fileType") val fileType: Int = 0,
 )
