@@ -1,20 +1,26 @@
 package uddug.com.data.services.chat
 
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.response.chat.ChatDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.MessageDto
 import uddug.com.data.services.models.response.chat.UserStatusDto
-import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
-import uddug.com.domain.entities.chat.MessageChat
 
 interface ChatApiService {
 
     @GET("chat/v1/dialogs")
     suspend fun getDialogs(): ChatDto
+
+    @POST("chat/v1/dialogs")
+    suspend fun createDialog(
+        @Body request: CreateDialogRequestDto,
+    ): DialogInfoDto
 
     @GET("chat/v1/dialogs/{dialogId}")
     suspend fun getMessages(

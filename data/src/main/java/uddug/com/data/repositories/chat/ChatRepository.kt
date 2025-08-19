@@ -5,6 +5,7 @@ import uddug.com.data.mapper.mapChatDtoToDomain
 import uddug.com.data.mapper.mapUserStatusDtoToDomain
 
 import uddug.com.data.services.chat.ChatApiService
+import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
 import uddug.com.domain.entities.chat.Chat
@@ -25,6 +26,12 @@ interface ChatRepository {
     ): List<MessageChat>
 
     suspend fun getDialogInfo(dialogId: Long): DialogInfo
+    suspend fun createDialog(
+        firstUserId: String,
+        firstUserLastName: String,
+        secondUserId: String,
+        secondUserLastName: String,
+    ): DialogInfo
     suspend fun getMessagesWithOwnerInfo(
         currentUserId: String,
         dialogId: Long,
@@ -78,6 +85,28 @@ class ChatRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             println("Error getting dialog info: ${e.message}")
             throw e // or return default DialogInfo
+        }
+    }
+
+    override suspend fun createDialog(
+        firstUserId: String,
+        firstUserLastName: String,
+        secondUserId: String,
+        secondUserLastName: String,
+    ): DialogInfo {
+        return try {
+            val request = CreateDialogRequestDto(
+                dialogName = "$firstUserLastName $secondUserLastName",
+                userRoles = mapOf(
+                    firstUserId to "37:202",
+                    secondUserId to "37:203"
+                )
+            )
+            val dialogInfoDto = apiService.createDialog(request)
+            mapDialogInfoDtoToDomain(dialogInfoDto)
+        } catch (e: Exception) {
+            println("Error creating dialog: ${e.message}")
+            throw e
         }
     }
 
