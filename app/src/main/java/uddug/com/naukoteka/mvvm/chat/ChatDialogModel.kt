@@ -83,7 +83,7 @@ class ChatDialogViewModel @Inject constructor(
                                     limit = 50,
                                     lastMessageId = null,
                                 )
-                                currentDialogID = dialogId
+                            //    currentDialogID = dialogId
                                 val name: String = when {
                                     info.interlocutor != null -> info.interlocutor?.fullName.orEmpty()
                                     else -> info.name.orEmpty()

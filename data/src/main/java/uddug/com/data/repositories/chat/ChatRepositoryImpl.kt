@@ -115,7 +115,7 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun createDialog(userId: Long): Long {
+    override suspend fun createDialog(userId: String): Long {
         return try {
             val dialog = apiService.createDialog(userId)
             dialog.id

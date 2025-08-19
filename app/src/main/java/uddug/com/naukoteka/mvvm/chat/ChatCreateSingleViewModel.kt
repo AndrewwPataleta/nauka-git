@@ -86,7 +86,7 @@ class ChatCreateSingleViewModel @Inject constructor(
     fun onUserClick(userId: String) {
         viewModelScope.launch {
             try {
-                val id = userId.toLongOrNull() ?: throw IllegalArgumentException("Invalid user id")
+                val id = userId
                 val dialogId = chatInteractor.createDialog(id)
                 _events.emit(ChatCreateSingleEvent.OpenDialogDetail(dialogId))
             } catch (e: Exception) {

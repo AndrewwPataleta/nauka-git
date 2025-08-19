@@ -60,7 +60,7 @@ interface ChatApiService {
 
     @POST("chat/v1/dialogs/{userId}")
     suspend fun createDialog(
-        @Path("userId") userId: Long,
+        @Path("userId") userId: String,
     ): DialogInfoDto
 
     @POST("chat/v2/dialogs/create")
