@@ -19,6 +19,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
@@ -99,39 +100,17 @@ fun ChatCard(
                         )
                     }
                 }
-                if (avatarUrl.isNullOrEmpty()) {
-
-                    val initials = name.split(" ").let {
-                        (it.firstOrNull()?.firstOrNull()?.toString() ?: "") +
-                                (it.getOrNull(1)?.firstOrNull()?.toString() ?: "")
-                    }
-                    val gradientRes = getGradientForName(name)
-
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(
-                                color = Color(0xFF93DDFF), // Используем XML drawable
-                                shape = CircleShape
-                            )
-                    ) {
-
-                        Text(
-                            text = "Ч",
-                            style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold),
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-                } else {
-                    // Если URL не пустой, загружаем изображение
-                    AsyncImage(
-                        model = BuildConfig.IMAGE_SERVER_URL + avatarUrl,
-                        contentDescription = "Avatar",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                    )
-                }
+                AsyncImage(
+                    model = avatarUrl?.let { BuildConfig.IMAGE_SERVER_URL + it },
+                    contentDescription = "Avatar",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(id = R.drawable.ic_logo_naukoteka),
+                    error = painterResource(id = R.drawable.ic_logo_naukoteka),
+                    fallback = painterResource(id = R.drawable.ic_logo_naukoteka),
+                )
                 Spacer(modifier = Modifier.width(16.dp))
 
                 // Основной контент
