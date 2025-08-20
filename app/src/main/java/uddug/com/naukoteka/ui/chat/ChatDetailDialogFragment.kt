@@ -20,8 +20,6 @@ import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
-import uddug.com.naukoteka.R
-
 @AndroidEntryPoint
 class ChatDetailDialogFragment : Fragment() {
 
