@@ -158,6 +158,7 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                             image = state.chatImage,
                             isGroup = state.isGroup,
                             status = state.status,
+                            firstParticipantName = state.firstParticipantName,
                             onBackPressed = { onBackPressed() },
                             onDetailClick = {
                                 viewModel.onChatDetailClick()
