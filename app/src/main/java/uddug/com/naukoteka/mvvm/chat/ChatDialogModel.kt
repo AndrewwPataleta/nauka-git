@@ -83,7 +83,7 @@ class ChatDialogViewModel @Inject constructor(
                                     dialogId = dialogId,
                                     limit = 50,
                                     lastMessageId = null,
-                                )
+                                ).sortedBy { it.createdAt }
                             //    currentDialogID = dialogId
                                 val name: String = when {
                                     info.interlocutor != null -> info.interlocutor?.fullName.orEmpty()
@@ -155,7 +155,7 @@ class ChatDialogViewModel @Inject constructor(
                                         dialogId = dialogId,
                                         limit = 50,
                                         lastMessageId = null,
-                                    )
+                                    ).sortedBy { it.createdAt }
                                     val name = info.interlocutor?.fullName.orEmpty()
                                     val image = info.interlocutor?.image.orEmpty()
                                     val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
@@ -437,7 +437,7 @@ class ChatDialogViewModel @Inject constructor(
                 val currentState = _uiState.value
                 if (currentState is ChatDialogUiState.Success) {
                     val updatedChats = currentState.chats.toMutableList().apply {
-                        add(0,newMessage)
+                        add(newMessage)
                     }
                     _uiState.value = currentState.copy(chats = updatedChats)
                 }
