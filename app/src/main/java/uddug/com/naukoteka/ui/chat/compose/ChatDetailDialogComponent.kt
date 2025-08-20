@@ -82,6 +82,7 @@ fun ChatDetailDialogComponent(
     viewModel: ChatDialogDetailViewModel,
     onBackPressed: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onSearchClick: () -> Unit,
 ) {
     val scrollState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -102,7 +103,7 @@ fun ChatDetailDialogComponent(
                 },
                 actions = {
 
-                    androidx.compose.material.IconButton(onClick = { }) {
+                    androidx.compose.material.IconButton(onClick = { onSearchClick() }) {
                         androidx.compose.material.Icon(
                             painter = painterResource(id = R.drawable.ic_search_chat),
                             contentDescription = "Edit Icon",

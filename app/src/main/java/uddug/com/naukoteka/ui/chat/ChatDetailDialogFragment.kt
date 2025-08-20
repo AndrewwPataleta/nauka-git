@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -18,6 +19,7 @@ import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
+import uddug.com.naukoteka.R
 
 @AndroidEntryPoint
 class ChatDetailDialogFragment : Fragment() {
@@ -77,6 +79,9 @@ class ChatDetailDialogFragment : Fragment() {
                         },
                         onNavigateToProfile = {
                             viewModel.getCurrentUser()?.let { navigationView?.selectShowEditFragment(it) }
+                        },
+                        onSearchClick = {
+                            findNavController().navigate(R.id.chatDetailSearchFragment)
                         }
                     )
                 }
