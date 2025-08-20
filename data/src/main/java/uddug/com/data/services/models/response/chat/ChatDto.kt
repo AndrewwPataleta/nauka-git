@@ -79,7 +79,7 @@ data class MessageDto(
         type = MessageType.fromInt(type),
         files = files.map { it.toDomain() },
         ownerId = ownerId,
-        createdAt = Instant.now(),
+        createdAt = Instant.parse(createdAt),
         readCount = read,
         isMine = ownerId == currentUserId
     )

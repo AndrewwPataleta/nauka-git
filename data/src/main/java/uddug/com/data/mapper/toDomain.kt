@@ -14,9 +14,9 @@ fun MessageDto.toDomain(currentUserId: String): MessageChat = MessageChat(
     id = id,
     text = text,
     type = MessageType.fromInt(type),
-    files = listOf(),
+    files = files.map { it.toDomain() },
     ownerId = ownerId,
-    createdAt = Instant.now(),
+    createdAt = Instant.parse(createdAt),
     readCount = read,
     isMine = ownerId == currentUserId
 )
