@@ -74,8 +74,14 @@ class ChatDialogFragment : Fragment() {
             viewModel.events.collectLatest { state ->
                 when (state) {
                     is ChatDialogEvents.OpenChatProfileDetail -> {
+                        val isGroup = (state.dialogInfo.users?.size ?: 0) > 2
+                        val destination = if (isGroup) {
+                            R.id.chatGroupDetailFragment
+                        } else {
+                            R.id.chatDetailDialog
+                        }
                         findNavController().navigate(
-                            R.id.chatDetailDialog,
+                            destination,
                             args = Bundle().apply {
                                 putLong(DIALOG_ID, state.dialogId)
                                 putParcelable(DIALOG_DETAIL, state.dialogInfo)

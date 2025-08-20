@@ -24,6 +24,12 @@
         android:name="uddug.com.naukoteka.ui.chat.ChatDetailDialogFragment">
 
     </fragment>
+    <fragment
+        android:id="@+id/chatGroupDetailFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatGroupDetailFragment">
+
+    </fragment>
+
 
 
     <fragment
