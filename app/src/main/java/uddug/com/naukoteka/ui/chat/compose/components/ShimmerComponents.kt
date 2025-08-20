@@ -75,8 +75,8 @@ fun MessageListShimmer() {
             ) {
                 Box(
                     modifier = Modifier
-                        .width(200.dp)
-                        .height(60.dp)
+                        .width(100.dp)
+                        .height(30.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFFE0E0E0))
                         .shimmer(shimmer)
