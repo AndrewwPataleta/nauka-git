@@ -6,6 +6,9 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
@@ -27,8 +30,10 @@ fun ChatTabBar(
     selectedChats: Set<Long>,
     onChatSelect: (Long) -> Unit,
     onOpenFolderSettings: () -> Unit,
+    onChangeFolderOrder: () -> Unit,
 ) {
     var selectedTabIndex by remember { mutableStateOf(0) }
+    var showFolderMenu by remember { mutableStateOf(false) }
 
     val folders by viewModel.folders.collectAsState()
 
@@ -45,10 +50,7 @@ fun ChatTabBar(
                 TabRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White)
-                        .pointerInput(Unit) {
-                            detectTapGestures(onLongPress = { onOpenFolderSettings() })
-                        },
+                        .background(Color.White),
                     selectedTabIndex = selectedTabIndex,
                     indicator = { tabPositions ->
                         TabRowDefaults.Indicator(
@@ -59,38 +61,77 @@ fun ChatTabBar(
                     divider = {},
                 ) {
                     folders.forEachIndexed { index, folder ->
-                        Tab(
-                            modifier = Modifier.background(Color.White),
-                            selected = selectedTabIndex == index,
-                            onClick = {
-                                selectedTabIndex = index
-                                viewModel.onFolderSelected(folder.id)
-                            },
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = folder.name,
-                                        maxLines = 1,
-                                        style = TextStyle(
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (selectedTabIndex == index) Color.Black else Color(
-                                                0xFF8083A0
+                        Box {
+                            Tab(
+                                modifier = Modifier
+                                    .background(Color.White)
+                                    .let {
+                                        if (index == 0) {
+                                            it.pointerInput(Unit) {
+                                                detectTapGestures(onLongPress = { showFolderMenu = true })
+                                            }
+                                        } else {
+                                            it
+                                        }
+                                    },
+                                selected = selectedTabIndex == index,
+                                onClick = {
+                                    selectedTabIndex = index
+                                    viewModel.onFolderSelected(folder.id)
+                                },
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = folder.name,
+                                            maxLines = 1,
+                                            style = TextStyle(
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (selectedTabIndex == index) Color.Black else Color(
+                                                    0xFF8083A0
+                                                )
                                             )
                                         )
-                                    )
-                                    if (folder.unreadCount > 0) {
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Badge(
-                                            containerColor = Color(0xFF2E83D9),
-                                            contentColor = Color.White
-                                        ) {
-                                            Text(text = folder.unreadCount.toString(), fontSize = 10.sp)
+                                        if (folder.unreadCount > 0) {
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Badge(
+                                                containerColor = Color(0xFF2E83D9),
+                                                contentColor = Color.White
+                                            ) {
+                                                Text(text = folder.unreadCount.toString(), fontSize = 10.sp)
+                                            }
                                         }
                                     }
                                 }
+                            )
+                            if (index == 0) {
+                                DropdownMenu(
+                                    expanded = showFolderMenu,
+                                    onDismissRequest = { showFolderMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Настроить папки") },
+                                        leadingIcon = {
+                                            Icon(Icons.Filled.Folder, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            showFolderMenu = false
+                                            onOpenFolderSettings()
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Изменить порядок") },
+                                        leadingIcon = {
+                                            Icon(Icons.Filled.Sort, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            showFolderMenu = false
+                                            onChangeFolderOrder()
+                                        }
+                                    )
+                                }
                             }
-                        )
+                        }
                     }
                 }
             }
