@@ -251,6 +251,20 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    fun setReplyMessage(message: MessageChat) {
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(replyMessage = message)
+        }
+    }
+
+    fun clearReplyMessage() {
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(replyMessage = null)
+        }
+    }
+
     fun startSelection(messageId: Long) {
         _isSelectionMode.value = true
         _selectedMessages.value = setOf(messageId)
@@ -346,6 +360,7 @@ class ChatDialogViewModel @Inject constructor(
             Log.d("ChatViewModel", "Sending socket message: $message")
             socketService.sendMessage("message", message)
             clearAttachedFiles()
+            clearReplyMessage()
         }
     }
 
@@ -446,6 +461,7 @@ sealed class ChatDialogUiState {
         val currentMessage: String = "",
         val attachedFiles: List<File> = emptyList(),
         val status: String? = null,
+        val replyMessage: MessageChat? = null,
     ) : ChatDialogUiState()
 
     data class Error(val message: String) : ChatDialogUiState()
