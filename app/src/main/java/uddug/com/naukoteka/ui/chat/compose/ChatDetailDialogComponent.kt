@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -75,6 +74,7 @@ import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatDetailUiState
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
+import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailShimmer
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -134,9 +134,9 @@ fun ChatDetailDialogComponent(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.TopStart
                 ) {
-                    CircularProgressIndicator()
+                    ChatDetailShimmer()
                 }
             }
 

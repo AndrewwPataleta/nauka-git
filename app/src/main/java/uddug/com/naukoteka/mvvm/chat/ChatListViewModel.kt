@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.repositories.chat.ChatRepository
@@ -37,6 +38,7 @@ class ChatListViewModel @Inject constructor(
     val selectedChats: StateFlow<Set<Long>> = _selectedChats
 
     fun loadFolders() {
+        _uiState.value = ChatListUiState.Loading
         viewModelScope.launch {
             try {
                 val folderList = chatRepository.getFolders()
@@ -51,10 +53,13 @@ class ChatListViewModel @Inject constructor(
 
     fun loadChats(folderId: Long? = currentFolderId) {
         _uiState.value = ChatListUiState.Loading
+        val startTime = System.currentTimeMillis()
         viewModelScope.launch {
             try {
                 val chats = chatRepository.getChats(folderId)
                 currentFolderId = folderId
+                val elapsed = System.currentTimeMillis() - startTime
+                if (elapsed < 1500L) delay(1500L - elapsed)
                 _uiState.value = ChatListUiState.Success(chats)
             } catch (e: Exception) {
                 _uiState.value = ChatListUiState.Error(e.message ?: "Unknown error")
