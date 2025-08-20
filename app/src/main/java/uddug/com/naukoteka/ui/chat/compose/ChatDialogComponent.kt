@@ -166,6 +166,7 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                     ChatInputBar(
                         currentMessage = state.currentMessage,
                         attachedFiles = state.attachedFiles,
+                        replyMessage = state.replyMessage,
                         onMessageChange = { newMessage ->
                             viewModel.updateCurrentMessage(newMessage)
                         },
@@ -181,6 +182,9 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                         },
                         onRemoveFile = { file ->
                             viewModel.removeAttachedFile(file)
+                        },
+                        onCancelReply = {
+                            viewModel.clearReplyMessage()
                         }
                     )
                 }
@@ -193,6 +197,9 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                 onSelectMessage = {
                     viewModel.startSelection(message.id)
                     selectedMessage = null
+                },
+                onReply = { msg ->
+                    viewModel.setReplyMessage(msg)
                 }
             )
         }

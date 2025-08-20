@@ -30,6 +30,7 @@ fun MessageFunctionsBottomSheetDialog(
     message: MessageChat,
     onDismissRequest: () -> Unit,
     onSelectMessage: () -> Unit,
+    onReply: (MessageChat) -> Unit,
     viewModel: MessageFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -51,7 +52,7 @@ fun MessageFunctionsBottomSheetDialog(
             )
             Spacer(modifier = Modifier.height(10.dp))
             val items = listOf(
-                R.string.chat_message_reply to { viewModel.reply(message.id) },
+                R.string.chat_message_reply to { onReply(message) },
                 R.string.chat_message_forward to { viewModel.forward(message.id) },
                 R.string.chat_message_copy to { viewModel.copy(message.id) },
                 R.string.chat_message_select to {

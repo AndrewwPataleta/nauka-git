@@ -22,8 +22,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import uddug.com.naukoteka.R
+import uddug.com.domain.entities.chat.MessageChat
 import java.io.File
 
 
@@ -32,10 +35,12 @@ fun ChatInputBar(
     modifier: Modifier = Modifier,
     currentMessage: String,
     attachedFiles: List<File>,
+    replyMessage: MessageChat?,
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
     onAttachClick: () -> Unit,
     onRemoveFile: (File) -> Unit,
+    onCancelReply: () -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -48,6 +53,38 @@ fun ChatInputBar(
                 .background(Color(0xFFEAEAF2))
                 .height(1.dp)
         )
+
+        replyMessage?.let { reply ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = reply.ownerName ?: "",
+                        color = Color(0XFF8083A0),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        text = reply.text.orEmpty(),
+                        color = Color(0XFF8083A0),
+                        fontSize = 12.sp,
+                        maxLines = 1
+                    )
+                }
+                IconButton(onClick = onCancelReply) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Cancel reply",
+                        tint = Color(0XFF8083A0)
+                    )
+                }
+            }
+        }
 
         if (attachedFiles.isNotEmpty()) {
             LazyRow(
