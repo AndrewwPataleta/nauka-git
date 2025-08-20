@@ -43,10 +43,13 @@ import uddug.com.naukoteka.R
 import uddug.com.naukoteka.ui.chat.compose.components.ChatInputBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageItem
 import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
+import uddug.com.naukoteka.ui.chat.compose.components.AttachOptionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
 import uddug.com.naukoteka.ui.chat.compose.components.MessageListShimmer
 import uddug.com.domain.entities.chat.MessageChat
 import java.io.File
+
+private enum class AttachmentPickerType { MEDIA, FILE }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -59,6 +62,8 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
     var selectedMessage by remember { mutableStateOf<MessageChat?>(null) }
     val isSelectionMode by viewModel.isSelectionMode.collectAsState()
     val selectedMessages by viewModel.selectedMessages.collectAsState()
+    var showAttachmentSheet by remember { mutableStateOf(false) }
+    var pendingPickerType by remember { mutableStateOf<AttachmentPickerType?>(null) }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
@@ -73,8 +78,15 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
         ActivityResultContracts.RequestPermission()
     ) { granted: Boolean ->
         if (granted) {
-            filePickerLauncher.launch(arrayOf("*/*"))
+            when (pendingPickerType) {
+                AttachmentPickerType.MEDIA ->
+                    filePickerLauncher.launch(arrayOf("image/*", "video/*"))
+                AttachmentPickerType.FILE ->
+                    filePickerLauncher.launch(arrayOf("*/*"))
+                null -> {}
+            }
         }
+        pendingPickerType = null
     }
 
     Box(
@@ -178,7 +190,7 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                             }
                         },
                         onAttachClick = {
-                            permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                            showAttachmentSheet = true
                         },
                         onRemoveFile = { file ->
                             viewModel.removeAttachedFile(file)
@@ -189,6 +201,23 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                     )
                 }
             }
+        }
+        if (showAttachmentSheet) {
+            AttachOptionsBottomSheetDialog(
+                onDismissRequest = { showAttachmentSheet = false },
+                onMediaClick = {
+                    pendingPickerType = AttachmentPickerType.MEDIA
+                    permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    showAttachmentSheet = false
+                },
+                onFileClick = {
+                    pendingPickerType = AttachmentPickerType.FILE
+                    permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    showAttachmentSheet = false
+                },
+                onPollClick = { showAttachmentSheet = false },
+                onContactClick = { showAttachmentSheet = false }
+            )
         }
         selectedMessage?.let { message ->
             MessageFunctionsBottomSheetDialog(
