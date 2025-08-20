@@ -87,7 +87,7 @@ fun ChatTabBar(
                 }
 
                 ChatListUiState.Loading -> {
-
+                    ChatListShimmer()
                 }
 
                 is ChatListUiState.Success -> {
