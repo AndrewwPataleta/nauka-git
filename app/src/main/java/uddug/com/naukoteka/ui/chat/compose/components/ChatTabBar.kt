@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.mvvm.chat.ChatListUiState
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
@@ -28,7 +29,6 @@ fun ChatTabBar(
     var selectedTabIndex by remember { mutableStateOf(0) }
 
     val folders by viewModel.folders.collectAsState()
-    val tabTitles = folders.map { it.name }
 
     val uiState by viewModel.uiState.collectAsState()
 
@@ -39,7 +39,7 @@ fun ChatTabBar(
                 .background(Color.White),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (tabTitles.isNotEmpty()) {
+            if (folders.isNotEmpty()) {
                 TabRow(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -53,18 +53,18 @@ fun ChatTabBar(
                     },
                     divider = {},
                 ) {
-                    tabTitles.forEachIndexed { index, title ->
+                    folders.forEachIndexed { index, folder ->
                         Tab(
                             modifier = Modifier.background(Color.White),
                             selected = selectedTabIndex == index,
                             onClick = {
                                 selectedTabIndex = index
-                                viewModel.onFolderSelected(folders[index].id)
+                                viewModel.onFolderSelected(folder.id)
                             },
                             text = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = title,
+                                        text = folder.name,
                                         maxLines = 1,
                                         style = TextStyle(
                                             fontSize = 14.sp,
@@ -74,6 +74,15 @@ fun ChatTabBar(
                                             )
                                         )
                                     )
+                                    if (folder.unreadCount > 0) {
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Badge(
+                                            containerColor = Color(0xFF2E83D9),
+                                            contentColor = Color.White
+                                        ) {
+                                            Text(text = folder.unreadCount.toString(), fontSize = 10.sp)
+                                        }
+                                    }
                                 }
                             }
                         )
