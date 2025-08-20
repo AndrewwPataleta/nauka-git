@@ -20,6 +20,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
+import uddug.com.naukoteka.R
 
 @AndroidEntryPoint
 class ChatDetailDialogFragment : Fragment() {
@@ -79,6 +80,9 @@ class ChatDetailDialogFragment : Fragment() {
                         },
                         onNavigateToProfile = {
                             viewModel.getCurrentUser()?.let { navigationView?.selectShowEditFragment(it) }
+                        },
+                        onSearchClick = {
+                            findNavController().navigate(R.id.chatDetailSearchFragment)
                         },
                         onChatDeleted = {
                             findNavController().popBackStack(R.id.chatListFragment, false)
