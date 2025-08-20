@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CheckboxDefaults
@@ -56,10 +57,11 @@ fun ChatMessageItem(
             .padding(vertical = 4.dp)
             .animateContentSize(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
+        horizontalArrangement = Arrangement.Start
     ) {
-        if (!isMine && selectionMode) {
+        if (selectionMode) {
             Checkbox(
+                modifier = Modifier.clip(CircleShape),
                 checked = isSelected,
                 onCheckedChange = { onSelectChange() },
                 colors = CheckboxDefaults.colors(
@@ -72,7 +74,7 @@ fun ChatMessageItem(
         }
         Row(
             modifier = Modifier
-                .weight(1f, fill = false)
+                .weight(1f)
                 .combinedClickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -173,18 +175,6 @@ fun ChatMessageItem(
                 )
             }
 
-        }
-        if (isMine && selectionMode) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = { onSelectChange() },
-                colors = CheckboxDefaults.colors(
-                    checkedColor = Color(0xFF2E83D9),
-                    uncheckedColor = Color(0xFF2E83D9),
-                    checkmarkColor = Color.White
-                )
-            )
         }
     }
 }
