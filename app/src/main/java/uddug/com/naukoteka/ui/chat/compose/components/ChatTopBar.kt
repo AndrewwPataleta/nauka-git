@@ -38,6 +38,7 @@ fun ChatTopBar(
     image: String,
     isGroup: Boolean,
     status: String?,
+    firstParticipantName: String? = null,
     onDetailClick: () -> Unit,
     onBackPressed: () -> Unit,
 ) {
@@ -68,7 +69,11 @@ fun ChatTopBar(
                             }
                     )
                 } else {
-                    val firstLetter = name.firstOrNull()?.uppercase() ?: ""
+                    val firstLetter = if (isGroup) {
+                        firstParticipantName?.firstOrNull()?.uppercase() ?: ""
+                    } else {
+                        name.firstOrNull()?.uppercase() ?: ""
+                    }
                     Box(
                         modifier = Modifier
                             .size(36.dp)

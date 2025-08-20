@@ -93,6 +93,7 @@ class ChatDialogViewModel @Inject constructor(
                                     info.interlocutor != null -> info.interlocutor?.image.orEmpty()
                                     else -> info.name.orEmpty()
                                 }
+                                val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
                                 var status: String? = null
                                 val isGroup = (info.users?.size ?: 0) > 2
                                 if (!isGroup) {
@@ -115,6 +116,7 @@ class ChatDialogViewModel @Inject constructor(
                                     chatName = name,
                                     chatImage = image,
                                     isGroup = isGroup,
+                                    firstParticipantName = firstParticipantName,
                                     status = status
                                 )
                                 markMessagesRead(dialogId, messages)
@@ -156,6 +158,7 @@ class ChatDialogViewModel @Inject constructor(
                                     )
                                     val name = info.interlocutor?.fullName.orEmpty()
                                     val image = info.interlocutor?.image.orEmpty()
+                                    val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
                                     var status: String? = null
                                     val isGroup = (info.users?.size ?: 0) > 2
                                     if (!isGroup) {
@@ -178,6 +181,7 @@ class ChatDialogViewModel @Inject constructor(
                                         chatName = name,
                                         chatImage = image,
                                         isGroup = isGroup,
+                                        firstParticipantName = firstParticipantName,
                                         status = status
                                     )
                                     markMessagesRead(dialogId, messages)
@@ -185,11 +189,13 @@ class ChatDialogViewModel @Inject constructor(
                             } else {
                                 val name = info.interlocutor?.fullName.orEmpty()
                                 val image = info.interlocutor?.image.orEmpty()
+                                val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
                                 _uiState.value = ChatDialogUiState.Success(
                                     chats = emptyList(),
                                     chatName = name,
                                     chatImage = image,
                                     isGroup = false,
+                                    firstParticipantName = firstParticipantName,
                                     status = null
                                 )
                             }
@@ -458,6 +464,7 @@ sealed class ChatDialogUiState {
         val chatName: String,
         val chatImage: String,
         val isGroup: Boolean,
+        val firstParticipantName: String = "",
         val currentMessage: String = "",
         val attachedFiles: List<File> = emptyList(),
         val status: String? = null,
