@@ -103,7 +103,17 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
 
             when (uiState) {
                 is ChatDialogUiState.Loading -> {
-                    MessageListShimmer()
+                    ChatTopBar(
+                        name = "",
+                        image = "",
+                        isGroup = false,
+                        status = null,
+                        onBackPressed = { onBackPressed() },
+                        onDetailClick = {}
+                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        MessageListShimmer()
+                    }
                 }
 
                 is ChatDialogUiState.Error -> {
