@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,11 +27,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import uddug.com.naukoteka.BuildConfig
+import uddug.com.naukoteka.R
 
 @Composable
 fun ChatTopBar(
@@ -40,6 +43,7 @@ fun ChatTopBar(
     status: String?,
     firstParticipantName: String? = null,
     onDetailClick: () -> Unit,
+    onSearchClick: () -> Unit,
     onBackPressed: () -> Unit,
 ) {
     Surface(elevation = 4.dp) {
@@ -69,30 +73,43 @@ fun ChatTopBar(
                             }
                     )
                 } else {
-                    val firstLetter = if (isGroup) {
-                        firstParticipantName?.firstOrNull()?.uppercase() ?: ""
-                    } else {
-                        name.firstOrNull()?.uppercase() ?: ""
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF2E83D9))
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {
-                                onDetailClick()
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = firstLetter,
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                    if (isGroup) {
+                        Image(
+                            painter = painterResource(id = R.drawable.mock_avatar),
+                            contentDescription = "image",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .size(36.dp)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    onDetailClick()
+                                }
                         )
+                    } else {
+                        val firstLetter = name.firstOrNull()?.uppercase() ?: ""
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF2E83D9))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    onDetailClick()
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = firstLetter,
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
                 Column(
@@ -121,6 +138,14 @@ fun ChatTopBar(
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
+
+                IconButton(onClick = { onSearchClick() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_search_chat),
+                        contentDescription = "Search",
+                        tint = Color(0xFF2E83D9)
+                    )
+                }
 
                 IconButton(onClick = { }) {
                     Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color(0xFF2E83D9))

@@ -55,7 +55,11 @@ private enum class AttachmentPickerType { MEDIA, FILE, CONTACT }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Unit) {
+fun ChatDialogComponent(
+    viewModel: ChatDialogViewModel,
+    onBackPressed: () -> Unit,
+    onSearchClick: () -> Unit,
+) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -123,8 +127,9 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                         isGroup = state.isGroup,
                         status = state.status,
                         firstParticipantName = state.firstParticipantName,
-                        onBackPressed = { onBackPressed() },
                         onDetailClick = {},
+                        onSearchClick = onSearchClick,
+                        onBackPressed = { onBackPressed() },
                     )
                     Box(modifier = Modifier.weight(1f)) {
                         MessageListShimmer()
@@ -173,10 +178,11 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                             isGroup = state.isGroup,
                             status = state.status,
                             firstParticipantName = state.firstParticipantName,
-                            onBackPressed = { onBackPressed() },
                             onDetailClick = {
                                 viewModel.onChatDetailClick()
-                            }
+                            },
+                            onSearchClick = onSearchClick,
+                            onBackPressed = { onBackPressed() },
                         )
                     }
                     // Список сообщений занимает всё оставшееся пространство экрана

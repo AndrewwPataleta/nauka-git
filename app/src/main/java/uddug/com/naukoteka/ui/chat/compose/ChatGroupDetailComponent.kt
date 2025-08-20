@@ -123,7 +123,7 @@ fun ChatGroupDetailComponent(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "${state.participants.size} участников",
+                            text = state.participants.joinToString(", ") { it.user.fullName.orEmpty() },
                             fontSize = 14.sp,
                             color = Color.Gray,
                             modifier = Modifier.fillMaxWidth(),
@@ -251,7 +251,7 @@ fun ChatGroupDetailComponent(
                             )
                         }
                     }
-                    androidx.compose.material3.Divider()
+                    androidx.compose.material3.Divider(color = Color(0xFFEAEAF2))
                     when (selectedTabIndex) {
                         0 -> ParticipantsContent(state.participants)
                         1 -> MediaContent(state.media)
@@ -282,25 +282,23 @@ fun ParticipantsContent(users: List<Participant>) {
                     contentScale = ContentScale.Crop
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.Start) {
                     Text(
                         text = participant.user.fullName.orEmpty(),
                         fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        textAlign = TextAlign.Start
                     )
                     participant.status?.let {
                         Text(
                             text = it,
                             fontSize = 12.sp,
                             color = Color.Gray,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
+                            textAlign = TextAlign.Start
                         )
                     }
                 }
             }
-            androidx.compose.material3.Divider()
+            androidx.compose.material3.Divider(color = Color(0xFFEAEAF2))
         }
     }
 }
