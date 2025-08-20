@@ -28,6 +28,7 @@ import uddug.com.naukoteka.ui.chat.di.SocketService
 import java.time.Instant
 import java.time.Duration
 import java.io.File
+import uddug.com.naukoteka.mvvm.chat.ContactInfo
 import javax.inject.Inject
 
 @HiltViewModel
@@ -54,6 +55,8 @@ class ChatDialogViewModel @Inject constructor(
     private var currentDialogInfo: DialogInfo? = null
 
     private var attachedFiles: MutableList<File> = mutableListOf()
+
+    private var attachedContact: ContactInfo? = null
 
     private var currentUser: UserProfileFullInfo? = null
 
@@ -273,6 +276,22 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    fun attachContact(contact: ContactInfo) {
+        attachedContact = contact
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(attachedContact = contact)
+        }
+    }
+
+    fun clearAttachedContact() {
+        attachedContact = null
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(attachedContact = null)
+        }
+    }
+
     fun setReplyMessage(message: MessageChat) {
         val currentState = _uiState.value
         if (currentState is ChatDialogUiState.Success) {
@@ -382,6 +401,7 @@ class ChatDialogViewModel @Inject constructor(
             Log.d("ChatViewModel", "Sending socket message: $message")
             socketService.sendMessage("message", message)
             clearAttachedFiles()
+            clearAttachedContact()
             clearReplyMessage()
         }
     }
@@ -492,6 +512,7 @@ sealed class ChatDialogUiState {
         val attachedFiles: List<File> = emptyList(),
         val status: String? = null,
         val replyMessage: MessageChat? = null,
+        val attachedContact: ContactInfo? = null,
     ) : ChatDialogUiState()
 
     data class Error(val message: String) : ChatDialogUiState()

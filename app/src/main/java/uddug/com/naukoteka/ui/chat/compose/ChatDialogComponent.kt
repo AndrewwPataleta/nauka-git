@@ -4,6 +4,7 @@ package uddug.com.naukoteka.ui.chat.compose
 import android.Manifest
 import android.content.Context
 import android.net.Uri
+import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
 import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
+import uddug.com.naukoteka.mvvm.chat.ContactInfo
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.ui.chat.compose.components.ChatInputBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageItem
@@ -49,7 +51,7 @@ import uddug.com.naukoteka.ui.chat.compose.components.MessageListShimmer
 import uddug.com.domain.entities.chat.MessageChat
 import java.io.File
 
-private enum class AttachmentPickerType { MEDIA, FILE }
+private enum class AttachmentPickerType { MEDIA, FILE, CONTACT }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -74,6 +76,16 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
         }
     }
 
+    val contactPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickContact()
+    ) { uri: Uri? ->
+        uri?.let {
+            getContactInfo(context, it)?.let { info ->
+                viewModel.attachContact(info)
+            }
+        }
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted: Boolean ->
@@ -83,6 +95,8 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                     filePickerLauncher.launch(arrayOf("image/*", "video/*"))
                 AttachmentPickerType.FILE ->
                     filePickerLauncher.launch(arrayOf("*/*"))
+                AttachmentPickerType.CONTACT ->
+                    contactPickerLauncher.launch(null)
                 null -> {}
             }
         }
@@ -227,7 +241,11 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                     showAttachmentSheet = false
                 },
                 onPollClick = { showAttachmentSheet = false },
-                onContactClick = { showAttachmentSheet = false }
+                onContactClick = {
+                    pendingPickerType = AttachmentPickerType.CONTACT
+                    permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                    showAttachmentSheet = false
+                }
             )
         }
         selectedMessage?.let { message ->
@@ -259,4 +277,33 @@ private fun uriToFile(context: Context, uri: Uri): File? {
     } catch (e: Exception) {
         null
     }
+}
+
+private fun getContactInfo(context: Context, uri: Uri): ContactInfo? {
+    val projection = arrayOf(
+        ContactsContract.Contacts._ID,
+        ContactsContract.Contacts.DISPLAY_NAME
+    )
+    val cursor = context.contentResolver.query(uri, projection, null, null, null)
+    cursor?.use {
+        if (it.moveToFirst()) {
+            val id = it.getString(it.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
+            val name = it.getString(it.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME))
+            var phone = ""
+            val phoneCursor = context.contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                arrayOf(id),
+                null
+            )
+            phoneCursor?.use { pc ->
+                if (pc.moveToFirst()) {
+                    phone = pc.getString(pc.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                }
+            }
+            return ContactInfo(name = name, phone = phone)
+        }
+    }
+    return null
 }
