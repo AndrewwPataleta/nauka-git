@@ -374,5 +374,7 @@
     <string name="find_chat_message">Поиск чатов и сообщений</string>
    <string name="create_group_chat">Создать групповой чат</string>
     <string name="subs">Подписки</string>
+    <string name="chat_empty_title">Здесь еще ничего нет</string>
+    <string name="chat_empty_description">Напишите сообщение, чтобы переписка сохранилась в списке чатов</string>
 
 </resources>
