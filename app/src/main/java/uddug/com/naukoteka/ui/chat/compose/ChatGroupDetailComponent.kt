@@ -41,6 +41,7 @@ import uddug.com.naukoteka.mvvm.chat.Participant
 fun ChatGroupDetailComponent(
     viewModel: ChatGroupDetailViewModel,
     onBackPressed: () -> Unit,
+    onSearchClick: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
@@ -52,7 +53,7 @@ fun ChatGroupDetailComponent(
                     Text(text = "Информация", fontSize = 20.sp, color = Color.Black)
                 },
                 actions = {
-                    androidx.compose.material.IconButton(onClick = { }) {
+                    androidx.compose.material.IconButton(onClick = { onSearchClick() }) {
                         androidx.compose.material.Icon(
                             painter = painterResource(id = R.drawable.ic_search_chat),
                             contentDescription = "Search Icon",
