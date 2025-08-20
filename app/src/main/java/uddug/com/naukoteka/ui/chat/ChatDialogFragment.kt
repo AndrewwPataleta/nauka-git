@@ -47,12 +47,19 @@ class ChatDialogFragment : Fragment() {
 
     companion object {
         const val DIALOG_ID = "DIALOG_ID"
+        const val INTERLOCUTOR_ID = "INTERLOCUTOR_ID"
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupObservers()
-        viewModel.loadMessages(arguments?.getLong(DIALOG_ID) ?: 0)
+        val dialogId = arguments?.getLong(DIALOG_ID) ?: 0
+        val peerId = arguments?.getString(INTERLOCUTOR_ID)
+        if (dialogId != 0L) {
+            viewModel.loadMessages(dialogId)
+        } else if (!peerId.isNullOrEmpty()) {
+            viewModel.loadMessagesByPeer(peerId)
+        }
     }
 
     private fun setupObservers() {

@@ -47,6 +47,11 @@ interface ChatApiService {
         @Path("dialogId") dialogId: Long,
     ): DialogInfoDto
 
+    @GET("chat/v1/dialogs/info/by-peer/{interlocutorId}")
+    suspend fun getDialogInfoByPeer(
+        @Path("interlocutorId") interlocutorId: String,
+    ): DialogInfoDto
+
     @GET("chat/v1/dialogs/media/{dialogId}")
     suspend fun getDialogMedia(
         @Path("dialogId") dialogId: Long,
