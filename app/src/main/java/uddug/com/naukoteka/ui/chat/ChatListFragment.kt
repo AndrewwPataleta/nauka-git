@@ -122,6 +122,9 @@ class ChatListFragment : Fragment() {
                                     putLong(ChatDetailDialogFragment.DIALOG_ID, dialogId)
                                 }
                             )
+                        },
+                        onFolderSettings = {
+                            findNavController().navigate(R.id.chatFolderSettingsFragment)
                         }
                     )
                 }
