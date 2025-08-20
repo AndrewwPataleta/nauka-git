@@ -2,6 +2,7 @@ package uddug.com.naukoteka.ui.chat.compose.components
 
 import ChatCard
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +26,7 @@ fun ChatTabBar(
     isSelectionMode: Boolean,
     selectedChats: Set<Long>,
     onChatSelect: (Long) -> Unit,
+    onOpenFolderSettings: () -> Unit,
 ) {
     var selectedTabIndex by remember { mutableStateOf(0) }
 
@@ -43,7 +45,10 @@ fun ChatTabBar(
                 TabRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White),
+                        .background(Color.White)
+                        .pointerInput(Unit) {
+                            detectTapGestures(onLongPress = { onOpenFolderSettings() })
+                        },
                     selectedTabIndex = selectedTabIndex,
                     indicator = { tabPositions ->
                         TabRowDefaults.Indicator(

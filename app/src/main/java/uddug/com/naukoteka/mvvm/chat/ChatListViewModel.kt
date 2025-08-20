@@ -66,6 +66,17 @@ class ChatListViewModel @Inject constructor(
         loadChats(currentFolderId)
     }
 
+    fun reorderFolders(fromIndex: Int, toIndex: Int) {
+        _folders.update { current ->
+            val mutable = current.toMutableList()
+            if (fromIndex in mutable.indices && toIndex in mutable.indices) {
+                val item = mutable.removeAt(fromIndex)
+                mutable.add(if (toIndex > fromIndex) toIndex - 1 else toIndex, item)
+            }
+            mutable
+        }
+    }
+
     fun updateDialogNotifications(dialogId: Long, disabled: Boolean) {
         viewModelScope.launch {
             try {
