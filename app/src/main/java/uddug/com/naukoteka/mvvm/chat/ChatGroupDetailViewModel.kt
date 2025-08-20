@@ -59,10 +59,21 @@ class ChatGroupDetailViewModel @Inject constructor(
                     sd = null,
                     ed = null,
                 )
+                val users = dialogInfo.users.orEmpty()
+                val userIds = users.mapNotNull { it.userId }
+                val statuses = if (userIds.isNotEmpty()) chatInteractor.getUsersStatus(userIds) else emptyList()
+                val statusMap = statuses.associateBy { it.userId }
+                val participants = users.map { user ->
+                    val status = statusMap[user.userId]
+                    val statusText = status?.let {
+                        if (it.isOnline) "Сейчас онлайн" else it.lastSeen?.let { ls -> formatLastSeen(ls) }
+                    }
+                    Participant(user, statusText)
+                }
                 _uiState.value = ChatGroupDetailUiState.Success(
                     name = dialogInfo.name.orEmpty(),
                     image = dialogInfo.dialogImage?.path,
-                    participants = dialogInfo.users.orEmpty(),
+                    participants = participants,
                     media = media,
                     files = files,
                     dialogId = dialogInfo.id,
@@ -79,11 +90,35 @@ sealed class ChatGroupDetailUiState {
     data class Success(
         val name: String,
         val image: String?,
-        val participants: List<User>,
+        val participants: List<Participant>,
         val media: List<MediaMessage>,
         val files: List<MediaMessage>,
         val dialogId: Long,
     ) : ChatGroupDetailUiState()
 
     data class Error(val message: String) : ChatGroupDetailUiState()
+}
+
+data class Participant(
+    val user: User,
+    val status: String?
+)
+
+private fun formatLastSeen(lastSeen: String): String {
+    return try {
+        val instant = java.time.Instant.parse(lastSeen)
+        val duration = java.time.Duration.between(instant, java.time.Instant.now())
+        val minutes = duration.toMinutes()
+        val hours = duration.toHours()
+        val days = duration.toDays()
+        val weeks = days / 7
+        when {
+            minutes < 60 -> "был ${minutes} мин. назад"
+            hours < 24 -> "был ${hours} ч. назад"
+            days < 7 -> "был ${days} д. назад"
+            else -> "был ${weeks} нед. назад"
+        }
+    } catch (e: Exception) {
+        ""
+    }
 }
