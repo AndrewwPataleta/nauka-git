@@ -101,15 +101,16 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
         ) {
 
 
-            when (uiState) {
+            when (val state = uiState) {
                 is ChatDialogUiState.Loading -> {
                     ChatTopBar(
-                        name = "",
-                        image = "",
-                        isGroup = false,
-                        status = null,
+                        name = state.chatName,
+                        image = state.chatImage,
+                        isGroup = state.isGroup,
+                        status = state.status,
+                        firstParticipantName = state.firstParticipantName,
                         onBackPressed = { onBackPressed() },
-                        onDetailClick = {}
+                        onDetailClick = {},
                     )
                     Box(modifier = Modifier.weight(1f)) {
                         MessageListShimmer()
@@ -117,14 +118,13 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
                 }
 
                 is ChatDialogUiState.Error -> {
-                    val error = (uiState as ChatDialogUiState.Error).message
+                    val error = state.message
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(text = error, color = Color.Red)
                     }
                 }
 
                 is ChatDialogUiState.Success -> {
-                    val state = uiState as ChatDialogUiState.Success
                     val messages = state.chats
                     if (isSelectionMode) {
                         TopAppBar(
