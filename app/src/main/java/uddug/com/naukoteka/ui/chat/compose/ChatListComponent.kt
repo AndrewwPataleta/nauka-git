@@ -28,6 +28,7 @@ fun ChatListComponent(
     onCreateChatClick: () -> Unit,
     onShowAttachments: (Long) -> Unit,
     onFolderSettings: () -> Unit,
+    onChangeFolderOrder: () -> Unit,
 ) {
     var selectedDialogId by remember { mutableStateOf<Long?>(null) }
     val isSelectionMode by viewModel.isSelectionMode.collectAsState()
@@ -60,7 +61,8 @@ fun ChatListComponent(
             isSelectionMode = isSelectionMode,
             selectedChats = selectedChats,
             onChatSelect = { viewModel.toggleChatSelection(it) },
-            onOpenFolderSettings = onFolderSettings
+            onOpenFolderSettings = onFolderSettings,
+            onChangeFolderOrder = onChangeFolderOrder
         )
     }
 
