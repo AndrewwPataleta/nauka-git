@@ -3,6 +3,9 @@ package uddug.com.naukoteka.mvvm.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import uddug.com.domain.repositories.chat.ChatRepository
 import javax.inject.Inject
@@ -11,6 +14,9 @@ import javax.inject.Inject
 class ChatFunctionsViewModel @Inject constructor(
     private val chatRepository: ChatRepository
 ) : ViewModel() {
+
+    private val _events = MutableSharedFlow<ChatFunctionsEvent>()
+    val events: SharedFlow<ChatFunctionsEvent> = _events.asSharedFlow()
 
     fun markUnread(dialogId: Long) {
         viewModelScope.launch {
@@ -80,9 +86,14 @@ class ChatFunctionsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 chatRepository.deleteDialog(dialogId)
+                _events.emit(ChatFunctionsEvent.ChatDeleted)
             } catch (e: Exception) {
                 // handle error if needed
             }
         }
     }
+}
+
+sealed class ChatFunctionsEvent {
+    data object ChatDeleted : ChatFunctionsEvent()
 }

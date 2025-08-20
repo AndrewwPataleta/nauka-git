@@ -82,6 +82,7 @@ fun ChatDetailDialogComponent(
     viewModel: ChatDialogDetailViewModel,
     onBackPressed: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onChatDeleted: () -> Unit,
 ) {
     val scrollState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -349,6 +350,7 @@ fun ChatDetailDialogComponent(
                             dialogId = state.dialogId,
                             onNavigateToProfile = onNavigateToProfile,
                             onDismissRequest = { showMoreDialog = false },
+                            onChatDeleted = onChatDeleted,
                         )
                     }
                 }
