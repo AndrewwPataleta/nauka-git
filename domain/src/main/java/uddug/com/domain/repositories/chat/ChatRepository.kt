@@ -31,6 +31,8 @@ interface ChatRepository {
 
     suspend fun getDialogInfo(dialogId: Long): DialogInfo
 
+    suspend fun getDialogInfoByPeer(interlocutorId: String): DialogInfo
+
     suspend fun getDialogMedia(
         dialogId: Long,
         category: Int,

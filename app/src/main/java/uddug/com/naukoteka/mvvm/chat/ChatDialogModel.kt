@@ -76,6 +76,7 @@ class ChatDialogViewModel @Inject constructor(
                         viewModelScope.launch {
                             val info = chatInteractor.getDialogInfo(dialogId)
                             currentDialogInfo = info
+                            currentDialogID = dialogId
                             it.id?.let { currentUserId ->
                                 val messages = chatInteractor.getMessagesWithOwnerInfo(
                                     currentUserId = currentUserId,
@@ -129,6 +130,78 @@ class ChatDialogViewModel @Inject constructor(
                 _uiState.value = ChatDialogUiState.Error(e.message ?: "Unknown error")
             }
 
+        }
+    }
+
+    @SuppressLint("CheckResult")
+    fun loadMessagesByPeer(interlocutorId: String) {
+        _uiState.value = ChatDialogUiState.Loading
+        viewModelScope.launch {
+            try {
+                userRepository.getProfileInfo().subscribeOn(Schedulers.io())
+                    .subscribe({ user ->
+                        currentUser = user
+                        viewModelScope.launch {
+                            val info = chatInteractor.getDialogInfoByPeer(interlocutorId)
+                            currentDialogInfo = info
+                            val dialogId = info.id
+                            if (dialogId != 0L) {
+                                currentDialogID = dialogId
+                                user.id?.let { currentUserId ->
+                                    val messages = chatInteractor.getMessagesWithOwnerInfo(
+                                        currentUserId = currentUserId,
+                                        dialogId = dialogId,
+                                        limit = 50,
+                                        lastMessageId = null,
+                                    )
+                                    val name = info.interlocutor?.fullName.orEmpty()
+                                    val image = info.interlocutor?.image.orEmpty()
+                                    var status: String? = null
+                                    val isGroup = (info.users?.size ?: 0) > 2
+                                    if (!isGroup) {
+                                        val userId = info.interlocutor?.userId
+                                        if (userId != null) {
+                                            try {
+                                                val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
+                                                status = if (userStatus?.isOnline == true) {
+                                                    "Онлайн"
+                                                } else {
+                                                    userStatus?.lastSeen?.let { formatLastSeen(it) }
+                                                }
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                            }
+                                        }
+                                    }
+                                    _uiState.value = ChatDialogUiState.Success(
+                                        chats = messages,
+                                        chatName = name,
+                                        chatImage = image,
+                                        isGroup = isGroup,
+                                        status = status
+                                    )
+                                    markMessagesRead(dialogId, messages)
+                                }
+                            } else {
+                                val name = info.interlocutor?.fullName.orEmpty()
+                                val image = info.interlocutor?.image.orEmpty()
+                                _uiState.value = ChatDialogUiState.Success(
+                                    chats = emptyList(),
+                                    chatName = name,
+                                    chatImage = image,
+                                    isGroup = false,
+                                    status = null
+                                )
+                            }
+                        }
+                    }, {
+                        it.printStackTrace()
+                        _uiState.value = ChatDialogUiState.Error("Unknown error")
+                    })
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _uiState.value = ChatDialogUiState.Error(e.message ?: "Unknown error")
+            }
         }
     }
 
@@ -248,13 +321,24 @@ class ChatDialogViewModel @Inject constructor(
 
             val cType = if (fileDescriptors.isEmpty()) 1 else 3
 
-            val message = ChatSocketMessage(
-                dialog = dialog.id,
-                cType = cType,
-                text = text,
-                owner = currentUser?.id.orEmpty(),
-                files = fileDescriptors.ifEmpty { null }
-            )
+            val message = if (dialog.id != 0L) {
+                ChatSocketMessage(
+                    dialog = dialog.id,
+                    cType = cType,
+                    text = text,
+                    owner = currentUser?.id.orEmpty(),
+                    files = fileDescriptors.ifEmpty { null }
+                )
+            } else {
+                val peer = dialog.interlocutor?.userId ?: return@launch
+                ChatSocketMessage(
+                    interlocutor = peer,
+                    cType = cType,
+                    text = text,
+                    owner = currentUser?.id.orEmpty(),
+                    files = fileDescriptors.ifEmpty { null }
+                )
+            }
             val currentState = _uiState.value
             if (currentState is ChatDialogUiState.Success) {
                 _uiState.value = currentState.copy(currentMessage = "")
@@ -309,6 +393,10 @@ class ChatDialogViewModel @Inject constructor(
                 val gson = Gson()
                 val socketMessage = gson.fromJson(jsonString, ChatSocketMessage::class.java)
 
+                if ((currentDialogInfo?.id ?: 0L) == 0L && (socketMessage.dialog ?: 0L) != 0L) {
+                    currentDialogInfo = currentDialogInfo?.copy(id = socketMessage.dialog!!)
+                    currentDialogID = socketMessage.dialog
+                }
 
                 val newMessage = MessageChat(
                     id = 0,

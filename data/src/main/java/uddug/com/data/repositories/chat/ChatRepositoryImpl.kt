@@ -89,6 +89,16 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getDialogInfoByPeer(interlocutorId: String): DialogInfo {
+        return try {
+            val dialogInfoDto = apiService.getDialogInfoByPeer(interlocutorId)
+            mapDialogInfoDtoToDomain(dialogInfoDto)
+        } catch (e: Exception) {
+            println("Error getting dialog info by peer: ${e.message}")
+            throw e
+        }
+    }
+
 
     override suspend fun getDialogMedia(
         dialogId: Long,

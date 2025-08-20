@@ -21,7 +21,7 @@ import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleEvent
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
-import uddug.com.naukoteka.ui.chat.ChatDialogFragment.Companion.DIALOG_ID
+import uddug.com.naukoteka.ui.chat.ChatDialogFragment.Companion.INTERLOCUTOR_ID
 import uddug.com.naukoteka.ui.chat.compose.ChatCreateSingleScreen
 
 @AndroidEntryPoint
@@ -57,7 +57,7 @@ class ChatCreateSingleFragment : Fragment() {
                         navController.getBackStackEntry(R.id.chatListFragment).savedStateHandle["refreshChats"] = true
                         navController.navigate(
                             R.id.chatDialogFragment,
-                            Bundle().apply { putLong(DIALOG_ID, state.dialogId) },
+                            Bundle().apply { putString(INTERLOCUTOR_ID, state.interlocutorId) },
                             navOptions {
                                 popUpTo(R.id.chatCreateSingleFragment) { inclusive = true }
                             }

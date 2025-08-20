@@ -29,6 +29,9 @@ class ChatInteractor @Inject constructor(
 
     suspend fun getDialogInfo(dialogId: Long): DialogInfo = chatRepository.getDialogInfo(dialogId)
 
+    suspend fun getDialogInfoByPeer(interlocutorId: String): DialogInfo =
+        chatRepository.getDialogInfoByPeer(interlocutorId)
+
     suspend fun getMessagesWithOwnerInfo(
         currentUserId: String,
         dialogId: Long,
