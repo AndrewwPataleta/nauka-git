@@ -1,6 +1,9 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -59,18 +62,24 @@ fun ChatMessageItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
-        if (selectionMode) {
-            Checkbox(
-                modifier = Modifier.clip(CircleShape),
-                checked = isSelected,
-                onCheckedChange = { onSelectChange() },
-                colors = CheckboxDefaults.colors(
-                    checkedColor = Color(0xFF2E83D9),
-                    uncheckedColor = Color(0xFF2E83D9),
-                    checkmarkColor = Color.White
+        AnimatedVisibility(
+            visible = selectionMode,
+            enter = expandHorizontally(),
+            exit = shrinkHorizontally()
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    modifier = Modifier.clip(CircleShape),
+                    checked = isSelected,
+                    onCheckedChange = { onSelectChange() },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = Color(0xFF2E83D9),
+                        uncheckedColor = Color(0xFF2E83D9),
+                        checkmarkColor = Color.White
+                    )
                 )
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+            }
         }
         Row(
             modifier = Modifier
