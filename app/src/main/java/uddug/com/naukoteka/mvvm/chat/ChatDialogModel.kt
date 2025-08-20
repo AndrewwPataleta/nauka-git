@@ -37,7 +37,7 @@ class ChatDialogViewModel @Inject constructor(
     private val socketService: SocketService,
     ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<ChatDialogUiState>(ChatDialogUiState.Loading)
+    private val _uiState = MutableStateFlow<ChatDialogUiState>(ChatDialogUiState.Loading())
     val uiState: StateFlow<ChatDialogUiState> = _uiState
 
     private val _events = MutableSharedFlow<ChatDialogEvents>()
@@ -67,7 +67,7 @@ class ChatDialogViewModel @Inject constructor(
 
     @SuppressLint("CheckResult")
     fun loadMessages(dialogId: Long) {
-        _uiState.value = ChatDialogUiState.Loading
+        _uiState.value = ChatDialogUiState.Loading()
         viewModelScope.launch {
             try {
                 userRepository.getProfileInfo().subscribeOn(Schedulers.io())
@@ -77,6 +77,42 @@ class ChatDialogViewModel @Inject constructor(
                             val info = chatInteractor.getDialogInfo(dialogId)
                             currentDialogInfo = info
                             currentDialogID = dialogId
+
+                            val name: String = when {
+                                info.interlocutor != null -> info.interlocutor?.fullName.orEmpty()
+                                else -> info.name.orEmpty()
+                            }
+                            val image: String = when {
+                                info.interlocutor != null -> info.interlocutor?.image.orEmpty()
+                                else -> info.name.orEmpty()
+                            }
+                            val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
+                            var status: String? = null
+                            val isGroup = (info.users?.size ?: 0) > 2
+                            if (!isGroup) {
+                                val userId = info.interlocutor?.userId
+                                if (userId != null) {
+                                    try {
+                                        val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
+                                        status = if (userStatus?.isOnline == true) {
+                                            "Онлайн"
+                                        } else {
+                                            userStatus?.lastSeen?.let { formatLastSeen(it) }
+                                        }
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+                                }
+                            }
+
+                            _uiState.value = ChatDialogUiState.Loading(
+                                chatName = name,
+                                chatImage = image,
+                                isGroup = isGroup,
+                                firstParticipantName = firstParticipantName,
+                                status = status
+                            )
+
                             it.id?.let { currentUserId ->
                                 val messages = chatInteractor.getMessagesWithOwnerInfo(
                                     currentUserId = currentUserId,
@@ -84,33 +120,6 @@ class ChatDialogViewModel @Inject constructor(
                                     limit = 50,
                                     lastMessageId = null,
                                 ).sortedBy { it.createdAt }
-                            //    currentDialogID = dialogId
-                                val name: String = when {
-                                    info.interlocutor != null -> info.interlocutor?.fullName.orEmpty()
-                                    else -> info.name.orEmpty()
-                                }
-                                val image: String = when {
-                                    info.interlocutor != null -> info.interlocutor?.image.orEmpty()
-                                    else -> info.name.orEmpty()
-                                }
-                                val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
-                                var status: String? = null
-                                val isGroup = (info.users?.size ?: 0) > 2
-                                if (!isGroup) {
-                                    val userId = info.interlocutor?.userId
-                                    if (userId != null) {
-                                        try {
-                                            val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
-                                            status = if (userStatus?.isOnline == true) {
-                                                "Онлайн"
-                                            } else {
-                                                userStatus?.lastSeen?.let { formatLastSeen(it) }
-                                            }
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
-                                        }
-                                    }
-                                }
                                 _uiState.value = ChatDialogUiState.Success(
                                     chats = messages,
                                     chatName = name,
@@ -137,7 +146,7 @@ class ChatDialogViewModel @Inject constructor(
 
     @SuppressLint("CheckResult")
     fun loadMessagesByPeer(interlocutorId: String) {
-        _uiState.value = ChatDialogUiState.Loading
+        _uiState.value = ChatDialogUiState.Loading()
         viewModelScope.launch {
             try {
                 userRepository.getProfileInfo().subscribeOn(Schedulers.io())
@@ -147,6 +156,36 @@ class ChatDialogViewModel @Inject constructor(
                             val info = chatInteractor.getDialogInfoByPeer(interlocutorId)
                             currentDialogInfo = info
                             val dialogId = info.id
+
+                            val name = info.interlocutor?.fullName.orEmpty()
+                            val image = info.interlocutor?.image.orEmpty()
+                            val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
+                            var status: String? = null
+                            val isGroup = (info.users?.size ?: 0) > 2
+                            if (!isGroup) {
+                                val userId = info.interlocutor?.userId
+                                if (userId != null) {
+                                    try {
+                                        val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
+                                        status = if (userStatus?.isOnline == true) {
+                                            "Онлайн"
+                                        } else {
+                                            userStatus?.lastSeen?.let { formatLastSeen(it) }
+                                        }
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+                                }
+                            }
+
+                            _uiState.value = ChatDialogUiState.Loading(
+                                chatName = name,
+                                chatImage = image,
+                                isGroup = isGroup,
+                                firstParticipantName = firstParticipantName,
+                                status = status
+                            )
+
                             if (dialogId != 0L) {
                                 currentDialogID = dialogId
                                 user.id?.let { currentUserId ->
@@ -156,26 +195,6 @@ class ChatDialogViewModel @Inject constructor(
                                         limit = 50,
                                         lastMessageId = null,
                                     ).sortedBy { it.createdAt }
-                                    val name = info.interlocutor?.fullName.orEmpty()
-                                    val image = info.interlocutor?.image.orEmpty()
-                                    val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
-                                    var status: String? = null
-                                    val isGroup = (info.users?.size ?: 0) > 2
-                                    if (!isGroup) {
-                                        val userId = info.interlocutor?.userId
-                                        if (userId != null) {
-                                            try {
-                                                val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
-                                                status = if (userStatus?.isOnline == true) {
-                                                    "Онлайн"
-                                                } else {
-                                                    userStatus?.lastSeen?.let { formatLastSeen(it) }
-                                                }
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                            }
-                                        }
-                                    }
                                     _uiState.value = ChatDialogUiState.Success(
                                         chats = messages,
                                         chatName = name,
@@ -187,16 +206,13 @@ class ChatDialogViewModel @Inject constructor(
                                     markMessagesRead(dialogId, messages)
                                 }
                             } else {
-                                val name = info.interlocutor?.fullName.orEmpty()
-                                val image = info.interlocutor?.image.orEmpty()
-                                val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
                                 _uiState.value = ChatDialogUiState.Success(
                                     chats = emptyList(),
                                     chatName = name,
                                     chatImage = image,
                                     isGroup = false,
                                     firstParticipantName = firstParticipantName,
-                                    status = null
+                                    status = status
                                 )
                             }
                         }
@@ -458,7 +474,14 @@ sealed class ChatDialogEvents {
 }
 
 sealed class ChatDialogUiState {
-    object Loading : ChatDialogUiState()
+    data class Loading(
+        val chatName: String = "",
+        val chatImage: String = "",
+        val isGroup: Boolean = false,
+        val firstParticipantName: String = "",
+        val status: String? = null,
+    ) : ChatDialogUiState()
+
     data class Success(
         val chats: List<MessageChat>,
         val chatName: String,
