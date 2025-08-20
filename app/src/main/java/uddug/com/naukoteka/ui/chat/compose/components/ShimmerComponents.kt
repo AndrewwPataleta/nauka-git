@@ -13,12 +13,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.valentinilk.shimmer.Shimmer
+import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
 
 @Composable
 fun ChatListShimmer() {
-    val shimmer: Shimmer = rememberShimmer()
+    val shimmer: Shimmer = rememberShimmer(
+        shimmerBounds = ShimmerBounds.View
+    )
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items((1..10).toList()) { _ ->
             Row(
@@ -59,7 +62,9 @@ fun ChatListShimmer() {
 
 @Composable
 fun MessageListShimmer() {
-    val shimmer: Shimmer = rememberShimmer()
+    val shimmer: Shimmer = rememberShimmer(
+        shimmerBounds = ShimmerBounds.View
+    )
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()

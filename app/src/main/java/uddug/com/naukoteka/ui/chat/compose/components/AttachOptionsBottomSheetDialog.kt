@@ -10,10 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Poll
+
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -48,17 +46,17 @@ fun AttachOptionsBottomSheetDialog(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             BottomSheetItem(
-                icon = Icons.Filled.Image,
+                icon = Icons.Filled.Person,
                 text = stringResource(R.string.chat_attach_photo_video),
                 onClick = onMediaClick
             )
             BottomSheetItem(
-                icon = Icons.Filled.InsertDriveFile,
+                icon = Icons.Filled.Person,
                 text = stringResource(R.string.chat_attach_file),
                 onClick = onFileClick
             )
             BottomSheetItem(
-                icon = Icons.Filled.Poll,
+                icon = Icons.Filled.Person,
                 text = stringResource(R.string.chat_attach_poll),
                 onClick = onPollClick
             )

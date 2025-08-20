@@ -7,7 +7,6 @@ import uddug.com.domain.entities.chat.FileKind
 import uddug.com.domain.entities.chat.FileType
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
-import uddug.com.domain.entities.profile.Image
 import java.time.Instant
 
 // ChatDto.kt

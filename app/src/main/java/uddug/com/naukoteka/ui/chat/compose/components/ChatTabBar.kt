@@ -7,14 +7,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.mvvm.chat.ChatListUiState
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatTabBar(
     viewModel: ChatListViewModel,
@@ -68,7 +69,9 @@ fun ChatTabBar(
                                     .let {
                                         if (index == 0) {
                                             it.pointerInput(Unit) {
-                                                detectTapGestures(onLongPress = { showFolderMenu = true })
+                                                detectTapGestures(onLongPress = {
+                                                    showFolderMenu = true
+                                                })
                                             }
                                         } else {
                                             it
@@ -98,7 +101,10 @@ fun ChatTabBar(
                                                 containerColor = Color(0xFF2E83D9),
                                                 contentColor = Color.White
                                             ) {
-                                                Text(text = folder.unreadCount.toString(), fontSize = 10.sp)
+                                                Text(
+                                                    text = folder.unreadCount.toString(),
+                                                    fontSize = 10.sp
+                                                )
                                             }
                                         }
                                     }
@@ -112,7 +118,7 @@ fun ChatTabBar(
                                     DropdownMenuItem(
                                         text = { Text("Настроить папки") },
                                         leadingIcon = {
-                                            Icon(Icons.Filled.Folder, contentDescription = null)
+                                            Icon(Icons.Filled.Person, contentDescription = null)
                                         },
                                         onClick = {
                                             showFolderMenu = false
@@ -122,7 +128,7 @@ fun ChatTabBar(
                                     DropdownMenuItem(
                                         text = { Text("Изменить порядок") },
                                         leadingIcon = {
-                                            Icon(Icons.Filled.Sort, contentDescription = null)
+                                            Icon(Icons.Filled.Person, contentDescription = null)
                                         },
                                         onClick = {
                                             showFolderMenu = false

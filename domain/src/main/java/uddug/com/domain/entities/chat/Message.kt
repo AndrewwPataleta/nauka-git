@@ -1,7 +1,6 @@
 package uddug.com.domain.entities.chat
 
 
-import uddug.com.domain.entities.profile.Image
 import java.time.Instant
 
 data class MessageChat(
