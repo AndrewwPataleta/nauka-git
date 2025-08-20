@@ -90,3 +90,27 @@ fun MessageListShimmer() {
         }
     }
 }
+
+@Composable
+fun ChatDetailShimmer() {
+    val shimmer: Shimmer = rememberShimmer(
+        shimmerBounds = ShimmerBounds.View
+    )
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        items((1..6).toList()) { _ ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(vertical = 8.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFE0E0E0))
+                    .shimmer(shimmer)
+            )
+        }
+    }
+}

@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -71,6 +72,7 @@ class ChatDialogViewModel @Inject constructor(
     @SuppressLint("CheckResult")
     fun loadMessages(dialogId: Long) {
         _uiState.value = ChatDialogUiState.Loading()
+        val startTime = System.currentTimeMillis()
         viewModelScope.launch {
             try {
                 userRepository.getProfileInfo().subscribeOn(Schedulers.io())
@@ -123,6 +125,8 @@ class ChatDialogViewModel @Inject constructor(
                                     limit = 50,
                                     lastMessageId = null,
                                 ).sortedBy { it.createdAt }
+                                val elapsed = System.currentTimeMillis() - startTime
+                                if (elapsed < 1500L) delay(1500L - elapsed)
                                 _uiState.value = ChatDialogUiState.Success(
                                     chats = messages,
                                     chatName = name,
@@ -150,6 +154,7 @@ class ChatDialogViewModel @Inject constructor(
     @SuppressLint("CheckResult")
     fun loadMessagesByPeer(interlocutorId: String) {
         _uiState.value = ChatDialogUiState.Loading()
+        val startTime = System.currentTimeMillis()
         viewModelScope.launch {
             try {
                 userRepository.getProfileInfo().subscribeOn(Schedulers.io())
@@ -198,6 +203,8 @@ class ChatDialogViewModel @Inject constructor(
                                         limit = 50,
                                         lastMessageId = null,
                                     ).sortedBy { it.createdAt }
+                                    val elapsed = System.currentTimeMillis() - startTime
+                                    if (elapsed < 1500L) delay(1500L - elapsed)
                                     _uiState.value = ChatDialogUiState.Success(
                                         chats = messages,
                                         chatName = name,
@@ -209,6 +216,8 @@ class ChatDialogViewModel @Inject constructor(
                                     markMessagesRead(dialogId, messages)
                                 }
                             } else {
+                                val elapsed = System.currentTimeMillis() - startTime
+                                if (elapsed < 1500L) delay(1500L - elapsed)
                                 _uiState.value = ChatDialogUiState.Success(
                                     chats = emptyList(),
                                     chatName = name,
