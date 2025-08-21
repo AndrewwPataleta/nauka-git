@@ -13,6 +13,8 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -36,8 +38,10 @@ fun ChatInputBar(
     currentMessage: String,
     attachedFiles: List<File>,
     replyMessage: MessageChat?,
+    isRecording: Boolean,
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
+    onVoiceClick: () -> Unit,
     onAttachClick: () -> Unit,
     onRemoveFile: (File) -> Unit,
     onCancelReply: () -> Unit,
@@ -165,8 +169,18 @@ fun ChatInputBar(
                 shape = RoundedCornerShape(12.dp)
             )
 
-            IconButton(onClick = onSendClick) {
-                Icon(Icons.Default.Send, contentDescription = "Send", tint = Color(0XFF8083A0))
+            if (currentMessage.isBlank()) {
+                IconButton(onClick = onVoiceClick) {
+                    Icon(
+                        imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
+                        contentDescription = if (isRecording) "Stop" else "Record",
+                        tint = Color(0XFF8083A0)
+                    )
+                }
+            } else {
+                IconButton(onClick = onSendClick) {
+                    Icon(Icons.Default.Send, contentDescription = "Send", tint = Color(0XFF8083A0))
+                }
             }
         }
     }

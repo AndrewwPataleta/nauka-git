@@ -50,6 +50,7 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
 import uddug.com.naukoteka.ui.chat.compose.components.MessageListShimmer
 import uddug.com.domain.entities.chat.MessageChat
 import java.io.File
+import uddug.com.naukoteka.ui.chat.AudioRecorder
 
 private enum class AttachmentPickerType { MEDIA, FILE, CONTACT }
 
@@ -70,6 +71,17 @@ fun ChatDialogComponent(
     val selectedMessages by viewModel.selectedMessages.collectAsState()
     var showAttachmentSheet by remember { mutableStateOf(false) }
     var pendingPickerType by remember { mutableStateOf<AttachmentPickerType?>(null) }
+
+    val audioRecorder = remember { AudioRecorder(context) }
+    var isRecording by remember { mutableStateOf(false) }
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted: Boolean ->
+        if (granted) {
+            audioRecorder.start()
+            isRecording = true
+        }
+    }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
@@ -210,6 +222,7 @@ fun ChatDialogComponent(
                         currentMessage = state.currentMessage,
                         attachedFiles = state.attachedFiles,
                         replyMessage = state.replyMessage,
+                        isRecording = isRecording,
                         onMessageChange = { newMessage ->
                             viewModel.updateCurrentMessage(newMessage)
                         },
@@ -218,6 +231,19 @@ fun ChatDialogComponent(
                                 viewModel.sendMessage(state.currentMessage)
                                 scrollState.animateScrollToItem(messages.size - 1)
                                 // keyboardController?.hide()
+                            }
+                        },
+                        onVoiceClick = {
+                            if (isRecording) {
+                                audioRecorder.stop()?.let { file ->
+                                    scope.launch {
+                                        viewModel.sendVoiceMessage(file)
+                                        scrollState.animateScrollToItem(messages.size - 1)
+                                    }
+                                }
+                                isRecording = false
+                            } else {
+                                audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                             }
                         },
                         onAttachClick = {
