@@ -6,6 +6,10 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,16 +83,16 @@ fun ChatCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .animateContentSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (selectionMode) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .padding(end = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
+                AnimatedVisibility(
+                    visible = selectionMode,
+                    enter = expandHorizontally(),
+                    exit = shrinkHorizontally()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
                             checked = isSelected,
                             onCheckedChange = { onSelectChange(it) },
@@ -98,6 +102,7 @@ fun ChatCard(
                                 checkmarkColor = Color.White
                             )
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
                     }
                 }
                 AsyncImage(

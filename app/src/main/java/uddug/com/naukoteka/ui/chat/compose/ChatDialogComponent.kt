@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +23,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -158,31 +160,42 @@ fun ChatDialogComponent(
                 is ChatDialogUiState.Success -> {
                     val messages = state.chats
                     if (isSelectionMode) {
-                        TopAppBar(
-                            title = {
-                                Text(text = selectedMessages.size.toString(), fontSize = 20.sp, color = Color.Black)
-                            },
-                            navigationIcon = {
-                                IconButton(onClick = { viewModel.clearSelection() }) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_close),
-                                        contentDescription = "Close",
-                                        tint = Color.Black
-                                    )
-                                }
-                            },
-                            actions = {
-                                IconButton(onClick = { viewModel.deleteSelectedMessages() }) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_trash),
-                                        contentDescription = "Delete",
-                                        tint = Color.Black
-                                    )
-                                }
-                            },
-                            backgroundColor = Color.White,
-                            elevation = 4.dp
-                        )
+                        Surface(elevation = 4.dp) {
+                            Column {
+                                TopAppBar(
+                                    modifier = Modifier.height(68.dp),
+                                    title = {
+                                        Text(text = selectedMessages.size.toString(), fontSize = 20.sp, color = Color.Black)
+                                    },
+                                    navigationIcon = {
+                                        IconButton(onClick = { viewModel.clearSelection() }) {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_close),
+                                                contentDescription = "Close",
+                                                tint = Color.Black
+                                            )
+                                        }
+                                    },
+                                    actions = {
+                                        IconButton(onClick = { viewModel.deleteSelectedMessages() }) {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_trash),
+                                                contentDescription = "Delete",
+                                                tint = Color.Black
+                                            )
+                                        }
+                                    },
+                                    backgroundColor = Color.White,
+                                    elevation = 0.dp
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(Color(0xFFEAEAF2))
+                                )
+                            }
+                        }
                     } else {
                         ChatTopBar(
                             name = state.chatName,
