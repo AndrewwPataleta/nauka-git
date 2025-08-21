@@ -143,7 +143,7 @@ interface ChatApiService {
     suspend fun searchDialogs(
         @Query("category") category: Int = 21,
         @Query("q") query: String,
-        @Query("limit") limit: Int = 10,
+        @Query("limit") limit: Int? = null,
     ): List<SearchDialogDto>
 
     @GET("chat/v1/dialogs/global/search")
@@ -151,7 +151,7 @@ interface ChatApiService {
         @Query("category") category: Int = 22,
         @Query("q") query: String,
         @Query("lastMessageId") lastMessageId: Long? = null,
-        @Query("limit") limit: Int = 10,
+        @Query("limit") limit: Int? = null,
     ): List<SearchMessageDto>
 
     @GET("chat/v1/users/search")

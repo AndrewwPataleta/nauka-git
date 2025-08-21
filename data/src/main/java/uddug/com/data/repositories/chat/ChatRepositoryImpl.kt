@@ -268,9 +268,9 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchDialogs(query: String, limit: Int): List<SearchDialog> {
+    override suspend fun searchDialogs(query: String): List<SearchDialog> {
         return try {
-            apiService.searchDialogs(query = query, limit = limit).map { it.toDomain() }
+            apiService.searchDialogs(query = query).map { it.toDomain() }
         } catch (e: Exception) {
             println("search dialogs error ${e.message}")
             emptyList()
@@ -280,10 +280,9 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun searchMessages(
         query: String,
         lastMessageId: Long?,
-        limit: Int,
     ): List<SearchMessage> {
         return try {
-            apiService.searchMessages(query = query, lastMessageId = lastMessageId, limit = limit)
+            apiService.searchMessages(query = query, lastMessageId = lastMessageId)
                 .map { it.toDomain() }
         } catch (e: Exception) {
             println("search messages error ${e.message}")

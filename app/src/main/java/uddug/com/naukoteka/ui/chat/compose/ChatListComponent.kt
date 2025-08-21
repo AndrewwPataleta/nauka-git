@@ -19,6 +19,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatListUiState
 import uddug.com.naukoteka.mvvm.chat.SearchResult
 import uddug.com.naukoteka.ui.chat.compose.components.ChatFunctionsBottomSheetDialog
+import uddug.com.naukoteka.ui.chat.compose.components.ChatListShimmer
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTabBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatToolbarComponent
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
@@ -54,6 +55,7 @@ fun ChatListComponent(
         )
         var query by remember { mutableStateOf("") }
         val searchResults by viewModel.searchResults.collectAsState()
+        val isSearchLoading by viewModel.isSearchLoading.collectAsState()
 
         SearchField(
             title = stringResource(R.string.find_chat_message),
@@ -63,7 +65,7 @@ fun ChatListComponent(
                 viewModel.search(it)
             }
         )
-        if (query.isEmpty()) {
+        if (query.length < 4) {
             ChatTabBar(
                 viewModel = viewModel,
                 onChatLongClick = { id -> selectedDialogId = id },
@@ -74,10 +76,13 @@ fun ChatListComponent(
                 onChangeFolderOrder = onChangeFolderOrder
             )
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(searchResults) { result ->
-                    SearchResultItem(result = result) {
-                        viewModel.onChatClick(it)
+            when {
+                isSearchLoading -> ChatListShimmer()
+                else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(searchResults) { result ->
+                        SearchResultItem(result = result) {
+                            viewModel.onChatClick(it)
+                        }
                     }
                 }
             }

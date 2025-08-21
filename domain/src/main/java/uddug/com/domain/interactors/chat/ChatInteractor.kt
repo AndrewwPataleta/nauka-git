@@ -100,12 +100,11 @@ class ChatInteractor @Inject constructor(
     suspend fun getUsersStatus(userIds: List<String>): List<UserStatus> =
         chatRepository.getUsersStatus(userIds)
 
-    suspend fun searchDialogs(query: String, limit: Int = 10): List<SearchDialog> =
-        chatRepository.searchDialogs(query, limit)
+    suspend fun searchDialogs(query: String): List<SearchDialog> =
+        chatRepository.searchDialogs(query)
 
     suspend fun searchMessages(
         query: String,
         lastMessageId: Long? = null,
-        limit: Int = 10,
-    ): List<SearchMessage> = chatRepository.searchMessages(query, lastMessageId, limit)
+    ): List<SearchMessage> = chatRepository.searchMessages(query, lastMessageId)
 }
