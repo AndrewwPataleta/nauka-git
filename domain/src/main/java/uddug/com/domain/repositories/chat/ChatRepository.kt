@@ -43,6 +43,16 @@ interface ChatRepository {
         ed: String?,
     ): List<MediaMessage>
 
+    suspend fun searchMessages(
+        currentUserId: String,
+        dialogId: Long,
+        searchField: String,
+        limit: Int = 50,
+        lastMessageId: Long? = null,
+        sd: String? = null,
+        ed: String? = null,
+    ): List<MessageChat>
+
     suspend fun createDialog(
         dialogName: String?,
         userRoles: Map<String, String?>,
