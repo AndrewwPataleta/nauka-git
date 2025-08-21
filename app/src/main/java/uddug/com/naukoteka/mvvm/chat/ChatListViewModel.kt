@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.ChatFolder
+import uddug.com.domain.entities.chat.SearchDialog
+import uddug.com.domain.entities.chat.SearchMessage
 import uddug.com.domain.repositories.chat.ChatRepository
 import javax.inject.Inject
 
@@ -36,6 +38,9 @@ class ChatListViewModel @Inject constructor(
 
     private val _selectedChats = MutableStateFlow<Set<Long>>(emptySet())
     val selectedChats: StateFlow<Set<Long>> = _selectedChats
+
+    private val _searchResults = MutableStateFlow<List<SearchResult>>(emptyList())
+    val searchResults: StateFlow<List<SearchResult>> = _searchResults
 
     fun loadFolders() {
         _uiState.value = ChatListUiState.Loading
@@ -148,6 +153,24 @@ class ChatListViewModel @Inject constructor(
             loadChats(currentFolderId)
         }
     }
+
+    fun search(query: String) {
+        if (query.isBlank()) {
+            _searchResults.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val dialogs = chatRepository.searchDialogs(query)
+                val messages = chatRepository.searchMessages(query)
+                val results = dialogs.map { SearchResult.Dialog(it) } +
+                        messages.map { SearchResult.Message(it) }
+                _searchResults.value = results
+            } catch (_: Exception) {
+                _searchResults.value = emptyList()
+            }
+        }
+    }
 }
 
 sealed class ChatListEvents {
@@ -162,4 +185,14 @@ sealed class ChatListUiState {
     ) : ChatListUiState()
 
     data class Error(val message: String) : ChatListUiState()
+}
+
+sealed class SearchResult {
+    abstract val dialogId: Long
+    data class Dialog(val data: SearchDialog) : SearchResult() {
+        override val dialogId: Long get() = data.dialogId
+    }
+    data class Message(val data: SearchMessage) : SearchResult() {
+        override val dialogId: Long get() = data.dialogId
+    }
 }

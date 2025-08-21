@@ -13,17 +13,22 @@ import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
 import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.chat.UserStatusDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
+import uddug.com.data.services.models.response.chat.SearchDialogDto
+import uddug.com.data.services.models.response.chat.SearchMessageDto
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.SearchDialog
+import uddug.com.domain.entities.chat.SearchMessage
 import uddug.com.domain.entities.chat.UserStatus
 import uddug.com.domain.entities.chat.updateOwnerInfoFromDialog
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.chat.ChatRepository
 import uddug.com.data.utils.toDomain
 import uddug.com.domain.entities.chat.File as ChatFile
+import java.time.Instant
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -238,6 +243,29 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun searchDialogs(query: String, limit: Int): List<SearchDialog> {
+        return try {
+            apiService.searchDialogs(query = query, limit = limit).map { it.toDomain() }
+        } catch (e: Exception) {
+            println("search dialogs error ${e.message}")
+            emptyList()
+        }
+    }
+
+    override suspend fun searchMessages(
+        query: String,
+        lastMessageId: Long?,
+        limit: Int,
+    ): List<SearchMessage> {
+        return try {
+            apiService.searchMessages(query = query, lastMessageId = lastMessageId, limit = limit)
+                .map { it.toDomain() }
+        } catch (e: Exception) {
+            println("search messages error ${e.message}")
+            emptyList()
+        }
+    }
+
     override suspend fun uploadFiles(files: List<JavaFile>, raw: Boolean): List<ChatFile> {
         val parts = files.map { file ->
             MultipartBody.Part.createFormData(
@@ -279,3 +307,26 @@ private fun FileDto.toDomain(): ChatFile = ChatFile(
 
 private fun UserStatusDto.toDomain(): UserStatus =
     UserStatus(userId = userId, isOnline = status.isOnline, lastSeen = status.lastSeen)
+
+private fun SearchDialogDto.toDomain(): SearchDialog =
+    SearchDialog(
+        dialogId = dialogId,
+        dialogType = dialogType,
+        messageId = messageId,
+        fullName = fullName,
+        image = image?.path,
+        createdAt = Instant.parse(createdAt),
+    )
+
+private fun SearchMessageDto.toDomain(): SearchMessage =
+    SearchMessage(
+        dialogId = dialogId,
+        messageId = messageId,
+        fullName = fullName,
+        image = image?.path,
+        userId = userId,
+        isOnline = status.isOnline,
+        lastSeen = status.lastSeen,
+        text = text,
+        createdAt = Instant.parse(createdAt),
+    )

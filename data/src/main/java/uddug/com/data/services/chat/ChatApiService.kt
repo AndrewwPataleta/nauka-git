@@ -25,6 +25,8 @@ import uddug.com.data.services.models.response.chat.MessageDto
 import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.user_profile.UserProfileFullInfoDto
 import uddug.com.data.services.models.response.chat.SearchUsersDto
+import uddug.com.data.services.models.response.chat.SearchDialogDto
+import uddug.com.data.services.models.response.chat.SearchMessageDto
 import uddug.com.domain.entities.chat.MediaMessage
 
 interface ChatApiService {
@@ -126,6 +128,21 @@ interface ChatApiService {
         @Body request: DeleteMessagesRequestDto,
         @Query("forMe") forMe: Boolean = false,
     )
+
+    @GET("chat/v1/dialogs/global/search")
+    suspend fun searchDialogs(
+        @Query("category") category: Int = 21,
+        @Query("q") query: String,
+        @Query("limit") limit: Int = 10,
+    ): List<SearchDialogDto>
+
+    @GET("chat/v1/dialogs/global/search")
+    suspend fun searchMessages(
+        @Query("category") category: Int = 22,
+        @Query("q") query: String,
+        @Query("lastMessageId") lastMessageId: Long? = null,
+        @Query("limit") limit: Int = 10,
+    ): List<SearchMessageDto>
 
     @GET("chat/v1/users/search")
     suspend fun searchUsers(
