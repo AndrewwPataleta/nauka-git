@@ -415,6 +415,43 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    fun sendVoiceMessage(file: File) {
+        viewModelScope.launch {
+            val dialog = currentDialogInfo ?: return@launch
+            val uploaded = try {
+                chatInteractor.uploadFiles(listOf(file))
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+            val descriptor = uploaded.firstOrNull()?.let { uploadedFile ->
+                FileDescriptor(
+                    id = uploadedFile.id,
+                    fileType = determineFileType(file)
+                )
+            }
+            val message = if (dialog.id != 0L) {
+                ChatSocketMessage(
+                    dialog = dialog.id,
+                    cType = 4,
+                    text = "",
+                    owner = currentUser?.id.orEmpty(),
+                    files = descriptor?.let { listOf(it) }
+                )
+            } else {
+                val peer = dialog.interlocutor?.userId ?: return@launch
+                ChatSocketMessage(
+                    interlocutor = peer,
+                    cType = 4,
+                    text = "",
+                    owner = currentUser?.id.orEmpty(),
+                    files = descriptor?.let { listOf(it) }
+                )
+            }
+            socketService.sendMessage("message", message)
+        }
+    }
+
     private fun markMessagesRead(dialogId: Long, messages: List<MessageChat>) {
         val messageIds = messages.filter { !it.isMine && (it.readCount ?: 0) == 0 }.map { it.id }
         if (messageIds.isEmpty()) return
