@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
+import uddug.com.naukoteka.mvvm.chat.ChatDetailUiState
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
@@ -80,7 +81,13 @@ class ChatDetailDialogFragment : Fragment() {
                             viewModel.getCurrentUser()?.let { navigationView?.selectShowEditFragment(it) }
                         },
                         onSearchClick = {
-                            findNavController().navigate(R.id.chatDetailSearchFragment)
+                            val dialogId = (viewModel.uiState.value as? ChatDetailUiState.Success)?.dialogId
+                                ?: arguments?.getLong(DIALOG_ID)
+                                ?: 0L
+                            findNavController().navigate(
+                                R.id.chatDetailSearchFragment,
+                                Bundle().apply { putLong(DIALOG_ID, dialogId) }
+                            )
                         },
                         onChatDeleted = {
                             findNavController().popBackStack(R.id.chatListFragment, false)

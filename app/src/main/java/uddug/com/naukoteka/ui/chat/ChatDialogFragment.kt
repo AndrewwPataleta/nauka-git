@@ -35,6 +35,8 @@ class ChatDialogFragment : Fragment() {
 
     private val viewModel: ChatDialogViewModel by viewModels()
 
+    private var dialogId: Long = 0
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         navigationView = requireActivity() as ContainerNavigationView
@@ -53,7 +55,7 @@ class ChatDialogFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupObservers()
-        val dialogId = arguments?.getLong(DIALOG_ID) ?: 0
+        dialogId = arguments?.getLong(DIALOG_ID) ?: 0
         val peerId = arguments?.getString(INTERLOCUTOR_ID)
         if (dialogId != 0L) {
             viewModel.loadMessages(dialogId)
@@ -109,7 +111,10 @@ class ChatDialogFragment : Fragment() {
                             requireActivity().onBackPressed()
                         },
                         onSearchClick = {
-                            findNavController().navigate(R.id.chatDetailSearchFragment)
+                            findNavController().navigate(
+                                R.id.chatDetailSearchFragment,
+                                Bundle().apply { putLong(ChatDetailDialogFragment.DIALOG_ID, dialogId) }
+                            )
                         }
                     )
                 }

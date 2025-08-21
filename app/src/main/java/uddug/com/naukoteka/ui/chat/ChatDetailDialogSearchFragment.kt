@@ -25,6 +25,8 @@ class ChatDetailDialogSearchFragment : Fragment() {
     ): View? {
         requireActivity().window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
+        arguments?.getLong(ChatDetailDialogFragment.DIALOG_ID)?.let { viewModel.loadDialogInfo(it) }
+
         return ComposeView(requireContext()).apply {
             setContent {
                 MaterialTheme {

@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailViewModel
+import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailUiState
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatGroupDetailComponent
 
@@ -75,7 +76,13 @@ class ChatGroupDetailFragment : Fragment() {
                     ChatGroupDetailComponent(
                         viewModel = viewModel,
                         onBackPressed = { requireActivity().onBackPressed() },
-                        onSearchClick = { findNavController().navigate(R.id.chatDetailSearchFragment) }
+                        onSearchClick = {
+                            val dialogId = (viewModel.uiState.value as? ChatGroupDetailUiState.Success)?.dialogId ?: 0L
+                            findNavController().navigate(
+                                R.id.chatDetailSearchFragment,
+                                Bundle().apply { putLong(ChatDetailDialogFragment.DIALOG_ID, dialogId) }
+                            )
+                        }
                     )
                 }
             }
