@@ -362,6 +362,9 @@ class ChatDialogViewModel @Inject constructor(
     fun sendMessage(text: String) {
         viewModelScope.launch {
             val dialog = currentDialogInfo ?: return@launch
+            val currentState = _uiState.value
+            val replyId = (currentState as? ChatDialogUiState.Success)?.replyMessage?.id
+
             if (text.isBlank() && attachedFiles.isEmpty()) {
                 Log.d("ChatViewModel", "Message is blank and no files attached — skipping")
                 return@launch
@@ -391,7 +394,8 @@ class ChatDialogViewModel @Inject constructor(
                     cType = cType,
                     text = text,
                     owner = currentUser?.id.orEmpty(),
-                    files = fileDescriptors.ifEmpty { null }
+                    files = fileDescriptors.ifEmpty { null },
+                    answered = replyId
                 )
             } else {
                 val peer = dialog.interlocutor?.userId ?: return@launch
@@ -400,10 +404,10 @@ class ChatDialogViewModel @Inject constructor(
                     cType = cType,
                     text = text,
                     owner = currentUser?.id.orEmpty(),
-                    files = fileDescriptors.ifEmpty { null }
+                    files = fileDescriptors.ifEmpty { null },
+                    answered = replyId
                 )
             }
-            val currentState = _uiState.value
             if (currentState is ChatDialogUiState.Success) {
                 _uiState.value = currentState.copy(currentMessage = "")
             }
@@ -501,6 +505,23 @@ class ChatDialogViewModel @Inject constructor(
                     currentDialogID = socketMessage.dialog
                 }
 
+                val replyPreview = socketMessage.ansPreview?.let { preview ->
+                    MessageChat(
+                        id = preview.i,
+                        text = preview.t,
+                        type = MessageType.TEXT,
+                        files = emptyList(),
+                        ownerId = preview.o?.i,
+                        createdAt = Instant.now(),
+                        readCount = 0,
+                        ownerName = preview.o?.fn,
+                        ownerAvatarUrl = preview.o?.im,
+                        ownerIsAdmin = false,
+                        isMine = preview.o?.i == currentUser?.id,
+                        replyTo = null
+                    )
+                }
+
                 val newMessage = MessageChat(
                     id = 0,
                     text = socketMessage.text,
@@ -513,7 +534,7 @@ class ChatDialogViewModel @Inject constructor(
                     ownerAvatarUrl = currentDialogInfo?.interlocutor?.image,
                     ownerIsAdmin = false,
                     isMine = socketMessage.owner == currentUser?.id,
-                    replyTo = null
+                    replyTo = replyPreview
                 )
 
                 val currentState = _uiState.value
