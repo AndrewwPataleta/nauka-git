@@ -105,11 +105,10 @@ interface ChatRepository {
 
     suspend fun getUsersStatus(userIds: List<String>): List<UserStatus>
 
-    suspend fun searchDialogs(query: String, limit: Int = 10): List<SearchDialog>
+    suspend fun searchDialogs(query: String): List<SearchDialog>
 
     suspend fun searchMessages(
         query: String,
         lastMessageId: Long? = null,
-        limit: Int = 10,
     ): List<SearchMessage>
 }

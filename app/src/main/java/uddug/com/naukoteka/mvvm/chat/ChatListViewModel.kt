@@ -42,6 +42,9 @@ class ChatListViewModel @Inject constructor(
     private val _searchResults = MutableStateFlow<List<SearchResult>>(emptyList())
     val searchResults: StateFlow<List<SearchResult>> = _searchResults
 
+    private val _isSearchLoading = MutableStateFlow(false)
+    val isSearchLoading: StateFlow<Boolean> = _isSearchLoading
+
     fun loadFolders() {
         _uiState.value = ChatListUiState.Loading
         viewModelScope.launch {
@@ -155,11 +158,13 @@ class ChatListViewModel @Inject constructor(
     }
 
     fun search(query: String) {
-        if (query.isBlank()) {
+        if (query.length < 4) {
             _searchResults.value = emptyList()
+            _isSearchLoading.value = false
             return
         }
         viewModelScope.launch {
+            _isSearchLoading.value = true
             try {
                 val dialogs = chatRepository.searchDialogs(query)
                 val messages = chatRepository.searchMessages(query)
@@ -168,6 +173,8 @@ class ChatListViewModel @Inject constructor(
                 _searchResults.value = results
             } catch (_: Exception) {
                 _searchResults.value = emptyList()
+            } finally {
+                _isSearchLoading.value = false
             }
         }
     }
