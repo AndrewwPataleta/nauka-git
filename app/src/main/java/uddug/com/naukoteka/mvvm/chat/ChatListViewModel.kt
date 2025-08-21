@@ -42,6 +42,8 @@ class ChatListViewModel @Inject constructor(
     private val _searchResults = MutableStateFlow<List<SearchResult>>(emptyList())
     val searchResults: StateFlow<List<SearchResult>> = _searchResults
 
+    private var loadChatsJob: kotlinx.coroutines.Job? = null
+
     fun loadFolders() {
         _uiState.value = ChatListUiState.Loading
         viewModelScope.launch {
@@ -58,11 +60,12 @@ class ChatListViewModel @Inject constructor(
 
     fun loadChats(folderId: Long? = currentFolderId) {
         _uiState.value = ChatListUiState.Loading
+        loadChatsJob?.cancel()
         val startTime = System.currentTimeMillis()
-        viewModelScope.launch {
+        currentFolderId = folderId
+        loadChatsJob = viewModelScope.launch {
             try {
                 val chats = chatRepository.getChats(folderId)
-                currentFolderId = folderId
                 val elapsed = System.currentTimeMillis() - startTime
                 if (elapsed < 1500L) delay(1500L - elapsed)
                 _uiState.value = ChatListUiState.Success(chats)

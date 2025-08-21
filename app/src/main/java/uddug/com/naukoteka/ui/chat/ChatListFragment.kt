@@ -123,7 +123,9 @@ class ChatListFragment : Fragment() {
                                 }
                             )
                         },
-                        onFolderSettings = { },
+                        onFolderSettings = {
+                            findNavController().navigate(R.id.chatFolderSettingsFragment)
+                        },
                         onChangeFolderOrder = {
                             findNavController().navigate(R.id.chatFolderSettingsFragment)
                         }
