@@ -9,16 +9,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatListUiState
+import uddug.com.naukoteka.mvvm.chat.SearchResult
 import uddug.com.naukoteka.ui.chat.compose.components.ChatFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTabBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatToolbarComponent
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
+import uddug.com.naukoteka.ui.chat.compose.components.SearchResultItem
 
 @Composable
 fun ChatListComponent(
@@ -48,22 +52,36 @@ fun ChatListComponent(
             onDeleteSelected = { viewModel.deleteSelectedChats() },
             onMoreClick = { }
         )
+        var query by remember { mutableStateOf("") }
+        val searchResults by viewModel.searchResults.collectAsState()
+
         SearchField(
             title = stringResource(R.string.find_chat_message),
-            query = "",
+            query = query,
             onSearchChanged = {
-
+                query = it
+                viewModel.search(it)
             }
         )
-        ChatTabBar(
-            viewModel = viewModel,
-            onChatLongClick = { id -> selectedDialogId = id },
-            isSelectionMode = isSelectionMode,
-            selectedChats = selectedChats,
-            onChatSelect = { viewModel.toggleChatSelection(it) },
-            onOpenFolderSettings = onFolderSettings,
-            onChangeFolderOrder = onChangeFolderOrder
-        )
+        if (query.isEmpty()) {
+            ChatTabBar(
+                viewModel = viewModel,
+                onChatLongClick = { id -> selectedDialogId = id },
+                isSelectionMode = isSelectionMode,
+                selectedChats = selectedChats,
+                onChatSelect = { viewModel.toggleChatSelection(it) },
+                onOpenFolderSettings = onFolderSettings,
+                onChangeFolderOrder = onChangeFolderOrder
+            )
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(searchResults) { result ->
+                    SearchResultItem(result = result) {
+                        viewModel.onChatClick(it)
+                    }
+                }
+            }
+        }
     }
 
     selectedDialogId?.let { id ->
