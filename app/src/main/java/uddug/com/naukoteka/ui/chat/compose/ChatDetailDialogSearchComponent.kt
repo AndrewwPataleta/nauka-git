@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,8 +23,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.ChatDetailUiState
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
+import uddug.com.naukoteka.ui.chat.compose.components.ChatMessagesList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +38,12 @@ fun ChatDetailDialogSearchComponent(
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Сообщения", "Медиа", "Файлы", "Записи")
 
+    val uiState by viewModel.uiState.collectAsState()
+    val searchMessages by viewModel.searchMessages.collectAsState()
+    val searchMedia by viewModel.searchMedia.collectAsState()
+    val searchFiles by viewModel.searchFiles.collectAsState()
+    val searchNotes by viewModel.searchNotes.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -42,7 +51,13 @@ fun ChatDetailDialogSearchComponent(
                     SearchField(
                         title = stringResource(R.string.search_country),
                         query = searchQuery,
-                        onSearchChanged = { searchQuery = it }
+                        onSearchChanged = {
+                            searchQuery = it
+                            val state = uiState
+                            if (state is ChatDetailUiState.Success) {
+                                viewModel.search(state.dialogId, searchQuery)
+                            }
+                        }
                     )
                 },
                 navigationIcon = {
@@ -93,16 +108,44 @@ fun ChatDetailDialogSearchComponent(
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                Text(
-                    text = "Нет результатов",
-                    modifier = Modifier.padding(top = 24.dp)
-                )
+            when (selectedTabIndex) {
+                0 -> if (searchMessages.isEmpty()) {
+                    NoResults()
+                } else {
+                    ChatMessagesList(searchMessages)
+                }
+
+                1 -> if (searchMedia.isEmpty()) {
+                    NoResults()
+                } else {
+                    MediaContent(searchMedia)
+                }
+
+                2 -> if (searchFiles.isEmpty()) {
+                    NoResults()
+                } else {
+                    FilesContent(searchFiles)
+                }
+
+                3 -> if (searchNotes.isEmpty()) {
+                    NoResults()
+                } else {
+                    NotesContent(searchNotes)
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun NoResults() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Text(
+            text = "Нет результатов",
+            modifier = Modifier.padding(top = 24.dp)
+        )
     }
 }

@@ -130,6 +130,31 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun searchMessages(
+        currentUserId: String,
+        dialogId: Long,
+        searchField: String,
+        limit: Int,
+        lastMessageId: Long?,
+        sd: String?,
+        ed: String?,
+    ): List<MessageChat> {
+        return try {
+            val messages = apiService.searchMessages(
+                dialogId,
+                searchField = searchField,
+                limit = limit,
+                lastMessageId = lastMessageId,
+                sd = sd,
+                ed = ed,
+            )
+            messages.map { it.toDomain(currentUserId) }
+        } catch (e: Exception) {
+            println("Error searching messages: ${e.message}")
+            emptyList()
+        }
+    }
+
     override suspend fun createDialog(
         dialogName: String?,
         userRoles: Map<String, String?>,

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
+import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.User
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
@@ -31,6 +32,18 @@ class ChatDialogDetailViewModel @Inject constructor(
 
     private var currentDialogInfo: DialogInfo? = null
     private var currentUser: UserProfileFullInfo? = null
+
+    private val _searchMessages = MutableStateFlow<List<MessageChat>>(emptyList())
+    val searchMessages: StateFlow<List<MessageChat>> = _searchMessages
+
+    private val _searchMedia = MutableStateFlow<List<MediaMessage>>(emptyList())
+    val searchMedia: StateFlow<List<MediaMessage>> = _searchMedia
+
+    private val _searchFiles = MutableStateFlow<List<MediaMessage>>(emptyList())
+    val searchFiles: StateFlow<List<MediaMessage>> = _searchFiles
+
+    private val _searchNotes = MutableStateFlow<List<MediaMessage>>(emptyList())
+    val searchNotes: StateFlow<List<MediaMessage>> = _searchNotes
 
     fun selectTab(index: Int) {
         _selectedTabIndex.value = index
@@ -111,6 +124,58 @@ class ChatDialogDetailViewModel @Inject constructor(
     }
 
     fun getCurrentUser(): UserProfileFullInfo? = currentUser
+
+    fun search(dialogId: Long, query: String) {
+        if (query.length < 3) {
+            _searchMessages.value = emptyList()
+            _searchMedia.value = emptyList()
+            _searchFiles.value = emptyList()
+            _searchNotes.value = emptyList()
+            return
+        }
+        val userId = currentUser?.id ?: return
+        viewModelScope.launch {
+            try {
+                _searchMessages.value = chatInteractor.searchMessages(
+                    userId,
+                    dialogId,
+                    query,
+                )
+                _searchMedia.value = chatInteractor.getDialogMedia(
+                    dialogId,
+                    category = 1,
+                    limit = 50,
+                    page = 1,
+                    query = query,
+                    sd = null,
+                    ed = null,
+                )
+                _searchFiles.value = chatInteractor.getDialogMedia(
+                    dialogId,
+                    category = 3,
+                    limit = 50,
+                    page = 1,
+                    query = query,
+                    sd = null,
+                    ed = null,
+                )
+                _searchNotes.value = chatInteractor.getDialogMedia(
+                    dialogId,
+                    category = 2,
+                    limit = 50,
+                    page = 1,
+                    query = query,
+                    sd = null,
+                    ed = null,
+                )
+            } catch (e: Exception) {
+                _searchMessages.value = emptyList()
+                _searchMedia.value = emptyList()
+                _searchFiles.value = emptyList()
+                _searchNotes.value = emptyList()
+            }
+        }
+    }
 }
 
 sealed class ChatDetailUiState {

@@ -54,6 +54,16 @@ interface ChatApiService {
         @Path("interlocutorId") interlocutorId: String,
     ): DialogInfoDto
 
+    @GET("chat/v1/dialogs/search-messages/{dialogId}")
+    suspend fun searchMessages(
+        @Path("dialogId") dialogId: Long,
+        @Query("searchField") searchField: String,
+        @Query("limit") limit: Int? = null,
+        @Query("lastMessageId") lastMessageId: Long? = null,
+        @Query("sd") sd: String? = null,
+        @Query("ed") ed: String? = null,
+    ): List<MessageDto>
+
     @GET("chat/v1/dialogs/media/{dialogId}")
     suspend fun getDialogMedia(
         @Path("dialogId") dialogId: Long,
