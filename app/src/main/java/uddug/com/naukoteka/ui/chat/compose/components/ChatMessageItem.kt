@@ -144,31 +144,53 @@ fun ChatMessageItem(
 
                 message.files.firstOrNull()?.let { file ->
                     Spacer(modifier = Modifier.height(6.dp))
-                    if (file.contentType?.startsWith("image") == true) {
-                        Column {
-                            AsyncImage(
-                                model = BuildConfig.IMAGE_SERVER_URL.plus(file.path),
-                                contentDescription = "image",
-                                contentScale = ContentScale.Crop,
+                    when {
+                        file.contentType?.startsWith("image") == true -> {
+                            Column {
+                                AsyncImage(
+                                    model = BuildConfig.IMAGE_SERVER_URL.plus(file.path),
+                                    contentDescription = "image",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .fillMaxWidth()
+                                        .height(140.dp)
+                                )
+                                file.fileName?.let { name ->
+                                    Text(
+                                        modifier = Modifier.padding(top = 4.dp),
+                                        text = name,
+                                        fontSize = 12.sp,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                        file.contentType?.startsWith("audio") == true -> {
+                            // Визуализация голосового сообщения с помощью библиотеки compose-audiowaveform
+                            com.linc.audiowaveform.AudioWaveform(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
                                     .fillMaxWidth()
-                                    .height(140.dp)
+                                    .height(48.dp),
+                                waveform = emptyList(),
+                                progress = 0f,
+                                onProgressChange = {}
                             )
-                            file.fileName?.let { name ->
+                            file.duration?.let { duration ->
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    modifier = Modifier.padding(top = 4.dp),
-                                    text = name,
+                                    text = duration,
                                     fontSize = 12.sp,
-                                    color = Color.White
+                                    color = if (isMine) Color.White else Color.Black
                                 )
                             }
                         }
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Menu, contentDescription = "PDF", tint = Color.White)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Медиа Сообщение", fontSize = 12.sp, color = Color.White)
+                        else -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Menu, contentDescription = "PDF", tint = Color.White)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Медиа Сообщение", fontSize = 12.sp, color = Color.White)
+                            }
                         }
                     }
                 }
