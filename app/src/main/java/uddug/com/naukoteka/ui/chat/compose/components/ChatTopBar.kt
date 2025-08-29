@@ -89,26 +89,16 @@ fun ChatTopBar(
                                 }
                         )
                     } else {
-                        val firstLetter = name.firstOrNull()?.uppercase() ?: ""
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF2E83D9))
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null
                                 ) {
                                     onDetailClick()
-                                },
-                            contentAlignment = Alignment.Center
+                                }
                         ) {
-                            Text(
-                                text = firstLetter,
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Avatar(null, name, size = 36.dp)
                         }
                     }
                 }
