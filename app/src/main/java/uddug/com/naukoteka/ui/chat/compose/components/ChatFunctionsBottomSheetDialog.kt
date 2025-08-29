@@ -28,9 +28,12 @@ import uddug.com.naukoteka.mvvm.chat.ChatFunctionsViewModel
 fun ChatFunctionsBottomSheetDialog(
     dialogId: Long,
     isBlocked: Boolean = false,
+    isPinned: Boolean = false,
+    notificationsDisabled: Boolean = false,
     onDismissRequest: () -> Unit,
     onShowAttachments: (Long) -> Unit,
     onSelectMessages: () -> Unit,
+    onPinChange: (Long, Boolean) -> Unit = { _, _ -> },
     onNotificationsChange: (Long, Boolean) -> Unit = { _, _ -> },
     viewModel: ChatFunctionsViewModel = hiltViewModel(),
 ) {
@@ -57,14 +60,33 @@ fun ChatFunctionsBottomSheetDialog(
             } else {
                 R.string.chat_block_chat to { viewModel.blockChat(dialogId) }
             }
-            val items = listOf(
-                R.string.chat_mark_unread to { viewModel.markUnread(dialogId) },
-                R.string.chat_show_attachments to { onShowAttachments(dialogId) },
-                R.string.chat_pin to { viewModel.pinChat(dialogId) },
+            val pinItem = if (isPinned) {
+                R.string.chat_unpin to {
+                    viewModel.unpinChat(dialogId)
+                    onPinChange(dialogId, false)
+                }
+            } else {
+                R.string.chat_pin to {
+                    viewModel.pinChat(dialogId)
+                    onPinChange(dialogId, true)
+                }
+            }
+            val notificationsItem = if (notificationsDisabled) {
+                R.string.chat_enable_notifications to {
+                    viewModel.enableNotifications(dialogId)
+                    onNotificationsChange(dialogId, false)
+                }
+            } else {
                 R.string.chat_disable_notifications to {
                     viewModel.disableNotifications(dialogId)
                     onNotificationsChange(dialogId, true)
-                },
+                }
+            }
+            val items = listOf(
+                R.string.chat_mark_unread to { viewModel.markUnread(dialogId) },
+                R.string.chat_show_attachments to { onShowAttachments(dialogId) },
+                pinItem,
+                notificationsItem,
                 R.string.chat_select_messages to {
                     viewModel.selectMessages(dialogId)
                     onSelectMessages()

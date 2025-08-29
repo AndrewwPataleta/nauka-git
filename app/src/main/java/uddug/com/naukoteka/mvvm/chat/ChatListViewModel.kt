@@ -112,6 +112,25 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
+    fun updateDialogPin(dialogId: Long, pinned: Boolean) {
+        viewModelScope.launch {
+            try {
+                chatRepository.getDialogInfo(dialogId)
+                _uiState.update { state ->
+                    if (state is ChatListUiState.Success) {
+                        val updatedChats = state.chats.map { chat ->
+                            if (chat.dialogId == dialogId) {
+                                chat.copy(isPinned = pinned)
+                            } else chat
+                        }
+                        ChatListUiState.Success(updatedChats)
+                    } else state
+                }
+            } catch (_: Exception) {
+            }
+        }
+    }
+
     fun onFolderSelected(folderId: Long) {
         loadChats(folderId)
     }
