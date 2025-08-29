@@ -17,12 +17,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import android.widget.Toast
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.MessageFunctionsViewModel
+import uddug.com.naukoteka.utils.copyToClipboard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +37,7 @@ fun MessageFunctionsBottomSheetDialog(
     viewModel: MessageFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -54,7 +58,17 @@ fun MessageFunctionsBottomSheetDialog(
             val items = listOf(
                 R.string.chat_message_reply to { onReply(message) },
                 R.string.chat_message_forward to { viewModel.forward(message.id) },
-                R.string.chat_message_copy to { viewModel.copy(message.id) },
+                R.string.chat_message_copy to {
+                    message.text?.let {
+                        context.copyToClipboard(it)
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.chat_message_copied),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    viewModel.copy(message.id)
+                },
                 R.string.chat_message_select to {
                     viewModel.select(message.id)
                     onSelectMessage()
