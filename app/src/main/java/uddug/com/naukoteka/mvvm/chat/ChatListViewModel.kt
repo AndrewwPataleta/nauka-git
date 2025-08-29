@@ -70,7 +70,7 @@ class ChatListViewModel @Inject constructor(
             try {
                 val chats = chatRepository.getChats(folderId)
                 val elapsed = System.currentTimeMillis() - startTime
-                if (elapsed < 1500L) delay(1500L - elapsed)
+                if (elapsed < 500L) delay(500L - elapsed)
                 _uiState.value = ChatListUiState.Success(chats)
             } catch (e: Exception) {
                 _uiState.value = ChatListUiState.Error(e.message ?: "Unknown error")

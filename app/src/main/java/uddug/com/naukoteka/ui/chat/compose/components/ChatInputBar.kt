@@ -12,9 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -26,6 +25,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.draw.scale
 import coil.compose.AsyncImage
 import uddug.com.naukoteka.R
 import uddug.com.domain.entities.chat.MessageChat
@@ -171,11 +180,28 @@ fun ChatInputBar(
 
             if (currentMessage.isBlank()) {
                 IconButton(onClick = onVoiceClick) {
-                    Icon(
-                        imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
-                        contentDescription = if (isRecording) "Stop" else "Record",
-                        tint = Color(0XFF8083A0)
-                    )
+                    if (isRecording) {
+                        val transition = rememberInfiniteTransition()
+                        val scale by transition.animateFloat(
+                            initialValue = 1f,
+                            targetValue = 1.3f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(500, easing = FastOutSlowInEasing),
+                                repeatMode = RepeatMode.Reverse
+                            )
+                        )
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_rec_mic_active),
+                            contentDescription = "Stop",
+
+                            modifier = Modifier.scale(scale)
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_rec_mic_inactive),
+                            contentDescription = "Record",
+                        )
+                    }
                 }
             } else {
                 IconButton(onClick = onSendClick) {

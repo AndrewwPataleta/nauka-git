@@ -126,7 +126,7 @@ class ChatDialogViewModel @Inject constructor(
                                     lastMessageId = null,
                                 ).sortedBy { it.createdAt }
                                 val elapsed = System.currentTimeMillis() - startTime
-                                if (elapsed < 1500L) delay(1500L - elapsed)
+                                if (elapsed < 500L) delay(500L - elapsed)
                                 _uiState.value = ChatDialogUiState.Success(
                                     chats = messages,
                                     chatName = name,
@@ -204,7 +204,7 @@ class ChatDialogViewModel @Inject constructor(
                                         lastMessageId = null,
                                     ).sortedBy { it.createdAt }
                                     val elapsed = System.currentTimeMillis() - startTime
-                                    if (elapsed < 1500L) delay(1500L - elapsed)
+                                    if (elapsed < 500L) delay(500L - elapsed)
                                     _uiState.value = ChatDialogUiState.Success(
                                         chats = messages,
                                         chatName = name,
@@ -217,7 +217,7 @@ class ChatDialogViewModel @Inject constructor(
                                 }
                             } else {
                                 val elapsed = System.currentTimeMillis() - startTime
-                                if (elapsed < 1500L) delay(1500L - elapsed)
+                                if (elapsed < 500L) delay(500L - elapsed)
                                 _uiState.value = ChatDialogUiState.Success(
                                     chats = emptyList(),
                                     chatName = name,

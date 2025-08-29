@@ -91,6 +91,9 @@ class ChatDetailDialogFragment : Fragment() {
                         viewModel = viewModel,
                         onBackPressed = {
                             requireActivity().onBackPressed()
+                        },
+                        onSearchClick = {
+                            findNavController().navigate(R.id.chatDetailSearchFragment)
                         }
                     )
                 }
