@@ -106,9 +106,10 @@ fun ChatGroupDetailComponent(
                           horizontalAlignment = Alignment.CenterHorizontally
                       ) {
                           Avatar(
-                              state.image,
-                              state.name,
-                              size = 100.dp
+                              url = null,
+                              name = null,
+                              size = 100.dp,
+                              overrideInitials = "Г",
                           )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(

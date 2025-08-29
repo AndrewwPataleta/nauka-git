@@ -19,7 +19,12 @@ import coil.compose.AsyncImage
 import uddug.com.naukoteka.BuildConfig
 
 @Composable
-fun Avatar(url: String?, name: String?, size: Dp = 36.dp) {
+fun Avatar(
+    url: String?,
+    name: String?,
+    size: Dp = 36.dp,
+    overrideInitials: String? = null,
+) {
     if (!url.isNullOrEmpty()) {
         AsyncImage(
             model = BuildConfig.IMAGE_SERVER_URL.plus(url),
@@ -29,12 +34,12 @@ fun Avatar(url: String?, name: String?, size: Dp = 36.dp) {
                 .clip(CircleShape)
         )
     } else {
-        val initials = name.orEmpty()
+        val initials = overrideInitials ?: name.orEmpty()
             .split(" ")
             .mapNotNull { it.firstOrNull()?.uppercase() }
             .take(2)
             .joinToString("")
-        val gradient = getGradientForName(name.orEmpty())
+        val gradient = getGradientForName(overrideInitials ?: name.orEmpty())
         Box(
             modifier = Modifier
                 .size(size)

@@ -64,7 +64,12 @@ fun ChatTopBar(
                             onDetailClick()
                         }
                 ) {
-                    Avatar(image.takeIf { it.isNotEmpty() }, name, size = 36.dp)
+                    Avatar(
+                        url = image.takeIf { !isGroup && it.isNotEmpty() },
+                        name = if (isGroup) null else name,
+                        size = 36.dp,
+                        overrideInitials = if (isGroup) "Г" else null,
+                    )
                 }
                 Column(
                     modifier = Modifier
