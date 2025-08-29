@@ -29,13 +29,15 @@ class ChatCreateMultiViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             try {
-                val users = chatInteractor.getDialogs().map { chat ->
-                    UserProfileFullInfo(
-                        id = chat.interlocutor.userId,
-                        fullName = chat.interlocutor.fullName,
-                        image = Image(path = chat.interlocutor.image)
-                    )
-                }
+                val users = chatInteractor.getDialogs()
+                    .filter { it.dialogType == 1 }
+                    .map { chat ->
+                        UserProfileFullInfo(
+                            id = chat.interlocutor.userId,
+                            fullName = chat.interlocutor.fullName,
+                            image = Image(path = chat.interlocutor.image)
+                        )
+                    }
                 _uiState.value = ChatCreateMultiUiState.Success(
                     query = "",
                     users = users,
