@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,13 +52,7 @@ fun ChatDetailDialogSearchComponent(
                     SearchField(
                         title = stringResource(R.string.search_country),
                         query = searchQuery,
-                        onSearchChanged = {
-                            searchQuery = it
-                            val state = uiState
-                            if (state is ChatDetailUiState.Success) {
-                                viewModel.search(state.dialogId, searchQuery)
-                            }
-                        }
+                        onSearchChanged = { searchQuery = it }
                     )
                 },
                 navigationIcon = {
@@ -73,6 +68,12 @@ fun ChatDetailDialogSearchComponent(
             )
         }
     ) { paddingValues ->
+        LaunchedEffect(uiState, searchQuery) {
+            val state = uiState
+            if (state is ChatDetailUiState.Success) {
+                viewModel.search(state.dialogId, searchQuery)
+            }
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
