@@ -84,6 +84,7 @@ fun ChatDialogComponent(
     var isRecording by remember { mutableStateOf(false) }
     var recordedAudio by remember { mutableStateOf<File?>(null) }
     var recordingTime by remember { mutableStateOf(0L) }
+    var isRecordingPlaying by remember { mutableStateOf(false) }
     val audioPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted: Boolean ->
@@ -268,6 +269,7 @@ fun ChatDialogComponent(
                         isRecording = isRecording,
                         recordedAudio = recordedAudio,
                         recordingTime = String.format("%02d:%02d", recordingTime / 60000, (recordingTime / 1000) % 60),
+                        isRecordingPlaying = isRecordingPlaying,
                         onMessageChange = { newMessage ->
                             viewModel.updateCurrentMessage(newMessage)
                         },
@@ -299,6 +301,10 @@ fun ChatDialogComponent(
                             recordedAudio?.delete()
                             recordedAudio = null
                             recordingTime = 0L
+                            if (isRecordingPlaying) {
+                                mediaPlayer.stop()
+                                isRecordingPlaying = false
+                            }
                         },
                         onSendRecording = {
                             recordedAudio?.let { file ->
@@ -309,13 +315,26 @@ fun ChatDialogComponent(
                             }
                             recordedAudio = null
                             recordingTime = 0L
+                            if (isRecordingPlaying) {
+                                mediaPlayer.stop()
+                                isRecordingPlaying = false
+                            }
                         },
                         onPlayRecording = {
                             recordedAudio?.let { file ->
-                                mediaPlayer.reset()
-                                mediaPlayer.setDataSource(file.absolutePath)
-                                mediaPlayer.prepare()
-                                mediaPlayer.start()
+                                if (isRecordingPlaying) {
+                                    mediaPlayer.pause()
+                                    isRecordingPlaying = false
+                                } else {
+                                    mediaPlayer.reset()
+                                    mediaPlayer.setDataSource(file.absolutePath)
+                                    mediaPlayer.prepare()
+                                    mediaPlayer.start()
+                                    isRecordingPlaying = true
+                                    mediaPlayer.setOnCompletionListener {
+                                        isRecordingPlaying = false
+                                    }
+                                }
                             }
                         }
                     )

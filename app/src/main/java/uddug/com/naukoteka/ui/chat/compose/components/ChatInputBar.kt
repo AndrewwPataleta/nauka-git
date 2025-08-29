@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -60,6 +61,7 @@ fun ChatInputBar(
     onDeleteRecording: () -> Unit,
     onSendRecording: () -> Unit,
     onPlayRecording: () -> Unit,
+    isRecordingPlaying: Boolean,
 ) {
     Column(
         modifier = modifier
@@ -169,7 +171,7 @@ fun ChatInputBar(
                             .weight(1f)
                             .padding(horizontal = 6.dp)
                     ) {
-                        RecordedAudioPreview(duration = recordingTime, onPlay = onPlayRecording)
+                        RecordedAudioPreview(duration = recordingTime, isPlaying = isRecordingPlaying, onPlay = onPlayRecording)
                     }
                     IconButton(onClick = onSendRecording) {
                         Icon(Icons.Default.Send, contentDescription = "Send", tint = Color(0XFF8083A0))
@@ -276,7 +278,7 @@ fun ChatInputBar(
 }
 
 @Composable
-fun RecordedAudioPreview(duration: String, onPlay: () -> Unit) {
+fun RecordedAudioPreview(duration: String, isPlaying: Boolean, onPlay: () -> Unit) {
     Box(
         modifier = Modifier
             .height(40.dp)
@@ -304,8 +306,8 @@ fun RecordedAudioPreview(duration: String, onPlay: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = "Play",
+                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = if (isPlaying) "Pause" else "Play",
                     tint = Color(0xFF3F7AFF)
                 )
             }
