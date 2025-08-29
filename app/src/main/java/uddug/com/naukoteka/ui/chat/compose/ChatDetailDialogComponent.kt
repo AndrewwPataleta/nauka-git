@@ -168,7 +168,7 @@ fun ChatDetailDialogComponent(
                     ) {
                         // Аватарка
                         Avatar(
-                            state.profile.image.takeIf { it.isNotEmpty() },
+                            state.profile.image.takeIf { it?.isNotEmpty() == true },
                             state.profile.fullName,
                             size = 100.dp
                         )

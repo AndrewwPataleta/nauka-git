@@ -17,7 +17,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Pause
+
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,6 +42,8 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.ui.res.colorResource
 import coil.compose.AsyncImage
 import uddug.com.naukoteka.R
 import uddug.com.domain.entities.chat.MessageChat
@@ -165,24 +167,35 @@ fun ChatInputBar(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onDeleteRecording) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_trash),
                             contentDescription = "Delete",
-                            tint = Color(0XFF8083A0)
                         )
                     }
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(horizontal = 6.dp)
+                            .background(
+                                color = colorResource(R.color.object_main),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
                     ) {
-                        RecordedAudioPreview(duration = recordingTime, isPlaying = isRecordingPlaying, onPlay = onPlayRecording)
+                        RecordedAudioPreview(
+                            duration = recordingTime,
+                            isPlaying = isRecordingPlaying,
+                            onPlay = onPlayRecording
+                        )
                     }
                     IconButton(onClick = onSendRecording) {
-                        Icon(Icons.Default.Send, contentDescription = "Send", tint = Color(0XFF8083A0))
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_send_message_new),
+                            contentDescription = "Send",
+                        )
                     }
                 }
             }
+
             isRecording -> {
                 var dragAmount by remember { mutableStateOf(0f) }
                 Row(
@@ -218,7 +231,7 @@ fun ChatInputBar(
                         )
                     }
                     Text(
-                        text = "Ведите влево для отмены",
+                        text = "Смахните влево для отмены",
                         color = Color(0XFF8083A0),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.weight(1f)
@@ -241,6 +254,7 @@ fun ChatInputBar(
                     }
                 }
             }
+
             else -> {
                 Row(
                     modifier = Modifier
@@ -287,7 +301,11 @@ fun ChatInputBar(
                         }
                     } else {
                         IconButton(onClick = onSendClick) {
-                            Icon(Icons.Default.Send, contentDescription = "Send", tint = Color(0XFF8083A0))
+                            Icon(
+                                Icons.Default.Send,
+                                contentDescription = "Send",
+                                tint = Color(0XFF8083A0)
+                            )
                         }
                     }
                 }
@@ -305,12 +323,7 @@ fun RecordedAudioPreview(duration: String, isPlaying: Boolean, onPlay: () -> Uni
             .clickable { onPlay() },
         contentAlignment = Alignment.CenterStart
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.background_voice_wave),
-            contentDescription = null,
-            modifier = Modifier.fillMaxWidth(),
-            contentScale = ContentScale.FillWidth
-        )
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -324,12 +337,19 @@ fun RecordedAudioPreview(duration: String, isPlaying: Boolean, onPlay: () -> Uni
                     .background(Color.White, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                Image(
+                    painter = if (isPlaying) painterResource(id = R.drawable.ic_stop_voice) else painterResource(
+                        id = R.drawable.ic_play_voice
+                    ),
                     contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = Color(0xFF3F7AFF)
                 )
             }
+            Image(
+                painter = painterResource(id = R.drawable.background_voice_wave),
+                contentDescription = null,
+                modifier = Modifier.weight(1f),
+                contentScale = ContentScale.FillWidth
+            )
             Text(text = duration, color = Color.White)
         }
     }

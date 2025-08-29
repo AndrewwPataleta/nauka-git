@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 
 @Composable
 fun CreateChatMemberCard(

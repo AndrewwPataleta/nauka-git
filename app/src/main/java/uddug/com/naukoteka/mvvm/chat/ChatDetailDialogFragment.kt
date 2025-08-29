@@ -94,6 +94,9 @@ class ChatDetailDialogFragment : Fragment() {
                         },
                         onSearchClick = {
                             findNavController().navigate(R.id.chatDetailSearchFragment)
+                        },
+                        onContactClick = {
+
                         }
                     )
                 }

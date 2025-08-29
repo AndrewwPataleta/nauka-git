@@ -5,6 +5,7 @@ import android.Manifest
 import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
+import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,7 +42,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
-import java.io.File
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
@@ -56,6 +56,7 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
 import uddug.com.naukoteka.ui.chat.compose.components.MessageListShimmer
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.naukoteka.ui.chat.AudioRecorder
+import java.io.File
 
 private enum class AttachmentPickerType { MEDIA, FILE }
 

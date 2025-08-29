@@ -27,6 +27,7 @@ import coil.compose.AsyncImage
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.core.deeplink.formatMessageTime
+import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
