@@ -286,6 +286,12 @@ fun ChatDialogComponent(
                                 audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                             }
                         },
+                        onCancelRecording = {
+                            audioRecorder.stop()?.delete()
+                            recordedAudio = null
+                            recordingTime = 0L
+                            isRecording = false
+                        },
                         onAttachClick = {
                             showAttachmentSheet = true
                         },
