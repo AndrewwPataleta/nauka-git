@@ -39,7 +39,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.icons.Icons
@@ -73,6 +72,7 @@ import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatDetailUiState
+import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailShimmer
 
@@ -167,13 +167,10 @@ fun ChatDetailDialogComponent(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Аватарка
-                        AsyncImage(
-                            model = BuildConfig.IMAGE_SERVER_URL.plus(state.profile.image),
-                            contentDescription = "Аватар",
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
+                        Avatar(
+                            state.profile.image.takeIf { it.isNotEmpty() },
+                            state.profile.fullName,
+                            size = 100.dp
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))

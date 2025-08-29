@@ -1,6 +1,5 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,13 +25,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 
 @Composable
@@ -57,50 +53,18 @@ fun ChatTopBar(
                 IconButton(onClick = { onBackPressed() }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF2E83D9))
                 }
-                if (image.isNotEmpty()) {
-                    AsyncImage(
-                        model = BuildConfig.IMAGE_SERVER_URL.plus(image),
-                        contentDescription = "image",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .size(36.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {
-                                onDetailClick()
-                            }
-                    )
-                } else {
-                    if (isGroup) {
-                        Image(
-                            painter = painterResource(id = R.drawable.mock_avatar),
-                            contentDescription = "image",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .size(36.dp)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null
-                                ) {
-                                    onDetailClick()
-                                }
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null
-                                ) {
-                                    onDetailClick()
-                                }
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .size(36.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
                         ) {
-                            Avatar(null, name, size = 36.dp)
+                            onDetailClick()
                         }
-                    }
+                ) {
+                    Avatar(image.takeIf { it.isNotEmpty() }, name, size = 36.dp)
                 }
                 Column(
                     modifier = Modifier
