@@ -339,11 +339,6 @@ class ChatDialogViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 chatInteractor.deleteMessages(ids.toList())
-                val currentState = _uiState.value
-                if (currentState is ChatDialogUiState.Success) {
-                    val updated = currentState.chats.filterNot { ids.contains(it.id) }
-                    _uiState.value = currentState.copy(chats = updated)
-                }
             } catch (_: Exception) {
                 // Ignored: network or API error
             } finally {
@@ -493,11 +488,34 @@ class ChatDialogViewModel @Inject constructor(
     private fun handleIncomingMessage(message: Any) {
         viewModelScope.launch {
             try {
-                // Преобразуем сообщение из JSON в ChatSocketMessage
+                // Преобразуем сообщение из JSON
                 val jsonString = when (message) {
                     is String -> message
                     is JSONObject -> message.toString()
                     else -> return@launch
+                }
+                val jsonObject = JSONObject(jsonString)
+
+                // Обрабатываем действие удаления сообщений
+                if (jsonObject.has("action")) {
+                    val action = jsonObject.getJSONObject("action")
+                    if (action.optString("type") == "delete") {
+                        val ids = mutableListOf<Long>()
+                        val array = action.optJSONArray("messages")
+                        if (array != null) {
+                            for (i in 0 until array.length()) {
+                                ids.add(array.getLong(i))
+                            }
+                        } else {
+                            action.optLong("messageId").takeIf { it != 0L }?.let { ids.add(it) }
+                        }
+                        val currentState = _uiState.value
+                        if (currentState is ChatDialogUiState.Success && ids.isNotEmpty()) {
+                            val updatedChats = currentState.chats.filterNot { ids.contains(it.id) }
+                            _uiState.value = currentState.copy(chats = updatedChats)
+                        }
+                    }
+                    return@launch
                 }
 
                 val gson = Gson()
