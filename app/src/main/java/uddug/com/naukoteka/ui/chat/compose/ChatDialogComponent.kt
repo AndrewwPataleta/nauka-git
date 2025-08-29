@@ -248,13 +248,14 @@ fun ChatDialogComponent(
                         },
                         onVoiceClick = {
                             if (isRecording) {
-                                audioRecorder.stop()?.let { file ->
+                                val recordedFile = audioRecorder.stop()
+                                isRecording = false
+                                recordedFile?.let { file ->
                                     scope.launch {
                                         viewModel.sendVoiceMessage(file)
                                         scrollState.animateScrollToItem(messages.size - 1)
                                     }
                                 }
-                                isRecording = false
                             } else {
                                 audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                             }
