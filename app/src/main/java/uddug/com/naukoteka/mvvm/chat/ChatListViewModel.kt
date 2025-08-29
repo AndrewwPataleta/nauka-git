@@ -69,12 +69,9 @@ class ChatListViewModel @Inject constructor(
         loadChatsJob = viewModelScope.launch {
             try {
                 val chats = chatRepository.getChats(folderId)
-                val filteredChats = chats.filter { chat ->
-                    chat.users.size <= 2
-                }
                 val elapsed = System.currentTimeMillis() - startTime
                 if (elapsed < 500L) delay(500L - elapsed)
-                _uiState.value = ChatListUiState.Success(filteredChats)
+                _uiState.value = ChatListUiState.Success(chats)
             } catch (e: Exception) {
                 _uiState.value = ChatListUiState.Error(e.message ?: "Unknown error")
             }
@@ -194,12 +191,6 @@ class ChatListViewModel @Inject constructor(
                 val dialogs = chatRepository.searchDialogs(query)
                     .filter { it.dialogType == 1 }
                 val messages = chatRepository.searchMessages(query)
-                    .mapNotNull { message ->
-                        val info = runCatching {
-                            chatRepository.getDialogInfo(message.dialogId)
-                        }.getOrNull()
-                        if (info?.users.orEmpty().size <= 2) message else null
-                    }
                 val results = dialogs.map { SearchResult.Dialog(it) } +
                         messages.map { SearchResult.Message(it) }
                 _searchResults.value = results
