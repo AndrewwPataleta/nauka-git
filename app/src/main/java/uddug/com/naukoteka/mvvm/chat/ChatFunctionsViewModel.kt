@@ -38,6 +38,16 @@ class ChatFunctionsViewModel @Inject constructor(
         }
     }
 
+    fun unpinChat(dialogId: Long) {
+        viewModelScope.launch {
+            try {
+                chatRepository.unpinDialog(dialogId)
+            } catch (e: Exception) {
+                // handle error if needed
+            }
+        }
+    }
+
     fun disableNotifications(dialogId: Long) {
         viewModelScope.launch {
             try {

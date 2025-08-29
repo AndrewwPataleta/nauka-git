@@ -90,15 +90,23 @@ fun ChatListComponent(
     }
 
     selectedDialogId?.let { id ->
-        val isBlocked = (uiState as? ChatListUiState.Success)?.chats?.firstOrNull { it.dialogId == id }?.isBlocked ?: false
+        val chat = (uiState as? ChatListUiState.Success)?.chats?.firstOrNull { it.dialogId == id }
+        val isBlocked = chat?.isBlocked ?: false
+        val isPinned = chat?.isPinned ?: false
+        val notificationsDisabled = chat?.notificationsDisable ?: false
         ChatFunctionsBottomSheetDialog(
             dialogId = id,
             isBlocked = isBlocked,
+            isPinned = isPinned,
+            notificationsDisabled = notificationsDisabled,
             onDismissRequest = { selectedDialogId = null },
             onShowAttachments = onShowAttachments,
             onSelectMessages = {
                 viewModel.startSelection(id)
                 selectedDialogId = null
+            },
+            onPinChange = { dialogId, pinned ->
+                viewModel.updateDialogPin(dialogId, pinned)
             },
             onNotificationsChange = { dialogId, disabled ->
                 viewModel.updateDialogNotifications(dialogId, disabled)
