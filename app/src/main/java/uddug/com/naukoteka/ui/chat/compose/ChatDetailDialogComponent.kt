@@ -235,7 +235,7 @@ fun ChatDetailDialogComponent(
                                         interactionSource = remember { MutableInteractionSource() },
                                         indication = null
                                     ) {
-
+                                        viewModel.shareDialog()
                                     }
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally

@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
@@ -15,6 +18,11 @@ import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.ui.chat.di.SocketService
 import uddug.com.domain.interactors.chat.ChatInteractor
+import android.net.Uri
+import com.google.firebase.dynamiclinks.ktx.androidParameters
+import com.google.firebase.dynamiclinks.ktx.dynamicLinks
+import com.google.firebase.dynamiclinks.ktx.shortLinkAsync
+import com.google.firebase.ktx.Firebase
 import javax.inject.Inject
 
 @HiltViewModel
@@ -44,6 +52,9 @@ class ChatDialogDetailViewModel @Inject constructor(
 
     private val _searchNotes = MutableStateFlow<List<MediaMessage>>(emptyList())
     val searchNotes: StateFlow<List<MediaMessage>> = _searchNotes
+
+    private val _events = MutableSharedFlow<ChatDialogDetailEvent>()
+    val events: SharedFlow<ChatDialogDetailEvent> = _events.asSharedFlow()
 
     fun selectTab(index: Int) {
         _selectedTabIndex.value = index
@@ -177,6 +188,19 @@ class ChatDialogDetailViewModel @Inject constructor(
             }
         }
     }
+
+    fun shareDialog() {
+        val dialogId = currentDialogInfo?.id ?: return
+        Firebase.dynamicLinks.shortLinkAsync {
+            link = Uri.parse("https://stage.naukotheka.ru/chat/$dialogId")
+            domainUriPrefix = "https://naukoteka.page.link"
+            androidParameters {}
+        }.addOnSuccessListener { shortLink ->
+            viewModelScope.launch {
+                _events.emit(ChatDialogDetailEvent.Share(shortLink.shortLink.toString()))
+            }
+        }
+    }
 }
 
 sealed class ChatDetailUiState {
@@ -191,4 +215,8 @@ sealed class ChatDetailUiState {
     ) : ChatDetailUiState()
 
     data class Error(val message: String) : ChatDetailUiState()
+}
+
+sealed class ChatDialogDetailEvent {
+    data class Share(val link: String) : ChatDialogDetailEvent()
 }
