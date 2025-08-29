@@ -38,13 +38,15 @@ class ChatCreateSingleViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val users = withContext(Dispatchers.IO) {
-                    chatInteractor.getDialogs().map { chat ->
-                        UserProfileFullInfo(
-                            id = chat.interlocutor.userId,
-                            fullName = chat.interlocutor.fullName,
-                            image = Image(path = chat.interlocutor.image)
-                        )
-                    }
+                    chatInteractor.getDialogs()
+                        .filter { it.dialogType == 1 }
+                        .map { chat ->
+                            UserProfileFullInfo(
+                                id = chat.interlocutor.userId,
+                                fullName = chat.interlocutor.fullName,
+                                image = Image(path = chat.interlocutor.image)
+                            )
+                        }
                 }
                 _uiState.value = ChatCreateSingleUiState.Success(
                     query = "",
