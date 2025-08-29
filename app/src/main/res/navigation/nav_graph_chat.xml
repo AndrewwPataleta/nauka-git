@@ -56,4 +56,8 @@
 
     </fragment>
 
+    <fragment
+        android:id="@+id/sendContactFragment"
+        android:name="uddug.com.naukoteka.ui.chat.SendContactFragment"/>
+
 </navigation>

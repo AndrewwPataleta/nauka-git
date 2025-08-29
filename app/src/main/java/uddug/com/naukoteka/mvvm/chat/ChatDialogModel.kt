@@ -59,6 +59,8 @@ class ChatDialogViewModel @Inject constructor(
 
     private var attachedContact: ContactInfo? = null
 
+    private var selectedUser: UserProfileFullInfo? = null
+
     private var currentUser: UserProfileFullInfo? = null
 
     init {
@@ -290,6 +292,14 @@ class ChatDialogViewModel @Inject constructor(
         val currentState = _uiState.value
         if (currentState is ChatDialogUiState.Success) {
             _uiState.value = currentState.copy(attachedContact = contact)
+        }
+    }
+
+    fun attachUserContact(user: UserProfileFullInfo) {
+        selectedUser = user
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(selectedContact = user)
         }
     }
 
@@ -601,6 +611,7 @@ sealed class ChatDialogUiState {
         val status: String? = null,
         val replyMessage: MessageChat? = null,
         val attachedContact: ContactInfo? = null,
+        val selectedContact: UserProfileFullInfo? = null,
     ) : ChatDialogUiState()
 
     data class Error(val message: String) : ChatDialogUiState()

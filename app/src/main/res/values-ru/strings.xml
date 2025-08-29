@@ -112,5 +112,7 @@
   <string name="change_photo">Изменить фотографию</string>
   <string name="open_photo">Открыть фотографию</string>
   <string name="amount_followers_following">%s подписчиков ∙ %s подписок</string>
+  <string name="send_contact_title">Отправить контакт</string>
+  <string name="search_contacts_hint">Поиск по контактам</string>
   <string name="labor_activity_name">%s в <font color="##2E83D9">%s</font></string>
 </resources>

@@ -16,6 +16,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.Chat
+import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatDialogEvents
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
@@ -93,6 +94,12 @@ class ChatDialogFragment : Fragment() {
                 }
             }
         }
+
+        findNavController().currentBackStackEntry?.savedStateHandle
+            ?.getLiveData<UserProfileFullInfo>("selectedUser")
+            ?.observe(viewLifecycleOwner) { user ->
+                user?.let { viewModel.attachUserContact(it) }
+            }
     }
 
     override fun onCreateView(
@@ -115,6 +122,9 @@ class ChatDialogFragment : Fragment() {
                                 R.id.chatDetailSearchFragment,
                                 Bundle().apply { putLong(ChatDetailDialogFragment.DIALOG_ID, dialogId) }
                             )
+                        },
+                        onContactClick = {
+                            findNavController().navigate(R.id.sendContactFragment)
                         }
                     )
                 }
