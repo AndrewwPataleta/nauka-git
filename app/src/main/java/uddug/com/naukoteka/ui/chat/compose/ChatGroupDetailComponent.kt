@@ -1,13 +1,11 @@
 package uddug.com.naukoteka.ui.chat.compose
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
@@ -21,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -29,9 +26,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailUiState
 import uddug.com.naukoteka.mvvm.chat.Participant
@@ -103,20 +99,17 @@ fun ChatGroupDetailComponent(
                         .background(Color.White)
                         .padding(paddingValues)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_logo_naukoteka),
-                            contentDescription = "Avatar",
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
+                      Column(
+                          modifier = Modifier
+                              .fillMaxWidth()
+                              .padding(16.dp),
+                          horizontalAlignment = Alignment.CenterHorizontally
+                      ) {
+                          Avatar(
+                              state.image,
+                              state.name,
+                              size = 100.dp
+                          )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = state.name,
@@ -274,13 +267,10 @@ fun ParticipantsContent(users: List<Participant>) {
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AsyncImage(
-                    model = BuildConfig.IMAGE_SERVER_URL.plus(participant.user.image.orEmpty()),
-                    contentDescription = "Avatar",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
+                Avatar(
+                    participant.user.image,
+                    participant.user.fullName,
+                    size = 40.dp
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(horizontalAlignment = Alignment.Start) {
