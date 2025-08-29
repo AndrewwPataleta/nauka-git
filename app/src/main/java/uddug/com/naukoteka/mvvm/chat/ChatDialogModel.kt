@@ -335,6 +335,7 @@ class ChatDialogViewModel @Inject constructor(
 
     fun deleteSelectedMessages() {
         val ids = _selectedMessages.value
+        if (ids.isEmpty()) return
         viewModelScope.launch {
             try {
                 chatInteractor.deleteMessages(ids.toList())
@@ -344,8 +345,10 @@ class ChatDialogViewModel @Inject constructor(
                     _uiState.value = currentState.copy(chats = updated)
                 }
             } catch (_: Exception) {
+                // Ignored: network or API error
+            } finally {
+                clearSelection()
             }
-            clearSelection()
         }
     }
 
