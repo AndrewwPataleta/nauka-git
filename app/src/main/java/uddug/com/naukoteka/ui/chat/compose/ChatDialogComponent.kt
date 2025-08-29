@@ -3,9 +3,8 @@ package uddug.com.naukoteka.ui.chat.compose
 
 import android.Manifest
 import android.content.Context
-import android.net.Uri
 import android.media.MediaPlayer
-import android.provider.ContactsContract
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -56,10 +55,9 @@ import uddug.com.naukoteka.ui.chat.compose.components.AttachOptionsBottomSheetDi
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
 import uddug.com.naukoteka.ui.chat.compose.components.MessageListShimmer
 import uddug.com.domain.entities.chat.MessageChat
-import java.io.File
 import uddug.com.naukoteka.ui.chat.AudioRecorder
 
-private enum class AttachmentPickerType { MEDIA, FILE, CONTACT }
+private enum class AttachmentPickerType { MEDIA, FILE }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -67,6 +65,7 @@ fun ChatDialogComponent(
     viewModel: ChatDialogViewModel,
     onBackPressed: () -> Unit,
     onSearchClick: () -> Unit,
+    onContactClick: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberLazyListState()
@@ -123,16 +122,6 @@ fun ChatDialogComponent(
         }
     }
 
-    val contactPickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickContact()
-    ) { uri: Uri? ->
-        uri?.let {
-            getContactInfo(context, it)?.let { info ->
-                viewModel.attachContact(info)
-            }
-        }
-    }
-
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted: Boolean ->
@@ -144,8 +133,6 @@ fun ChatDialogComponent(
                     )
                 AttachmentPickerType.FILE ->
                     filePickerLauncher.launch(arrayOf("*/*"))
-                AttachmentPickerType.CONTACT ->
-                    contactPickerLauncher.launch(null)
                 null -> {}
             }
         }
@@ -362,9 +349,8 @@ fun ChatDialogComponent(
                 },
                 onPollClick = { showAttachmentSheet = false },
                 onContactClick = {
-                    pendingPickerType = AttachmentPickerType.CONTACT
-                    permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                     showAttachmentSheet = false
+                    onContactClick()
                 }
             )
         }

@@ -400,5 +400,7 @@
     <string name="chat_attach_file">Файлы</string>
     <string name="chat_attach_poll">Опросы</string>
     <string name="chat_attach_contact">Контакты</string>
+    <string name="send_contact_title">Отправить контакт</string>
+    <string name="search_contacts_hint">Поиск по контактам</string>
 
 </resources>
