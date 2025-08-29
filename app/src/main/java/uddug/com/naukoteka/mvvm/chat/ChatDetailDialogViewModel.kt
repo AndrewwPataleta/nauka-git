@@ -126,13 +126,14 @@ class ChatDialogDetailViewModel @Inject constructor(
     fun getCurrentUser(): UserProfileFullInfo? = currentUser
 
     fun search(dialogId: Long, query: String) {
-        if (query.length < 3) {
+        if (query.isBlank()) {
             _searchMessages.value = emptyList()
             _searchMedia.value = emptyList()
             _searchFiles.value = emptyList()
             _searchNotes.value = emptyList()
             return
         }
+
         val userId = currentUser?.id ?: return
         viewModelScope.launch {
             try {
