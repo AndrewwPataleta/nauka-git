@@ -178,7 +178,7 @@ fun ChatInputBar(
                 shape = RoundedCornerShape(12.dp)
             )
 
-            if (currentMessage.isBlank()) {
+            if (currentMessage.isBlank() && attachedFiles.isEmpty()) {
                 IconButton(onClick = onVoiceClick) {
                     if (isRecording) {
                         val transition = rememberInfiniteTransition()
