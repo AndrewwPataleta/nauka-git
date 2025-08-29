@@ -4,6 +4,7 @@ package uddug.com.naukoteka.ui.chat.compose
 import android.Manifest
 import android.content.Context
 import android.net.Uri
+import android.media.MediaPlayer
 import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,9 +29,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,6 +41,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
+import java.io.File
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
@@ -75,13 +79,27 @@ fun ChatDialogComponent(
     var pendingPickerType by remember { mutableStateOf<AttachmentPickerType?>(null) }
 
     val audioRecorder = remember { AudioRecorder(context) }
+    val mediaPlayer = remember { MediaPlayer() }
     var isRecording by remember { mutableStateOf(false) }
+    var recordedAudio by remember { mutableStateOf<File?>(null) }
+    var recordingTime by remember { mutableStateOf(0L) }
     val audioPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted: Boolean ->
         if (granted) {
             audioRecorder.start()
+            recordedAudio = null
+            recordingTime = 0L
             isRecording = true
+        }
+    }
+
+    LaunchedEffect(isRecording) {
+        if (isRecording) {
+            while (isRecording) {
+                delay(1000)
+                recordingTime += 1000
+            }
         }
     }
 
@@ -236,6 +254,8 @@ fun ChatDialogComponent(
                         attachedFiles = state.attachedFiles,
                         replyMessage = state.replyMessage,
                         isRecording = isRecording,
+                        recordedAudio = recordedAudio,
+                        recordingTime = String.format("%02d:%02d", recordingTime / 60000, (recordingTime / 1000) % 60),
                         onMessageChange = { newMessage ->
                             viewModel.updateCurrentMessage(newMessage)
                         },
@@ -248,12 +268,7 @@ fun ChatDialogComponent(
                         },
                         onVoiceClick = {
                             if (isRecording) {
-                                audioRecorder.stop()?.let { file ->
-                                    scope.launch {
-                                        viewModel.sendVoiceMessage(file)
-                                        scrollState.animateScrollToItem(messages.size - 1)
-                                    }
-                                }
+                                recordedAudio = audioRecorder.stop()
                                 isRecording = false
                             } else {
                                 audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -267,6 +282,29 @@ fun ChatDialogComponent(
                         },
                         onCancelReply = {
                             viewModel.clearReplyMessage()
+                        },
+                        onDeleteRecording = {
+                            recordedAudio?.delete()
+                            recordedAudio = null
+                            recordingTime = 0L
+                        },
+                        onSendRecording = {
+                            recordedAudio?.let { file ->
+                                scope.launch {
+                                    viewModel.sendVoiceMessage(file)
+                                    scrollState.animateScrollToItem(messages.size - 1)
+                                }
+                            }
+                            recordedAudio = null
+                            recordingTime = 0L
+                        },
+                        onPlayRecording = {
+                            recordedAudio?.let { file ->
+                                mediaPlayer.reset()
+                                mediaPlayer.setDataSource(file.absolutePath)
+                                mediaPlayer.prepare()
+                                mediaPlayer.start()
+                            }
                         }
                     )
                 }
