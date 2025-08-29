@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
@@ -105,17 +104,7 @@ fun ChatCard(
                         Spacer(modifier = Modifier.width(8.dp))
                     }
                 }
-                AsyncImage(
-                    model = avatarUrl?.let { BuildConfig.IMAGE_SERVER_URL + it },
-                    contentDescription = "Avatar",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(id = R.drawable.ic_logo_naukoteka),
-                    error = painterResource(id = R.drawable.ic_logo_naukoteka),
-                    fallback = painterResource(id = R.drawable.ic_logo_naukoteka),
-                )
+                Avatar(avatarUrl, name, size = 40.dp)
                 Spacer(modifier = Modifier.width(16.dp))
 
                 // Основной контент
@@ -227,23 +216,7 @@ fun ChatCard(
     }
 }
 
-fun getGradientForName(name: String): Brush {
-    val gradientRes = when (getHashCodeToString(name.hashCode(), 8)) {
-        0 -> Brush.linearGradient(listOf(Color.Red, Color.Yellow))
-        1 -> Brush.linearGradient(listOf(Color.Green, Color.Blue))
-        2 -> Brush.linearGradient(listOf(Color.Cyan, Color.Magenta))
-        3 -> Brush.linearGradient(listOf(Color.Gray, Color.Black))
-        4 -> Brush.linearGradient(listOf(Color.LightGray, Color.DarkGray))
-        else -> Brush.linearGradient(listOf(Color.White, Color.Black))
-    }
-    return gradientRes
-}
-
 fun formatMessageTime(time: String): String {
     // Ваш код для форматирования времени
     return time
-}
-
-fun getHashCodeToString(value: Int, mod: Int): Int {
-    return value % mod
 }

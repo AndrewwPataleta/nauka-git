@@ -99,7 +99,7 @@ fun ChatMessageItem(
         ) {
             if (!isMine) {
                 // Аватарка
-                Avatar(message.ownerAvatarUrl)
+                Avatar(message.ownerAvatarUrl, message.ownerName)
                 Spacer(modifier = Modifier.width(8.dp))
             }
 
