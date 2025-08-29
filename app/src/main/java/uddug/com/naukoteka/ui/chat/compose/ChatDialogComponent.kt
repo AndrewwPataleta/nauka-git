@@ -6,6 +6,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -85,6 +86,15 @@ fun ChatDialogComponent(
         }
     }
 
+    val mediaPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia()
+    ) { uris: List<Uri> ->
+        val files = uris.mapNotNull { uri -> uriToFile(context, uri) }
+        if (files.isNotEmpty()) {
+            viewModel.attachFiles(files)
+        }
+    }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
     ) { uris: List<Uri> ->
@@ -110,7 +120,9 @@ fun ChatDialogComponent(
         if (granted) {
             when (pendingPickerType) {
                 AttachmentPickerType.MEDIA ->
-                    filePickerLauncher.launch(arrayOf("image/*", "video/*"))
+                    mediaPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
+                    )
                 AttachmentPickerType.FILE ->
                     filePickerLauncher.launch(arrayOf("*/*"))
                 AttachmentPickerType.CONTACT ->
