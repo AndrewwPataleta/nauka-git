@@ -34,10 +34,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.MessageType
 import uddug.com.naukoteka.BuildConfig
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -52,6 +54,7 @@ fun ChatMessageItem(
     onSelectChange: () -> Unit = {},
     onLongPress: (MessageChat) -> Unit,
 ) {
+    val isSystem = message.type == MessageType.SYSTEM
     Row(
         modifier = Modifier
             .padding(horizontal = 10.dp)
@@ -94,24 +97,36 @@ fun ChatMessageItem(
                         if (selectionMode) onSelectChange() else onLongPress(message)
                     }
                 ),
-            horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
+            horizontalArrangement = when {
+                isSystem -> Arrangement.Center
+                isMine -> Arrangement.End
+                else -> Arrangement.Start
+            },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (!isMine) {
+            if (!isMine && !isSystem) {
                 // Аватарка
                 Avatar(message.ownerAvatarUrl, message.ownerName)
                 Spacer(modifier = Modifier.width(8.dp))
             }
 
-            Column(
-                modifier = Modifier
-                    .background(
-                        color = if (isMine) Color(0xFF2E83D9) else Color(0xFFF5F5F9),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .padding(8.dp)
-                    .widthIn(max = 300.dp)
-            ) {
+            if (isSystem) {
+                Text(
+                    text = message.text.orEmpty(),
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .background(
+                            color = if (isMine) Color(0xFF2E83D9) else Color(0xFFF5F5F9),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .padding(8.dp)
+                        .widthIn(max = 300.dp)
+                ) {
                 if (!isMine && message.ownerName?.isNotEmpty() == true) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -182,6 +197,7 @@ fun ChatMessageItem(
                     color = if (isMine) Color.White.copy(alpha = 0.8f) else Color.Gray,
                     modifier = Modifier.align(Alignment.End)
                 )
+                }
             }
 
         }
