@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.ui.chat
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -18,6 +19,7 @@ import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatDetailUiState
+import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailEvent
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
@@ -53,6 +55,19 @@ class ChatDetailDialogFragment : Fragment() {
             viewModel.uiState.collectLatest { state ->
                 when (state) {
                     else -> {}
+                }
+            }
+        }
+        lifecycleScope.launch {
+            viewModel.events.collectLatest { event ->
+                when (event) {
+                    is ChatDialogDetailEvent.Share -> {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, event.link)
+                        }
+                        startActivity(Intent.createChooser(shareIntent, getString(R.string.share)))
+                    }
                 }
             }
         }

@@ -134,6 +134,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging:24.1.0'
     implementation 'com.google.firebase:firebase-inappmessaging-display:21.0.1'
     implementation 'com.google.firebase:firebase-config:22.1.0'
+    implementation 'com.google.firebase:firebase-dynamic-links-ktx:21.1.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
 
     implementation ui.cicerone
