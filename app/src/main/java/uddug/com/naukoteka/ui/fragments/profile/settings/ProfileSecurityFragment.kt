@@ -3,6 +3,7 @@ package uddug.com.naukoteka.ui.fragments.profile.settings
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -27,6 +28,7 @@ import uddug.com.naukoteka.presentation.profile.edit.ProfileEditView
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.PROFILE_ARGS
+import uddug.com.naukoteka.ui.activities.main.AuthActivity
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment.Companion.DELETE_AVATAR_RESULT
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment.Companion.UPLOAD_AVATAR_RESULT
@@ -96,7 +98,9 @@ class ProfileSecurityFragment : BaseFragment(R.layout.fragment_profile_security)
     }
 
     override fun openLoginPage() {
-
+        val activity = requireActivity()
+        activity.finishAffinity()
+        activity.startActivity(Intent(activity, AuthActivity::class.java))
     }
 
     override fun openLogoutDialog() {
@@ -112,7 +116,7 @@ class ProfileSecurityFragment : BaseFragment(R.layout.fragment_profile_security)
         }
         (dialog.findViewById(R.id.deleteConfirmBtn) as? View)?.setOnClickListener {
             dialog.dismiss()
-            presenter.selectConfirmDelete(dialog.findViewById<EditText>(R.id.reason).text.toString())
+            presenter.selectConfirmExit()
         }
         dialog.show()
     }
