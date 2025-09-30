@@ -33,6 +33,7 @@ import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBott
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment.Companion.DELETE_AVATAR_RESULT
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment.Companion.UPLOAD_AVATAR_RESULT
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileEditPersonalInfoFragment.Companion.UPDATE_PROFILE_INFO
+import uddug.com.naukoteka.navigation.Screens
 import uddug.com.naukoteka.utils.getHashCodeToString
 import uddug.com.naukoteka.utils.text.isNotNullOrEmpty
 import uddug.com.naukoteka.utils.ui.load
@@ -100,7 +101,11 @@ class ProfileSecurityFragment : BaseFragment(R.layout.fragment_profile_security)
     override fun openLoginPage() {
         val activity = requireActivity()
         activity.finishAffinity()
-        activity.startActivity(Intent(activity, AuthActivity::class.java))
+        activity.startActivity(
+            Intent(activity, AuthActivity::class.java).apply {
+                putExtra(Screens.TO_LOGIN, true)
+            }
+        )
     }
 
     override fun openLogoutDialog() {
