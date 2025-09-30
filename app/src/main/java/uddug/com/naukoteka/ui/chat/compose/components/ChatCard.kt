@@ -1,15 +1,12 @@
-import android.text.format.DateUtils
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,15 +19,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.core.deeplink.formatMessageTime
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -87,25 +80,28 @@ fun ChatCard(
                     .animateContentSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AnimatedVisibility(
-                    visible = selectionMode,
-                    enter = expandHorizontally(),
-                    exit = shrinkHorizontally()
+                Box(
+                    modifier = Modifier
+                        .size(40.dp),
+                    contentAlignment = Alignment.BottomEnd
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = isSelected,
-                            onCheckedChange = { onSelectChange(it) },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = Color(0xFF2E83D9),
-                                uncheckedColor = Color(0xFF2E83D9),
-                                checkmarkColor = Color.White
+                    Avatar(avatarUrl, name, size = 40.dp)
+                    if (selectionMode && isSelected) {
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .background(Color(0xFF2EB66D), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(10.dp)
                             )
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        }
                     }
                 }
-                Avatar(avatarUrl, name, size = 40.dp)
                 Spacer(modifier = Modifier.width(16.dp))
 
                 // Основной контент
