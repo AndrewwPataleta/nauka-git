@@ -37,8 +37,21 @@ fun ChatTabBar(
     var showFolderMenu by remember { mutableStateOf(false) }
 
     val folders by viewModel.folders.collectAsState()
+    val currentFolderId by viewModel.currentFolderId.collectAsState()
 
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(folders, currentFolderId) {
+        if (folders.isEmpty()) {
+            selectedTabIndex = 0
+        } else {
+            val newIndex = folders.indexOfFirst { it.id == currentFolderId }
+            val resolvedIndex = if (newIndex >= 0) newIndex else 0
+            if (selectedTabIndex != resolvedIndex) {
+                selectedTabIndex = resolvedIndex
+            }
+        }
+    }
 
     Box {
         Column(

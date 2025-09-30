@@ -28,7 +28,8 @@ class ChatListViewModel @Inject constructor(
     private val _folders = MutableStateFlow<List<ChatFolder>>(emptyList())
     val folders: StateFlow<List<ChatFolder>> = _folders
 
-    private var currentFolderId: Long? = null
+    private val _currentFolderId = MutableStateFlow<Long?>(null)
+    val currentFolderId: StateFlow<Long?> = _currentFolderId
 
     private val _events = MutableSharedFlow<ChatListEvents>()
     val events: SharedFlow<ChatListEvents> = _events.asSharedFlow()
@@ -53,19 +54,24 @@ class ChatListViewModel @Inject constructor(
             try {
                 val folderList = chatRepository.getFolders()
                 _folders.value = folderList
-                currentFolderId = folderList.firstOrNull()?.id
-                loadChats(currentFolderId)
+                val selectedId = _currentFolderId.value
+                val initialFolderId = when {
+                    selectedId != null && folderList.any { it.id == selectedId } -> selectedId
+                    else -> folderList.firstOrNull()?.id
+                }
+                _currentFolderId.value = initialFolderId
+                loadChats(initialFolderId)
             } catch (e: Exception) {
                 _uiState.value = ChatListUiState.Error(e.message ?: "Unknown error")
             }
         }
     }
 
-    fun loadChats(folderId: Long? = currentFolderId) {
+    fun loadChats(folderId: Long? = _currentFolderId.value) {
         _uiState.value = ChatListUiState.Loading
         loadChatsJob?.cancel()
         val startTime = System.currentTimeMillis()
-        currentFolderId = folderId
+        _currentFolderId.value = folderId
         loadChatsJob = viewModelScope.launch {
             try {
                 val chats = chatRepository.getChats(folderId)
@@ -79,7 +85,7 @@ class ChatListViewModel @Inject constructor(
     }
 
     fun refreshChats() {
-        loadChats(currentFolderId)
+        loadChats(_currentFolderId.value)
     }
 
     fun reorderFolders(fromIndex: Int, toIndex: Int) {
@@ -175,7 +181,7 @@ class ChatListViewModel @Inject constructor(
                 }
             }
             clearSelection()
-            loadChats(currentFolderId)
+            loadChats(_currentFolderId.value)
         }
     }
 
