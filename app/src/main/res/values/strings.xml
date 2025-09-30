@@ -110,7 +110,7 @@
     <string name="delete_photo">Удалить фотографию</string>
     <string name="change_photo">Изменить фотографию</string>
     <string name="open_photo">Открыть фотографию</string>
-    <string name="amount_followers_following">%s подписчиков ∙ %s подписок</string>
+    <string name="amount_followers_following">%1$s подписчиков ∙ %2$s подписок</string>
     <string name="edit_photo">Изменить фотографию</string>
     <string name="Фотография">Фотография</string>
     <string name="profile">Профиль</string>
@@ -126,7 +126,7 @@
     <string name="place_birthday">Место рождения</string>
     <string name="place_live">Место проживания</string>
     <string name="personal_info">Контактная информация</string>
-    <string name="labor_activity_name">%s в %s</string>
+    <string name="labor_activity_name">%1$s в %2$s</string>
     <string name="profile_full_subs">Подписчика</string>
     <string name="profile_full_subr">Подписок</string>
     <string name="naukotheka_ru_link">naukotheka.ru/%1$s</string>
