@@ -83,7 +83,7 @@ fun ChatListComponent(
         }
 
         SearchField(
-            title = stringResource(R.string.find_chat_message),
+            title = stringResource(R.string.search_enter_query_full),
             query = query,
             onSearchChanged = {
                 query = it
@@ -96,7 +96,8 @@ fun ChatListComponent(
             onFocusChanged = { focused ->
                 isSearchFieldFocused = focused
                 viewModel.onSearchFocusChanged(focused || query.isNotEmpty())
-            }
+            },
+            placeholderCentered = true
         )
         if (!isSearchActive) {
             Box(modifier = Modifier.weight(1f)) {
@@ -197,7 +198,7 @@ private fun SearchResultsContent(
             when {
                 query.length < SEARCH_MIN_QUERY_LENGTH -> {
                     Text(
-                        text = stringResource(R.string.search_min_chars_hint, SEARCH_MIN_QUERY_LENGTH),
+                        text = stringResource(R.string.search_enter_query),
                         color = Color(0xFF8083A0),
                         modifier = Modifier
                             .align(Alignment.Center)
@@ -223,7 +224,11 @@ private fun SearchResultsContent(
                     } else {
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
                             items(currentResults) { result ->
-                                SearchResultItem(result = result, onClick = onResultClick)
+                                SearchResultItem(
+                                    result = result,
+                                    query = query,
+                                    onClick = onResultClick
+                                )
                             }
                         }
                     }
@@ -238,4 +243,4 @@ private enum class SearchTab(@StringRes val titleRes: Int) {
     Messages(R.string.search_tab_messages)
 }
 
-private const val SEARCH_MIN_QUERY_LENGTH = 4
+private const val SEARCH_MIN_QUERY_LENGTH = 1

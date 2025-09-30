@@ -372,6 +372,12 @@
     <string name="profile_shasre">Поделиться</string>
     <string name="profile_more">Еще</string>
     <string name="find_chat_message">Поиск чатов и сообщений</string>
+    <string name="search_enter_query_full">Введите текстовый запрос в поле поиска</string>
+    <string name="search_enter_query">Введите текстовый запрос</string>
+    <string name="search_status_online">Онлайн</string>
+    <string name="search_status_minutes_ago">Был(а) в сети %1$d минут назад</string>
+    <string name="search_status_hours_ago">Был(а) в сети %1$d часов назад</string>
+    <string name="search_status_date">Был(а) в сети %1$s</string>
     <string name="search_tab_chats">Чаты</string>
     <string name="search_tab_messages">Сообщения</string>
     <string name="search_min_chars_hint">Введите не менее %1$d символов</string>
