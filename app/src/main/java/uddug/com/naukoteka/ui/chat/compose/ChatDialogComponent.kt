@@ -254,6 +254,7 @@ fun ChatDialogComponent(
                         currentMessage = state.currentMessage,
                         attachedFiles = state.attachedFiles,
                         replyMessage = state.replyMessage,
+                        editingMessage = state.editingMessage,
                         isRecording = isRecording,
                         recordedAudio = recordedAudio,
                         recordingTime = String.format("%02d:%02d", recordingTime / 60000, (recordingTime / 1000) % 60),
@@ -290,6 +291,9 @@ fun ChatDialogComponent(
                         },
                         onCancelReply = {
                             viewModel.clearReplyMessage()
+                        },
+                        onCancelEditing = {
+                            viewModel.clearEditingMessage()
                         },
                         onDeleteRecording = {
                             recordedAudio?.delete()
@@ -365,6 +369,10 @@ fun ChatDialogComponent(
                 },
                 onReply = { msg ->
                     viewModel.setReplyMessage(msg)
+                },
+                onEdit = { msg ->
+                    viewModel.startEditingMessage(msg)
+                    selectedMessage = null
                 }
             )
         }

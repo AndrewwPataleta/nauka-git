@@ -16,8 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.PlayArrow
-
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,8 +40,8 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
 import uddug.com.naukoteka.R
 import uddug.com.domain.entities.chat.MessageChat
@@ -55,6 +53,7 @@ fun ChatInputBar(
     currentMessage: String,
     attachedFiles: List<File>,
     replyMessage: MessageChat?,
+    editingMessage: MessageChat?,
     isRecording: Boolean,
     recordedAudio: File?,
     recordingTime: String,
@@ -65,6 +64,7 @@ fun ChatInputBar(
     onAttachClick: () -> Unit,
     onRemoveFile: (File) -> Unit,
     onCancelReply: () -> Unit,
+    onCancelEditing: () -> Unit,
     onDeleteRecording: () -> Unit,
     onSendRecording: () -> Unit,
     onPlayRecording: () -> Unit,
@@ -83,35 +83,11 @@ fun ChatInputBar(
         )
 
         replyMessage?.let { reply ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = reply.ownerName ?: "",
-                        color = Color(0XFF8083A0),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        text = reply.text.orEmpty(),
-                        color = Color(0XFF8083A0),
-                        fontSize = 12.sp,
-                        maxLines = 1
-                    )
-                }
-                IconButton(onClick = onCancelReply) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = "Cancel reply",
-                        tint = Color(0XFF8083A0)
-                    )
-                }
-            }
+            ReplyInfoBlock(reply = reply, onCancelReply = onCancelReply)
+        }
+
+        editingMessage?.let { message ->
+            EditInfoBlock(message = message, onCancelEdit = onCancelEditing)
         }
 
         if (attachedFiles.isNotEmpty()) {
@@ -310,6 +286,78 @@ fun ChatInputBar(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ReplyInfoBlock(reply: MessageChat, onCancelReply: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = reply.ownerName ?: "",
+                color = Color(0XFF8083A0),
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+            )
+            Text(
+                text = reply.text.orEmpty(),
+                color = Color(0XFF8083A0),
+                fontSize = 12.sp,
+                maxLines = 1
+            )
+        }
+        IconButton(onClick = onCancelReply) {
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = stringResource(id = R.string.cancel_button),
+                tint = Color(0XFF8083A0)
+            )
+        }
+    }
+}
+
+@Composable
+private fun EditInfoBlock(message: MessageChat, onCancelEdit: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Create,
+            contentDescription = null,
+            tint = Color(0XFF8083A0),
+            modifier = Modifier.padding(end = 8.dp)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(id = R.string.chat_editing_title),
+                color = Color(0XFF8083A0),
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+            )
+            Text(
+                text = message.text.orEmpty(),
+                color = Color(0XFF8083A0),
+                fontSize = 12.sp,
+                maxLines = 1
+            )
+        }
+        IconButton(onClick = onCancelEdit) {
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = stringResource(id = R.string.cancel_button),
+                tint = Color(0XFF8083A0)
+            )
         }
     }
 }

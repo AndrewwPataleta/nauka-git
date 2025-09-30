@@ -390,12 +390,14 @@
     <string name="chat_delete_chat">Удалить чат</string>
     <string name="message_functions_title">Действия с сообщением</string>
     <string name="chat_message_reply">Ответить</string>
+    <string name="chat_message_edit">Редактировать</string>
     <string name="chat_message_forward">Переслать</string>
     <string name="chat_message_copy">Скопировать</string>
     <string name="chat_message_copied">Сообщение скопировано</string>
     <string name="chat_message_select">Выбрать сообщение</string>
     <string name="chat_message_show_original">Показать оригинал в чате</string>
     <string name="chat_message_delete">Удалить сообщение</string>
+    <string name="chat_editing_title">Редактирование</string>
     <string name="create_group_chat">Создать групповой чат</string>
     <string name="subs">Подписки</string>
 

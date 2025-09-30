@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.widget.Toast
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.MessageType
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.MessageFunctionsViewModel
 import uddug.com.naukoteka.utils.copyToClipboard
@@ -34,6 +35,7 @@ fun MessageFunctionsBottomSheetDialog(
     onDismissRequest: () -> Unit,
     onSelectMessage: () -> Unit,
     onReply: (MessageChat) -> Unit,
+    onEdit: (MessageChat) -> Unit,
     viewModel: MessageFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -55,10 +57,13 @@ fun MessageFunctionsBottomSheetDialog(
                 )
             )
             Spacer(modifier = Modifier.height(10.dp))
-            val items = listOf(
-                R.string.chat_message_reply to { onReply(message) },
-                R.string.chat_message_forward to { viewModel.forward(message.id) },
-                R.string.chat_message_copy to {
+            val items = buildList<Pair<Int, () -> Unit>> {
+                add(R.string.chat_message_reply to { onReply(message) })
+                if (message.isMine && message.type == MessageType.TEXT) {
+                    add(R.string.chat_message_edit to { onEdit(message) })
+                }
+                add(R.string.chat_message_forward to { viewModel.forward(message.id) })
+                add(R.string.chat_message_copy to {
                     message.text?.let {
                         context.copyToClipboard(it)
                         Toast.makeText(
@@ -68,14 +73,14 @@ fun MessageFunctionsBottomSheetDialog(
                         ).show()
                     }
                     viewModel.copy(message.id)
-                },
-                R.string.chat_message_select to {
+                })
+                add(R.string.chat_message_select to {
                     viewModel.select(message.id)
                     onSelectMessage()
-                },
-                R.string.chat_message_show_original to { viewModel.showOriginal(message.id) },
-                R.string.chat_message_delete to { viewModel.delete(message.id) }
-            )
+                })
+                add(R.string.chat_message_show_original to { viewModel.showOriginal(message.id) })
+                add(R.string.chat_message_delete to { viewModel.delete(message.id) })
+            }
             items.forEach { (textRes, action) ->
                 Row(
                     modifier = Modifier
