@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
@@ -27,7 +28,7 @@ fun ChatToolbarCreateSingleComponent(
     TopAppBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Создать чат", fontSize = 20.sp, color = Color.Black)
+                Text(text = stringResource(R.string.chat_create_single_title), fontSize = 20.sp, color = Color.Black)
             }
         },
         actions = {

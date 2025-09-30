@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.ext.data
 
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.ui.fragments.login.CustomLanguage
 import java.util.*
 
@@ -16,7 +17,7 @@ val SUPPORTED_LOCALES: MutableList<Locale> = mutableListOf(
 )
 
 val SUPPORTED_LOCALES_CUSTOM = listOf(
-    CustomLanguage("English", EN_LOCALE),
-    CustomLanguage("Русский", RU_LOCALE),
-    CustomLanguage("عرب", AR_LOCALE),
+    CustomLanguage(R.string.language_english, EN_LOCALE),
+    CustomLanguage(R.string.language_russian, RU_LOCALE),
+    CustomLanguage(R.string.language_arabic, AR_LOCALE),
 )

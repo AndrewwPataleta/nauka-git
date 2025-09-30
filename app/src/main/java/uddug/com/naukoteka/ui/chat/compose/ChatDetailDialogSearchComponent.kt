@@ -47,7 +47,12 @@ fun ChatDetailDialogSearchComponent(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedTabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Сообщения", "Медиа", "Файлы", "Записи")
+    val tabs = listOf(
+        stringResource(R.string.chat_detail_tab_messages),
+        stringResource(R.string.chat_detail_tab_media),
+        stringResource(R.string.chat_detail_tab_files),
+        stringResource(R.string.chat_detail_tab_records)
+    )
 
     val uiState by viewModel.uiState.collectAsState()
     val searchMessages by viewModel.searchMessages.collectAsState()
@@ -163,7 +168,7 @@ private fun NoResults() {
         contentAlignment = Alignment.TopCenter
     ) {
         Text(
-            text = "Нет результатов",
+            text = stringResource(R.string.chat_search_no_results),
             modifier = Modifier.padding(top = 24.dp)
         )
     }

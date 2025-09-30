@@ -26,8 +26,9 @@ import uddug.com.domain.entities.chat.MessageType
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.ui.chat.di.SocketService
+import uddug.com.naukoteka.mvvm.chat.ChatStatusFormatter
+import uddug.com.naukoteka.mvvm.chat.ChatStatusTextMode.GENERIC
 import java.time.Instant
-import java.time.Duration
 import java.io.File
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
 import javax.inject.Inject
@@ -37,6 +38,7 @@ class ChatDialogViewModel @Inject constructor(
     private val userRepository: UserProfileRepository,
     private val chatInteractor: ChatInteractor,
     private val socketService: SocketService,
+    private val chatStatusFormatter: ChatStatusFormatter,
     ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ChatDialogUiState>(ChatDialogUiState.Loading())
@@ -102,7 +104,7 @@ class ChatDialogViewModel @Inject constructor(
                                     try {
                                         val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
                                         status = if (userStatus?.isOnline == true) {
-                                            "Онлайн"
+                                            chatStatusFormatter.online()
                                         } else {
                                             userStatus?.lastSeen?.let { formatLastSeen(it) }
                                         }
@@ -178,7 +180,7 @@ class ChatDialogViewModel @Inject constructor(
                                     try {
                                         val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
                                         status = if (userStatus?.isOnline == true) {
-                                            "Онлайн"
+                                            chatStatusFormatter.online()
                                         } else {
                                             userStatus?.lastSeen?.let { formatLastSeen(it) }
                                         }
@@ -624,22 +626,9 @@ class ChatDialogViewModel @Inject constructor(
     }
 
     private fun formatLastSeen(lastSeen: String): String {
-        return try {
-            val instant = Instant.parse(lastSeen)
-            val duration = Duration.between(instant, Instant.now())
-            val minutes = duration.toMinutes()
-            val hours = duration.toHours()
-            val days = duration.toDays()
-            val weeks = days / 7
-            when {
-                minutes < 60 -> "был ${minutes} мин. назад"
-                hours < 24 -> "был ${hours} ч. назад"
-                days < 7 -> "был ${days} д. назад"
-                else -> "был ${weeks} нед. назад"
-            }
-        } catch (e: Exception) {
-            ""
-        }
+        return runCatching { Instant.parse(lastSeen) }
+            .map { chatStatusFormatter.formatLastSeen(it, GENERIC) }
+            .getOrDefault("")
     }
 
     private fun handleIncomingMessage(message: Any) {

@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.presentation.profile.edit
 
+import androidx.annotation.StringRes
 import uddug.com.naukoteka.global.views.InformativeView
 import uddug.com.naukoteka.global.views.LoadingView
 import moxy.MvpView
@@ -12,6 +13,6 @@ interface ProfileEditPersonalInfoView : MvpView, LoadingView, InformativeView {
     fun setMainInformation(profileInfo: UserProfileFullInfo)
     fun setMaxInputRange(maxDefault: Int, maxDescription: Int)
     fun updateLengthInputs(maxDefault: Int, maxDescription: Int)
-    fun setGenders(genres: List<String>, selectedPos: Int)
+    fun setGenders(@StringRes genres: List<Int>, selectedPos: Int)
     fun profileSuccessfulUpdate()
 }

@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:fontFamily="@font/golos_text_regular"
-            android:text="Russian" />
+            android:text="@string/language_russian" />
 
         <ImageView
             android:id="@+id/iv_arrow_down"

@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,6 +42,7 @@ import coil.compose.AsyncImage
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
 import uddug.com.naukoteka.BuildConfig
+import uddug.com.naukoteka.R
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -137,7 +139,7 @@ fun ChatMessageItem(
                         if (message.ownerIsAdmin) {
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "админ",
+                                text = stringResource(R.string.chat_admin_label),
                                 fontSize = 10.sp,
                                 color = Color.Gray
                             )
@@ -186,7 +188,7 @@ fun ChatMessageItem(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Menu, contentDescription = "PDF", tint = Color.White)
                             Spacer(Modifier.width(8.dp))
-                            Text("Медиа Сообщение", fontSize = 12.sp, color = Color.White)
+                            Text(stringResource(R.string.chat_media_message_label), fontSize = 12.sp, color = Color.White)
                         }
                     }
                 }

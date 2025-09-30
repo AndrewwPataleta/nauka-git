@@ -41,12 +41,16 @@ fun ChatGroupDetailComponent(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
-    val tabs = listOf("Участники", "Медиа", "Файлы")
+    val tabs = listOf(
+        stringResource(R.string.chat_group_tab_participants),
+        stringResource(R.string.chat_group_tab_media),
+        stringResource(R.string.chat_group_tab_files)
+    )
     Scaffold(
         topBar = {
             androidx.compose.material.TopAppBar(
                 title = {
-                    Text(text = "Информация", fontSize = 20.sp, color = Color.Black)
+                    Text(text = stringResource(R.string.chat_group_info_title), fontSize = 20.sp, color = Color.Black)
                 },
                 actions = {
                     androidx.compose.material.IconButton(onClick = { onSearchClick() }) {
@@ -109,7 +113,7 @@ fun ChatGroupDetailComponent(
                               url = null,
                               name = null,
                               size = 100.dp,
-                              overrideInitials = "Г",
+                              overrideInitials = stringResource(R.string.chat_group_initial),
                           )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
