@@ -90,20 +90,15 @@ fun ChatInputBar(
                     .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = reply.ownerName ?: "",
-                        color = Color(0XFF8083A0),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        text = reply.text.orEmpty(),
-                        color = Color(0XFF8083A0),
-                        fontSize = 12.sp,
-                        maxLines = 1
-                    )
-                }
+                ReplyBlock(
+                    reply = reply,
+                    isMine = false,
+                    backgroundColor = Color(0xFFF5F5F9),
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
                 IconButton(onClick = onCancelReply) {
                     Icon(
                         imageVector = Icons.Filled.Close,
