@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +30,8 @@ fun SearchField(
     onSearchChanged: (String) -> Unit,
     onFocusChanged: (Boolean) -> Unit = {},
     placeholderCentered: Boolean = false,
+    showClearIcon: Boolean = false,
+    onClearClick: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier
@@ -37,15 +41,14 @@ fun SearchField(
                 shape = RoundedCornerShape(16.dp),
                 color = Color(0xFFEAEAF2)
             )
-            .padding(start = 16.dp)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_search),
             contentDescription = "Search",
             tint = Color.Gray,
-            modifier = Modifier
-                .size(18.dp)
-                .align(Alignment.CenterVertically)
+            modifier = Modifier.size(18.dp)
         )
 
         BasicTextField(
@@ -53,9 +56,9 @@ fun SearchField(
             onValueChange = { onSearchChanged(it) },
             textStyle = LocalTextStyle.current.copy(color = Color.Black),
             modifier = Modifier
-                .fillMaxWidth()
+                .weight(1f)
                 .onFocusChanged { onFocusChanged(it.isFocused) }
-                .padding(10.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             decorationBox = { innerTextField ->
                 Box(
                     modifier = Modifier.fillMaxWidth(),
@@ -78,5 +81,19 @@ fun SearchField(
                 }
             }
         )
+
+        if (showClearIcon) {
+            IconButton(
+                onClick = onClearClick,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_close),
+                    contentDescription = "Clear search",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
     }
 }
