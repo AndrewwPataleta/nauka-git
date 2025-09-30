@@ -410,6 +410,7 @@ private fun ReplyInfoBlock(reply: MessageChat, onCancelReply: () -> Unit) {
 
 @Composable
 private fun EditInfoBlock(message: MessageChat, onCancelEdit: () -> Unit) {
+    val accentColor = colorResource(id = R.color.object_main)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -420,13 +421,19 @@ private fun EditInfoBlock(message: MessageChat, onCancelEdit: () -> Unit) {
         Icon(
             imageVector = Icons.Filled.Create,
             contentDescription = null,
-            tint = Color(0XFF8083A0),
-            modifier = Modifier.padding(end = 8.dp)
+            tint = accentColor
+        )
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .width(2.dp)
+                .height(24.dp)
+                .background(accentColor)
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = stringResource(id = R.string.chat_editing_title),
-                color = Color(0XFF8083A0),
+                color = accentColor,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp
             )
