@@ -45,6 +45,8 @@ import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
 import uddug.com.naukoteka.R
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.profile.UserProfileFullInfo
+import uddug.com.naukoteka.mvvm.chat.ContactInfo
 import java.io.File
 
 @Composable
@@ -57,6 +59,8 @@ fun ChatInputBar(
     isRecording: Boolean,
     recordedAudio: File?,
     recordingTime: String,
+    selectedContact: UserProfileFullInfo?,
+    attachedContact: ContactInfo?,
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
     onVoiceClick: () -> Unit,
@@ -65,6 +69,8 @@ fun ChatInputBar(
     onRemoveFile: (File) -> Unit,
     onCancelReply: () -> Unit,
     onCancelEditing: () -> Unit,
+    onRemoveSelectedContact: () -> Unit,
+    onRemoveAttachedContact: () -> Unit,
     onDeleteRecording: () -> Unit,
     onSendRecording: () -> Unit,
     onPlayRecording: () -> Unit,
@@ -129,6 +135,85 @@ fun ChatInputBar(
                             )
                         }
                     }
+                }
+            }
+        }
+
+        selectedContact?.let { contact ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Avatar(
+                    url = contact.image?.path,
+                    name = contact.fullName,
+                    size = 40.dp
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = contact.fullName.orEmpty(),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color(0xFF1F1F1F)
+                    )
+                    val phone = contact.phone ?: contact.phone2 ?: contact.phone3
+                    phone?.takeIf { it.isNotBlank() }?.let {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = it,
+                            fontSize = 12.sp,
+                            color = Color(0xFF8083A0)
+                        )
+                    }
+                }
+                IconButton(onClick = onRemoveSelectedContact) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Remove contact",
+                        tint = Color(0xFF8083A0)
+                    )
+                }
+            }
+        }
+
+        attachedContact?.let { contact ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Avatar(
+                    url = null,
+                    name = contact.name,
+                    size = 40.dp
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = contact.name,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color(0xFF1F1F1F)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = contact.phone,
+                        fontSize = 12.sp,
+                        color = Color(0xFF8083A0)
+                    )
+                }
+                IconButton(onClick = onRemoveAttachedContact) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Remove contact",
+                        tint = Color(0xFF8083A0)
+                    )
                 }
             }
         }
