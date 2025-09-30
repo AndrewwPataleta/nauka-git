@@ -118,4 +118,13 @@
   <string name="search_dialogs_hint">Поиск по диалогам</string>
   <string name="search_contacts_hint">Поиск по контактам</string>
   <string name="labor_activity_name">%1$s в <font color="##2E83D9">%2$s</font></string>
+  <string name="chat_message_date_today">Сегодня</string>
+  <string name="chat_message_date_yesterday">Вчера</string>
+  <string name="chat_message_date_week_ago">Неделю назад</string>
+  <plurals name="chat_message_date_days_ago">
+    <item quantity="one">%d день назад</item>
+    <item quantity="few">%d дня назад</item>
+    <item quantity="many">%d дней назад</item>
+    <item quantity="other">%d дня назад</item>
+  </plurals>
 </resources>
