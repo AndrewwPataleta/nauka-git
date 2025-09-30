@@ -303,6 +303,14 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    fun clearSelectedContact() {
+        selectedUser = null
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(selectedContact = null)
+        }
+    }
+
     fun clearAttachedContact() {
         attachedContact = null
         val currentState = _uiState.value
@@ -367,11 +375,83 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    private fun buildUserContactPayload(user: UserProfileFullInfo): String? {
+        val json = JSONObject()
+        user.id?.let { json.put("id", it) }
+        user.fullName?.let { json.put("fullName", it) }
+        user.nickname?.let { json.put("nickname", it) }
+        user.phone?.let { json.put("phone", it) }
+        user.image?.path?.let { json.put("image", it) }
+        return if (json.length() == 0) null else json.toString()
+    }
+
+    private fun buildPhoneContactPayload(contact: ContactInfo): String {
+        return JSONObject().apply {
+            put("name", contact.name)
+            put("phone", contact.phone)
+        }.toString()
+    }
+
+    private fun createContactSocketMessage(
+        dialog: DialogInfo,
+        payload: String,
+        replyId: Long?,
+    ): ChatSocketMessage? {
+        return if (dialog.id != 0L) {
+            ChatSocketMessage(
+                dialog = dialog.id,
+                cType = 7,
+                text = payload,
+                owner = currentUser?.id.orEmpty(),
+                answered = replyId
+            )
+        } else {
+            val peer = dialog.interlocutor?.userId ?: return null
+            ChatSocketMessage(
+                interlocutor = peer,
+                cType = 7,
+                text = payload,
+                owner = currentUser?.id.orEmpty(),
+                answered = replyId
+            )
+        }
+    }
+
     fun sendMessage(text: String) {
         viewModelScope.launch {
             val dialog = currentDialogInfo ?: return@launch
             val currentState = _uiState.value
             val replyId = (currentState as? ChatDialogUiState.Success)?.replyMessage?.id
+
+            selectedUser?.let { user ->
+                val payload = buildUserContactPayload(user) ?: return@launch
+                val message = createContactSocketMessage(dialog, payload, replyId) ?: return@launch
+                socketService.sendMessage("message", message)
+                selectedUser = null
+                if (currentState is ChatDialogUiState.Success) {
+                    _uiState.value = currentState.copy(
+                        currentMessage = "",
+                        selectedContact = null
+                    )
+                }
+                clearReplyMessage()
+                return@launch
+            }
+
+            attachedContact?.let { contact ->
+                val payload = buildPhoneContactPayload(contact)
+                val message = createContactSocketMessage(dialog, payload, replyId) ?: return@launch
+                socketService.sendMessage("message", message)
+                attachedContact = null
+                if (currentState is ChatDialogUiState.Success) {
+                    _uiState.value = currentState.copy(
+                        currentMessage = "",
+                        attachedContact = null
+                    )
+                }
+                clearReplyMessage()
+                return@launch
+            }
 
             if (text.isBlank() && attachedFiles.isEmpty()) {
                 Log.d("ChatViewModel", "Message is blank and no files attached — skipping")
@@ -422,7 +502,6 @@ class ChatDialogViewModel @Inject constructor(
             Log.d("ChatViewModel", "Sending socket message: $message")
             socketService.sendMessage("message", message)
             clearAttachedFiles()
-            clearAttachedContact()
             clearReplyMessage()
         }
     }

@@ -257,7 +257,8 @@ fun ChatDialogComponent(
                         isRecording = isRecording,
                         recordedAudio = recordedAudio,
                         recordingTime = String.format("%02d:%02d", recordingTime / 60000, (recordingTime / 1000) % 60),
-                        isRecordingPlaying = isRecordingPlaying,
+                        selectedContact = state.selectedContact,
+                        attachedContact = state.attachedContact,
                         onMessageChange = { newMessage ->
                             viewModel.updateCurrentMessage(newMessage)
                         },
@@ -290,6 +291,12 @@ fun ChatDialogComponent(
                         },
                         onCancelReply = {
                             viewModel.clearReplyMessage()
+                        },
+                        onRemoveSelectedContact = {
+                            viewModel.clearSelectedContact()
+                        },
+                        onRemoveAttachedContact = {
+                            viewModel.clearAttachedContact()
                         },
                         onDeleteRecording = {
                             recordedAudio?.delete()
@@ -330,7 +337,8 @@ fun ChatDialogComponent(
                                     }
                                 }
                             }
-                        }
+                        },
+                        isRecordingPlaying = isRecordingPlaying
                     )
                 }
             }
