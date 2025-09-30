@@ -60,4 +60,8 @@
         android:id="@+id/sendContactFragment"
         android:name="uddug.com.naukoteka.ui.chat.SendContactFragment"/>
 
+    <fragment
+        android:id="@+id/forwardMessageFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ForwardMessageFragment"/>
+
 </navigation>

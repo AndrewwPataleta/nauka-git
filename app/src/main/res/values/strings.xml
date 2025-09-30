@@ -413,6 +413,9 @@
     <string name="chat_attach_poll">Опросы</string>
     <string name="chat_attach_contact">Контакты</string>
     <string name="send_contact_title">Отправить контакт</string>
+    <string name="forward_message_title">Переслать сообщение</string>
+    <string name="forward_message_error">Не удалось переслать сообщение</string>
+    <string name="search_dialogs_hint">Поиск по диалогам</string>
     <string name="search_contacts_hint">Поиск по контактам</string>
 
 </resources>

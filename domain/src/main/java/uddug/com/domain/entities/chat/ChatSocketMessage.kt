@@ -9,6 +9,9 @@ data class ChatSocketMessage(
     val files: List<FileDescriptor>? = null,
     val answered: Long? = null,
     val ansPreview: AnswerPreview? = null,
+    val forwarded: Long? = null,
+    val forwardedn: List<Long>? = null,
+    val dialogs: List<Long>? = null,
 )
 
 public data class FileDescriptor(

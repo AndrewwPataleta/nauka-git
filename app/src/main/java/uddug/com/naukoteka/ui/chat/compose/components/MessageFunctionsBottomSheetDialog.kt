@@ -36,6 +36,7 @@ fun MessageFunctionsBottomSheetDialog(
     onSelectMessage: () -> Unit,
     onReply: (MessageChat) -> Unit,
     onEdit: (MessageChat) -> Unit,
+    onForward: (MessageChat) -> Unit,
     viewModel: MessageFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -62,7 +63,7 @@ fun MessageFunctionsBottomSheetDialog(
                 if (message.isMine && message.type == MessageType.TEXT) {
                     add(R.string.chat_message_edit to { onEdit(message) })
                 }
-                add(R.string.chat_message_forward to { viewModel.forward(message.id) })
+                add(R.string.chat_message_forward to { onForward(message) })
                 add(R.string.chat_message_copy to {
                     message.text?.let {
                         context.copyToClipboard(it)
