@@ -172,6 +172,7 @@ dependencies {
     implementation lib.domain
     implementation lib.data
     implementation("com.github.dhaval2404:imagepicker:2.1")
+    implementation "io.github.ParkSangGwon:tedimagepicker:1.4.2"
     debugImplementation "com.github.chuckerteam.chucker:library:4.0.0"
     releaseImplementation "com.github.chuckerteam.chucker:library-no-op:4.0.0"
     implementation("com.vanniktech:android-image-cropper:4.6.0")

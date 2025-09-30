@@ -3,11 +3,12 @@ package uddug.com.naukoteka.ui.chat.compose
 
 import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
 import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -43,6 +44,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import com.gun0912.tedimagepicker.builder.TedImagePicker
 import kotlinx.coroutines.launch
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
 import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
@@ -105,15 +108,6 @@ fun ChatDialogComponent(
         }
     }
 
-    val mediaPickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia()
-    ) { uris: List<Uri> ->
-        val files = uris.mapNotNull { uri -> uriToFile(context, uri) }
-        if (files.isNotEmpty()) {
-            viewModel.attachFiles(files)
-        }
-    }
-
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
     ) { uris: List<Uri> ->
@@ -123,18 +117,48 @@ fun ChatDialogComponent(
         }
     }
 
+    val mediaPermissions = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO
+            )
+        } else {
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+    }
+    val filePermissions = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            emptyArray()
+        } else {
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+    }
+
+    fun attachMediaFiles(uris: List<Uri>) {
+        val files = uris.mapNotNull { uri -> uriToFile(context, uri) }
+        if (files.isNotEmpty()) {
+            viewModel.attachFiles(files)
+        }
+    }
+
+    fun openMediaPicker() {
+        TedImagePicker.with(context)
+            .showCameraTile(true)
+            .startMultiImage { uriList ->
+                attachMediaFiles(uriList)
+            }
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted: Boolean ->
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.values.all { it }
         if (granted) {
             when (pendingPickerType) {
-                AttachmentPickerType.MEDIA ->
-                    mediaPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
-                    )
-                AttachmentPickerType.FILE ->
-                    filePickerLauncher.launch(arrayOf("*/*"))
-                null -> {}
+                AttachmentPickerType.MEDIA -> openMediaPicker()
+                AttachmentPickerType.FILE -> filePickerLauncher.launch(arrayOf("*/*"))
+                null -> Unit
             }
         }
         pendingPickerType = null
@@ -351,14 +375,28 @@ fun ChatDialogComponent(
             AttachOptionsBottomSheetDialog(
                 onDismissRequest = { showAttachmentSheet = false },
                 onMediaClick = {
-                    pendingPickerType = AttachmentPickerType.MEDIA
-                    permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
                     showAttachmentSheet = false
+                    val hasPermissions = mediaPermissions.all { permission ->
+                        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+                    }
+                    if (hasPermissions) {
+                        openMediaPicker()
+                    } else {
+                        pendingPickerType = AttachmentPickerType.MEDIA
+                        permissionLauncher.launch(mediaPermissions)
+                    }
                 },
                 onFileClick = {
-                    pendingPickerType = AttachmentPickerType.FILE
-                    permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
                     showAttachmentSheet = false
+                    val hasPermissions = filePermissions.all { permission ->
+                        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+                    }
+                    if (hasPermissions) {
+                        filePickerLauncher.launch(arrayOf("*/*"))
+                    } else {
+                        pendingPickerType = AttachmentPickerType.FILE
+                        permissionLauncher.launch(filePermissions)
+                    }
                 },
                 onPollClick = { showAttachmentSheet = false },
                 onContactClick = {
