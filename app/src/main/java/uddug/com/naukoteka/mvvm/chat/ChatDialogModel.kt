@@ -31,6 +31,8 @@ import uddug.com.naukoteka.mvvm.chat.ChatStatusTextMode.GENERIC
 import java.time.Instant
 import java.io.File
 import java.io.EOFException
+import java.util.Locale
+import uddug.com.domain.entities.chat.File as ChatFile
 import javax.inject.Inject
 
 private const val IMAGE_FILE_TYPE = 1
@@ -437,6 +439,33 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    private fun ChatFile.toFileDescriptor(): FileDescriptor {
+        return FileDescriptor(
+            id = id,
+            fileType = resolveExistingFileType(),
+        )
+    }
+
+    private fun ChatFile.resolveExistingFileType(): Int {
+        fileType?.let { return it }
+
+        val contentType = contentType?.lowercase(Locale.ROOT)
+        val extension = fileName
+            ?.substringAfterLast('.', missingDelimiterValue = "")
+            ?.lowercase(Locale.ROOT)
+
+        return when {
+            extension != null && extension in VOICE_EXTENSIONS -> VOICE_FILE_TYPE
+            extension != null && extension in AUDIO_EXTENSIONS -> AUDIO_FILE_TYPE
+            extension != null && extension in VIDEO_EXTENSIONS -> VIDEO_FILE_TYPE
+            extension != null && extension in IMAGE_EXTENSIONS -> IMAGE_FILE_TYPE
+            contentType?.startsWith("audio/") == true -> AUDIO_FILE_TYPE
+            contentType?.startsWith("video/") == true -> VIDEO_FILE_TYPE
+            contentType?.startsWith("image/") == true -> IMAGE_FILE_TYPE
+            else -> DOCUMENT_FILE_TYPE
+        }
+    }
+
     private fun buildUserContactPayload(user: UserProfileFullInfo): String? {
         val json = JSONObject()
         user.id?.let { json.put("id", it) }
@@ -528,7 +557,7 @@ class ChatDialogViewModel @Inject constructor(
                         dialogId = dialog.id,
                         messageId = editingMessage.id,
                         text = text,
-                        fileIds = editingMessage.files.map { it.id },
+                        files = editingMessage.files.mapNotNull { it.toFileDescriptor() },
                     )
                 } catch (e: EOFException) {
                     Log.w(

@@ -5,6 +5,7 @@ import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.SearchDialog
 import uddug.com.domain.entities.chat.SearchMessage
 import uddug.com.domain.entities.chat.UserStatus
@@ -89,8 +90,8 @@ class ChatInteractor @Inject constructor(
         dialogId: Long,
         messageId: Long,
         text: String,
-        fileIds: List<String> = emptyList(),
-    ): MessageChat = chatRepository.updateMessage(dialogId, messageId, text, fileIds)
+        files: List<FileDescriptor> = emptyList(),
+    ): MessageChat = chatRepository.updateMessage(dialogId, messageId, text, files)
 
     suspend fun deleteMessage(messageId: Long, forMe: Boolean = false) =
         chatRepository.deleteMessage(messageId, forMe)
