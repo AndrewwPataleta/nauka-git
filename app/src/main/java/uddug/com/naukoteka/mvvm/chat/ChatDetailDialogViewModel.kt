@@ -32,6 +32,13 @@ class ChatDialogDetailViewModel @Inject constructor(
     private val socketService: SocketService
 ) : ViewModel() {
 
+    private val tabToCategoryMap = mapOf(
+        0 to 1, // Визуальные вложения
+        1 to 3, // Сырые файлы
+        2 to 6, // Голосовые сообщения
+        3 to 7, // Записи звонков
+    )
+
     private val _uiState = MutableStateFlow<ChatDetailUiState>(ChatDetailUiState.Loading)
     val uiState: StateFlow<ChatDetailUiState> = _uiState
 
@@ -58,6 +65,7 @@ class ChatDialogDetailViewModel @Inject constructor(
 
     fun selectTab(index: Int) {
         _selectedTabIndex.value = index
+        loadTabData(index)
     }
 
     fun loadDialogInfo(dialogId: Long) {
@@ -73,60 +81,26 @@ class ChatDialogDetailViewModel @Inject constructor(
 
     fun setDialogInfo(dialogInfo: DialogInfo) {
         currentDialogInfo = dialogInfo
+        _selectedTabIndex.value = 0
 
         viewModelScope.launch {
             userRepository.getProfileInfo().subscribeOn(Schedulers.io())
                 .subscribe({
                     currentUser = it
                     viewModelScope.launch {
-                        val media = chatInteractor.getDialogMedia(
-                            dialogInfo.id,
-                            category = 1,
-                            limit = 50,
-                            page = 1,
-                            query = null,
-                            sd = null,
-                            ed = null,
-                        )
-                        val files = chatInteractor.getDialogMedia(
-                            dialogInfo.id,
-                            category = 3,
-                            limit = 50,
-                            page = 1,
-                            query = null,
-                            sd = null,
-                            ed = null,
-                        )
-                        val voices = chatInteractor.getDialogMedia(
-                            dialogInfo.id,
-                            category = 4,
-                            limit = 50,
-                            page = 1,
-                            query = null,
-                            sd = null,
-                            ed = null,
-                        )
-                        val notes = chatInteractor.getDialogMedia(
-                            dialogInfo.id,
-                            category = 2,
-                            limit = 50,
-                            page = 1,
-                            query = null,
-                            sd = null,
-                            ed = null,
-                        )
                         _uiState.value = ChatDetailUiState.Success(
                             profile = User(
                                 image = dialogInfo.interlocutor?.image.orEmpty(),
                                 fullName = dialogInfo.interlocutor?.fullName.orEmpty(),
                                 nickname = dialogInfo.interlocutor?.nickname.orEmpty()
                             ),
-                            media = media,
-                            files = files,
-                            voices = voices,
-                            notes = notes,
+                            media = emptyList(),
+                            files = emptyList(),
+                            voices = emptyList(),
+                            notes = emptyList(),
                             dialogId = dialogInfo.id
                         )
+                        loadTabData(0)
                     }
 
                 }, {})
@@ -173,7 +147,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                 )
                 _searchNotes.value = chatInteractor.getDialogMedia(
                     dialogId,
-                    category = 2,
+                    category = 7,
                     limit = 50,
                     page = 1,
                     query = query,
@@ -201,6 +175,36 @@ class ChatDialogDetailViewModel @Inject constructor(
             }
         }
     }
+
+    private fun loadTabData(index: Int) {
+        val dialogId = currentDialogInfo?.id ?: return
+        val category = tabToCategoryMap[index] ?: return
+
+        viewModelScope.launch {
+            try {
+                val media = chatInteractor.getDialogMedia(
+                    dialogId,
+                    category = category,
+                    limit = 50,
+                    page = 1,
+                    query = null,
+                    sd = null,
+                    ed = null,
+                )
+
+                val currentState = _uiState.value as? ChatDetailUiState.Success ?: return@launch
+                _uiState.value = when (index) {
+                    0 -> currentState.copy(media = media)
+                    1 -> currentState.copy(files = media)
+                    2 -> currentState.copy(voices = media)
+                    3 -> currentState.copy(notes = media)
+                    else -> currentState
+                }
+            } catch (e: Exception) {
+            }
+        }
+    }
+
 }
 
 sealed class ChatDetailUiState {
