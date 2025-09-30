@@ -47,19 +47,20 @@ fun Context.launchCustomTabsByUrl(
 
 
 fun formatMessageTime(time: String): String {
-    val messageDate = ZonedDateTime.parse(time, DateTimeFormatter.ISO_DATE_TIME)
-        .withZoneSameInstant(ZoneId.systemDefault())
-    val currentDate = ZonedDateTime.now(ZoneId.systemDefault())
+    return runCatching {
+        val messageDate = ZonedDateTime.parse(time, DateTimeFormatter.ISO_DATE_TIME)
+            .withZoneSameInstant(ZoneId.systemDefault())
+        val currentDate = ZonedDateTime.now(ZoneId.systemDefault())
 
-    return when {
-        messageDate.toLocalDate().isEqual(currentDate.toLocalDate()) -> {
-            messageDate.format(DateTimeFormatter.ofPattern("HH:mm"))
+        when {
+            messageDate.toLocalDate().isEqual(currentDate.toLocalDate()) -> {
+                messageDate.format(DateTimeFormatter.ofPattern("HH:mm"))
+            }
+            messageDate.isAfter(currentDate.minusDays(7)) -> {
+                val dayOfWeek = messageDate.dayOfWeek
+                dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("ru"))
+            }
+            else -> messageDate.format(DateTimeFormatter.ofPattern("dd.MM.yy"))
         }
-        messageDate.isAfter(currentDate.minusDays(7)) -> {
-            val dayOfWeek = messageDate.dayOfWeek
-            val shortDay = dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("ru"))
-            shortDay
-        }
-        else -> messageDate.format(DateTimeFormatter.ofPattern("dd.MM.yy"))
-    }
+    }.getOrElse { time }
 }
