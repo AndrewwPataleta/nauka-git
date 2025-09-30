@@ -203,6 +203,12 @@ fun ChatDialogComponent(
 
                 is ChatDialogUiState.Success -> {
                     val messages = state.chats
+
+                    LaunchedEffect(messages.size) {
+                        if (messages.isNotEmpty()) {
+                            scrollState.scrollToItem(messages.size - 1)
+                        }
+                    }
                     if (isSelectionMode) {
                         Surface(elevation = 4.dp) {
                             Column {
