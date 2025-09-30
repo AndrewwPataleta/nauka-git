@@ -428,4 +428,7 @@
     <string name="search_dialogs_hint">Поиск по диалогам</string>
     <string name="search_contacts_hint">Поиск по контактам</string>
 
+    <string name="chat_file_attachment_unknown_type">FILE</string>
+    <string name="chat_file_download_started">Downloading file…</string>
+
 </resources>
