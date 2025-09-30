@@ -111,13 +111,6 @@ fun ChatListComponent(
             }
         )
         if (!isSearchActive) {
-            Text(
-                text = stringResource(R.string.search_enter_query),
-                color = Color(0xFF8083A0),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
             Box(modifier = Modifier.weight(1f)) {
                 ChatTabBar(
                     viewModel = viewModel,
@@ -130,15 +123,6 @@ fun ChatListComponent(
                 )
             }
         } else {
-            if (query.length < SEARCH_MIN_QUERY_LENGTH) {
-                Text(
-                    text = stringResource(R.string.search_enter_query_min_length),
-                    color = Color(0xFF8083A0),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
             SearchResultsContent(
                 modifier = Modifier.weight(1f),
                 query = query,
@@ -223,7 +207,25 @@ private fun SearchResultsContent(
                 .background(Color.White)
         ) {
             when {
-                query.length < SEARCH_MIN_QUERY_LENGTH -> {}
+                query.isEmpty() -> {
+                    Text(
+                        text = stringResource(R.string.search_enter_query),
+                        color = Color(0xFF8083A0),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = 32.dp)
+                    )
+                }
+
+                query.length < SEARCH_MIN_QUERY_LENGTH -> {
+                    Text(
+                        text = stringResource(R.string.search_enter_query_min_length),
+                        color = Color(0xFF8083A0),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = 32.dp)
+                    )
+                }
 
                 isLoading -> ChatListShimmer()
 
