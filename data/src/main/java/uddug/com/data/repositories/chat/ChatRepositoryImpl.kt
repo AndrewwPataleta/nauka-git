@@ -8,6 +8,7 @@ import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.DialogImageRequestDto
 import uddug.com.data.services.models.request.chat.PinMessageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
+import uddug.com.data.services.models.request.chat.UpdateMessageFileDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
 import uddug.com.data.services.models.response.chat.FileDto
@@ -23,6 +24,7 @@ import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.SearchDialog
 import uddug.com.domain.entities.chat.SearchMessage
 import uddug.com.domain.entities.chat.UserStatus
+import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.updateOwnerInfoFromDialog
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.chat.ChatRepository
@@ -253,14 +255,19 @@ class ChatRepositoryImpl @Inject constructor(
         dialogId: Long,
         messageId: Long,
         text: String,
-        fileIds: List<String> = emptyList(),
+        files: List<FileDescriptor> = emptyList(),
     ): MessageChat {
         val dto = apiService.updateMessage(
             UpdateMessageRequestDto(
                 dialogId = dialogId,
                 messageId = messageId,
                 updatedText = text,
-                files = fileIds,
+                files = files.map { file ->
+                    UpdateMessageFileDto(
+                        id = file.id,
+                        fileType = file.fileType,
+                    )
+                },
             )
         )
         return dto.toDomain(dto.ownerId)

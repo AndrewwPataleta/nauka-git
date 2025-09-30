@@ -6,5 +6,10 @@ data class UpdateMessageRequestDto(
     @SerializedName("dialogId") val dialogId: Long,
     @SerializedName("messageId") val messageId: Long,
     @SerializedName("updatedText") val updatedText: String?,
-    @SerializedName("files") val files: List<String> = emptyList(),
+    @SerializedName("files") val files: List<UpdateMessageFileDto> = emptyList(),
+)
+
+data class UpdateMessageFileDto(
+    @SerializedName("id") val id: String,
+    @SerializedName("fileType") val fileType: Int,
 )

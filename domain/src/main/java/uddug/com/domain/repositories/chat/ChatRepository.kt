@@ -3,6 +3,7 @@ package uddug.com.domain.repositories.chat
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.DialogInfo
+import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.SearchDialog
@@ -99,7 +100,7 @@ interface ChatRepository {
         dialogId: Long,
         messageId: Long,
         text: String,
-        fileIds: List<String> = emptyList(),
+        files: List<FileDescriptor> = emptyList(),
     ): MessageChat
 
     suspend fun deleteMessage(messageId: Long, forMe: Boolean = false)
