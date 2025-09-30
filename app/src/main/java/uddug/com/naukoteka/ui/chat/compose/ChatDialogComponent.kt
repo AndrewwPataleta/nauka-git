@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
@@ -52,6 +52,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.ui.chat.compose.components.ChatInputBar
+import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageDateBadge
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageItem
 import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.AttachOptionsBottomSheetDialog
@@ -59,7 +60,11 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
 import uddug.com.naukoteka.ui.chat.compose.components.MessageListShimmer
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.naukoteka.ui.chat.AudioRecorder
+import uddug.com.naukoteka.ui.chat.compose.formatMessageDate
+import uddug.com.naukoteka.ui.chat.compose.messageDate
+import uddug.com.naukoteka.ui.chat.compose.shouldShowDateBadge
 import java.io.File
+import java.time.ZoneId
 
 private enum class AttachmentPickerType { MEDIA, FILE }
 
@@ -77,6 +82,7 @@ fun ChatDialogComponent(
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
     val context = LocalContext.current
+    val zoneId = remember { ZoneId.systemDefault() }
     var selectedMessage by remember { mutableStateOf<MessageChat?>(null) }
     val isSelectionMode by viewModel.isSelectionMode.collectAsState()
     val selectedMessages by viewModel.selectedMessages.collectAsState()
@@ -268,13 +274,23 @@ fun ChatDialogComponent(
                             .fillMaxWidth()
                             .padding(vertical = 10.dp)
                     ) {
-                        items(messages) { message ->
+                        itemsIndexed(messages) { index, message ->
+                            val previousMessage = messages.getOrNull(index - 1)
+                            if (shouldShowDateBadge(previousMessage, message, zoneId)) {
+                                ChatMessageDateBadge(
+                                    text = formatMessageDate(
+                                        context = context,
+                                        date = message.messageDate(zoneId),
+                                        zoneId = zoneId
+                                    )
+                                )
+                            }
                             ChatMessageItem(
                                 message = message,
                                 isMine = message.isMine,
-                                    selectionMode = isSelectionMode,
-                                    isSelected = selectedMessages.contains(message.id),
-                                    onSelectChange = { viewModel.toggleMessageSelection(message.id) },
+                                selectionMode = isSelectionMode,
+                                isSelected = selectedMessages.contains(message.id),
+                                onSelectChange = { viewModel.toggleMessageSelection(message.id) },
                                 onLongPress = { selectedMessage = it }
                             )
                         }
