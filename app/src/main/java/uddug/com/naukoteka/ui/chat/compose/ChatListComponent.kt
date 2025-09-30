@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import uddug.com.naukoteka.R
@@ -59,6 +60,7 @@ fun ChatListComponent(
             .fillMaxSize()
             .background(color = Color.White)
     ) {
+        val focusManager = LocalFocusManager.current
         ChatToolbarComponent(
             viewModel = viewModel,
             onCreateChatClick = { onCreateChatClick() },
@@ -97,7 +99,16 @@ fun ChatListComponent(
                 isSearchFieldFocused = focused
                 viewModel.onSearchFocusChanged(focused || query.isNotEmpty())
             },
-            placeholderCentered = true
+            placeholderCentered = true,
+            showClearIcon = isSearchActive,
+            onClearClick = {
+                query = ""
+                selectedSearchTab = SearchTab.Dialogs
+                focusManager.clearFocus()
+                isSearchFieldFocused = false
+                viewModel.search("")
+                viewModel.onSearchFocusChanged(false)
+            }
         )
         if (!isSearchActive) {
             Box(modifier = Modifier.weight(1f)) {
