@@ -13,11 +13,12 @@ import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.SearchMessage
 import uddug.com.domain.entities.chat.User
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
-import uddug.com.naukoteka.ui.chat.di.SocketService
 import uddug.com.domain.interactors.chat.ChatInteractor
+import uddug.com.naukoteka.ui.chat.di.SocketService
 import android.net.Uri
 import com.google.firebase.dynamiclinks.ktx.androidParameters
 import com.google.firebase.dynamiclinks.ktx.dynamicLinks
@@ -41,8 +42,8 @@ class ChatDialogDetailViewModel @Inject constructor(
     private var currentDialogInfo: DialogInfo? = null
     private var currentUser: UserProfileFullInfo? = null
 
-    private val _searchMessages = MutableStateFlow<List<MessageChat>>(emptyList())
-    val searchMessages: StateFlow<List<MessageChat>> = _searchMessages
+    private val _searchMessages = MutableStateFlow<List<SearchMessage>>(emptyList())
+    val searchMessages: StateFlow<List<SearchMessage>> = _searchMessages
 
     private val _searchMedia = MutableStateFlow<List<MediaMessage>>(emptyList())
     val searchMedia: StateFlow<List<MediaMessage>> = _searchMedia
@@ -148,11 +149,17 @@ class ChatDialogDetailViewModel @Inject constructor(
         val userId = currentUser?.id ?: return
         viewModelScope.launch {
             try {
-                _searchMessages.value = chatInteractor.searchMessages(
+                val messages = chatInteractor.searchMessages(
                     userId,
                     dialogId,
                     query,
                 )
+                _searchMessages.value = messages.map { message ->
+                    message.toSearchMessage(
+                        dialogId = dialogId,
+                        currentUser = currentUser,
+                    )
+                }
                 _searchMedia.value = chatInteractor.getDialogMedia(
                     dialogId,
                     category = 1,
@@ -200,6 +207,27 @@ class ChatDialogDetailViewModel @Inject constructor(
                 _events.emit(ChatDialogDetailEvent.Share(shortLink.shortLink.toString()))
             }
         }
+    }
+    private fun MessageChat.toSearchMessage(
+        dialogId: Long,
+        currentUser: UserProfileFullInfo?,
+    ): SearchMessage {
+        val userName = ownerName.takeUnless { it.isNullOrBlank() }
+            ?: if (isMine) currentUser?.fullName else null
+        val userAvatar = ownerAvatarUrl.takeUnless { it.isNullOrBlank() }
+            ?: if (isMine) currentUser?.image?.path else null
+
+        return SearchMessage(
+            dialogId = dialogId,
+            messageId = id,
+            fullName = userName.orEmpty(),
+            image = userAvatar,
+            userId = ownerId.orEmpty(),
+            isOnline = false,
+            lastSeen = null,
+            text = text,
+            createdAt = createdAt,
+        )
     }
 }
 
