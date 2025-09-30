@@ -70,6 +70,7 @@ fun ChatDialogComponent(
     onBackPressed: () -> Unit,
     onSearchClick: () -> Unit,
     onContactClick: () -> Unit,
+    onForwardMessage: (MessageChat) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberLazyListState()
@@ -419,6 +420,9 @@ fun ChatDialogComponent(
                 onEdit = { msg ->
                     viewModel.startEditingMessage(msg)
                     selectedMessage = null
+                },
+                onForward = { msg ->
+                    onForwardMessage(msg)
                 }
             )
         }
