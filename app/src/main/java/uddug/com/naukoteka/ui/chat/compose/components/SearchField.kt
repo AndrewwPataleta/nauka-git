@@ -13,6 +13,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -20,9 +21,10 @@ import uddug.com.naukoteka.R
 
 @Composable
 fun SearchField(
-     title: String,
-     query: String,
-     onSearchChanged: (String) -> Unit
+    title: String,
+    query: String,
+    onSearchChanged: (String) -> Unit,
+    onFocusChanged: (Boolean) -> Unit = {},
 ) {
     Row(
         modifier = Modifier
@@ -49,6 +51,7 @@ fun SearchField(
             textStyle = LocalTextStyle.current.copy(color = Color.Black),
             modifier = Modifier
                 .fillMaxWidth()
+                .onFocusChanged { onFocusChanged(it.isFocused) }
                 .padding(10.dp),
             decorationBox = { innerTextField ->
                 if (query.isEmpty()) {

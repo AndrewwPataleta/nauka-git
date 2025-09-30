@@ -372,6 +372,10 @@
     <string name="profile_shasre">Поделиться</string>
     <string name="profile_more">Еще</string>
     <string name="find_chat_message">Поиск чатов и сообщений</string>
+    <string name="search_tab_chats">Чаты</string>
+    <string name="search_tab_messages">Сообщения</string>
+    <string name="search_min_chars_hint">Введите не менее %1$d символов</string>
+    <string name="search_empty_result">Ничего не найдено</string>
     <string name="chat_functions_title">Функции чата</string>
     <string name="chat_mark_unread">Отметить непрочитанным</string>
     <string name="chat_show_attachments">Показать вложения</string>

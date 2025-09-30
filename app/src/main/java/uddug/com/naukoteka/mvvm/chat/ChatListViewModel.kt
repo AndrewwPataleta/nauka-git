@@ -3,13 +3,14 @@ package uddug.com.naukoteka.mvvm.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.SearchDialog
@@ -39,13 +40,17 @@ class ChatListViewModel @Inject constructor(
     private val _selectedChats = MutableStateFlow<Set<Long>>(emptySet())
     val selectedChats: StateFlow<Set<Long>> = _selectedChats
 
-    private val _searchResults = MutableStateFlow<List<SearchResult>>(emptyList())
-    val searchResults: StateFlow<List<SearchResult>> = _searchResults
+    private val _searchResults = MutableStateFlow(SearchResults())
+    val searchResults: StateFlow<SearchResults> = _searchResults
 
     private val _isSearchLoading = MutableStateFlow(false)
     val isSearchLoading: StateFlow<Boolean> = _isSearchLoading
 
+    private val _isSearchActive = MutableStateFlow(false)
+    val isSearchActive: StateFlow<Boolean> = _isSearchActive
+
     private var loadChatsJob: kotlinx.coroutines.Job? = null
+    private var searchJob: Job? = null
 
     fun loadFolders() {
         _uiState.value = ChatListUiState.Loading
@@ -179,27 +184,44 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
+    fun onSearchFocusChanged(isActive: Boolean) {
+        _isSearchActive.value = isActive
+        if (!isActive) {
+            _searchResults.value = SearchResults()
+            _isSearchLoading.value = false
+            searchJob?.cancel()
+        }
+    }
+
     fun search(query: String) {
-        if (query.length < 4) {
-            _searchResults.value = emptyList()
+        if (query.length < SEARCH_MIN_QUERY_LENGTH) {
+            searchJob?.cancel()
+            _searchResults.value = SearchResults()
             _isSearchLoading.value = false
             return
         }
-        viewModelScope.launch {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
             _isSearchLoading.value = true
             try {
                 val dialogs = chatRepository.searchDialogs(query)
-                    .filter { it.dialogType == 1 }
+                    .map { SearchResult.Dialog(it) }
                 val messages = chatRepository.searchMessages(query)
-                val results = dialogs.map { SearchResult.Dialog(it) } +
-                        messages.map { SearchResult.Message(it) }
-                _searchResults.value = results
+                    .map { SearchResult.Message(it) }
+                _searchResults.value = SearchResults(
+                    dialogs = dialogs,
+                    messages = messages,
+                )
             } catch (_: Exception) {
-                _searchResults.value = emptyList()
+                _searchResults.value = SearchResults()
             } finally {
                 _isSearchLoading.value = false
             }
         }
+    }
+
+    private companion object {
+        const val SEARCH_MIN_QUERY_LENGTH = 4
     }
 }
 
@@ -216,6 +238,11 @@ sealed class ChatListUiState {
 
     data class Error(val message: String) : ChatListUiState()
 }
+
+data class SearchResults(
+    val dialogs: List<SearchResult.Dialog> = emptyList(),
+    val messages: List<SearchResult.Message> = emptyList(),
+)
 
 sealed class SearchResult {
     abstract val dialogId: Long
