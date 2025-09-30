@@ -246,8 +246,20 @@ class ChatRepositoryImpl @Inject constructor(
         apiService.unpinMessage(PinMessageRequestDto(dialogId, messageId))
     }
 
-    override suspend fun updateMessage(messageId: Long, text: String): MessageChat {
-        val dto = apiService.updateMessage(UpdateMessageRequestDto(messageId, text))
+    override suspend fun updateMessage(
+        dialogId: Long,
+        messageId: Long,
+        text: String,
+        fileIds: List<String> = emptyList(),
+    ): MessageChat {
+        val dto = apiService.updateMessage(
+            UpdateMessageRequestDto(
+                dialogId = dialogId,
+                messageId = messageId,
+                updatedText = text,
+                files = fileIds,
+            )
+        )
         return dto.toDomain(dto.ownerId)
     }
 

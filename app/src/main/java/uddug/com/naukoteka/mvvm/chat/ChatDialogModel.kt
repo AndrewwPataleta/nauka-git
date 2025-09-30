@@ -409,7 +409,12 @@ class ChatDialogViewModel @Inject constructor(
 
             if (editingMessage != null) {
                 try {
-                    val updated = chatInteractor.updateMessage(editingMessage.id, text)
+                    val updated = chatInteractor.updateMessage(
+                        dialogId = dialog.id,
+                        messageId = editingMessage.id,
+                        text = text,
+                        fileIds = editingMessage.files.map { it.id },
+                    )
                     val updatedChats = successState.chats.map { existing ->
                         if (existing.id == updated.id) {
                             existing.copy(
