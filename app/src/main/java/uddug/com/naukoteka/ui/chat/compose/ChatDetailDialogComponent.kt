@@ -2,6 +2,7 @@ package uddug.com.naukoteka.ui.chat.compose
 
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -43,6 +44,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Share
@@ -66,6 +68,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import uddug.com.domain.entities.chat.MediaMessage
@@ -75,6 +78,10 @@ import uddug.com.naukoteka.mvvm.chat.ChatDetailUiState
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailShimmer
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -400,12 +407,130 @@ fun FilesContent(items: List<MediaMessage>) {
             .fillMaxSize()
             .padding(8.dp)
     ) {
-        items(items) { item ->
-            Text(
-                text = item.file.fileName,
-                modifier = Modifier.padding(4.dp)
-            )
+        items(items, key = { it.file.id }) { item ->
+            FileItem(item)
         }
+    }
+}
+
+@Composable
+private fun FileItem(item: MediaMessage) {
+    val extension = remember(item.file.fileName) {
+        item.file.fileName.substringAfterLast('.', "").uppercase()
+    }
+    val sizeText = remember(item.file.fileSize) { formatFileSize(item.file.fileSize) }
+    val dateText = remember(item.createdAt) { formatFileDate(item.createdAt) }
+    val metaText = listOfNotNull(sizeText, dateText).joinToString(separator = " • ")
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        elevation = 0.dp,
+        backgroundColor = Color(0xFFF5F5F9),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            FileIcon(extension = extension)
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = item.file.fileName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (metaText.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = metaText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF7F838D)
+                    )
+                }
+            }
+            IconButton(onClick = { }) {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = null,
+                    tint = Color(0xFF7F838D)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FileIcon(extension: String) {
+    val backgroundColor = remember(extension) { fileExtensionColor(extension) }
+    Box(
+        modifier = Modifier
+            .size(56.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(backgroundColor),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Description,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+            if (extension.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = extension,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White
+                )
+            }
+        }
+    }
+}
+
+private fun formatFileSize(sizeInBytes: Int?): String? {
+    val size = sizeInBytes ?: return null
+    if (size <= 0) return null
+    val units = listOf("B", "KB", "MB", "GB", "TB")
+    var value = size.toDouble()
+    var unitIndex = 0
+    while (value >= 1024 && unitIndex < units.lastIndex) {
+        value /= 1024
+        unitIndex++
+    }
+    val pattern = if (value >= 10 || unitIndex == 0) "%.0f" else "%.1f"
+    return String.format(Locale.getDefault(), pattern, value) + units[unitIndex].lowercase(Locale.getDefault())
+}
+
+private fun formatFileDate(rawDate: String): String? {
+    return try {
+        val instant = Instant.parse(rawDate)
+        val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+        localDate.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru")))
+    } catch (error: Exception) {
+        null
+    }
+}
+
+private fun fileExtensionColor(extension: String): Color {
+    return when (extension.uppercase(Locale.getDefault())) {
+        "PDF" -> Color(0xFFE57373)
+        "DOC", "DOCX" -> Color(0xFF64B5F6)
+        "XLS", "XLSX" -> Color(0xFF81C784)
+        "JPG", "JPEG", "PNG" -> Color(0xFF9575CD)
+        "ZIP", "RAR" -> Color(0xFF4DD0E1)
+        else -> Color(0xFF90A4AE)
     }
 }
 
