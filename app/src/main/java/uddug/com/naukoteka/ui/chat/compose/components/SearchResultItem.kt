@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import uddug.com.domain.entities.chat.SearchDialog
 import uddug.com.domain.entities.chat.SearchMessage
 import uddug.com.naukoteka.R
-import uddug.com.naukoteka.core.deeplink.formatMessageTime as formatChatTime
+import uddug.com.naukoteka.core.deeplink.formatMessageTime
 import uddug.com.naukoteka.mvvm.chat.SearchResult
 import java.time.Duration
 import java.time.Instant
@@ -57,14 +57,14 @@ private fun SearchDialogResultCard(
     val statusText = remember(dialog.createdAt) {
         formatDialogStatus(context.resources, dialog.createdAt)
     }
-    val timeText = remember(dialog.createdAt) { formatChatTime(dialog.createdAt.toString()) }
+    val createdAtIso = remember(dialog.createdAt) { dialog.createdAt.toString() }
 
     ChatCard(
         dialogId = dialog.dialogId,
         avatarUrl = dialog.image,
         name = dialog.fullName,
         message = statusText,
-        time = timeText,
+        time = createdAtIso,
         onChatClick = onClick,
         onChatLongClick = {},
     )
@@ -77,7 +77,7 @@ private fun SearchMessageResultCard(
     onClick: (Long) -> Unit,
 ) {
     val highlightColor = Color(0xFF2E83D9)
-    val timeText = remember(result.createdAt) { formatChatTime(result.createdAt.toString()) }
+    val createdAtIso = remember(result.createdAt) { result.createdAt.toString() }
     val messageText = result.text.orEmpty()
 
     Column(
@@ -106,7 +106,7 @@ private fun SearchMessageResultCard(
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = timeText,
+                        text = formatMessageTime(createdAtIso),
                         color = Color(0xFF8083A0),
                         fontSize = 12.sp,
                         maxLines = 1,
