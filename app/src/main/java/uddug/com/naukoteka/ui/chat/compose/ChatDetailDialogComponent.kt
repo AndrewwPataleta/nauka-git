@@ -94,13 +94,18 @@ fun ChatDetailDialogComponent(
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
 
 
-    val tabs = listOf("Медиа", "Файлы", "Голосовые", "Записи")
+    val tabs = listOf(
+        stringResource(R.string.chat_detail_tab_media),
+        stringResource(R.string.chat_detail_tab_files),
+        stringResource(R.string.chat_detail_tab_voice),
+        stringResource(R.string.chat_detail_tab_records)
+    )
 
     Scaffold(
         topBar = {
             androidx.compose.material.TopAppBar(
                 title = {
-                    Text(text = "Информация", fontSize = 20.sp, color = Color.Black)
+                    Text(text = stringResource(R.string.chat_group_info_title), fontSize = 20.sp, color = Color.Black)
                 },
                 actions = {
 

@@ -292,7 +292,7 @@ fun ChatInputBar(
                         )
                     }
                     Text(
-                        text = "Смахните влево для отмены",
+                        text = stringResource(R.string.chat_swipe_to_cancel),
                         color = Color(0XFF8083A0),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.weight(1f)
@@ -335,7 +335,7 @@ fun ChatInputBar(
                     TextField(
                         value = currentMessage,
                         onValueChange = onMessageChange,
-                        placeholder = { Text("Напишите сообщение") },
+                        placeholder = { Text(stringResource(R.string.chat_message_placeholder)) },
                         modifier = Modifier
                             .padding(horizontal = 6.dp)
                             .weight(1f)

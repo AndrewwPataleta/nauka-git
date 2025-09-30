@@ -1,8 +1,10 @@
 package uddug.com.naukoteka.mvvm.chat
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +17,7 @@ import uddug.com.domain.entities.profile.Image
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
+import uddug.com.naukoteka.R
 import javax.inject.Inject
 import io.reactivex.Single
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -25,6 +28,7 @@ import kotlin.coroutines.resumeWithException
 class ChatCreateSingleViewModel @Inject constructor(
     private val chatInteractor: ChatInteractor,
     private val userProfileRepository: UserProfileRepository,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState =
@@ -115,7 +119,9 @@ class ChatCreateSingleViewModel @Inject constructor(
             if (hasPermit) {
                 _events.emit(ChatCreateSingleEvent.OpenDialogDetail(userId))
             } else {
-                _uiState.value = ChatCreateSingleUiState.Error("Нет разрешения на личный диалог")
+                _uiState.value = ChatCreateSingleUiState.Error(
+                    context.getString(R.string.chat_private_dialog_permission_error)
+                )
             }
 
 //            val selectedLastName =

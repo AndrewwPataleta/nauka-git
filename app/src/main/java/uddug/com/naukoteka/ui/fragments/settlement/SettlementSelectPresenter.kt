@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.ui.fragments.settlement
 
+import android.content.Context
 import io.reactivex.disposables.CompositeDisposable
 import moxy.InjectViewState
 import toothpick.InjectConstructor
@@ -8,6 +9,7 @@ import uddug.com.domain.interactors.country.LocationInteractor
 
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.global.base.BasePresenterImpl
 import uddug.com.naukoteka.presentation.profile.edit.models.SettlementType
 import uddug.com.naukoteka.utils.text.isNotNullOrEmpty
@@ -18,6 +20,7 @@ import java.util.Locale
 @InjectViewState
 class SettlementSelectPresenter(
     private val locationInteractor: LocationInteractor,
+    private val context: Context,
 ) : BasePresenterImpl<SettlementSelectView>() {
 
     var compositeDisposable: CompositeDisposable = CompositeDisposable()
@@ -34,6 +37,8 @@ class SettlementSelectPresenter(
 
     private var countryId: String? = null
     private var settlement: String? = null
+
+    private val noSelectLabel by lazy { context.getString(R.string.settlement_no_selection) }
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
         this.userProfileFullInfo = profileFullInfo
@@ -74,13 +79,13 @@ class SettlementSelectPresenter(
             locationInteractor.findSettlementsByCountry(it, str)
                 .subscribe({
                     searchSettlements.clear()
-                    searchSettlements.add(0, Settlement(id = NO_RESULT_ID, socrname = NO_SELECT))
+                    searchSettlements.add(0, Settlement(id = NO_RESULT_ID, socrname = noSelectLabel))
                     searchSettlements.addAll(it)
                     viewState.setSettlements(searchSettlements)
                 }, {
                     it.printStackTrace()
                     searchSettlements.clear()
-                    searchSettlements.add(0, Settlement(id = NO_RESULT_ID, city = NO_SELECT))
+                    searchSettlements.add(0, Settlement(id = NO_RESULT_ID, city = noSelectLabel))
                     viewState.setSettlements(searchSettlements)
                 })
         }?.let {
@@ -141,7 +146,6 @@ class SettlementSelectPresenter(
 
     companion object {
         const val NO_RESULT_ID = "-1"
-        const val NO_SELECT = "Без выбора"
     }
 
 }

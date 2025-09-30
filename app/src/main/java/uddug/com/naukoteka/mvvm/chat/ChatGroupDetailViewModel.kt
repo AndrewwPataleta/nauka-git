@@ -10,11 +10,14 @@ import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.User
 import uddug.com.domain.interactors.chat.ChatInteractor
+import uddug.com.naukoteka.mvvm.chat.ChatStatusFormatter
+import uddug.com.naukoteka.mvvm.chat.ChatStatusTextMode.GENERIC
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatGroupDetailViewModel @Inject constructor(
     private val chatInteractor: ChatInteractor,
+    private val chatStatusFormatter: ChatStatusFormatter,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ChatGroupDetailUiState>(ChatGroupDetailUiState.Loading)
@@ -66,8 +69,16 @@ class ChatGroupDetailViewModel @Inject constructor(
                 val participants = users.map { user ->
                     val status = statusMap[user.userId]
                     val statusText = status?.let {
-                        if (it.isOnline) "Сейчас онлайн" else it.lastSeen?.let { ls -> formatLastSeen(ls) }
-                    }
+                        if (it.isOnline) {
+                            chatStatusFormatter.online()
+                        } else {
+                            it.lastSeen?.let { ls ->
+                                runCatching { java.time.Instant.parse(ls) }
+                                    .map { instant -> chatStatusFormatter.formatLastSeen(instant, GENERIC) }
+                                    .getOrDefault("")
+                            }
+                        }
+                    }?.takeIf { it?.isNotEmpty() == true }
                     Participant(user, statusText)
                 }
                 _uiState.value = ChatGroupDetailUiState.Success(
@@ -101,24 +112,5 @@ sealed class ChatGroupDetailUiState {
 
 data class Participant(
     val user: User,
-    val status: String?
+    val status: String?,
 )
-
-private fun formatLastSeen(lastSeen: String): String {
-    return try {
-        val instant = java.time.Instant.parse(lastSeen)
-        val duration = java.time.Duration.between(instant, java.time.Instant.now())
-        val minutes = duration.toMinutes()
-        val hours = duration.toHours()
-        val days = duration.toDays()
-        val weeks = days / 7
-        when {
-            minutes < 60 -> "был ${minutes} мин. назад"
-            hours < 24 -> "был ${hours} ч. назад"
-            days < 7 -> "был ${days} д. назад"
-            else -> "был ${weeks} нед. назад"
-        }
-    } catch (e: Exception) {
-        ""
-    }
-}

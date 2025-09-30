@@ -15,10 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatListUiState
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 
@@ -135,7 +137,7 @@ fun ChatTabBar(
                                     onDismissRequest = { showFolderMenu = false }
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("Настроить папки") },
+                                        text = { Text(stringResource(R.string.chat_folder_menu_configure)) },
                                         leadingIcon = {
                                             Icon(Icons.Filled.Person, contentDescription = null)
                                         },
@@ -145,7 +147,7 @@ fun ChatTabBar(
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Изменить порядок") },
+                                        text = { Text(stringResource(R.string.chat_folder_menu_change_order)) },
                                         leadingIcon = {
                                             Icon(Icons.Filled.Person, contentDescription = null)
                                         },
@@ -177,9 +179,9 @@ fun ChatTabBar(
                             ChatCard(
                                 dialogId = chat.dialogId,
                                 avatarUrl = chat.interlocutor.image,
-                                name = chat.interlocutor.fullName ?: "Неизвестный",
-                                message = chat.lastMessage.text ?: "Нет сообщений",
-                                time = chat.lastMessage.createdAt ?: "Неизвестно",
+                                name = chat.interlocutor.fullName ?: stringResource(R.string.chat_unknown_user),
+                                message = chat.lastMessage.text ?: stringResource(R.string.chat_no_messages),
+                                time = chat.lastMessage.createdAt ?: stringResource(R.string.chat_unknown_time),
                                 newMessagesCount = chat.unreadMessages,
                                 attachment = chat.lastMessage.files?.firstOrNull()?.path,
                                 isRepost = chat.lastMessage.type == 5,

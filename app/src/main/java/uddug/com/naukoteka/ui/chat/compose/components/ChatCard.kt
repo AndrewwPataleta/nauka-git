@@ -130,13 +130,14 @@ fun ChatCard(
 
                     // Последнее сообщение
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        val messageText = when {
+                            isRepost -> stringResource(R.string.chat_last_message_repost, message)
+                            isMedia -> stringResource(R.string.chat_last_message_media)
+                            isFromMe -> stringResource(R.string.chat_last_message_from_me, message)
+                            else -> message
+                        }
                         Text(
-                            text = when {
-                                isRepost -> "Репост: $message"
-                                isMedia -> "Медиа-вложение"
-                                isFromMe -> "Вы: $message"
-                                else -> message
-                            },
+                            text = messageText,
                             style = TextStyle(
                                 fontSize = 14.sp,
                                 color = if (isFromMe) Color.Blue else Color.Gray,

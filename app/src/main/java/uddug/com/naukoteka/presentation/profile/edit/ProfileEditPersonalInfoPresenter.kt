@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.presentation.profile.edit
 
 import android.annotation.SuppressLint
+import androidx.annotation.StringRes
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import moxy.InjectViewState
@@ -8,6 +9,7 @@ import toothpick.InjectConstructor
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.user_profile.UserProfileInteractor
 import uddug.com.domain.interactors.user_profile.model.ShortInfoUpdate
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.global.base.BasePresenterImpl
 import java.util.concurrent.TimeUnit
 
@@ -22,7 +24,8 @@ class ProfileEditPersonalInfoPresenter(
         private const val errorTag = "ProfileEditPresenterError"
         const val MAX_DEFAULT_INPUT = 30
         const val MAX_DESCRIPTION = 500
-        var genres = arrayOf("Мужчина", "Женщина")
+        @StringRes
+        val genders = listOf(R.string.gender_male, R.string.gender_female)
         val NEW_SPINNER_ID = 1
         val UREF_MAN = "46:2"
         val UREF_WOMAN = "46:1"
@@ -113,7 +116,8 @@ class ProfileEditPersonalInfoPresenter(
     override fun onFirstViewAttach() {
         super.onFirstViewAttach()
         viewState.setGenders(
-            genres.toList(), selectedPos = when (userProfileFullInfo?.gender) {
+            genders,
+            selectedPos = when (userProfileFullInfo?.gender) {
                 UREF_MAN -> 0
                 UREF_WOMAN -> 1
                 else -> -1

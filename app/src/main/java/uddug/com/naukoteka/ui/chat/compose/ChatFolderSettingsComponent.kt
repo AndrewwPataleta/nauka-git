@@ -20,12 +20,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -42,7 +44,7 @@ fun ChatFolderSettingsComponent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Настроить папки", color = Color.Black) },
+                title = { Text(text = stringResource(R.string.chat_folder_settings_title), color = Color.Black) },
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = null, tint = Color(0xFF2E83D9))
@@ -60,13 +62,13 @@ fun ChatFolderSettingsComponent(
                 .padding(padding)
         ) {
             Text(
-                text = "Вы можете создать папки с нужными чатами и переключаться между ними.\nЧтобы удалить папку или изменить порядок сортировки, нажмите кнопку «Изменить».",
+                text = stringResource(R.string.chat_folder_settings_description),
                 modifier = Modifier.padding(16.dp),
                 fontSize = 14.sp,
                 color = Color(0xFF8083A0)
             )
             Text(
-                text = "Выбранные чаты или группы",
+                text = stringResource(R.string.chat_folder_settings_selected_chats),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 fontSize = 16.sp,
                 color = Color.Black
@@ -75,7 +77,7 @@ fun ChatFolderSettingsComponent(
                 onClick = { },
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
-                Text(text = "Добавить новую папку", color = Color(0xFF2E83D9))
+                Text(text = stringResource(R.string.chat_folder_settings_add_folder), color = Color(0xFF2E83D9))
             }
             LazyColumn(
                 state = reorderState.listState,

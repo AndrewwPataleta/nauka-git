@@ -4,6 +4,7 @@ import io.reactivex.subjects.BehaviorSubject
 import uddug.com.data.validator.FieldsValidator
 import uddug.com.domain.interactors.user_profile.UserProfileInteractor
 import uddug.com.domain.interactors.user_profile.model.ShortInfoUi
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.global.base.BasePresenterImpl
 import uddug.com.naukoteka.navigation.AppRouter
 import uddug.com.naukoteka.navigation.Screens
@@ -61,7 +62,7 @@ class ShortInfoProfilePresenter(
     fun fillProfile(shortInfoUi: ShortInfoUi) {
         userProfileInteractor.setUser(shortInfoUi)
             .await {
-                viewState.showInfoMessage("Данные заполнены успешно")
+                viewState.showInfoMessage(R.string.short_info_profile_data_filled)
                 router.newRootScreen(Screens.Login())
             }
     }

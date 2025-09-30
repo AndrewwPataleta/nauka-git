@@ -3,7 +3,6 @@ package uddug.com.naukoteka.mvvm.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,6 +12,8 @@ import uddug.com.domain.entities.chat.UserStatus
 import uddug.com.domain.entities.profile.Image
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.chat.ChatInteractor
+import uddug.com.naukoteka.mvvm.chat.ChatStatusFormatter
+import uddug.com.naukoteka.mvvm.chat.ChatStatusTextMode
 import javax.inject.Inject
 
 data class SendContactUiState(
@@ -27,7 +28,8 @@ data class SendContactItem(
 
 @HiltViewModel
 class SendContactViewModel @Inject constructor(
-    private val chatInteractor: ChatInteractor
+    private val chatInteractor: ChatInteractor,
+    private val chatStatusFormatter: ChatStatusFormatter
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SendContactUiState())
@@ -83,26 +85,14 @@ class SendContactViewModel @Inject constructor(
 
     private fun formatStatus(status: UserStatus?): String? {
         status ?: return null
-        if (status.isOnline) {
-            return "Сейчас онлайн"
-        }
-        val lastSeen = status.lastSeen ?: return null
-        return try {
-            val instant = Instant.parse(lastSeen)
-            val duration = Duration.between(instant, Instant.now())
-            val minutes = duration.toMinutes().coerceAtLeast(1)
-            val hours = duration.toHours().coerceAtLeast(1)
-            val days = duration.toDays().coerceAtLeast(1)
-            val weeks = (days / 7).coerceAtLeast(1)
-            when {
-                minutes < 60 -> "Был(а) в сети ${minutes} мин. назад"
-                hours < 24 -> "Был(а) в сети ${hours} ч. назад"
-                days == 1L -> "Был(а) в сети вчера"
-                days < 7 -> "Был(а) в сети ${days} д. назад"
-                else -> "Был(а) в сети ${weeks} нед. назад"
+        return if (status.isOnline) {
+            chatStatusFormatter.online(ChatStatusTextMode.CONTACT)
+        } else {
+            status.lastSeen?.let { lastSeen ->
+                runCatching { Instant.parse(lastSeen) }
+                    .map { instant -> chatStatusFormatter.formatLastSeen(instant, ChatStatusTextMode.CONTACT) }
+                    .getOrNull()
             }
-        } catch (e: Exception) {
-            null
         }
     }
 }

@@ -160,10 +160,12 @@ class ProfileEditPersonalInfoFragment : BaseFragment(R.layout.fragment_profile_e
         )
     }
 
-    override fun setGenders(genres: List<String>, selectedPos: Int) {
+    override fun setGenders(genres: List<Int>, selectedPos: Int) {
+        val genderTitles = genres.map { getString(it) }
         val adapter = ArrayAdapter(
             requireContext(),
-            android.R.layout.simple_spinner_dropdown_item, genres
+            android.R.layout.simple_spinner_dropdown_item,
+            genderTitles
         )
         contentView.genderChoose.adapter = adapter
         contentView.genderChoose.setSelection(selectedPos)
