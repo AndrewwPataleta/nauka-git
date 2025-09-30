@@ -85,8 +85,12 @@ class ChatInteractor @Inject constructor(
     suspend fun unpinMessage(dialogId: Long, messageId: Long) =
         chatRepository.unpinMessage(dialogId, messageId)
 
-    suspend fun updateMessage(messageId: Long, text: String): MessageChat =
-        chatRepository.updateMessage(messageId, text)
+    suspend fun updateMessage(
+        dialogId: Long,
+        messageId: Long,
+        text: String,
+        fileIds: List<String> = emptyList(),
+    ): MessageChat = chatRepository.updateMessage(dialogId, messageId, text, fileIds)
 
     suspend fun deleteMessage(messageId: Long, forMe: Boolean = false) =
         chatRepository.deleteMessage(messageId, forMe)

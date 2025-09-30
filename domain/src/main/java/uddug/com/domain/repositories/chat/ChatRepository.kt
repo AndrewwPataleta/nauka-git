@@ -95,7 +95,12 @@ interface ChatRepository {
 
     suspend fun unpinMessage(dialogId: Long, messageId: Long)
 
-    suspend fun updateMessage(messageId: Long, text: String): MessageChat
+    suspend fun updateMessage(
+        dialogId: Long,
+        messageId: Long,
+        text: String,
+        fileIds: List<String> = emptyList(),
+    ): MessageChat
 
     suspend fun deleteMessage(messageId: Long, forMe: Boolean = false)
 
