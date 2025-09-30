@@ -146,7 +146,10 @@ fun ChatMessageItem(
                 }
 
                 if (message.replyTo != null) {
-                    ReplyBlock(message.replyTo!!)
+                    ReplyBlock(
+                        reply = message.replyTo!!,
+                        isMine = isMine
+                    )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
                 if (!message.text.isNullOrBlank()) {
