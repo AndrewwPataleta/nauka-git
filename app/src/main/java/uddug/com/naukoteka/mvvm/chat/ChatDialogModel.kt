@@ -325,6 +325,33 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    fun startEditingMessage(message: MessageChat) {
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success && message.isMine) {
+            attachedFiles.clear()
+            attachedContact = null
+            selectedUser = null
+            _uiState.value = currentState.copy(
+                editingMessage = message,
+                currentMessage = message.text.orEmpty(),
+                attachedFiles = emptyList(),
+                replyMessage = null,
+                attachedContact = null,
+                selectedContact = null,
+            )
+        }
+    }
+
+    fun clearEditingMessage() {
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(
+                editingMessage = null,
+                currentMessage = ""
+            )
+        }
+    }
+
     fun startSelection(messageId: Long) {
         _isSelectionMode.value = true
         _selectedMessages.value = setOf(messageId)
@@ -371,12 +398,44 @@ class ChatDialogViewModel @Inject constructor(
         viewModelScope.launch {
             val dialog = currentDialogInfo ?: return@launch
             val currentState = _uiState.value
-            val replyId = (currentState as? ChatDialogUiState.Success)?.replyMessage?.id
+            val successState = currentState as? ChatDialogUiState.Success
+            val replyId = successState?.replyMessage?.id
 
             if (text.isBlank() && attachedFiles.isEmpty()) {
                 Log.d("ChatViewModel", "Message is blank and no files attached — skipping")
                 return@launch
             }
+            val editingMessage = successState?.editingMessage
+
+            if (editingMessage != null) {
+                try {
+                    val updated = chatInteractor.updateMessage(editingMessage.id, text)
+                    val updatedChats = successState.chats.map { existing ->
+                        if (existing.id == updated.id) {
+                            existing.copy(
+                                text = updated.text,
+                                type = updated.type,
+                                files = updated.files,
+                                readCount = updated.readCount,
+                                createdAt = updated.createdAt,
+                                ownerId = updated.ownerId,
+                                isMine = updated.isMine
+                            )
+                        } else {
+                            existing
+                        }
+                    }
+                    _uiState.value = successState.copy(
+                        chats = updatedChats,
+                        currentMessage = "",
+                        editingMessage = null
+                    )
+                } catch (e: Exception) {
+                    Log.e("ChatViewModel", "Failed to update message", e)
+                }
+                return@launch
+            }
+
             val uploaded = if (attachedFiles.isNotEmpty()) {
                 try {
                     chatInteractor.uploadFiles(attachedFiles)
@@ -416,8 +475,8 @@ class ChatDialogViewModel @Inject constructor(
                     answered = replyId
                 )
             }
-            if (currentState is ChatDialogUiState.Success) {
-                _uiState.value = currentState.copy(currentMessage = "")
+            if (successState != null) {
+                _uiState.value = successState.copy(currentMessage = "")
             }
             Log.d("ChatViewModel", "Sending socket message: $message")
             socketService.sendMessage("message", message)
@@ -612,6 +671,7 @@ sealed class ChatDialogUiState {
         val replyMessage: MessageChat? = null,
         val attachedContact: ContactInfo? = null,
         val selectedContact: UserProfileFullInfo? = null,
+        val editingMessage: MessageChat? = null,
     ) : ChatDialogUiState()
 
     data class Error(val message: String) : ChatDialogUiState()
