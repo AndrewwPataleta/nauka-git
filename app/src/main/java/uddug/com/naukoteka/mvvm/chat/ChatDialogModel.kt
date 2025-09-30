@@ -314,7 +314,11 @@ class ChatDialogViewModel @Inject constructor(
     fun setReplyMessage(message: MessageChat) {
         val currentState = _uiState.value
         if (currentState is ChatDialogUiState.Success) {
-            _uiState.value = currentState.copy(replyMessage = message)
+            _uiState.value = currentState.copy(
+                replyMessage = message,
+                editingMessage = null,
+                currentMessage = if (currentState.editingMessage != null) "" else currentState.currentMessage,
+            )
         }
     }
 
