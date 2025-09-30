@@ -29,10 +29,13 @@ import uddug.com.domain.repositories.chat.ChatRepository
 import uddug.com.data.utils.toDomain
 import uddug.com.domain.entities.chat.File as ChatFile
 import java.time.Instant
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import android.webkit.MimeTypeMap
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File as JavaFile
+import java.net.URLConnection
+import java.util.Locale
 import javax.inject.Inject
 
 class ChatRepositoryImpl @Inject constructor(
@@ -304,10 +307,11 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun uploadFiles(files: List<JavaFile>, raw: Boolean): List<ChatFile> {
         val parts = files.map { file ->
+            val mediaType = determineMimeType(file).toMediaType()
             MultipartBody.Part.createFormData(
                 name = "files",
                 filename = file.name,
-                body = file.asRequestBody("image/*".toMediaTypeOrNull())
+                body = file.asRequestBody(mediaType)
             )
         }
         return try {
@@ -340,6 +344,19 @@ private fun FileDto.toDomain(): ChatFile = ChatFile(
     duration = duration,
     viewCount = viewCount,
 )
+
+private fun determineMimeType(file: JavaFile): String {
+    val fileName = file.name
+    val extension = fileName.substringAfterLast('.', "").lowercase(Locale.getDefault())
+    val mimeTypeFromExtension = if (extension.isNotEmpty()) {
+        MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+    } else {
+        null
+    }
+    return mimeTypeFromExtension
+        ?: URLConnection.guessContentTypeFromName(fileName)
+        ?: "application/octet-stream"
+}
 
 private fun UserStatusDto.toDomain(): UserStatus =
     UserStatus(userId = userId, isOnline = status.isOnline, lastSeen = status.lastSeen)

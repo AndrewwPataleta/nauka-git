@@ -7,30 +7,55 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-
-import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
 import uddug.com.domain.entities.profile.UserProfileFullInfo
+import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
-import uddug.com.naukoteka.ui.chat.di.SocketService
-import java.time.Instant
-import java.time.Duration
-import java.io.File
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
+import uddug.com.naukoteka.ui.chat.di.SocketService
+import java.io.File
+import java.time.Duration
+import java.time.Instant
 import javax.inject.Inject
+
+private const val IMAGE_FILE_TYPE = 1
+private const val VIDEO_FILE_TYPE = 30
+private const val VOICE_FILE_TYPE = 21
+private const val AUDIO_FILE_TYPE = 20
+private const val DOCUMENT_FILE_TYPE = 100
+
+private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif")
+private val VIDEO_EXTENSIONS = setOf("mp4", "mkv", "mov", "avi", "wmv", "flv", "webm")
+private val VOICE_EXTENSIONS = setOf("m4a", "aac", "amr", "3gp")
+private val AUDIO_EXTENSIONS = setOf("mp3", "wav", "flac", "ogg", "oga", "opus")
+private val DOCUMENT_EXTENSIONS = setOf(
+    "pdf",
+    "doc",
+    "docx",
+    "xls",
+    "xlsx",
+    "ppt",
+    "pptx",
+    "txt",
+    "zip",
+    "rar",
+    "7z",
+    "rtf",
+    "csv"
+)
 
 @HiltViewModel
 class ChatDialogViewModel @Inject constructor(
@@ -397,12 +422,15 @@ class ChatDialogViewModel @Inject constructor(
     }
 
     private fun determineFileType(file: File): Int {
-        return when (file.extension.lowercase()) {
-            "jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif" -> 1
-            "mp4", "mkv", "mov", "avi", "wmv", "flv", "webm" -> 30
-            "m4a", "aac", "amr", "3gp" -> 21
-            "mp3", "wav", "flac", "ogg", "oga", "opus" -> 20
-            else -> 1
+        val extension = file.extension.lowercase()
+        return when {
+            extension in IMAGE_EXTENSIONS -> IMAGE_FILE_TYPE
+            extension in VIDEO_EXTENSIONS -> VIDEO_FILE_TYPE
+            extension in VOICE_EXTENSIONS -> VOICE_FILE_TYPE
+            extension in AUDIO_EXTENSIONS -> AUDIO_FILE_TYPE
+            extension in DOCUMENT_EXTENSIONS -> DOCUMENT_FILE_TYPE
+            extension.isBlank() -> IMAGE_FILE_TYPE
+            else -> DOCUMENT_FILE_TYPE
         }
     }
 
@@ -525,9 +553,10 @@ class ChatDialogViewModel @Inject constructor(
                 return@launch
             }
 
+            val uploadRequiresRaw = attachedFiles.any { determineFileType(it) != IMAGE_FILE_TYPE }
             val uploaded = if (attachedFiles.isNotEmpty()) {
                 try {
-                    chatInteractor.uploadFiles(attachedFiles)
+                    chatInteractor.uploadFiles(attachedFiles, uploadRequiresRaw)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     emptyList()
@@ -535,7 +564,7 @@ class ChatDialogViewModel @Inject constructor(
             } else emptyList()
 
             val fileDescriptors = uploaded.mapIndexed { index, uploadedFile ->
-                val type = attachedFiles.getOrNull(index)?.let { determineFileType(it) } ?: 100
+                val type = attachedFiles.getOrNull(index)?.let { determineFileType(it) } ?: DOCUMENT_FILE_TYPE
                 FileDescriptor(
                     id = uploadedFile.id,
                     fileType = type
@@ -578,7 +607,8 @@ class ChatDialogViewModel @Inject constructor(
         viewModelScope.launch {
             val dialog = currentDialogInfo ?: return@launch
             val uploaded = try {
-                chatInteractor.uploadFiles(listOf(file))
+                val requiresRawUpload = determineFileType(file) != IMAGE_FILE_TYPE
+                chatInteractor.uploadFiles(listOf(file), requiresRawUpload)
             } catch (e: Exception) {
                 e.printStackTrace()
                 emptyList()
