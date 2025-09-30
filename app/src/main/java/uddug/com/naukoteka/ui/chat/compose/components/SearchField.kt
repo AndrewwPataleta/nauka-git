@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import uddug.com.naukoteka.R
 
@@ -25,6 +27,7 @@ fun SearchField(
     query: String,
     onSearchChanged: (String) -> Unit,
     onFocusChanged: (Boolean) -> Unit = {},
+    placeholderCentered: Boolean = false,
 ) {
     Row(
         modifier = Modifier
@@ -54,10 +57,25 @@ fun SearchField(
                 .onFocusChanged { onFocusChanged(it.isFocused) }
                 .padding(10.dp),
             decorationBox = { innerTextField ->
-                if (query.isEmpty()) {
-                    Text(text = title, color = Color.Gray)
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = if (placeholderCentered) Alignment.Center else Alignment.CenterStart
+                ) {
+                    if (query.isEmpty()) {
+                        Text(
+                            text = title,
+                            color = Color(0xFF8083A0),
+                            textAlign = if (placeholderCentered) TextAlign.Center else TextAlign.Start,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        innerTextField()
+                    }
                 }
-                innerTextField()
             }
         )
     }

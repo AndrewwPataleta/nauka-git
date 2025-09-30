@@ -227,7 +227,7 @@ class ChatListViewModel @Inject constructor(
     }
 
     private companion object {
-        const val SEARCH_MIN_QUERY_LENGTH = 4
+        const val SEARCH_MIN_QUERY_LENGTH = 1
     }
 }
 
