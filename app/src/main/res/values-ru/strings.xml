@@ -117,6 +117,8 @@
   <string name="forward_message_error">Не удалось переслать сообщение</string>
   <string name="search_dialogs_hint">Поиск по диалогам</string>
   <string name="search_contacts_hint">Поиск по контактам</string>
+  <string name="chat_file_attachment_unknown_type">ФАЙЛ</string>
+  <string name="chat_file_download_started">Загрузка файла…</string>
   <string name="labor_activity_name">%1$s в <font color="##2E83D9">%2$s</font></string>
   <string name="short_info_profile_data_filled">Данные заполнены успешно</string>
   <string name="gender_male">Мужчина</string>

@@ -30,6 +30,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatStatusFormatter
 import uddug.com.naukoteka.mvvm.chat.ChatStatusTextMode.GENERIC
 import java.time.Instant
 import java.io.File
+import java.io.EOFException
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
 import javax.inject.Inject
 
@@ -494,36 +495,45 @@ class ChatDialogViewModel @Inject constructor(
             val editingMessage = successState?.editingMessage
 
             if (editingMessage != null) {
-                try {
-                    val updated = chatInteractor.updateMessage(
+                val updatedMessage = try {
+                    chatInteractor.updateMessage(
                         dialogId = dialog.id,
                         messageId = editingMessage.id,
                         text = text,
                         fileIds = editingMessage.files.map { it.id },
                     )
-                    val updatedChats = successState.chats.map { existing ->
-                        if (existing.id == updated.id) {
-                            existing.copy(
-                                text = updated.text,
-                                type = updated.type,
-                                files = updated.files,
-                                readCount = updated.readCount,
-                                createdAt = updated.createdAt,
-                                ownerId = updated.ownerId,
-                                isMine = updated.isMine
-                            )
-                        } else {
-                            existing
-                        }
-                    }
-                    _uiState.value = successState.copy(
-                        chats = updatedChats,
-                        currentMessage = "",
-                        editingMessage = null
+                } catch (e: EOFException) {
+                    Log.w(
+                        "ChatViewModel",
+                        "Empty response received when updating message, using local data",
+                        e
                     )
+                    editingMessage.copy(text = text)
                 } catch (e: Exception) {
                     Log.e("ChatViewModel", "Failed to update message", e)
+                    return@launch
                 }
+
+                val updatedChats = successState.chats.map { existing ->
+                    if (existing.id == updatedMessage.id) {
+                        existing.copy(
+                            text = updatedMessage.text,
+                            type = updatedMessage.type,
+                            files = updatedMessage.files,
+                            readCount = updatedMessage.readCount,
+                            createdAt = updatedMessage.createdAt,
+                            ownerId = updatedMessage.ownerId,
+                            isMine = updatedMessage.isMine
+                        )
+                    } else {
+                        existing
+                    }
+                }
+                _uiState.value = successState.copy(
+                    chats = updatedChats,
+                    currentMessage = "",
+                    editingMessage = null
+                )
                 return@launch
             }
 
