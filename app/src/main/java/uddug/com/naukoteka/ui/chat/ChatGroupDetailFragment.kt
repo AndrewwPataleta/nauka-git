@@ -82,6 +82,9 @@ class ChatGroupDetailFragment : Fragment() {
                                 R.id.chatDetailSearchFragment,
                                 Bundle().apply { putLong(ChatDetailDialogFragment.DIALOG_ID, dialogId) }
                             )
+                        },
+                        onAddParticipantsClick = {
+                            findNavController().navigate(R.id.chatCreateMultiFragment)
                         }
                     )
                 }
