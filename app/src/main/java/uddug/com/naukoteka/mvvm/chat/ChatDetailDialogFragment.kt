@@ -24,6 +24,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.ChatDialogFragment
 import uddug.com.naukoteka.ui.chat.ChatDialogFragment.Companion
+import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_MESSAGE_ID
 import uddug.com.naukoteka.ui.chat.compose.ChatDialogComponent
 import uddug.com.naukoteka.ui.chat.compose.ChatListComponent
 
@@ -97,6 +98,12 @@ class ChatDetailDialogFragment : Fragment() {
                         },
                         onContactClick = {
 
+                        },
+                        onForwardMessage = { message ->
+                            val args = Bundle().apply {
+                                putLong(ARG_MESSAGE_ID, message.id)
+                            }
+                            findNavController().navigate(R.id.forwardMessageFragment, args)
                         }
                     )
                 }

@@ -46,7 +46,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.gun0912.tedimagepicker.builder.TedImagePicker
+import gun0912.tedimagepicker.builder.TedImagePicker
 import kotlinx.coroutines.launch
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
 import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel

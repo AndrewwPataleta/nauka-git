@@ -430,7 +430,7 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="profile_shasre">Поделиться</string>
     <string name="profile_more">Еще</string>
     <string name="find_chat_message">Поиск чатов и сообщений</string>
-    <string name="search_enter_query_full">Введите текстовый запрос в поле поиска</string>
+    <string name="search_enter_query_full">Введите текстовый запрос</string>
     <string name="search_enter_query">Введите текстовый запрос</string>
     <string name="search_enter_query_min_length">Введите текстовый запрос минимум 3 символа</string>
     <string name="search_status_online">Онлайн</string>
@@ -467,7 +467,7 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="subs">Подписки</string>
 
     <!-- Chat attachment options -->
-    <string name="chat_attach_photo_video">Фотографии и видео</string>
+    <string name="chat_attach_photo_video">Фото и видео</string>
     <string name="chat_attach_file">Файлы</string>
     <string name="chat_attach_poll">Опросы</string>
     <string name="chat_attach_contact">Контакты</string>

@@ -487,7 +487,9 @@ fun RecordedAudioPreview(duration: String, isPlaying: Boolean, onPlay: () -> Uni
             Image(
                 painter = painterResource(id = R.drawable.background_voice_wave),
                 contentDescription = null,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .padding(horizontal = 10.dp)
+                    .weight(1f),
                 contentScale = ContentScale.FillWidth
             )
             Text(text = duration, color = Color.White)

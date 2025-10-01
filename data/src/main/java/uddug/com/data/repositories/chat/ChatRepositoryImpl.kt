@@ -255,7 +255,7 @@ class ChatRepositoryImpl @Inject constructor(
         dialogId: Long,
         messageId: Long,
         text: String,
-        files: List<FileDescriptor> = emptyList(),
+        files: List<FileDescriptor>,
     ): MessageChat {
         val dto = apiService.updateMessage(
             UpdateMessageRequestDto(

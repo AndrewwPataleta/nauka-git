@@ -34,6 +34,7 @@ import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -297,7 +298,7 @@ private fun FileAttachmentCard(
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Filled.Download,
+                    imageVector = Icons.Filled.ArrowDropDown,
                     contentDescription = null,
                     tint = supportingColor,
                     modifier = Modifier.size(16.dp)

@@ -44,7 +44,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.List
+
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Share
@@ -482,7 +483,7 @@ private fun FileIcon(extension: String) {
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
-                imageVector = Icons.Filled.Description,
+                imageVector = Icons.Filled.List,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
