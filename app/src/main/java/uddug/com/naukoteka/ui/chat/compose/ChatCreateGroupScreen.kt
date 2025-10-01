@@ -392,10 +392,10 @@ private fun GroupMemberRow(
                     fontSize = 12.sp
                 )
             }
-            member.user.placeOfResidence?.takeIf { it.isNotBlank() }?.let { residence ->
+            member.status?.takeIf { it.isNotBlank() }?.let { status ->
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = residence,
+                    text = status,
                     fontSize = 12.sp,
                     color = Color(0xFF8083A0)
                 )
