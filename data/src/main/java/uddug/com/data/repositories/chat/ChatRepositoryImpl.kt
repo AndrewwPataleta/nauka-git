@@ -4,6 +4,9 @@ import uddug.com.data.mapper.mapChatDtoToDomain
 import uddug.com.data.mapper.mapFolderDtoToDomain
 import uddug.com.data.services.chat.ChatApiService
 import uddug.com.data.services.models.request.chat.ChatFolderRequestDto
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.DialogImageRequestDto
@@ -245,7 +248,7 @@ class ChatRepositoryImpl @Inject constructor(
             val request = CreateDialogRequestDto(
                 dialogName = dialogName,
                 dialogImage = imageId?.let { DialogImageRequestDto(it) },
-                userRoles = userRoles,
+                userRoles = userRoles.toUserRolesJson(),
             )
             val dialog = apiService.createDialog(request)
             dialog.id
@@ -264,7 +267,7 @@ class ChatRepositoryImpl @Inject constructor(
             val request = CreateDialogRequestDto(
                 dialogName = dialogName,
                 dialogImage = imageId?.let { DialogImageRequestDto(it) },
-                userRoles = userRoles,
+                userRoles = userRoles.toUserRolesJson(),
             )
             val dialog = apiService.createGroupDialog(request)
             dialog.id
@@ -414,6 +417,14 @@ class ChatRepositoryImpl @Inject constructor(
             emptyList()
         }
     }
+}
+
+private fun Map<String, String?>.toUserRolesJson(): JsonObject {
+    val json = JsonObject()
+    for ((userId, role) in this) {
+        json.add(userId, role?.let(::JsonPrimitive) ?: JsonNull.INSTANCE)
+    }
+    return json
 }
 
 private fun FileDto.toDomain(): ChatFile = ChatFile(
