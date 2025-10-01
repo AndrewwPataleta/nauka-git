@@ -44,7 +44,9 @@ fun mapUserDtoToDomain(userDto: UserDto): User {
         image = userDto.image?.path,
         fullName = userDto.fullName,
         nickname = userDto.nickname,
-        userId = userDto.userId
+        userId = userDto.userId,
+        role = userDto.role,
+        isAdmin = userDto.isAdmin ?: false,
     )
 }
 

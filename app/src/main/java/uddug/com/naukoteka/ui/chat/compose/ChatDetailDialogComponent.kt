@@ -92,6 +92,7 @@ fun ChatDetailDialogComponent(
     onNavigateToProfile: () -> Unit,
     onSearchClick: () -> Unit,
     onChatDeleted: () -> Unit,
+    onEditGroup: () -> Unit,
 ) {
     val scrollState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -362,6 +363,8 @@ fun ChatDetailDialogComponent(
                             onNavigateToProfile = onNavigateToProfile,
                             onDismissRequest = { showMoreDialog = false },
                             onChatDeleted = onChatDeleted,
+                            onEditGroup = onEditGroup,
+                            isCurrentUserAdmin = state.isCurrentUserAdmin,
                         )
                     }
                 }
