@@ -15,23 +15,13 @@ fun mapChatDtoToDomain(chatDto: ChatDto): List<Chat> {
             dialogId = dialog?.dialogId ?: 0,
             dialogName = dialog?.dialogName.orEmpty(),
             dialogType = dialog?.dialogType ?: 0,
+            dialogImage = dialog?.dialogImage?.let { mapImageDtoToDomain(it) },
             messageId = dialog?.messageId ?: 0,
             isPinned = dialog?.isPinned ?: false,
             isUnread = dialog?.isUnread ?: false,
             users = dialog?.users?.map { mapUserDtoToDomain(it) } ?: emptyList(),
-            interlocutor = mapUserDtoToDomain(dialog?.interlocutor ?: UserDto(null, "", "", "", "")),
-            lastMessage = mapMessageDtoToDomain(
-                dialog?.lastMessage ?: MessageDto(
-                    0,
-                    "",
-                    0,
-                    emptyList(),
-                    0,
-                    "",
-                    "",
-                    false
-                )
-            ),
+            interlocutor = mapUserDtoToDomain(dialog?.interlocutor ?: UserDto()),
+            lastMessage = mapMessageDtoToDomain(dialog?.lastMessage),
             unreadMessages = dialog?.unreadMessages ?: 0,
             notificationsDisable = dialog?.notificationsDisable ?: false,
             isBlocked = dialog?.isBlocked ?: false
@@ -56,15 +46,15 @@ fun mapImageDtoToDomain(imageDto: ImageDto): Image {
     )
 }
 
-fun mapMessageDtoToDomain(messageDto: MessageDto): Message {
+fun mapMessageDtoToDomain(messageDto: MessageDto?): Message {
     return Message(
-        id = messageDto.id,
-        text = messageDto.text,
-        type = messageDto.type,
-        files = messageDto.files.map { mapImageDtoToDomain(it) },
-        read = messageDto.read,
-        ownerId = messageDto.ownerId,
-        createdAt = messageDto.createdAt,
-        isPinned = messageDto.isPinned
+        id = messageDto?.id,
+        text = messageDto?.text,
+        type = messageDto?.type,
+        files = messageDto?.files?.map { mapImageDtoToDomain(it) } ?: emptyList(),
+        read = messageDto?.read,
+        ownerId = messageDto?.ownerId,
+        createdAt = messageDto?.createdAt,
+        isPinned = messageDto?.isPinned
     )
 }

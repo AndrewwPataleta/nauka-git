@@ -9,6 +9,7 @@ data class Chat(
     val dialogId: Long,
     val dialogName: String,
     val dialogType: Int,
+    val dialogImage: Image? = null,
     val messageId: Long,
     val isPinned: Boolean,
     val isUnread: Boolean,
