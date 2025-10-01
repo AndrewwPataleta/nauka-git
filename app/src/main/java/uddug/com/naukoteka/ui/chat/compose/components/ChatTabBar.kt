@@ -4,10 +4,11 @@ import ChatCard
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
@@ -276,29 +277,29 @@ fun ChatTabBar(
                     divider = {},
                 ) {
                     folders.forEachIndexed { index, folder ->
+                        val onTabClick = {
+                            selectedTabIndex = index
+                            viewModel.onFolderSelected(folder.id)
+                        }
                         Box(
                             modifier = Modifier
                                 .background(Color.White)
-                                .combinedClickable(
-                                    onClick = {
-                                        selectedTabIndex = index
-                                        viewModel.onFolderSelected(folder.id)
-                                    },
-                                    onLongClick = {
-                                        bottomSheetState = if (mainFolderId != null && folder.id == mainFolderId) {
-                                            FolderBottomSheetState.Main
-                                        } else {
-                                            FolderBottomSheetState.Folder(folder)
+                                .pointerInput(mainFolderId, folder.id) {
+                                    detectTapGestures(
+                                        onTap = { onTabClick() },
+                                        onLongPress = {
+                                            bottomSheetState = if (mainFolderId != null && folder.id == mainFolderId) {
+                                                FolderBottomSheetState.Main
+                                            } else {
+                                                FolderBottomSheetState.Folder(folder)
+                                            }
                                         }
-                                    }
-                                )
+                                    )
+                                }
                         ) {
                             Tab(
                                 selected = selectedTabIndex == index,
-                                onClick = {
-                                    selectedTabIndex = index
-                                    viewModel.onFolderSelected(folder.id)
-                                },
+                                onClick = onTabClick,
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
