@@ -215,6 +215,9 @@ fun ChatDialogComponent(
 
                 is ChatDialogUiState.Success -> {
                     val messages = state.chats
+                    val messageIndexById = remember(messages) {
+                        messages.mapIndexed { index, message -> message.id to index }.toMap()
+                    }
 
                     LaunchedEffect(messages.size) {
                         if (messages.isNotEmpty()) {
@@ -297,7 +300,14 @@ fun ChatDialogComponent(
                                 selectionMode = isSelectionMode,
                                 isSelected = selectedMessages.contains(message.id),
                                 onSelectChange = { viewModel.toggleMessageSelection(message.id) },
-                                onLongPress = { selectedMessage = it }
+                                onLongPress = { selectedMessage = it },
+                                onReplyReferenceClick = { targetId ->
+                                    messageIndexById[targetId]?.let { index ->
+                                        scope.launch {
+                                            scrollState.animateScrollToItem(index)
+                                        }
+                                    }
+                                }
                             )
                         }
                     }
