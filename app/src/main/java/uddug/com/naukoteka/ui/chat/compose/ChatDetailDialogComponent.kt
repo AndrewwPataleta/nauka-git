@@ -4,29 +4,27 @@ package uddug.com.naukoteka.ui.chat.compose
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,18 +35,12 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.List
 
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -59,9 +51,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.LaunchedEffect
 
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -84,7 +73,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ChatDetailDialogComponent(
     viewModel: ChatDialogDetailViewModel,
@@ -94,8 +83,6 @@ fun ChatDetailDialogComponent(
     onChatDeleted: () -> Unit,
 ) {
     val scrollState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
-    val keyboardController = LocalSoftwareKeyboardController.current
 
 
     val uiState by viewModel.uiState.collectAsState()
@@ -166,251 +153,273 @@ fun ChatDetailDialogComponent(
 
             is ChatDetailUiState.Success -> {
                 var showMoreDialog by remember { mutableStateOf(false) }
-                Column(
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.White)
-                        .padding(paddingValues)
+                        .padding(paddingValues),
+                    state = scrollState
                 ) {
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        
-                        Avatar(
-                            state.profile.image.takeIf { it?.isNotEmpty() == true },
-                            state.profile.fullName,
-                            size = 100.dp
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        
-                        Text(
-                            text = state.profile.fullName.orEmpty(),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = state.profile.nickname.orEmpty(),
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row {
-                            Column(
-                                Modifier
-                                    .weight(1f)
-                                    .padding(end = 4.dp)
-                                    .background(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFF5F5F9)
-                                    )
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) {
-
-                                    }
-                                    .padding(12.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    modifier = Modifier
-                                        .padding(start = 2.dp)
-                                        .size(24.dp),
-                                    painter = painterResource(id = R.drawable.ic_profile_call),
-                                    contentDescription = "Media",
-                                    tint = Color(0xFF2E83D9)
-                                )
-                                Text(
-                                    text = stringResource(R.string.call_user),
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF8083A0)
-                                )
-                            }
-                            Column(
-                                Modifier
-                                    .weight(1f)
-                                    .padding(start = 4.dp, end = 4.dp)
-                                    .background(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFF5F5F9)
-                                    )
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) {
-                                        viewModel.shareDialog()
-                                    }
-                                    .padding(12.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    modifier = Modifier
-                                        .padding(start = 2.dp)
-                                        .size(24.dp),
-                                    painter = painterResource(id = R.drawable.ic_profile_send),
-                                    contentDescription = "Media",
-                                    tint = Color(0xFF2E83D9)
-                                )
-                                Text(
-                                    text = stringResource(R.string.profile_shasre),
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF8083A0)
-                                )
-                            }
-                            Column(
-                                Modifier
-                                    .weight(1f)
-                                    .padding(start = 4.dp)
-                                    .background(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFF5F5F9)
-                                    )
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) { showMoreDialog = true }
-                                    .padding(12.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    modifier = Modifier
-                                        .padding(start = 2.dp)
-                                        .size(24.dp),
-                                    painter = painterResource(id = R.drawable.ic_profile_more),
-                                    contentDescription = "Media",
-                                    tint = Color(0xFF2E83D9)
-                                )
-                                Text(
-                                    text = stringResource(R.string.profile_more),
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF8083A0)
-                                )
-                            }
-                        }
-                    }
-
-                    TabRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.White),
-                        selectedTabIndex = selectedTabIndex,
-                        indicator = { tabPositions ->
-                            TabRowDefaults.Indicator(
-                                Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                                color = Color(0xFF2E83D9)
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Avatar(
+                                state.profile.image.takeIf { it?.isNotEmpty() == true },
+                                state.profile.fullName,
+                                size = 100.dp
                             )
-                        },
-                        divider = {}
-                    ) {
-                        tabs.forEachIndexed { index, title ->
-                            Tab(
-                                selected = selectedTabIndex == index,
-                                onClick = { viewModel.selectTab(index) },
-                                text = {
-                                    Row(verticalAlignment = Alignment.Top) {
-                                        androidx.compose.material3.Text(
-                                            text = title,
-                                            maxLines = 1,
-                                            style = TextStyle(
-                                                fontSize = 14.sp,
-                                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Bold,
-                                                color = if (selectedTabIndex == index) Color.Black else Color(
-                                                    0xFF8083A0
-                                                )
-                                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = state.profile.fullName.orEmpty(),
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = state.profile.nickname.orEmpty(),
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row {
+                                Column(
+                                    Modifier
+                                        .weight(1f)
+                                        .padding(end = 4.dp)
+                                        .background(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = Color(0xFFF5F5F9)
                                         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                    }
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null
+                                        ) {}
+                                        .padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        modifier = Modifier
+                                            .padding(start = 2.dp)
+                                            .size(24.dp),
+                                        painter = painterResource(id = R.drawable.ic_profile_call),
+                                        contentDescription = "Media",
+                                        tint = Color(0xFF2E83D9)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.call_user),
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF8083A0)
+                                    )
                                 }
-                            )
+                                Column(
+                                    Modifier
+                                        .weight(1f)
+                                        .padding(start = 4.dp, end = 4.dp)
+                                        .background(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = Color(0xFFF5F5F9)
+                                        )
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null
+                                        ) { viewModel.shareDialog() }
+                                        .padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        modifier = Modifier
+                                            .padding(start = 2.dp)
+                                            .size(24.dp),
+                                        painter = painterResource(id = R.drawable.ic_profile_send),
+                                        contentDescription = "Media",
+                                        tint = Color(0xFF2E83D9)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.profile_shasre),
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF8083A0)
+                                    )
+                                }
+                                Column(
+                                    Modifier
+                                        .weight(1f)
+                                        .padding(start = 4.dp)
+                                        .background(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = Color(0xFFF5F5F9)
+                                        )
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null
+                                        ) { showMoreDialog = true }
+                                        .padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        modifier = Modifier
+                                            .padding(start = 2.dp)
+                                            .size(24.dp),
+                                        painter = painterResource(id = R.drawable.ic_profile_more),
+                                        contentDescription = "Media",
+                                        tint = Color(0xFF2E83D9)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.profile_more),
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF8083A0)
+                                    )
+                                }
+                            }
                         }
                     }
-                    Divider()
 
-                    
+                    stickyHeader {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.White)
+                        ) {
+                            TabRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                selectedTabIndex = selectedTabIndex,
+                                indicator = { tabPositions ->
+                                    TabRowDefaults.Indicator(
+                                        Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                                        color = Color(0xFF2E83D9)
+                                    )
+                                },
+                                divider = {}
+                            ) {
+                                tabs.forEachIndexed { index, title ->
+                                    Tab(
+                                        selected = selectedTabIndex == index,
+                                        onClick = { viewModel.selectTab(index) },
+                                        text = {
+                                            Row(verticalAlignment = Alignment.Top) {
+                                                androidx.compose.material3.Text(
+                                                    text = title,
+                                                    maxLines = 1,
+                                                    style = TextStyle(
+                                                        fontSize = 14.sp,
+                                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Bold,
+                                                        color = if (selectedTabIndex == index) Color.Black else Color(0xFF8083A0)
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                            Divider()
+                        }
+                    }
+
                     when (selectedTabIndex) {
-                        0 -> MediaContent(state.media)
-                        1 -> FilesContent(state.files)
-                        2 -> VoiceContent(state.voices)
-                        3 -> NotesContent(state.notes)
+                        0 -> mediaContent(state.media)
+                        1 -> filesContent(state.files)
+                        2 -> voiceContent(state.voices)
+                        3 -> notesContent(state.notes)
                     }
-                    if (showMoreDialog) {
-                        ChatDetailMoreSheetDialog(
-                            dialogId = state.dialogId,
-                            onNavigateToProfile = onNavigateToProfile,
-                            onDismissRequest = { showMoreDialog = false },
-                            onChatDeleted = onChatDeleted,
-                        )
-                    }
+
+                    item { Spacer(modifier = Modifier.height(16.dp)) }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun MediaContent(items: List<MediaMessage>) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.TopStart
-    ) {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3), 
-            modifier = Modifier.padding(8.dp)
-        ) {
-            items(items) { item ->
-                Card(
-                    modifier = Modifier
-                        .padding(4.dp)
-
-                ) {
-                    AsyncImage(
-                        model = BuildConfig.IMAGE_SERVER_URL + item.file.path,
-                        contentDescription = "Avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .size(120.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                if (showMoreDialog) {
+                    ChatDetailMoreSheetDialog(
+                        dialogId = state.dialogId,
+                        onNavigateToProfile = onNavigateToProfile,
+                        onDismissRequest = { showMoreDialog = false },
+                        onChatDeleted = onChatDeleted,
                     )
                 }
+
+private fun LazyListScope.mediaContent(items: List<MediaMessage>) {
+    if (items.isEmpty()) {
+        item { Spacer(modifier = Modifier.height(16.dp)) }
+        return
+    }
+
+    val rows = items.chunked(3)
+    items(rows) { rowItems ->
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            rowItems.forEach { media ->
+                MediaGridItem(
+                    item = media,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            repeat(3 - rowItems.size) {
+                Spacer(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
+                )
             }
         }
     }
 }
 
+private fun LazyListScope.filesContent(items: List<MediaMessage>) {
+    if (items.isEmpty()) {
+        item { Spacer(modifier = Modifier.height(16.dp)) }
+        return
+    }
+
+    items(items, key = { it.file.id }) { item ->
+        FileItem(item)
+    }
+}
+
+private fun LazyListScope.voiceContent(items: List<MediaMessage>) {
+    if (items.isEmpty()) {
+        item { Spacer(modifier = Modifier.height(16.dp)) }
+        return
+    }
+
+    items(items, key = { it.file.id }) { item ->
+        VoiceItem(item)
+    }
+}
+
+private fun LazyListScope.notesContent(items: List<MediaMessage>) {
+    if (items.isEmpty()) {
+        item { Spacer(modifier = Modifier.height(16.dp)) }
+        return
+    }
+
+    items(items, key = { it.file.id }) { item ->
+        NoteItem(item)
+    }
+}
+
 @Composable
-fun FilesContent(items: List<MediaMessage>) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp)
+private fun MediaGridItem(
+    item: MediaMessage,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        elevation = 0.dp
     ) {
-        items(items, key = { it.file.id }) { item ->
-            FileItem(item)
-        }
+        AsyncImage(
+            model = BuildConfig.IMAGE_SERVER_URL + item.file.path,
+            contentDescription = "Avatar",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 
@@ -426,7 +435,7 @@ private fun FileItem(item: MediaMessage) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
         elevation = 0.dp,
         backgroundColor = Color(0xFFF5F5F9),
         shape = RoundedCornerShape(16.dp)
@@ -536,33 +545,21 @@ private fun fileExtensionColor(extension: String): Color {
 }
 
 @Composable
-fun VoiceContent(items: List<MediaMessage>) {
-    LazyColumn(
+private fun VoiceItem(item: MediaMessage) {
+    Text(
+        text = item.file.fileName,
         modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp)
-    ) {
-        items(items) { item ->
-            Text(
-                text = item.file.fileName,
-                modifier = Modifier.padding(4.dp)
-            )
-        }
-    }
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    )
 }
 
 @Composable
-fun NotesContent(items: List<MediaMessage>) {
-    LazyColumn(
+private fun NoteItem(item: MediaMessage) {
+    Text(
+        text = item.file.fileName,
         modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp)
-    ) {
-        items(items) { item ->
-            Text(
-                text = item.file.fileName,
-                modifier = Modifier.padding(4.dp)
-            )
-        }
-    }
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    )
 }
