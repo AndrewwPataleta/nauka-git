@@ -33,6 +33,7 @@ import java.io.File
 import java.io.EOFException
 import java.util.Locale
 import uddug.com.domain.entities.chat.File as ChatFile
+import uddug.com.domain.entities.chat.updateOwnerInfoFromDialog
 import javax.inject.Inject
 
 private const val IMAGE_FILE_TYPE = 1
@@ -758,20 +759,13 @@ class ChatDialogViewModel @Inject constructor(
                     )
                 }
 
-                val newMessage = MessageChat(
-                    id = 0,
-                    text = socketMessage.text,
-                    type = MessageType.TEXT,
-                    files = emptyList(),
-                    ownerId = socketMessage.owner,
-                    createdAt = Instant.now(),
-                    readCount = 0,
-                    ownerName = currentDialogInfo?.interlocutor?.fullName,
-                    ownerAvatarUrl = currentDialogInfo?.interlocutor?.image,
-                    ownerIsAdmin = false,
-                    isMine = socketMessage.owner == currentUser?.id,
-                    replyTo = replyPreview
-                )
+                val newMessage = socketMessage
+                    .toMessageChat(replyPreview)
+                    .let { message ->
+                        currentDialogInfo?.let { info ->
+                            message.updateOwnerInfoFromDialog(info)
+                        } ?: message
+                    }
 
                 val currentState = _uiState.value
                 if (currentState is ChatDialogUiState.Success) {
@@ -785,6 +779,48 @@ class ChatDialogViewModel @Inject constructor(
                 Log.e("ChatViewModel", "Error processing incoming message", e)
             }
         }
+    }
+
+    private fun ChatSocketMessage.toMessageChat(replyPreview: MessageChat?): MessageChat {
+        val createdAtInstant = parseInstantOrNow(createdAt)
+        val attachments = files?.mapNotNull { it.toChatFile() } ?: emptyList()
+        val isMineMessage = owner == currentUser?.id
+        val type = if (cType == 5) MessageType.SYSTEM else MessageType.TEXT
+
+        return MessageChat(
+            id = id ?: 0L,
+            text = text,
+            type = type,
+            files = attachments,
+            ownerId = owner,
+            createdAt = createdAtInstant,
+            readCount = read ?: if (isMineMessage) 1 else 0,
+            ownerName = ownerName,
+            ownerAvatarUrl = ownerAvatarUrl,
+            ownerIsAdmin = false,
+            isMine = isMineMessage,
+            replyTo = replyPreview
+        )
+    }
+
+    private fun FileDescriptor.toChatFile(): ChatFile? {
+        val filePath = path ?: return null
+        return ChatFile(
+            id = id,
+            path = filePath,
+            fileName = fileName,
+            contentType = contentType,
+            fileSize = fileSize,
+            fileType = fileType,
+            fileKind = fileKind,
+            duration = duration,
+            viewCount = viewCount
+        )
+    }
+
+    private fun parseInstantOrNow(value: String?): Instant {
+        if (value.isNullOrBlank()) return Instant.now()
+        return runCatching { Instant.parse(value) }.getOrElse { Instant.now() }
     }
 
 }

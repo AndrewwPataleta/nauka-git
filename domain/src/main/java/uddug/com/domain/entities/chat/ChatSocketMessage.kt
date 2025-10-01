@@ -4,7 +4,7 @@ data class ChatSocketMessage(
     val dialog: Long? = null,
     val interlocutor: String? = null,
     val cType: Int = 1,
-    val text: String,
+    val text: String? = null,
     val owner: String? = null,
     val files: List<FileDescriptor>? = null,
     val answered: Long? = null,
@@ -12,11 +12,23 @@ data class ChatSocketMessage(
     val forwarded: Long? = null,
     val forwardedn: List<Long>? = null,
     val dialogs: List<Long>? = null,
+    val id: Long? = null,
+    val createdAt: String? = null,
+    val ownerName: String? = null,
+    val ownerAvatarUrl: String? = null,
+    val read: Int? = null,
 )
 
 public data class FileDescriptor(
     val id: String,
-    val fileType: Int
+    val fileType: Int,
+    val path: String? = null,
+    val fileName: String? = null,
+    val contentType: String? = null,
+    val fileSize: Int? = null,
+    val fileKind: Int? = null,
+    val duration: String? = null,
+    val viewCount: Int? = null,
 )
 
 data class AnswerPreview(
