@@ -140,9 +140,12 @@ class ChatCreateGroupViewModel @Inject constructor(
                     .joinToString(separator = ", ")
                     .take(MAX_GROUP_NAME_LENGTH)
 
-            val userRoles = participants
+            val userRoles = current.members
                 .mapNotNull { member ->
-                    member.user.id?.let { id -> id to if (member.isAdmin) ADMIN_ROLE else null }
+                    member.user.id?.let { id ->
+                        val role = if (member.isCreator || member.isAdmin) ADMIN_ROLE else null
+                        id to role
+                    }
                 }
                 .toMap()
 
