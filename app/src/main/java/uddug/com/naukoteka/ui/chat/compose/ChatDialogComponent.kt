@@ -3,14 +3,15 @@ package uddug.com.naukoteka.ui.chat.compose
 
 import android.Manifest
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,8 +47,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.activity.ComponentActivity
-import gun0912.tedimagepicker.builder.TedImagePicker
 import kotlinx.coroutines.launch
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
 import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
@@ -152,15 +151,16 @@ fun ChatDialogComponent(
         }
     }
 
+    val mediaPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia()
+    ) { uris ->
+        attachMediaFiles(uris)
+    }
+
     fun openMediaPicker() {
-        val activity = context.findActivity()
-        if (activity != null) {
-            TedImagePicker.with(activity)
-                .showCameraTile(true)
-                .startMultiImage { uriList ->
-                    attachMediaFiles(uriList)
-                }
-        }
+        mediaPickerLauncher.launch(
+            PickVisualMediaRequest(PickVisualMedia.ImageAndVideo)
+        )
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -455,12 +455,6 @@ fun ChatDialogComponent(
             )
         }
     }
-}
-
-private tailrec fun Context.findActivity(): ComponentActivity? = when (this) {
-    is ComponentActivity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
 }
 
 private fun getContactInfo(context: Context, uri: Uri): ContactInfo? {
