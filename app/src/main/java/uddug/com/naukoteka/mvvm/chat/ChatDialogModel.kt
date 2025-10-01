@@ -604,13 +604,7 @@ class ChatDialogViewModel @Inject constructor(
                 }
             } else emptyList()
 
-            val fileDescriptors = uploaded.mapIndexed { index, uploadedFile ->
-                val type = attachedFiles.getOrNull(index)?.let { determineFileType(it) } ?: DOCUMENT_FILE_TYPE
-                FileDescriptor(
-                    id = uploadedFile.id,
-                    fileType = type
-                )
-            }
+            val fileDescriptors = uploaded.map { it.toFileDescriptor() }
 
             val cType = if (fileDescriptors.isEmpty()) 1 else 3
 
@@ -654,12 +648,7 @@ class ChatDialogViewModel @Inject constructor(
                 e.printStackTrace()
                 emptyList()
             }
-            val descriptor = uploaded.firstOrNull()?.let { uploadedFile ->
-                FileDescriptor(
-                    id = uploadedFile.id,
-                    fileType = determineFileType(file)
-                )
-            }
+            val descriptor = uploaded.firstOrNull()?.toFileDescriptor()
             val message = if (dialog.id != 0L) {
                 ChatSocketMessage(
                     dialog = dialog.id,
