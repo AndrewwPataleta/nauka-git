@@ -171,6 +171,10 @@
   <string name="chat_create_group_add_participant">Добавить еще участника</string>
   <string name="chat_create_group_members">Участники %1$d</string>
   <string name="chat_create_group_admin_label">Админ.</string>
+  <string name="chat_create_group_member_actions_title">Редактирование</string>
+  <string name="chat_create_group_member_give_admin">Дать права администратора</string>
+  <string name="chat_create_group_member_revoke_admin">Забрать права администратора</string>
+  <string name="chat_create_group_member_remove">Удалить из группы</string>
   <string name="chat_create_group_avatar_description">Аватар группы</string>
   <string name="chat_create_group_image_upload_error">Не удалось загрузить изображение</string>
   <string name="chat_create_group_missing_participants_error">Добавьте участников</string>
