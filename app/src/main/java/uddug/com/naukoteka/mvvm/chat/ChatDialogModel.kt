@@ -419,7 +419,7 @@ class ChatDialogViewModel @Inject constructor(
             try {
                 chatInteractor.deleteMessages(ids.toList())
             } catch (_: Exception) {
-                // Ignored: network or API error
+                
             } finally {
                 clearSelection()
             }
@@ -703,7 +703,7 @@ class ChatDialogViewModel @Inject constructor(
     private fun handleIncomingMessage(message: Any) {
         viewModelScope.launch {
             try {
-                // Преобразуем сообщение из JSON
+                
                 val jsonString = when (message) {
                     is String -> message
                     is JSONObject -> message.toString()
@@ -711,7 +711,7 @@ class ChatDialogViewModel @Inject constructor(
                 }
                 val jsonObject = JSONObject(jsonString)
 
-                // Обрабатываем действие удаления сообщений
+                
                 if (jsonObject.has("action")) {
                     val action = jsonObject.getJSONObject("action")
                     if (action.optString("type") == "delete") {

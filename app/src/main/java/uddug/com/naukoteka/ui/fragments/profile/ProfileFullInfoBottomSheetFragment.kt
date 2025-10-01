@@ -89,23 +89,23 @@ class ProfileFullInfoBottomSheetFragment : BaseBottomSheetDialogFragment(), Prof
             ).show()
         }
 
-//        doIfIsNotNullOrEmpty(profileFullInfo.keywordsMap) {
-//            contentView.tagsContainer.isVisible = true
-//            it.map { tag ->
-//                val tagView = TagInterestView(
-//                    context = requireContext(),
-//                ).apply {
-//                    attachTag(
-//                        name = tag.additionalProp?.term.toString(),
-//                        parent = contentView.tagsContainer,
-//                    )
-//                }
-//                contentView.tagsContainer.addView(
-//                    view
-//                )
-//                contentView.tagsContainer.addView(tagView)
-//            }
-//        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         doIfIsNotNullOrEmptyString(profileFullInfo.birthDate) {
             contentView.birthdayContainer.isVisible
             val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)

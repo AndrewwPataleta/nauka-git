@@ -466,7 +466,7 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="create_group_chat">Создать групповой чат</string>
     <string name="subs">Подписки</string>
 
-    <!-- Chat attachment options -->
+    
     <string name="chat_attach_photo_video">Фотографии и видео</string>
     <string name="chat_attach_file">Файлы</string>
     <string name="chat_attach_poll">Опросы</string>

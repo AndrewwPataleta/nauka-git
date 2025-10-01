@@ -142,10 +142,10 @@ class FeedContainerAdapter(
             }
             val publicationInstant = Instant.parse(item.pubDate)
 
-            // Получаем текущее время в Instant
+            
             val now = Instant.now()
 
-            // Сравниваем даты и вычисляем разницу в днях
+            
             val daysAgo = ChronoUnit.DAYS.between(publicationInstant, now)
 
 
@@ -207,23 +207,23 @@ class FeedContainerAdapter(
                     binding.originalInitials.isVisible = true
                 }
 
-//                item.upPost?.files?.forEach { file ->
-//                    file.contentType?.let {
-//                        when (detectContentType(it)) {
-//                            ContentType.IMAGE -> {
-//                                binding.postImage.load(
-//                                    withAnimation = true,
-//                                    model = BuildConfig.IMAGE_SERVER_URL.plus(file.path)
-//                                )
-//                                binding.postImage.isVisible = true
-//                            }
-//
-//                            ContentType.VIDEO -> ""
-//                            ContentType.LINK -> ""
-//                            ContentType.NONE -> ""
-//                        }
-//                    }
-//                }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             } else {
                 binding.originalContainer.isVisible = false
             }

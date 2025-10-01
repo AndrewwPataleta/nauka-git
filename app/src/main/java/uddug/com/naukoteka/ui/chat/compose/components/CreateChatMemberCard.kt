@@ -27,8 +27,8 @@ fun CreateChatMemberCard(
     showCheckbox: Boolean = true,
     checkboxOnLeft: Boolean = false,
 ) {
-    // Определяем форматирование даты
-  //  val formattedTime = formatMessageTime(time)
+    
+  
     var isChecked by remember { mutableStateOf(false) }
 
     Card(
@@ -43,8 +43,8 @@ fun CreateChatMemberCard(
                     isChecked = !isChecked
                 }
                 onMemberClick()
-            },  // Убираем отступы
-        colors = CardDefaults.cardColors(containerColor = Color.White)  // Белый фон
+            },  
+        colors = CardDefaults.cardColors(containerColor = Color.White)  
     ) {
         Column {
               Row(
@@ -68,9 +68,9 @@ fun CreateChatMemberCard(
                   Avatar(avatarUrl.takeIf { it.isNotEmpty() }, name, size = 40.dp)
                   Spacer(modifier = Modifier.width(16.dp))
 
-                // Основной контент
+                
                 Column(modifier = Modifier.weight(1f)) {
-                    // Имя
+                    
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = if (name.isEmpty()) {
@@ -95,11 +95,11 @@ fun CreateChatMemberCard(
                       )
                   }
             }
-//            Text(
-//                text = formattedTime,
-//                style = TextStyle(fontSize = 12.sp, color = Color.Gray),
-//                modifier = Modifier
-//            )
+
+
+
+
+
         }
     }
 }

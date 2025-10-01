@@ -55,8 +55,8 @@ class WorkExperienceView @JvmOverloads constructor(
                 context,
                 uddug.com.naukoteka.R.style.NauTextAppearance_AppCompat_SubTitleDark
             ),
-            0, // beginning of hPa
-            jobTitle.length + 2, // end of string
+            0, 
+            jobTitle.length + 2, 
             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         )
         spannable.setSpan(
@@ -64,8 +64,8 @@ class WorkExperienceView @JvmOverloads constructor(
                 context,
                 uddug.com.naukoteka.R.style.NauTextAppearance_AppCompat_Link
             ),
-            jobTitle.length + 2, // beginning of hPa
-            spannable.length, // end of string
+            jobTitle.length + 2, 
+            spannable.length, 
             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         )
         binding.workDescription.text = spannable

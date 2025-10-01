@@ -1,6 +1,6 @@
 package uddug.com.data.services.models.response.chat
 
-// DialogInfoDto.kt
+
 data class DialogInfoDto(
     val id: Long,
     val name: String?,

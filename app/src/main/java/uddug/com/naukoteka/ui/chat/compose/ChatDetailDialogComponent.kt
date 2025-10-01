@@ -178,7 +178,7 @@ fun ChatDetailDialogComponent(
                             .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Аватарка
+                        
                         Avatar(
                             state.profile.image.takeIf { it?.isNotEmpty() == true },
                             state.profile.fullName,
@@ -187,7 +187,7 @@ fun ChatDetailDialogComponent(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Имя и титул
+                        
                         Text(
                             text = state.profile.fullName.orEmpty(),
                             fontSize = 20.sp,
@@ -325,22 +325,22 @@ fun ChatDetailDialogComponent(
                                                 )
                                             )
                                         )
-//                            Spacer(modifier = Modifier.width(4.dp))
-//                            if (tabCounts[index].isNotEmpty()) {
-//                                Box(
-//                                    contentAlignment = Alignment.Center,
-//                                    modifier = Modifier
-//                                        .size(20.dp)
-//                                        .background(Color.Blue, shape = CircleShape)
-//                                ) {
-//                                    Text(
-//                                        text = tabCounts[index],
-//                                        color = Color.White,
-//                                        fontSize = 12.sp,
-//                                        fontWeight = FontWeight.Bold
-//                                    )
-//                                }
-//                            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                                     }
                                 }
                             )
@@ -348,7 +348,7 @@ fun ChatDetailDialogComponent(
                     }
                     Divider()
 
-                    // Контент табов
+                    
                     when (selectedTabIndex) {
                         0 -> MediaContent(state.media)
                         1 -> FilesContent(state.files)
@@ -376,7 +376,7 @@ fun MediaContent(items: List<MediaMessage>) {
         contentAlignment = Alignment.TopStart
     ) {
         LazyVerticalGrid(
-            columns = GridCells.Fixed(3), // 2 столбца
+            columns = GridCells.Fixed(3), 
             modifier = Modifier.padding(8.dp)
         ) {
             items(items) { item ->

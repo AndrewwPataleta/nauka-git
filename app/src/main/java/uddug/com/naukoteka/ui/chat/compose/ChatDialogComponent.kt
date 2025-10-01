@@ -176,7 +176,7 @@ fun ChatDialogComponent(
         modifier = Modifier
             .background(Color.White)
             .fillMaxSize()
-            .systemBarsPadding() // Учитываем панель состояния (статус бар)
+            .systemBarsPadding() 
     ) {
         Column(
             modifier = Modifier
@@ -267,7 +267,7 @@ fun ChatDialogComponent(
                             onBackPressed = { onBackPressed() },
                         )
                     }
-                    // Список сообщений занимает всё оставшееся пространство экрана
+                    
                     LazyColumn(
                         state = scrollState,
                         modifier = Modifier
@@ -297,7 +297,7 @@ fun ChatDialogComponent(
                         }
                     }
 
-                    // ChatInputBar остается внизу экрана
+                    
                     ChatInputBar(
                         currentMessage = state.currentMessage,
                         attachedFiles = state.attachedFiles,
@@ -315,7 +315,7 @@ fun ChatDialogComponent(
                             scope.launch {
                                 viewModel.sendMessage(state.currentMessage)
                                 scrollState.animateScrollToItem(messages.size - 1)
-                                // keyboardController?.hide()
+                                
                             }
                         },
                         onVoiceClick = {

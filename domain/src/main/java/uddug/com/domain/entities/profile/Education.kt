@@ -11,7 +11,7 @@ data class Education(
     var ed: String? = null,
     var rUser: String? = null,
     var rOrg: String? = null,
-    // var rOrgItem: ROrgItem? = ROrgItem(),
+    
     var cType: String? = null,
     var cLevel: String? = null,
     var cLevelName: String? = null,

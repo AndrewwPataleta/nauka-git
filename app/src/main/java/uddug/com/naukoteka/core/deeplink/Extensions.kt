@@ -39,7 +39,7 @@ fun Context.launchCustomTabsByUrl(
         builder.setInstantAppsEnabled(instantAppsEnabled)
         val customBuilder = builder.build()
         customBuilder.launchUrl(this, Uri.parse(link))
-      //  customBuilder.launchUrl(this, Uri.parse(getString(R.string.docs_link_to_google, link)))
+      
     } catch (e: ActivityNotFoundException) {
         onError()
     }

@@ -26,20 +26,20 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
 
-<!--    <com.tbuonomo.viewpagerdotsindicator.SpringDotsIndicator-->
-<!--        android:id="@+id/springDotsIndicator"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginBottom="32dp"-->
-<!--        app:dotsColor="@color/white"-->
-<!--        app:dotsCornerRadius="3dp"-->
-<!--        app:dotsSize="3dp"-->
-<!--        app:dotsSpacing="4dp"-->
-<!--        app:dotsStrokeColor="@color/object_main"-->
-<!--        app:dotsStrokeWidth="1dp"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent" />-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     <TextView
         android:id="@+id/tv_skip"

@@ -2,7 +2,7 @@ package uddug.com.domain.entities.chat
 
 import java.time.Instant
 
-/** Search result for dialog */
+
 data class SearchDialog(
     val dialogId: Long,
     val dialogType: Int,
@@ -12,7 +12,7 @@ data class SearchDialog(
     val createdAt: Instant,
 )
 
-/** Search result for message */
+
 data class SearchMessage(
     val dialogId: Long,
     val messageId: Long,

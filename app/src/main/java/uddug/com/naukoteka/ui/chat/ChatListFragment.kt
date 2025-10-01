@@ -94,7 +94,7 @@ class ChatListFragment : Fragment() {
                         findNavController().navigate(
                             R.id.chatCreateSingleFragment,
                             args = Bundle().apply {
-                             //   putLong(DIALOG_ID, state.dialogId)
+                             
                             }
                         )
                     }

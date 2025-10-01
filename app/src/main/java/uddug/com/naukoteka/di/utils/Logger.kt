@@ -32,21 +32,21 @@ class Logger : ILogger {
             return
         }
 
-        // TODO make call on something to notificate me about error immediately
-        /*Single.fromCallable {
-            OkHttpClient().newCall(
-                Request.Builder()
-                .url(slackWebHookUrl)
-                .post(
-                    RequestBody.create(
-                    MediaType.get("application/json"),
-                    gson.toJson(SlackReport(listOf(SlackAttachment(message))))
-                ))
-                .build())
-                .execute()
-        }
-            .subscribeOn(schedulers.io())
-            .subscribe({}, {})*/
+        
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 
     override fun info(message: String) {

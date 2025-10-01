@@ -10,7 +10,7 @@ data class UpdateUserProfileEducationDto(
     @SerializedName("ed") var ed: String? = null,
     @SerializedName("rUser") var rUser: String? = null,
     @SerializedName("rOrg") var rOrg: String? = null,
- //   @SerializedName("rOrgItem") var rOrgItemDto: ROrgItemDto? = null,
+ 
     @SerializedName("cType") var cType: String? = null,
     @SerializedName("cLevel") var cLevel: String? = null,
     @SerializedName("specialty") var specialty: String? = null,

@@ -9,7 +9,7 @@ import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
 import java.time.Instant
 
-// ChatDto.kt
+
 
 data class ChatDto(
     val dialogs: List<DialogDto>,
