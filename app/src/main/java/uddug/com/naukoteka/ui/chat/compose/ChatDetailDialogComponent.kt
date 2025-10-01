@@ -48,7 +48,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.outlined.Download
+
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -446,7 +446,7 @@ private fun FileItem(item: MediaMessage) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Download,
+                            painter = painterResource(R.drawable.ic_file_download),
                             contentDescription = null,
                             tint = Color(0xFF7F838D),
                             modifier = Modifier.size(18.dp)

@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
+import ChatAttachmentPreview
 import ChatCard
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background

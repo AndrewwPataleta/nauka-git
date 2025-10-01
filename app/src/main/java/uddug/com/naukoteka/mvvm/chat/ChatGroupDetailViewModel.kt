@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.rx2.await
+
 import kotlinx.coroutines.withContext
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage

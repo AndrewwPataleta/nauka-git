@@ -5,10 +5,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.InsertDriveFile
+
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.animation.animateContentSize
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -288,7 +289,7 @@ private fun AttachmentPreview(
 
             ChatAttachmentType.FILE -> {
                 Icon(
-                    imageVector = Icons.Filled.InsertDriveFile,
+                    imageVector = Icons.Default.Menu,
                     contentDescription = null,
                     tint = Color(0xFF2E83D9),
                     modifier = Modifier.size(16.dp)
