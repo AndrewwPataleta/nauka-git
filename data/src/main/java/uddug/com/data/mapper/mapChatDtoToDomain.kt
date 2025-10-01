@@ -42,7 +42,14 @@ fun mapUserDtoToDomain(userDto: UserDto): User {
 
 fun mapImageDtoToDomain(imageDto: ImageDto): Image {
     return Image(
-        path = imageDto.path ?: ""
+        id = imageDto.id,
+        path = imageDto.path ?: "",
+        fileName = imageDto.fileName,
+        contentType = imageDto.contentType,
+        fileSize = imageDto.fileSize,
+        fileType = imageDto.fileType,
+        fileKind = imageDto.fileKind,
+        duration = imageDto.duration,
     )
 }
 

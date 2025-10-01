@@ -357,6 +357,34 @@ fun ChatTabBar(
                             }
                             val avatarUrl = chat.dialogImage?.path?.takeIf { it.isNotBlank() }
                                 ?: chat.interlocutor.image
+                            val firstFile = chat.lastMessage.files?.firstOrNull()
+                            val attachmentPreview = firstFile?.let { file ->
+                                val type = when (file.fileType) {
+                                    1 -> ChatAttachmentType.IMAGE
+                                    2 -> ChatAttachmentType.VIDEO
+                                    else -> ChatAttachmentType.FILE
+                                }
+                                val path = if (type == ChatAttachmentType.IMAGE) file.path else null
+                                if (type != ChatAttachmentType.IMAGE || !path.isNullOrBlank()) {
+                                    ChatAttachmentPreview(
+                                        path = path,
+                                        type = type,
+                                    )
+                                } else {
+                                    null
+                                }
+                            }
+                            val isGroupChat = chat.dialogType != 1
+                            val isFromMe = viewModel.isMessageFromMe(chat.lastMessage.ownerId)
+                            val authorName = if (isGroupChat && !isFromMe) {
+                                val ownerId = chat.lastMessage.ownerId
+                                val author = chat.users.firstOrNull { it.userId == ownerId }
+                                    ?: chat.interlocutor.takeIf { it.userId == ownerId }
+                                author?.fullName?.takeIf { it.isNotBlank() }
+                                    ?: author?.nickname?.takeIf { it.isNotBlank() }
+                            } else {
+                                null
+                            }
                             ChatCard(
                                 dialogId = chat.dialogId,
                                 avatarUrl = avatarUrl,
@@ -364,11 +392,12 @@ fun ChatTabBar(
                                 message = chat.lastMessage.text ?: stringResource(R.string.chat_no_messages),
                                 time = chat.lastMessage.createdAt ?: stringResource(R.string.chat_unknown_time),
                                 newMessagesCount = chat.unreadMessages,
-                                attachment = chat.lastMessage.files?.firstOrNull()?.path,
+                                attachmentPreview = attachmentPreview,
                                 isRepost = false,
                                //     chat.lastMessage.type == 5,
-                                isMedia = chat.lastMessage.files?.isNotEmpty() == true,
-                                isFromMe = chat.lastMessage.ownerId == "",
+                                isGroupChat = isGroupChat,
+                                isFromMe = isFromMe,
+                                authorName = authorName,
                                 notificationsDisable = chat.notificationsDisable,
                                 isPinned = chat.isPinned,
                                 isMuted = chat.notificationsDisable,

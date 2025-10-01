@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import uddug.com.data.cache.user_id.UserIdCache
+import uddug.com.data.cache.user_uuid.UserUUIDCache
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.SearchDialog
 import uddug.com.domain.entities.chat.SearchMessage
@@ -21,7 +23,14 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatListViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
+    userIdCache: UserIdCache,
+    userUUIDCache: UserUUIDCache,
 ) : ViewModel() {
+
+    private val currentUserIds: Set<String> = listOfNotNull(
+        userIdCache.entity?.takeIf { it.isNotBlank() },
+        userUUIDCache.entity?.takeIf { it.isNotBlank() },
+    ).toSet()
 
     private val _uiState = MutableStateFlow<ChatListUiState>(ChatListUiState.Loading)
     val uiState: StateFlow<ChatListUiState> = _uiState
@@ -52,6 +61,10 @@ class ChatListViewModel @Inject constructor(
 
     private var loadChatsJob: kotlinx.coroutines.Job? = null
     private var searchJob: Job? = null
+
+    fun isMessageFromMe(ownerId: String?): Boolean {
+        return ownerId.isNullOrBlank() || currentUserIds.contains(ownerId)
+    }
 
     fun loadFolders() {
         _uiState.value = ChatListUiState.Loading

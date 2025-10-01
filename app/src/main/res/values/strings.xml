@@ -224,6 +224,10 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_last_message_repost">Repost: %1$s</string>
     <string name="chat_last_message_media">Media attachment</string>
     <string name="chat_last_message_from_me">You: %1$s</string>
+    <string name="chat_last_message_image">Image</string>
+    <string name="chat_last_message_video">Video</string>
+    <string name="chat_last_message_file">File</string>
+    <string name="chat_last_message_author_you">You</string>
     <string name="chat_swipe_to_cancel">Swipe left to cancel</string>
     <string name="chat_message_placeholder">Write a message</string>
     <string name="chat_reply_default_author">Reply</string>
