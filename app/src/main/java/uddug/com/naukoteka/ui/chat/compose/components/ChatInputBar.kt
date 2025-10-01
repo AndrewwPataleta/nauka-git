@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -389,6 +390,7 @@ fun ChatInputBar(
 
 @Composable
 private fun ReplyInfoBlock(reply: MessageChat, onCancelReply: () -> Unit) {
+    val iconColor = Color(0XFF8083A0)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -396,16 +398,30 @@ private fun ReplyInfoBlock(reply: MessageChat, onCancelReply: () -> Unit) {
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_chat_reply),
+            contentDescription = null,
+            tint = iconColor
+        )
+        Image(
+            painter = painterResource(id = R.drawable.ic_chat_separator),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .width(2.dp)
+                .height(24.dp),
+            colorFilter = ColorFilter.tint(iconColor)
+        )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = reply.ownerName ?: "",
-                color = Color(0XFF8083A0),
+                color = iconColor,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp
             )
             Text(
                 text = reply.text.orEmpty(),
-                color = Color(0XFF8083A0),
+                color = iconColor,
                 fontSize = 12.sp,
                 maxLines = 1
             )
@@ -431,16 +447,18 @@ private fun EditInfoBlock(message: MessageChat, onCancelEdit: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Filled.Create,
+            painter = painterResource(id = R.drawable.ic_chat_edit),
             contentDescription = null,
             tint = accentColor
         )
-        Box(
+        Image(
+            painter = painterResource(id = R.drawable.ic_chat_separator),
+            contentDescription = null,
             modifier = Modifier
                 .padding(horizontal = 12.dp)
                 .width(2.dp)
-                .height(24.dp)
-                .background(accentColor)
+                .height(24.dp),
+            colorFilter = ColorFilter.tint(accentColor)
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
