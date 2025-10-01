@@ -3,15 +3,32 @@ package uddug.com.naukoteka.ui.chat.compose.components
 import ChatCard
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.MarkChatRead
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Sort
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,6 +37,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
+import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatListUiState
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
@@ -36,12 +55,24 @@ fun ChatTabBar(
     onChangeFolderOrder: () -> Unit,
 ) {
     var selectedTabIndex by remember { mutableStateOf(0) }
-    var showFolderMenu by remember { mutableStateOf(false) }
 
     val folders by viewModel.folders.collectAsState()
     val currentFolderId by viewModel.currentFolderId.collectAsState()
 
     val uiState by viewModel.uiState.collectAsState()
+
+    val mainFolderId = folders.firstOrNull()?.id
+    var bottomSheetState by remember { mutableStateOf<FolderBottomSheetState?>(null) }
+    val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val coroutineScope = rememberCoroutineScope()
+    var folderToRename by remember { mutableStateOf<ChatFolder?>(null) }
+    var folderToDelete by remember { mutableStateOf<ChatFolder?>(null) }
+
+    LaunchedEffect(bottomSheetState) {
+        if (bottomSheetState != null) {
+            modalBottomSheetState.show()
+        }
+    }
 
     LaunchedEffect(folders, currentFolderId) {
         if (folders.isEmpty()) {
@@ -56,6 +87,174 @@ fun ChatTabBar(
     }
 
     Box {
+        bottomSheetState?.let { sheetState ->
+            ModalBottomSheet(
+                sheetState = modalBottomSheetState,
+                onDismissRequest = {
+                    coroutineScope.launch {
+                        modalBottomSheetState.hide()
+                        bottomSheetState = null
+                    }
+                }
+            ) {
+                when (sheetState) {
+                    FolderBottomSheetState.Main -> {
+                        ListItem(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    coroutineScope.launch {
+                                        modalBottomSheetState.hide()
+                                        bottomSheetState = null
+                                        onOpenFolderSettings()
+                                    }
+                                },
+                            leadingContent = {
+                                Icon(Icons.Outlined.Settings, contentDescription = null)
+                            },
+                            headlineContent = {
+                                Text(text = stringResource(R.string.chat_folder_menu_configure))
+                            }
+                        )
+                        ListItem(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    coroutineScope.launch {
+                                        modalBottomSheetState.hide()
+                                        bottomSheetState = null
+                                        onChangeFolderOrder()
+                                    }
+                                },
+                            leadingContent = {
+                                Icon(Icons.Outlined.Sort, contentDescription = null)
+                            },
+                            headlineContent = {
+                                Text(text = stringResource(R.string.chat_folder_menu_change_order))
+                            }
+                        )
+                    }
+
+                    is FolderBottomSheetState.Folder -> {
+                        val folder = sheetState.folder
+                        ListItem(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    coroutineScope.launch {
+                                        modalBottomSheetState.hide()
+                                        bottomSheetState = null
+                                        folderToRename = folder
+                                    }
+                                },
+                            leadingContent = {
+                                Icon(Icons.Outlined.Edit, contentDescription = null)
+                            },
+                            headlineContent = {
+                                Text(text = stringResource(R.string.chat_folder_action_rename))
+                            }
+                        )
+                        ListItem(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    coroutineScope.launch {
+                                        modalBottomSheetState.hide()
+                                        bottomSheetState = null
+                                        viewModel.markFolderAsRead(folder.id)
+                                    }
+                                },
+                            leadingContent = {
+                                Icon(Icons.Outlined.MarkChatRead, contentDescription = null)
+                            },
+                            headlineContent = {
+                                Text(text = stringResource(R.string.chat_folder_action_mark_read))
+                            }
+                        )
+                        ListItem(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    coroutineScope.launch {
+                                        modalBottomSheetState.hide()
+                                        bottomSheetState = null
+                                        folderToDelete = folder
+                                    }
+                                },
+                            leadingContent = {
+                                Icon(Icons.Outlined.Delete, contentDescription = null)
+                            },
+                            headlineContent = {
+                                Text(text = stringResource(R.string.chat_folder_action_delete))
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        folderToRename?.let { folder ->
+            var name by remember(folder) { mutableStateOf(folder.name) }
+            AlertDialog(
+                onDismissRequest = { folderToRename = null },
+                title = { Text(text = stringResource(R.string.chat_folder_action_rename_title)) },
+                text = {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.chat_folder_action_rename_placeholder)) }
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.renameFolder(folder.id, name.trim())
+                            folderToRename = null
+                        },
+                        enabled = name.isNotBlank()
+                    ) {
+                        Text(text = stringResource(R.string.chat_folder_action_rename_confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { folderToRename = null }) {
+                        Text(text = stringResource(R.string.chat_folder_action_delete_confirm_negative))
+                    }
+                }
+            )
+        }
+
+        folderToDelete?.let { folder ->
+            AlertDialog(
+                onDismissRequest = { folderToDelete = null },
+                title = { Text(text = stringResource(R.string.chat_folder_action_delete_confirm_title)) },
+                text = {
+                    Text(
+                        text = stringResource(
+                            R.string.chat_folder_action_delete_confirm_message,
+                            folder.name
+                        )
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteFolder(folder.id)
+                            folderToDelete = null
+                        }
+                    ) {
+                        Text(text = stringResource(R.string.chat_folder_action_delete_confirm_positive))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { folderToDelete = null }) {
+                        Text(text = stringResource(R.string.chat_folder_action_delete_confirm_negative))
+                    }
+                }
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -77,31 +276,28 @@ fun ChatTabBar(
                     divider = {},
                 ) {
                     folders.forEachIndexed { index, folder ->
-                        Box {
-                            Tab(
-                                modifier = Modifier
-                                    .background(Color.White)
-                                    .let {
-                                        if (index == 0) {
-                                            it.combinedClickable(
-                                                onClick = {
-                                                    selectedTabIndex = index
-                                                    viewModel.onFolderSelected(folder.id)
-                                                },
-                                                onLongClick = {
-                                                    showFolderMenu = true
-                                                }
-                                            )
-                                        } else {
-                                            it
-                                        }
-                                    },
-                                selected = selectedTabIndex == index,
-                                onClick = {
-                                    if (index != 0) {
+                        Box(
+                            modifier = Modifier
+                                .background(Color.White)
+                                .combinedClickable(
+                                    onClick = {
                                         selectedTabIndex = index
                                         viewModel.onFolderSelected(folder.id)
+                                    },
+                                    onLongClick = {
+                                        bottomSheetState = if (mainFolderId != null && folder.id == mainFolderId) {
+                                            FolderBottomSheetState.Main
+                                        } else {
+                                            FolderBottomSheetState.Folder(folder)
+                                        }
                                     }
+                                )
+                        ) {
+                            Tab(
+                                selected = selectedTabIndex == index,
+                                onClick = {
+                                    selectedTabIndex = index
+                                    viewModel.onFolderSelected(folder.id)
                                 },
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -131,33 +327,6 @@ fun ChatTabBar(
                                     }
                                 }
                             )
-                            if (index == 0) {
-                                DropdownMenu(
-                                    expanded = showFolderMenu,
-                                    onDismissRequest = { showFolderMenu = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.chat_folder_menu_configure)) },
-                                        leadingIcon = {
-                                            Icon(Icons.Filled.Person, contentDescription = null)
-                                        },
-                                        onClick = {
-                                            showFolderMenu = false
-                                            onOpenFolderSettings()
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.chat_folder_menu_change_order)) },
-                                        leadingIcon = {
-                                            Icon(Icons.Filled.Person, contentDescription = null)
-                                        },
-                                        onClick = {
-                                            showFolderMenu = false
-                                            onChangeFolderOrder()
-                                        }
-                                    )
-                                }
-                            }
                         }
                     }
                 }
@@ -207,4 +376,9 @@ fun ChatTabBar(
             }
         }
     }
+}
+
+private sealed class FolderBottomSheetState {
+    object Main : FolderBottomSheetState()
+    data class Folder(val folder: ChatFolder) : FolderBottomSheetState()
 }

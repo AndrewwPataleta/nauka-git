@@ -2,6 +2,8 @@ package uddug.com.domain.repositories.chat
 
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
+import uddug.com.domain.entities.chat.ChatFolderDetails
+import uddug.com.domain.entities.chat.ChatFolderDialogsPage
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MediaMessage
@@ -17,6 +19,31 @@ interface ChatRepository {
     suspend fun getChats(folderId: Long? = null): List<Chat>
 
     suspend fun getFolders(): List<ChatFolder>
+
+    suspend fun createFolder(
+        name: String,
+        dialogIds: List<Long> = emptyList(),
+        ord: Int? = null,
+    ): ChatFolder
+
+    suspend fun updateFolder(
+        folderId: Long,
+        name: String? = null,
+        dialogIds: List<Long>? = null,
+        ord: Int? = null,
+    ): ChatFolder
+
+    suspend fun deleteFolder(folderId: Long)
+
+    suspend fun getFolder(folderId: Long): ChatFolderDetails
+
+    suspend fun getFolderDialogs(
+        folderId: Long,
+        limit: Int,
+        page: Int,
+    ): ChatFolderDialogsPage
+
+    suspend fun markFolderAsRead(folderId: Long)
 
     suspend fun getMessages(
         currentUserId: String,

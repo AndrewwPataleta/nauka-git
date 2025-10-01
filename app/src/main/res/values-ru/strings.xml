@@ -130,6 +130,16 @@
   <string name="chat_folder_settings_add_folder">Добавить новую папку</string>
   <string name="chat_folder_menu_configure">Настроить папки</string>
   <string name="chat_folder_menu_change_order">Изменить порядок</string>
+  <string name="chat_folder_action_rename">Переименовать папку</string>
+  <string name="chat_folder_action_mark_read">Отметить как прочитанное</string>
+  <string name="chat_folder_action_delete">Удалить папку</string>
+  <string name="chat_folder_action_rename_title">Переименовать папку</string>
+  <string name="chat_folder_action_rename_placeholder">Название папки</string>
+  <string name="chat_folder_action_rename_confirm">Сохранить</string>
+  <string name="chat_folder_action_delete_confirm_title">Удалить папку?</string>
+  <string name="chat_folder_action_delete_confirm_message">Вы уверены, что хотите удалить папку "%1$s"?</string>
+  <string name="chat_folder_action_delete_confirm_positive">Удалить</string>
+  <string name="chat_folder_action_delete_confirm_negative">Отмена</string>
   <string name="chat_unknown_user">Неизвестный</string>
   <string name="chat_no_messages">Нет сообщений</string>
   <string name="chat_unknown_time">Неизвестно</string>
