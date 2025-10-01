@@ -6,10 +6,10 @@
     </style>
 
     <style name="Theme.NoWiredStrapInNavigationBar" parent="Theme.MaterialComponents.Light.BottomSheetDialog">
-        <item name="android:windowIsFloating">false</item> <!-- This is important -->
+        <item name="android:windowIsFloating">false</item> 
         <item name="android:statusBarColor">@color/transparent
-        </item> <!-- And then this will be needed -->
-        <!--<item name="android:navigationBarColor">@color/white</item>-->
+        </item> 
+        
         <item name="android:colorBackground">@color/white</item>
     </style>
 

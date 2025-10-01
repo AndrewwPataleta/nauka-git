@@ -54,7 +54,7 @@ object NetworkModule {
                     HttpLoggingInterceptor.Level.NONE
                 }
             })
-            // .addInterceptor(authInterceptor) // Add this if you have an interceptor
+            
             .connectTimeout(2, TimeUnit.MINUTES)
             .readTimeout(2, TimeUnit.MINUTES)
             .writeTimeout(2, TimeUnit.MINUTES)

@@ -20,7 +20,7 @@ class AuthInteractorTest {
     lateinit var repository: AuthRepository
 
     @Mock
-    lateinit var schedulers: SchedulersProvider //= AppSchedulersProvider()
+    lateinit var schedulers: SchedulersProvider 
 
     private lateinit var interactor: AuthInteractor
 
@@ -34,7 +34,7 @@ class AuthInteractorTest {
     fun testLogin() {
         `when`(repository.loginEmail("", "")).then { Completable.complete() }
         `when`(schedulers.io()).then { Schedulers.io() }
-        //`when`(schedulers.ui()).then { AndroidSchedulers.mainThread() }
+        
 
         var loginemitter = interactor.login("","").test()
         verify(repository).loginEmail("","")

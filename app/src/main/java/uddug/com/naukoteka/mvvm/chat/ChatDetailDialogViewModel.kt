@@ -34,10 +34,10 @@ class ChatDialogDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val tabToCategoryMap = mapOf(
-        0 to 1, // Визуальные вложения
-        1 to 3, // Сырые файлы
-        2 to 6, // Голосовые сообщения
-        3 to 7, // Записи звонков
+        0 to 1, 
+        1 to 3, 
+        2 to 6, 
+        3 to 7, 
     )
 
     private val _uiState = MutableStateFlow<ChatDetailUiState>(ChatDetailUiState.Loading)

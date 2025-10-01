@@ -110,7 +110,7 @@ class ChatCreateSingleViewModel @Inject constructor(
                     (currentState.users + currentState.searchResults).find { it.id == userId }
                 } else null
 
-            // 👉 Берём профиль текущего пользователя из UserProfileRepository
+            
             val me = withContext(Dispatchers.IO) {
                 userProfileRepository.getProfileInfo().await()
             }
@@ -124,29 +124,29 @@ class ChatCreateSingleViewModel @Inject constructor(
                 )
             }
 
-//            val selectedLastName =
-//                selectedUser?.lastName ?: selectedUser?.fullName?.split(" ")?.firstOrNull()
-//
-//            val dialogName = listOfNotNull(me.lastName, selectedLastName).joinToString(" ")
-//
-//            // роли участников
-//            val userRoles = mutableMapOf<String, String?>()
-//            me.id?.let { userRoles[it] = "37:202" }
-//            userRoles[userId] = "37:202"
-//
-//            val dialogId = withContext(Dispatchers.IO) {
-//                chatInteractor.createDialog(dialogName, userRoles)
-//            }
-//
-//            _events.emit(ChatCreateSingleEvent.OpenDialogDetail(dialogId))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         }
     }
 }
 
-/**
- * Простая корутинная обёртка для RxJava Single<T>,
- * чтобы не использовать blockingGet() и не блокировать поток.
- */
+
+
+
+
 private suspend fun <T> Single<T>.await(): T =
     suspendCancellableCoroutine { cont ->
         val d = this.subscribe(

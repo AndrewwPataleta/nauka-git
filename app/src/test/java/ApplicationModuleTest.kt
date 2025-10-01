@@ -35,11 +35,11 @@ class ApplicationModuleTest {
     @Test
     @Throws(Exception::class)
     fun testModule_shouldReturnApplicationBindings() {
-        // GIVEN
+        
         val application: Application = ApplicationProvider.getApplicationContext()
         val appScope = getAppScope.installTestModules(AppModule(application))
 
-        // WHEN
+        
         val injectedApp = appScope.getInstance(Context::class.java)
 
         val logger = appScope.getInstance(ILogger::class.java)
@@ -58,7 +58,7 @@ class ApplicationModuleTest {
         val authRepository = appScope.getInstance(AuthRepository::class.java)
         val userProfileRepository = appScope.getInstance(UserProfileRepository::class.java)
 
-        // THEN
+        
         assertThat("injected app is instance of context ", injectedApp is Context)
         assertThat(logger, notNullValue())
         assertThat(sharedPreferences, notNullValue())
@@ -78,20 +78,20 @@ class ApplicationModuleTest {
     @Test
     @Throws(Exception::class)
     fun testModule_shouldReturnDefaultSharedPreferences() {
-        // GIVEN
+        
         val application = ApplicationProvider.getApplicationContext<Application>()
         val itemKey = "isValid"
         val appScope = getAppScope.installModules(AppModule(application))
 
 
 
-        // WHEN
+        
         val sharedPreferencesFromScope = appScope.getInstance(
             SharedPreferences::class.java
         )
         sharedPreferencesFromScope.edit().putBoolean(itemKey, true).commit()
 
-        // THEN
+        
         assertThat(sharedPreferencesFromScope.getBoolean(itemKey, false), `is`(true))
     }
 }

@@ -16,7 +16,7 @@ class UserProfileMapper(
             firstName = name,
             lastName = surname,
             middleName = if (middleName.isNullOrEmpty()) " " else middleName,
-            // nick name should be more or equals 6 digits after id
+            
             nickname = "id${nickname}"
         )
     }

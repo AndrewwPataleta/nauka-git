@@ -48,7 +48,7 @@ class NaukotekaPushService : FirebaseMessagingService() {
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Since android Oreo notification channel is needed.
+        
         val channel = NotificationChannel(
             channelId,
             NOTIFICATION_TITLE,

@@ -5,9 +5,9 @@ import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.dsl.DependencyHandler
 
-/**
- * Adds required dependencies to app module
- */
+
+
+
 fun DependencyHandler.addAppModuleDependencies() {
 
     implementation(Deps.KOTLIN)
@@ -16,7 +16,7 @@ fun DependencyHandler.addAppModuleDependencies() {
     implementation(Deps.ANDROIDX_ACTIVITY_COMPOSE)
     implementation(Deps.ANDROIDX_FRAGMENT_KTX)
 
-    // Support and Widgets
+    
     implementation(Deps.APPCOMPAT)
     implementation(Deps.MATERIAL)
     implementation(Deps.CONSTRAINT_LAYOUT)
@@ -24,17 +24,17 @@ fun DependencyHandler.addAppModuleDependencies() {
     implementation(Deps.VIEWPAGER2)
     implementation(Deps.GMS_PLAY_LOCATION)
 
-    //Firebase
+    
     implementation(platform(Deps.FIREBASE_PLATFORM_BOM))
     implementation(Deps.FIREBASE_ANALYTICS)
     implementation(Deps.FIREBASE_AUTH)
     implementation(Deps.FIREBASE_MESSAGE)
 
-    // Views, Animations
+    
     implementation(Deps.LOTTIE)
     implementation(Deps.TIMBER)
 
-    // Lifecycle, LiveData, ViewModel
+    
     implementation(Deps.LIFECYCLE_LIVEDATA_KTX)
     implementation(Deps.LIFECYCLE_RUNTIME_KTX)
     implementation(Deps.LIFECYCLE_VIEWMODEL_KTX)
@@ -43,35 +43,35 @@ fun DependencyHandler.addAppModuleDependencies() {
     implementation(Deps.LIFECYCLE_SERVICE)
     implementation(Deps.LIFECYCLE_PROCESS)
 
-    // Navigation Components
+    
     implementation(Deps.NAVIGATION_FRAGMENT)
     implementation(Deps.NAVIGATION_UI)
     implementation(Deps.NAVIGATION_RUNTIME)
     implementation(Deps.NAVIGATION_DYNAMIC)
 
-    // Dagger Hilt
+    
     implementation(Deps.DAGGER_HILT_ANDROID)
     implementation(Deps.DAGGER_HILT_NAVIGATION_COMPOSE)
     kapt(Deps.DAGGER_HILT_COMPILER)
 
-    // Coroutines
+    
     implementation(Deps.COROUTINES_CORE)
     implementation(Deps.COROUTINES_ANDROID)
-    // Room
+    
     implementation(Deps.ROOM_RUNTIME)
-    // For Kotlin use kapt instead of annotationProcessor
+    
     kapt(Deps.ROOM_COMPILER)
-    // optional - Kotlin Extensions and Coroutines support for Room
+    
     implementation(Deps.ROOM_KTX)
 
-    // Gson
+    
     implementation(Deps.GSON)
-    //implementation(Deps.CHUCKER_DEBUG)
+    
 
-    //Date working
+    
     implementation(Deps.TEMPO)
 
-    // Glide
+    
     implementation(Deps.GLIDE)
     kapt(Deps.GLIDE_COMPILER)
 
@@ -80,7 +80,7 @@ fun DependencyHandler.addAppModuleDependencies() {
     implementation(Deps.viewBindingPropertyDelegate)
     implementation(Deps.viewBindingPropertyDelegateNoReflection)
 
-    // Compose
+    
     implementation(Deps.composeRuntime)
     implementation(Deps.composeViewbinding)
     implementation(Deps.composeFoundation)
@@ -97,7 +97,7 @@ fun DependencyHandler.addAppModuleDependencies() {
     implementation ("io.github.chochanaresh:filepicker:0.2.3")
     implementation("com.github.dhaval2404:imagepicker:2.1")
 
-    //implementation("com.github.Mindinventory:Lassi:1.3.0")
+    
 }
 
 
@@ -105,9 +105,9 @@ fun DependencyHandler.addDataDependencies() {
     implementation(Deps.GRAPH_QL)
 }
 
-/**
- * Adds dependencies to core module
- */
+
+
+
 fun DependencyHandler.addCoreModuleDependencies() {
     implementation(Deps.KOTLIN)
     implementation(Deps.ANDROIDX_CORE_KTX)
@@ -115,14 +115,14 @@ fun DependencyHandler.addCoreModuleDependencies() {
     implementation(Deps.ANDROIDX_ACTIVITY_COMPOSE)
     implementation(Deps.ANDROIDX_FRAGMENT_KTX)
 
-    // Support and Widgets
+    
     implementation(Deps.APPCOMPAT)
     implementation(Deps.MATERIAL)
     implementation(Deps.CONSTRAINT_LAYOUT)
     implementation(Deps.RECYCLER_VIEW)
     implementation(Deps.VIEWPAGER2)
 
-    // Lifecycle, LiveData, ViewModel
+    
     implementation(Deps.LIFECYCLE_LIVEDATA_KTX)
     implementation(Deps.LIFECYCLE_VIEWMODEL_KTX)
     implementation(Deps.LIFECYCLE_VIEWMODEL_SAVEDSTATE)
@@ -130,36 +130,36 @@ fun DependencyHandler.addCoreModuleDependencies() {
     implementation(Deps.LIFECYCLE_SERVICE)
     implementation(Deps.LIFECYCLE_PROCESS)
 
-    // Navigation Components
+    
     implementation(Deps.NAVIGATION_FRAGMENT)
     implementation(Deps.NAVIGATION_UI)
     implementation(Deps.NAVIGATION_RUNTIME)
     implementation(Deps.NAVIGATION_DYNAMIC)
 
-    // Dagger Hilt
+    
     implementation(Deps.DAGGER_HILT_ANDROID)
     implementation(Deps.DAGGER_HILT_NAVIGATION_COMPOSE)
     kapt(Deps.DAGGER_HILT_COMPILER)
 
-    // Coroutines
+    
     implementation(Deps.COROUTINES_CORE)
     implementation(Deps.COROUTINES_ANDROID)
 
     implementation(Deps.OK_HTTP3)
-    // Glide
+    
     implementation(Deps.GLIDE)
     kapt(Deps.GLIDE_COMPILER)
 
     implementation(Deps.GSON)
     implementation(Deps.KOTLIN_DATETIME)
 
-    // Compose
+    
     implementation(Deps.composeRuntime)
 
     implementation(Deps.accompanistSystemUIController)
     implementation(Deps.chuckerInterceptor)
     implementation(Deps.reflection)
-    //implementation("com.github.Mindinventory:Lassi:1.3.0")
+    
     implementation(Deps.yandexMaps)
 }
 
@@ -170,14 +170,14 @@ fun DependencyHandler.addDSModuleDependencies() {
     implementation(Deps.ANDROIDX_ACTIVITY_COMPOSE)
     implementation(Deps.ANDROIDX_FRAGMENT_KTX)
 
-    // Support and Widgets
+    
     implementation(Deps.APPCOMPAT)
     implementation(Deps.MATERIAL)
     implementation(Deps.CONSTRAINT_LAYOUT)
     implementation(Deps.RECYCLER_VIEW)
     implementation(Deps.VIEWPAGER2)
 
-    // Lifecycle, LiveData, ViewModel
+    
     implementation(Deps.LIFECYCLE_LIVEDATA_KTX)
     implementation(Deps.LIFECYCLE_VIEWMODEL_KTX)
     implementation(Deps.LIFECYCLE_VIEWMODEL_SAVEDSTATE)
@@ -185,13 +185,13 @@ fun DependencyHandler.addDSModuleDependencies() {
     implementation(Deps.LIFECYCLE_SERVICE)
     implementation(Deps.LIFECYCLE_PROCESS)
 
-    // Navigation Components
+    
     implementation(Deps.NAVIGATION_FRAGMENT)
     implementation(Deps.NAVIGATION_UI)
     implementation(Deps.NAVIGATION_RUNTIME)
     implementation(Deps.NAVIGATION_DYNAMIC)
 
-    // Compose
+    
     implementation(Deps.compose)
     implementation(Deps.composeRuntime)
     implementation(Deps.composeRuntimeLifecycle)
@@ -213,8 +213,8 @@ fun DependencyHandler.addDSModuleDependencies() {
 
     implementation(Deps.composeLandscapistGlide)
     implementation(Deps.composeLandscapistPlaceholder)
-    //implementation(Deps.composeM3)
-    //implementation(Deps.accompanistNav)
+    
+    
 
     implementation(Deps.glassmorphic)
     implementation(Deps.kotlin_immutable)
@@ -223,29 +223,29 @@ fun DependencyHandler.addDSModuleDependencies() {
     implementation("androidx.browser:browser:1.5.0")
 }
 
-/**
- * Adds core dependencies such as kotlin, appcompat, navigation and dagger-hilt to Dynamic
- * Feature modules.
- *
- */
+
+
+
+
+
 fun DependencyHandler.addBaseDynamicFeatureModuleDependencies() {
     implementation(Deps.KOTLIN)
     implementation(Deps.ANDROIDX_CORE_KTX)
     implementation(Deps.ANDROIDX_ACTIVITY_KTX)
     implementation(Deps.ANDROIDX_ACTIVITY_COMPOSE)
     implementation(Deps.ANDROIDX_FRAGMENT_KTX)
-    // Lifecycle, LiveData, ViewModel
+    
     implementation(Deps.LIFECYCLE_LIVEDATA_KTX)
     implementation(Deps.LIFECYCLE_VIEWMODEL_KTX)
     implementation(Deps.LIFECYCLE_COMMON_JAVA8)
 
-    // Navigation Components
+    
     implementation(Deps.NAVIGATION_FRAGMENT)
     implementation(Deps.NAVIGATION_UI)
     implementation(Deps.NAVIGATION_RUNTIME)
     implementation(Deps.NAVIGATION_DYNAMIC)
 
-    // Dagger Hilt
+    
     implementation(Deps.DAGGER_HILT_ANDROID)
     implementation(Deps.DAGGER_HILT_NAVIGATION_COMPOSE)
     kapt(Deps.DAGGER_HILT_COMPILER)
@@ -253,34 +253,34 @@ fun DependencyHandler.addBaseDynamicFeatureModuleDependencies() {
     implementation(Deps.SWIPE_REFRESH_LAYOUT)
 
     implementation(Deps.GSON)
-    // RxJava
+    
     implementation(Deps.RX_JAVA3)
-    // RxAndroid
+    
     implementation(Deps.RX_JAVA3_ANDROID)
 
-    // Coroutines
+    
     implementation(Deps.COROUTINES_CORE)
     implementation(Deps.COROUTINES_ANDROID)
 
-    //Date working
+    
     implementation(Deps.TEMPO)
 
-    // Room
+    
     implementation(Deps.ROOM_RUNTIME)
     kapt(Deps.ROOM_COMPILER)
 
     implementation(Deps.ROOM_KTX)
     implementation(Deps.ROOM_RXJAVA3)
 
-    // Compose
+    
     implementation(Deps.composeRuntime)
 
     implementation(Deps.accompanistSystemUIController)
 }
 
-/**
- * Adds Unit test dependencies
- */
+
+
+
 fun DependencyHandler.addUnitTestDependencies() {
 
 
@@ -290,11 +290,11 @@ fun DependencyHandler.addInstrumentationTestDependencies() {
 
 }
 
-/*
- * These extensions mimic the extensions that are generated on the fly by Gradle.
- * They are used here to provide above dependency syntax that mimics Gradle Kotlin DSL
- * syntax in module\build.gradle.kts files.
- */
+
+
+
+
+
 @Suppress("detekt.UnusedPrivateMember")
 private fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? =
     add("implementation", dependencyNotation)

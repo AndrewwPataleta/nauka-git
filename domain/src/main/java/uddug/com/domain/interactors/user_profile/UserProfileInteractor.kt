@@ -52,7 +52,7 @@ class UserProfileInteractor(
 
     fun checkNickname(nickname: String): Observable<Boolean> {
         return userProfileRepository.checkNickname(nickname)
-            //.onErrorReturnItem(false)
+            
             .onErrorReturn {
                 if (it is HttpException && it.statusCode == ServerApiError.Unauthorized) {
                     throw it

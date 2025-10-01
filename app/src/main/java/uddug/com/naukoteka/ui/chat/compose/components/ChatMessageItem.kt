@@ -123,7 +123,7 @@ fun ChatMessageItem(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (!isMine && !isSystem) {
-                // Аватарка
+                
                 Avatar(message.ownerAvatarUrl, message.ownerName)
                 Spacer(modifier = Modifier.width(8.dp))
             }

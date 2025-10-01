@@ -55,14 +55,14 @@ public class MvpAppCompatDialogLocalFragment extends FragmentActivity implements
     public void onDestroy() {
         super.onDestroy();
 
-        //We leave the screen and respectively all fragments will be destroyed
+        
         if (getParent().isFinishing()) {
             getMvpDelegate().onDestroy();
             return;
         }
 
-        // When we rotate device isRemoving() return true for fragment placed in backstack
-        // http://stackoverflow.com/questions/34649126/fragment-back-stack-and-isremoving
+        
+        
         if (isStateSaved) {
             isStateSaved = false;
             return;
@@ -72,9 +72,9 @@ public class MvpAppCompatDialogLocalFragment extends FragmentActivity implements
 
     }
 
-    /**
-     * @return The {@link MvpDelegate} being used by this Fragment.
-     */
+    
+
+
     @Override
     public MvpDelegate getMvpDelegate() {
         return mvpDelegate;

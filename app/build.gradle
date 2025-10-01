@@ -85,18 +85,18 @@ android {
     buildFeatures {
         viewBinding true
         dataBinding true
-        compose true // Включаем поддержку Compose
+        compose true 
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion '1.5.3' // Используйте актуальную версию
+        kotlinCompilerExtensionVersion '1.5.3' 
     }
 
     namespace 'uddug.com.naukoteka'
 }
 
 dependencies {
-    // Основные зависимости
+    
     implementation presentation.kotlin
     implementation presentation.ktxCore
     implementation ui.appcompat
@@ -107,7 +107,7 @@ dependencies {
     implementation ui.localeChanger
 
 
-    // MVVM и Compose зависимости
+    
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2"
@@ -122,7 +122,7 @@ dependencies {
     implementation "org.burnoutcrew.composereorderable:reorderable:0.9.6"
     implementation "com.valentinilk.shimmer:compose-shimmer:1.0.5"
 
-    // Остальные зависимости
+    
     implementation ui.glide
     implementation ui.glideAnnotation
     kapt ui.glideProcessor
@@ -217,5 +217,5 @@ dependencies {
 }
 
 kapt {
-    correctErrorTypes = true  // Важно для корректной работы Hilt
+    correctErrorTypes = true  
 }

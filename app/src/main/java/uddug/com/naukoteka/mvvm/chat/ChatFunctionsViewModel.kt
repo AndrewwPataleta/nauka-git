@@ -23,7 +23,7 @@ class ChatFunctionsViewModel @Inject constructor(
             try {
                 chatRepository.setDialogUnread(dialogId)
             } catch (e: Exception) {
-                // handle error if needed
+                
             }
         }
     }
@@ -33,7 +33,7 @@ class ChatFunctionsViewModel @Inject constructor(
             try {
                 chatRepository.pinDialog(dialogId)
             } catch (e: Exception) {
-                // handle error if needed
+                
             }
         }
     }
@@ -43,7 +43,7 @@ class ChatFunctionsViewModel @Inject constructor(
             try {
                 chatRepository.unpinDialog(dialogId)
             } catch (e: Exception) {
-                // handle error if needed
+                
             }
         }
     }
@@ -53,7 +53,7 @@ class ChatFunctionsViewModel @Inject constructor(
             try {
                 chatRepository.disableNotifications(dialogId)
             } catch (e: Exception) {
-                // handle error if needed
+                
             }
         }
     }
@@ -63,13 +63,13 @@ class ChatFunctionsViewModel @Inject constructor(
             try {
                 chatRepository.enableNotifications(dialogId)
             } catch (e: Exception) {
-                // handle error if needed
+                
             }
         }
     }
 
     fun selectMessages(dialogId: Long) {
-        // TODO: implement when API is available
+        
     }
 
     fun blockChat(dialogId: Long) {
@@ -77,7 +77,7 @@ class ChatFunctionsViewModel @Inject constructor(
             try {
                 chatRepository.blockDialog(dialogId)
             } catch (e: Exception) {
-                // handle error if needed
+                
             }
         }
     }
@@ -87,7 +87,7 @@ class ChatFunctionsViewModel @Inject constructor(
             try {
                 chatRepository.unblockDialog(dialogId)
             } catch (e: Exception) {
-                // handle error if needed
+                
             }
         }
     }
@@ -98,7 +98,7 @@ class ChatFunctionsViewModel @Inject constructor(
                 chatRepository.deleteDialog(dialogId)
                 _events.emit(ChatFunctionsEvent.ChatDeleted)
             } catch (e: Exception) {
-                // handle error if needed
+                
             }
         }
     }

@@ -12,12 +12,12 @@ import kotlin.reflect.typeOf
 
 object DeepLinkGenerator {
 
-    /**
-     * Генерация Uri
-     *
-     * @param deeplink [DeepLink]
-     * @return [Intent]
-     */
+    
+
+
+
+
+
     @Suppress("UNCHECKED_CAST")
     fun generate(deeplink: DeepLink): Intent {
         val deeplinkBuilder = StringBuilder("trendapp://${deeplink.scheme.module}.trendagent.ru")

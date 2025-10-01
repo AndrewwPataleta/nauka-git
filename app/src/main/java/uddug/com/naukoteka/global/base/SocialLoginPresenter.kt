@@ -23,16 +23,16 @@ abstract class SocialLoginPresenter<V : SocialLoginView> : BasePresenterImpl<V>(
     fun authSocial(socialType: SocialType) {
         router.run {
             val url = AppConfigs.authSocialUrl(socialType)
-            //if (socialType == SocialType.GOOGLE) {
-            //    navigateTo(Screens.OpenBrowser(url))
-            //} else {
+            
+            
+            
                 setResultListener(Screens.RESULT_AUTH_SOCIAL) {
                     (it as? IntentKeys.SocialAuthorization)?.let { socialAuthorization ->
                         socialAuth(socialAuthorization.socialType, socialAuthorization.key)
                     }
                 }
                 navigateTo(Screens.WebViewAuth(url))
-            //}
+            
         }
     }
 

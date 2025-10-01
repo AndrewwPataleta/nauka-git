@@ -3,7 +3,7 @@ package uddug.com.domain.entities.chat
 import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
 
-// Chat.kt
+
 
 data class Chat(
     val dialogId: Long,

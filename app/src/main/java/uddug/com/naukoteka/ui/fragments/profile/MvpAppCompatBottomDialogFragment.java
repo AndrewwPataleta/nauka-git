@@ -61,14 +61,14 @@ public class MvpAppCompatBottomDialogFragment extends BottomSheetDialogFragment 
     public void onDestroy() {
         super.onDestroy();
 
-        //We leave the screen and respectively all fragments will be destroyed
+        
         if (getActivity().isFinishing()) {
             getMvpDelegate().onDestroy();
             return;
         }
 
-        // When we rotate device isRemoving() return true for fragment placed in backstack
-        // http://stackoverflow.com/questions/34649126/fragment-back-stack-and-isremoving
+        
+        
         if (isStateSaved) {
             isStateSaved = false;
             return;
@@ -86,9 +86,9 @@ public class MvpAppCompatBottomDialogFragment extends BottomSheetDialogFragment 
         }
     }
 
-    /**
-     * @return The {@link MvpDelegate} being used by this Fragment.
-     */
+    
+
+
     @Override
     public MvpDelegate getMvpDelegate() {
         if (mvpDelegate == null) {

@@ -83,7 +83,7 @@ class EducationHighActionPresenter(
         }.subscribe({
             viewState.educationSuccessUpdated()
         }, {
-            // Error handling if needed
+            
         })
 
         compositeDisposable.add(disposable)
@@ -100,7 +100,7 @@ class EducationHighActionPresenter(
                     lastSettlements = settlements
                     viewState.setSettlements(settlements)
                 }, {
-                    // Error handling if needed
+                    
                 })
             }?.let {
                 compositeDisposable.add(

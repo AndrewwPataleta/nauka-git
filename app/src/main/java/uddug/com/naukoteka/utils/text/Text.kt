@@ -57,7 +57,7 @@ fun String.shareIntent(activity: Activity) {
 
 fun String.toHtmlColorFontFormat(fontSize: Int = 15): String {
     return ("<html><style type='text/css'>@font-face { font-family: sfuid_display_regular; src: url('fonts/sfuid_display_regular.otf'); } body p {color: #424242; font-family: sfuid_display_regular;}</style>"
-            + "<body >" + "<p align=\"justify\" style=\"font-size: ${fontSize}px; font-family: sfuid_display_regular;\">" + this/*.replaceNewLineToBr()*/
+            + "<body >" + "<p align=\"justify\" style=\"font-size: ${fontSize}px; font-family: sfuid_display_regular;\">" + this
         .paintHashTags() + "</p> " + "</body></html>")
 }
 

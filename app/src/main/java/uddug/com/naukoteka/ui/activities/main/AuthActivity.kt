@@ -77,8 +77,8 @@ class AuthActivity : BaseActivity(), RouterProvider, MainView {
         val isLaunchedAfterSystemKilled = savedInstanceState != null
         if (!isLaunchedAfterSystemKilled) {
             router.navigateTo(Splash())
-            //router.navigateTo(RegistrationFirstStep())
-            //router.navigateTo(ShortInfoProfile())
+            
+            
         }
 
         LayoutInflater.from(this).inflate(R.layout.progress_bar, contentView.container, true)
@@ -101,8 +101,8 @@ class AuthActivity : BaseActivity(), RouterProvider, MainView {
         newIntent.getParcelableExtra<IntentKeys.SocialAuthorization>(IntentKeys.SocialAuthorization.KEY)
             ?.let { socialAuth ->
                 presenter.socialAuth(socialAuth.socialType, socialAuth.key)
-                // todo pass registration key
-                // router.navigateTo(Screens.EndRegistartion())
+                
+                
             }
 
         if (newIntent.getBooleanExtra(TO_LOGIN, false)) {

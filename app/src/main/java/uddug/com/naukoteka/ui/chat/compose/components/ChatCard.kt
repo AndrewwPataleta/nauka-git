@@ -47,7 +47,7 @@ fun ChatCard(
     onChatClick: (Long) -> Unit,
     onChatLongClick: (Long) -> Unit
 ) {
-    // Определяем форматирование даты
+    
     val formattedTime = formatMessageTime(time)
 
     Card(
@@ -69,8 +69,8 @@ fun ChatCard(
                         onChatLongClick(dialogId)
                     }
                 }
-            ),  // Убираем отступы
-        colors = CardDefaults.cardColors(containerColor = Color.White)  // Белый фон
+            ),  
+        colors = CardDefaults.cardColors(containerColor = Color.White)  
     ) {
         Column {
             Row(
@@ -104,9 +104,9 @@ fun ChatCard(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Основной контент
+                
                 Column(modifier = Modifier.weight(1f)) {
-                    // Имя
+                    
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = if (name.isNullOrEmpty()) {
@@ -128,7 +128,7 @@ fun ChatCard(
                     }
 
 
-                    // Последнее сообщение
+                    
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val messageText = when {
                             isRepost -> stringResource(R.string.chat_last_message_repost, message)
@@ -147,7 +147,7 @@ fun ChatCard(
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
 
-                        // Иконка медиа вложения, если оно есть
+                        
                         if (isMedia && attachment?.isNotEmpty() == true) {
                             AsyncImage(
                                 model = BuildConfig.IMAGE_SERVER_URL + attachment,
@@ -180,7 +180,7 @@ fun ChatCard(
                         )
                     }
 
-                    // Число новых сообщений
+                    
                     newMessagesCount?.let {
                         if (it > 0) {
                             val circleColor = if (notificationsDisable) Color.Gray else Color(0xFF2E83D9)
@@ -201,7 +201,7 @@ fun ChatCard(
                         }
                     }
                 }
-                // Время
+                
 
             }
             Box(
@@ -215,6 +215,6 @@ fun ChatCard(
 }
 
 fun formatMessageTime(time: String): String {
-    // Ваш код для форматирования времени
+    
     return time
 }

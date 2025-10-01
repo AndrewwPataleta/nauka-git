@@ -3,7 +3,7 @@ package uddug.com.domain.entities.chat
 import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
 
-// DialogInfo.kt
+
 @Parcelize
 data class DialogInfo(
     val id: Long,
