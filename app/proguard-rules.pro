@@ -45,3 +45,13 @@
   **[] $VALUES;
   public *;
 }
+
+# Preserve chat socket payload models that are (de)serialised with Gson.
+# These classes are parsed from runtime JSON messages, therefore their
+# fields must not be obfuscated or removed.
+-keep class uddug.com.domain.entities.chat.ChatSocketMessage { *; }
+-keep class uddug.com.domain.entities.chat.FileDescriptor { *; }
+-keep class uddug.com.domain.entities.chat.AnswerPreview { *; }
+-keep class uddug.com.domain.entities.chat.PreviewOwner { *; }
+-keep class uddug.com.domain.entities.chat.PreviewFile { *; }
+-keep class uddug.com.domain.entities.chat.PreviewFileStat { *; }
