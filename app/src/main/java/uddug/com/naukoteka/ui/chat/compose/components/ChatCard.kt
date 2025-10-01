@@ -151,7 +151,7 @@ fun ChatCard(
                         attachmentPreview != null -> when (attachmentPreview.type) {
                             ChatAttachmentType.IMAGE -> stringResource(R.string.chat_last_message_image)
                             ChatAttachmentType.VIDEO -> stringResource(R.string.chat_last_message_video)
-                            ChatAttachmentType.FILE -> stringResource(R.string.chat_last_message_file)
+                            ChatAttachmentType.FILE -> message
                         }
                         !isGroupChat && isFromMe -> stringResource(R.string.chat_last_message_from_me, message)
                         else -> message
