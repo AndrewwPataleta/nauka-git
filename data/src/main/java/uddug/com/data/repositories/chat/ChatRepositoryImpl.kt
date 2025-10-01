@@ -4,6 +4,7 @@ import uddug.com.data.mapper.mapChatDtoToDomain
 import uddug.com.data.mapper.mapFolderDtoToDomain
 import uddug.com.data.services.chat.ChatApiService
 import uddug.com.data.services.models.request.chat.ChatFolderRequestDto
+import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
@@ -419,7 +420,11 @@ class ChatRepositoryImpl @Inject constructor(
     }
 }
 
-private fun Map<String, String?>.toUserRolesJson(): JsonObject {
+private fun Map<String, String?>.toUserRolesJson(): JsonElement {
+    if (isEmpty()) {
+        return JsonNull.INSTANCE
+    }
+
     val json = JsonObject()
     for ((userId, role) in this) {
         json.add(userId, role?.let(::JsonPrimitive) ?: JsonNull.INSTANCE)
