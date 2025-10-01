@@ -3,6 +3,7 @@ package uddug.com.naukoteka.ui.chat.compose
 
 import android.Manifest
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.net.Uri
@@ -39,12 +40,13 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.activity.ComponentActivity
 import gun0912.tedimagepicker.builder.TedImagePicker
 import kotlinx.coroutines.launch
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
@@ -151,11 +153,14 @@ fun ChatDialogComponent(
     }
 
     fun openMediaPicker() {
-        TedImagePicker.with(context)
-            .showCameraTile(true)
-            .startMultiImage { uriList ->
-                attachMediaFiles(uriList)
-            }
+        val activity = context.findActivity()
+        if (activity != null) {
+            TedImagePicker.with(activity)
+                .showCameraTile(true)
+                .startMultiImage { uriList ->
+                    attachMediaFiles(uriList)
+                }
+        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -450,6 +455,12 @@ fun ChatDialogComponent(
             )
         }
     }
+}
+
+private tailrec fun Context.findActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 private fun getContactInfo(context: Context, uri: Uri): ContactInfo? {

@@ -45,3 +45,4 @@
   **[] $VALUES;
   public *;
 }
+-keep class gun0912.tedimagepicker.** { *; }
