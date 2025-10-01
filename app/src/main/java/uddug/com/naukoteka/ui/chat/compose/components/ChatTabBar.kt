@@ -8,13 +8,13 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pointerInput
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.MarkChatRead
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Sort
+
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,6 +24,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -33,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -128,7 +130,7 @@ fun ChatTabBar(
                                     }
                                 },
                             leadingContent = {
-                                Icon(Icons.Outlined.Sort, contentDescription = null)
+                                Icon(Icons.Outlined.Settings, contentDescription = null)
                             },
                             headlineContent = {
                                 Text(text = stringResource(R.string.chat_folder_menu_change_order))
@@ -166,7 +168,7 @@ fun ChatTabBar(
                                     }
                                 },
                             leadingContent = {
-                                Icon(Icons.Outlined.MarkChatRead, contentDescription = null)
+                                Icon(Icons.Outlined.Done, contentDescription = null)
                             },
                             headlineContent = {
                                 Text(text = stringResource(R.string.chat_folder_action_mark_read))

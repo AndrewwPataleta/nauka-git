@@ -34,8 +34,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.Add
+
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -84,7 +86,11 @@ fun ChatCreateGroupScreen(
             if (file != null) {
                 viewModel.onAvatarSelected(file)
             } else {
-                Toast.makeText(context, R.string.chat_create_group_image_upload_error, Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    R.string.chat_create_group_image_upload_error,
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -444,7 +450,7 @@ private fun GroupMemberActionsBottomSheet(
             if (!member.isCreator) {
                 if (member.isAdmin) {
                     GroupMemberActionRow(
-                        icon = Icons.Outlined.AdminPanelSettings,
+                        icon = Icons.Outlined.Delete,
                         text = stringResource(R.string.chat_create_group_member_revoke_admin),
                         onClick = {
                             onRevokeAdminClick()
@@ -453,7 +459,7 @@ private fun GroupMemberActionsBottomSheet(
                     )
                 } else {
                     GroupMemberActionRow(
-                        icon = Icons.Outlined.AdminPanelSettings,
+                        icon = Icons.Outlined.Favorite,
                         text = stringResource(R.string.chat_create_group_member_give_admin),
                         onClick = {
                             onGrantAdminClick()

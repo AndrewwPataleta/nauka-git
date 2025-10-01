@@ -326,22 +326,6 @@ fun ChatDetailDialogComponent(
                                                 )
                                             )
                                         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                                     }
                                 }
                             )
@@ -365,7 +349,7 @@ fun ChatDetailDialogComponent(
                             onEditGroup = {
 
                             },
-                            isCurrentUserAdmin =
+                            isCurrentUserAdmin = false
                         )
                     }
                 }

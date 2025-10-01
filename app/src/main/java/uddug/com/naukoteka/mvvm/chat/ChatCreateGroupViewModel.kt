@@ -148,7 +148,7 @@ class ChatCreateGroupViewModel @Inject constructor(
                 .filterNot { it.isCreator }
                 .mapNotNull { member ->
                     member.user.id?.let { id ->
-                        val role = if (member.isAdmin) ADMIN_ROLE else null
+                        val role = if (member.isAdmin) ADMIN_ROLE else "37:203"
                         id to role
                     }
                 }

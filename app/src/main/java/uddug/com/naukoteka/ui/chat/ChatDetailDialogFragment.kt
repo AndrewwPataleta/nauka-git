@@ -107,17 +107,7 @@ class ChatDetailDialogFragment : Fragment() {
                         onChatDeleted = {
                             findNavController().popBackStack(R.id.chatListFragment, false)
                         },
-                        onEditGroup = {
-                            val dialogId = (viewModel.uiState.value as? ChatDetailUiState.Success)?.dialogId
-                                ?: arguments?.getLong(DIALOG_ID)
-                                ?: 0L
-                            if (dialogId != 0L) {
-                                findNavController().navigate(
-                                    R.id.chatGroupDetailFragment,
-                                    Bundle().apply { putLong(DIALOG_ID, dialogId) }
-                                )
-                            }
-                        }
+
                     )
                 }
             }

@@ -249,7 +249,7 @@ class ChatRepositoryImpl @Inject constructor(
             val request = CreateDialogRequestDto(
                 dialogName = dialogName,
                 dialogImage = imageId?.let { DialogImageRequestDto(it) },
-                userRoles = userRoles.toUserRolesJson(),
+                userRoles = userRoles,
             )
             val dialog = apiService.createDialog(request)
             dialog.id
@@ -268,7 +268,7 @@ class ChatRepositoryImpl @Inject constructor(
             val request = CreateDialogRequestDto(
                 dialogName = dialogName,
                 dialogImage = imageId?.let { DialogImageRequestDto(it) },
-                userRoles = userRoles.toUserRolesJson(),
+                userRoles = userRoles
             )
             val dialog = apiService.createGroupDialog(request)
             dialog.id
@@ -350,7 +350,7 @@ class ChatRepositoryImpl @Inject constructor(
                 },
             )
         )
-        return dto.toDomain(dto.ownerId)
+        return dto.ownerId?.let { dto.toDomain(it) }!!
     }
 
     override suspend fun deleteMessage(messageId: Long, forMe: Boolean) {
