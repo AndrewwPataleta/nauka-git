@@ -208,6 +208,16 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_folder_settings_add_folder">Add new folder</string>
     <string name="chat_folder_menu_configure">Configure folders</string>
     <string name="chat_folder_menu_change_order">Change order</string>
+    <string name="chat_folder_action_rename">Rename folder</string>
+    <string name="chat_folder_action_mark_read">Mark as read</string>
+    <string name="chat_folder_action_delete">Delete folder</string>
+    <string name="chat_folder_action_rename_title">Rename folder</string>
+    <string name="chat_folder_action_rename_placeholder">Folder name</string>
+    <string name="chat_folder_action_rename_confirm">Save</string>
+    <string name="chat_folder_action_delete_confirm_title">Delete folder?</string>
+    <string name="chat_folder_action_delete_confirm_message">Are you sure you want to delete the folder "%1$s"?</string>
+    <string name="chat_folder_action_delete_confirm_positive">Delete</string>
+    <string name="chat_folder_action_delete_confirm_negative">Cancel</string>
     <string name="chat_unknown_user">Unknown</string>
     <string name="chat_no_messages">No messages</string>
     <string name="chat_unknown_time">Unknown</string>

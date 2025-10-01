@@ -11,6 +11,7 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
+import uddug.com.data.services.models.request.chat.ChatFolderRequestDto
 import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.PinMessageRequestDto
@@ -18,6 +19,9 @@ import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.response.chat.ChatDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
+import uddug.com.data.services.models.response.chat.FolderDetailsDto
+import uddug.com.data.services.models.response.chat.FolderDialogsDto
+import uddug.com.data.services.models.response.chat.FolderDto
 import uddug.com.data.services.models.response.chat.FoldersDto
 import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
 import uddug.com.data.services.models.response.chat.UserStatusDto
@@ -36,6 +40,31 @@ interface ChatApiService {
 
     @GET("chat/v1/dialogs/folder")
     suspend fun getFolders(): FoldersDto
+
+    @POST("chat/v1/dialogs/folder")
+    suspend fun createFolder(@Body request: ChatFolderRequestDto): FolderDto
+
+    @PATCH("chat/v1/dialogs/folder/{folderId}")
+    suspend fun updateFolder(
+        @Path("folderId") folderId: Long,
+        @Body request: ChatFolderRequestDto,
+    ): FolderDto
+
+    @DELETE("chat/v1/dialogs/folder/{folderId}")
+    suspend fun deleteFolder(@Path("folderId") folderId: Long)
+
+    @GET("chat/v1/dialogs/folder/{folderId}")
+    suspend fun getFolder(@Path("folderId") folderId: Long): FolderDetailsDto
+
+    @GET("chat/v1/dialogs/folder/{folderId}/dialogs")
+    suspend fun getFolderDialogs(
+        @Path("folderId") folderId: Long,
+        @Query("limit") limit: Int,
+        @Query("page") page: Int,
+    ): FolderDialogsDto
+
+    @PATCH("chat/v1/dialogs/folder/{folderId}/set-read")
+    suspend fun markFolderAsRead(@Path("folderId") folderId: Long)
 
     @GET("chat/v1/dialogs/{dialogId}")
     suspend fun getMessages(

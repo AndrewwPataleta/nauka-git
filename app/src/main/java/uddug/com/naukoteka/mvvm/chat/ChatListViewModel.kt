@@ -72,6 +72,50 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
+    fun renameFolder(folderId: Long, newName: String) {
+        viewModelScope.launch {
+            try {
+                val updatedFolder = chatRepository.updateFolder(folderId, name = newName)
+                _folders.update { current ->
+                    current.map { if (it.id == folderId) updatedFolder else it }
+                }
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    fun markFolderAsRead(folderId: Long) {
+        viewModelScope.launch {
+            try {
+                chatRepository.markFolderAsRead(folderId)
+                _folders.update { current ->
+                    current.map { if (it.id == folderId) it.copy(unreadCount = 0) else it }
+                }
+                if (_currentFolderId.value == folderId) {
+                    _uiState.update { state ->
+                        if (state is ChatListUiState.Success) {
+                            val updatedChats = state.chats.map { chat ->
+                                chat.copy(unreadMessages = 0, isUnread = false)
+                            }
+                            ChatListUiState.Success(updatedChats)
+                        } else state
+                    }
+                }
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    fun deleteFolder(folderId: Long) {
+        viewModelScope.launch {
+            try {
+                chatRepository.deleteFolder(folderId)
+                loadFolders()
+            } catch (_: Exception) {
+            }
+        }
+    }
+
     fun loadChats(folderId: Long? = _currentFolderId.value) {
         _uiState.value = ChatListUiState.Loading
         loadChatsJob?.cancel()

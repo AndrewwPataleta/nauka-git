@@ -3,6 +3,7 @@ package uddug.com.data.repositories.chat
 import uddug.com.data.mapper.mapChatDtoToDomain
 import uddug.com.data.mapper.mapFolderDtoToDomain
 import uddug.com.data.services.chat.ChatApiService
+import uddug.com.data.services.models.request.chat.ChatFolderRequestDto
 import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.DialogImageRequestDto
@@ -12,26 +13,20 @@ import uddug.com.data.services.models.request.chat.UpdateMessageFileDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
 import uddug.com.data.services.models.response.chat.FileDto
+import uddug.com.data.services.models.response.chat.FolderDetailsDto
+import uddug.com.data.services.models.response.chat.FolderDialogItemDto
+import uddug.com.data.services.models.response.chat.FolderDialogsDto
 import uddug.com.data.services.models.response.chat.UserStatusDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
 import uddug.com.data.services.models.response.chat.SearchDialogDto
 import uddug.com.data.services.models.response.chat.SearchMessageDto
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
-import uddug.com.domain.entities.chat.DialogInfo
-import uddug.com.domain.entities.chat.MediaMessage
-import uddug.com.domain.entities.chat.MessageChat
-import uddug.com.domain.entities.chat.SearchDialog
-import uddug.com.domain.entities.chat.SearchMessage
-import uddug.com.domain.entities.chat.UserStatus
-import uddug.com.domain.entities.chat.FileDescriptor
-import uddug.com.domain.entities.chat.updateOwnerInfoFromDialog
-import uddug.com.domain.entities.profile.UserProfileFullInfo
-import uddug.com.domain.repositories.chat.ChatRepository
-import uddug.com.data.utils.toDomain
-import uddug.com.domain.entities.chat.File as ChatFile
-import java.time.Instant
+import uddug.com.domain.entities.chat.ChatFolderDetails
+import uddug.com.domain.entities.chat.ChatFolderDialog
+import uddug.com.domain.entities.chat.ChatFolderDialogsPage
 import android.webkit.MimeTypeMap
+import java.time.Instant
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -39,6 +34,18 @@ import java.io.File as JavaFile
 import java.net.URLConnection
 import java.util.Locale
 import javax.inject.Inject
+import uddug.com.data.utils.toDomain
+import uddug.com.domain.entities.chat.DialogInfo
+import uddug.com.domain.entities.chat.FileDescriptor
+import uddug.com.domain.entities.chat.MediaMessage
+import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.SearchDialog
+import uddug.com.domain.entities.chat.SearchMessage
+import uddug.com.domain.entities.chat.UserStatus
+import uddug.com.domain.entities.chat.updateOwnerInfoFromDialog
+import uddug.com.domain.entities.profile.UserProfileFullInfo
+import uddug.com.domain.repositories.chat.ChatRepository
+import uddug.com.domain.entities.chat.File as ChatFile
 
 class ChatRepositoryImpl @Inject constructor(
     private val apiService: ChatApiService,
@@ -61,6 +68,75 @@ class ChatRepositoryImpl @Inject constructor(
             println("get folders error ${e.message}")
             emptyList()
         }
+    }
+
+    override suspend fun createFolder(
+        name: String,
+        dialogIds: List<Long>,
+        ord: Int?,
+    ): ChatFolder {
+        return try {
+            val request = ChatFolderRequestDto(
+                name = name,
+                dialogIds = dialogIds.takeIf { it.isNotEmpty() },
+                ord = ord,
+            )
+            val folderDto = apiService.createFolder(request)
+            mapFolderDtoToDomain(folderDto)
+        } catch (e: Exception) {
+            println("create folder error ${e.message}")
+            throw e
+        }
+    }
+
+    override suspend fun updateFolder(
+        folderId: Long,
+        name: String?,
+        dialogIds: List<Long>?,
+        ord: Int?,
+    ): ChatFolder {
+        return try {
+            val request = ChatFolderRequestDto(
+                name = name,
+                dialogIds = dialogIds,
+                ord = ord,
+            )
+            val folderDto = apiService.updateFolder(folderId, request)
+            mapFolderDtoToDomain(folderDto)
+        } catch (e: Exception) {
+            println("update folder error ${e.message}")
+            throw e
+        }
+    }
+
+    override suspend fun deleteFolder(folderId: Long) {
+        apiService.deleteFolder(folderId)
+    }
+
+    override suspend fun getFolder(folderId: Long): ChatFolderDetails {
+        return try {
+            apiService.getFolder(folderId).toDomain()
+        } catch (e: Exception) {
+            println("get folder error ${e.message}")
+            throw e
+        }
+    }
+
+    override suspend fun getFolderDialogs(
+        folderId: Long,
+        limit: Int,
+        page: Int,
+    ): ChatFolderDialogsPage {
+        return try {
+            apiService.getFolderDialogs(folderId, limit, page).toDomain()
+        } catch (e: Exception) {
+            println("get folder dialogs error ${e.message}")
+            throw e
+        }
+    }
+
+    override suspend fun markFolderAsRead(folderId: Long) {
+        apiService.markFolderAsRead(folderId)
     }
 
     override suspend fun getMessages(
@@ -350,6 +426,26 @@ private fun FileDto.toDomain(): ChatFile = ChatFile(
     fileKind = fileKind,
     duration = duration,
     viewCount = viewCount,
+)
+
+private fun FolderDetailsDto.toDomain(): ChatFolderDetails = ChatFolderDetails(
+    folder = ChatFolder(
+        id = id,
+        name = name,
+        ord = ord,
+        unreadCount = unreadCount,
+    ),
+    dialogIds = dialogIds,
+    dialogs = dialogs.map { it.toDomain() },
+)
+
+private fun FolderDialogsDto.toDomain(): ChatFolderDialogsPage = ChatFolderDialogsPage(
+    dialogs = dialogs.map { it.toDomain() },
+)
+
+private fun FolderDialogItemDto.toDomain(): ChatFolderDialog = ChatFolderDialog(
+    dialog = dialog.toDomain(),
+    folderNames = folderNames,
 )
 
 private fun determineMimeType(file: JavaFile): String {

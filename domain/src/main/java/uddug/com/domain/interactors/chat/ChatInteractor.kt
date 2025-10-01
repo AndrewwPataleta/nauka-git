@@ -2,10 +2,12 @@ package uddug.com.domain.interactors.chat
 
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
+import uddug.com.domain.entities.chat.ChatFolderDetails
+import uddug.com.domain.entities.chat.ChatFolderDialogsPage
 import uddug.com.domain.entities.chat.DialogInfo
+import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
-import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.SearchDialog
 import uddug.com.domain.entities.chat.SearchMessage
 import uddug.com.domain.entities.chat.UserStatus
@@ -22,6 +24,31 @@ class ChatInteractor @Inject constructor(
     suspend fun getDialogs(folderId: Long? = null): List<Chat> = chatRepository.getChats(folderId)
 
     suspend fun getFolders(): List<ChatFolder> = chatRepository.getFolders()
+
+    suspend fun createFolder(
+        name: String,
+        dialogIds: List<Long> = emptyList(),
+        ord: Int? = null,
+    ): ChatFolder = chatRepository.createFolder(name, dialogIds, ord)
+
+    suspend fun updateFolder(
+        folderId: Long,
+        name: String? = null,
+        dialogIds: List<Long>? = null,
+        ord: Int? = null,
+    ): ChatFolder = chatRepository.updateFolder(folderId, name, dialogIds, ord)
+
+    suspend fun deleteFolder(folderId: Long) = chatRepository.deleteFolder(folderId)
+
+    suspend fun getFolder(folderId: Long): ChatFolderDetails = chatRepository.getFolder(folderId)
+
+    suspend fun getFolderDialogs(
+        folderId: Long,
+        limit: Int,
+        page: Int,
+    ): ChatFolderDialogsPage = chatRepository.getFolderDialogs(folderId, limit, page)
+
+    suspend fun markFolderAsRead(folderId: Long) = chatRepository.markFolderAsRead(folderId)
 
     suspend fun getMessages(
         currentUserId: String,
