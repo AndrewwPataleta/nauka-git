@@ -32,7 +32,14 @@ data class User(
 ) : Parcelable
 
 data class Image(
+    val id: String? = null,
     val path: String? = null,
+    val fileName: String? = null,
+    val contentType: String? = null,
+    val fileSize: Int? = null,
+    val fileType: Int? = null,
+    val fileKind: Int? = null,
+    val duration: String? = null,
 )
 
 data class Message(

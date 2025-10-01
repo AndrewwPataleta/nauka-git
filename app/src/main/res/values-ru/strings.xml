@@ -146,6 +146,10 @@
   <string name="chat_last_message_repost">Репост: %1$s</string>
   <string name="chat_last_message_media">Медиа-вложение</string>
   <string name="chat_last_message_from_me">Вы: %1$s</string>
+  <string name="chat_last_message_image">Изображение</string>
+  <string name="chat_last_message_video">Видео</string>
+  <string name="chat_last_message_file">Файл</string>
+  <string name="chat_last_message_author_you">Вы</string>
   <string name="chat_swipe_to_cancel">Смахните влево для отмены</string>
   <string name="chat_message_placeholder">Напишите сообщение</string>
   <string name="chat_reply_default_author">Ответ</string>
