@@ -48,6 +48,7 @@ import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
 import java.io.File
+import java.util.Locale
 
 @Composable
 fun ChatInputBar(
@@ -105,33 +106,44 @@ fun ChatInputBar(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(attachedFiles) { file ->
+                    val isImage = file.isImageFile()
                     Box(
                         modifier = Modifier
                             .size(50.dp)
                             .clip(RoundedCornerShape(8.dp))
+                            .background(if (isImage) Color.Transparent else Color(0xFFE4E8F1))
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
-                            ) { onRemoveFile(file) }
+                            ) { onRemoveFile(file) },
+                        contentAlignment = Alignment.Center
                     ) {
-                        AsyncImage(
-                            model = file,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.matchParentSize()
-                        )
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .size(16.dp)
-                                .background(Color.Red, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Close,
-                                contentDescription = "Remove",
-                                tint = Color.White,
-                                modifier = Modifier.size(10.dp)
+                        if (isImage) {
+                            AsyncImage(
+                                model = file,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.matchParentSize()
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .size(16.dp)
+                                    .background(Color.Red, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Remove",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                            }
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_attached_file_dialog),
+                                contentDescription = null,
+                                modifier = Modifier.size(28.dp)
                             )
                         }
                     }
@@ -495,4 +507,11 @@ fun RecordedAudioPreview(duration: String, isPlaying: Boolean, onPlay: () -> Uni
             Text(text = duration, color = Color.White)
         }
     }
+}
+
+private val IMAGE_FILE_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif")
+
+private fun File.isImageFile(): Boolean {
+    val extension = extension.lowercase(Locale.ROOT)
+    return IMAGE_FILE_EXTENSIONS.contains(extension)
 }

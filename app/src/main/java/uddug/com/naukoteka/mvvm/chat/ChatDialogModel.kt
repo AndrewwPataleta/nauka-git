@@ -514,6 +514,7 @@ class ChatDialogViewModel @Inject constructor(
             val currentState = _uiState.value
             val successState = currentState as? ChatDialogUiState.Success
             val replyId = successState?.replyMessage?.id
+            val sanitizedText = if (text.isBlank()) "" else text
 
             selectedUser?.let { user ->
                 val payload = buildUserContactPayload(user) ?: return@launch
@@ -545,7 +546,7 @@ class ChatDialogViewModel @Inject constructor(
                 return@launch
             }
 
-            if (text.isBlank() && attachedFiles.isEmpty()) {
+            if (sanitizedText.isEmpty() && attachedFiles.isEmpty()) {
                 Log.d("ChatViewModel", "Message is blank and no files attached — skipping")
                 return@launch
             }
@@ -556,7 +557,7 @@ class ChatDialogViewModel @Inject constructor(
                     chatInteractor.updateMessage(
                         dialogId = dialog.id,
                         messageId = editingMessage.id,
-                        text = text,
+                        text = sanitizedText,
                         files = editingMessage.files.mapNotNull { it.toFileDescriptor() },
                     )
                 } catch (e: EOFException) {
@@ -565,7 +566,7 @@ class ChatDialogViewModel @Inject constructor(
                         "Empty response received when updating message, using local data",
                         e
                     )
-                    editingMessage.copy(text = text)
+                    editingMessage.copy(text = sanitizedText)
                 } catch (e: Exception) {
                     Log.e("ChatViewModel", "Failed to update message", e)
                     return@launch
@@ -618,7 +619,7 @@ class ChatDialogViewModel @Inject constructor(
                 ChatSocketMessage(
                     dialog = dialog.id,
                     cType = cType,
-                    text = text,
+                    text = sanitizedText,
                     owner = currentUser?.id.orEmpty(),
                     files = fileDescriptors.ifEmpty { null },
                     answered = replyId
@@ -628,7 +629,7 @@ class ChatDialogViewModel @Inject constructor(
                 ChatSocketMessage(
                     interlocutor = peer,
                     cType = cType,
-                    text = text,
+                    text = sanitizedText,
                     owner = currentUser?.id.orEmpty(),
                     files = fileDescriptors.ifEmpty { null },
                     answered = replyId
