@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
@@ -101,9 +103,10 @@ fun ChatCreateSingleScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_add_users_chat),
                                 contentDescription = "Edit Icon",
+                                tint = Color(0xFF2E83D9)
                             )
                             Text(
-                                modifier = Modifier.padding(start = 16.dp),
+                                modifier = Modifier.padding(start = 8.dp),
                                 text = stringResource(R.string.create_group_chat),
                                 fontSize = 18.sp,
                                 color = Color.Black,
@@ -116,6 +119,7 @@ fun ChatCreateSingleScreen(
                             text = stringResource(R.string.subs),
                             fontSize = 18.sp,
                             color = Color.Black,
+                            fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(vertical = 10.dp)
                         )
                     }

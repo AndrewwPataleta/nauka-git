@@ -144,14 +144,6 @@ class ChatCreateSingleViewModel @Inject constructor(
 
 
 
-private suspend fun <T> Single<T>.await(): T =
-    suspendCancellableCoroutine { cont ->
-        val d = this.subscribe(
-            { value -> if (cont.isActive) cont.resume(value) },
-            { error -> if (cont.isActive) cont.resumeWithException(error) }
-        )
-        cont.invokeOnCancellation { d.dispose() }
-    }
 
 sealed class ChatCreateSingleEvent {
     data class OpenDialogDetail(val interlocutorId: String) : ChatCreateSingleEvent()
