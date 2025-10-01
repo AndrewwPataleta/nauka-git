@@ -24,6 +24,7 @@ fun ChatToolbarCreateSingleComponent(
     modifier: Modifier = Modifier,
     onBackPressed: () -> Unit,
     onActionClick: (() -> Unit)? = null,
+    isActionEnabled: Boolean = true,
 ) {
     TopAppBar(
         title = {
@@ -33,10 +34,11 @@ fun ChatToolbarCreateSingleComponent(
         },
         actions = {
             if (onActionClick != null) {
-                IconButton(onClick = { onActionClick() }) {
+                IconButton(onClick = { onActionClick() }, enabled = isActionEnabled) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_chat_create_apply),
                         contentDescription = "Edit Icon",
+                        tint = if (isActionEnabled) Color(0xFF2E83D9) else Color(0x4D2E83D9)
                     )
                 }
             }

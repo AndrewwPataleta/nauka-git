@@ -18,11 +18,8 @@ import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.await
 import javax.inject.Inject
-import io.reactivex.Single
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 @HiltViewModel
 class ChatCreateSingleViewModel @Inject constructor(
@@ -110,7 +107,7 @@ class ChatCreateSingleViewModel @Inject constructor(
                     (currentState.users + currentState.searchResults).find { it.id == userId }
                 } else null
 
-            
+
             val me = withContext(Dispatchers.IO) {
                 userProfileRepository.getProfileInfo().await()
             }

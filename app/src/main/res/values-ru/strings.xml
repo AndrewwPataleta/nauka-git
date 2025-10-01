@@ -165,6 +165,17 @@
   <string name="chat_status_contact_last_seen_weeks">Был(а) в сети %1$d нед. назад</string>
   <string name="chat_status_contact_last_seen_yesterday">Был(а) в сети вчера</string>
   <string name="chat_private_dialog_permission_error">Нет разрешения на личный диалог</string>
+  <string name="chat_create_group_title">Создать группу</string>
+  <string name="chat_create_group_name_placeholder">Укажите название группы</string>
+  <string name="chat_create_group_name_counter">%1$d/100</string>
+  <string name="chat_create_group_add_participant">Добавить еще участника</string>
+  <string name="chat_create_group_members">Участники %1$d</string>
+  <string name="chat_create_group_admin_label">Админ.</string>
+  <string name="chat_create_group_avatar_description">Аватар группы</string>
+  <string name="chat_create_group_image_upload_error">Не удалось загрузить изображение</string>
+  <string name="chat_create_group_missing_participants_error">Добавьте участников</string>
+  <string name="chat_create_group_generic_error">Произошла ошибка. Попробуйте еще раз</string>
+  <string name="chat_create_group_min_members_error">Выберите минимум двух участников</string>
   <string name="settlement_no_selection">Без выбора</string>
   <string name="language_english">Английский</string>
   <string name="language_russian">Русский</string>

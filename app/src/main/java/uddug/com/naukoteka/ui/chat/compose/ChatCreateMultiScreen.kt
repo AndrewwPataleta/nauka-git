@@ -31,6 +31,9 @@ fun ChatCreateMultiScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    val successState = uiState as? ChatCreateMultiUiState.Success
+    val isActionEnabled = (successState?.selected?.size ?: 0) >= 2
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -38,14 +41,15 @@ fun ChatCreateMultiScreen(
     ) {
         ChatToolbarCreateSingleComponent(
             onBackPressed = onBackPressed,
-            onActionClick = { viewModel.onCreateGroupClick() }
+            onActionClick = { viewModel.onCreateGroupClick() },
+            isActionEnabled = isActionEnabled
         )
 
         when (uiState) {
             is ChatCreateMultiUiState.Error -> Unit
             ChatCreateMultiUiState.Loading -> Unit
             is ChatCreateMultiUiState.Success -> {
-                val state = uiState as ChatCreateMultiUiState.Success
+                val state = successState ?: return
                 SearchField(
                     title = stringResource(R.string.find_chat_message),
                     query = state.query,

@@ -90,30 +90,27 @@ class ChatCreateMultiViewModel @Inject constructor(
     fun onCreateGroupClick() {
         val current = _uiState.value
         if (current is ChatCreateMultiUiState.Success) {
-            viewModelScope.launch {
-                try {
-                    val allUsers = current.users + current.searchResults
-                    val userRoles = allUsers
-                        .mapNotNull { user ->
-                            user.id?.let { id -> id to if (current.selected.contains(id)) "37:202" else null }
-                        }
-                        .toMap()
-                    val dialogName = allUsers
-                        .filter { user -> user.id?.let { current.selected.contains(it) } == true }
-                        .mapNotNull { it.fullName }
-                        .joinToString(", ")
-                    val dialogId = chatInteractor.createGroupDialog(dialogName, userRoles)
-                    _events.emit(ChatCreateMultiEvent.GroupCreated(dialogId))
-                } catch (e: Exception) {
-                    _uiState.value = ChatCreateMultiUiState.Error(e.message ?: "Unknown error")
+            val selectedUsers = (current.users + current.searchResults)
+                .filter { user -> user.id?.let { current.selected.contains(it) } == true }
+                .distinctBy { it.id }
+
+            if (selectedUsers.size < 2) {
+                viewModelScope.launch {
+                    _events.emit(ChatCreateMultiEvent.ShowMinimumMembersError)
                 }
+                return
+            }
+
+            viewModelScope.launch {
+                _events.emit(ChatCreateMultiEvent.OpenGroupDetails(selectedUsers))
             }
         }
     }
 }
 
 sealed class ChatCreateMultiEvent {
-    data class GroupCreated(val dialogId: Long) : ChatCreateMultiEvent()
+    data class OpenGroupDetails(val selectedUsers: List<UserProfileFullInfo>) : ChatCreateMultiEvent()
+    object ShowMinimumMembersError : ChatCreateMultiEvent()
 }
 
 sealed class ChatCreateMultiUiState {

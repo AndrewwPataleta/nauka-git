@@ -67,8 +67,12 @@ class ChatInteractor @Inject constructor(
     suspend fun createDialog(dialogName: String?, userRoles: Map<String, String?>): Long =
         chatRepository.createDialog(dialogName = dialogName, userRoles = userRoles)
 
-    suspend fun createGroupDialog(dialogName: String, userRoles: Map<String, String?>): Long =
-        chatRepository.createGroupDialog(dialogName = dialogName, userRoles = userRoles)
+    suspend fun createGroupDialog(
+        dialogName: String?,
+        userRoles: Map<String, String?>,
+        imageId: String? = null,
+    ): Long =
+        chatRepository.createGroupDialog(dialogName = dialogName, userRoles = userRoles, imageId = imageId)
 
     suspend fun searchUsers(query: String, limit: Int = 10, page: Int = 1): List<UserProfileFullInfo> =
         chatRepository.searchUsers(query, limit, page)
