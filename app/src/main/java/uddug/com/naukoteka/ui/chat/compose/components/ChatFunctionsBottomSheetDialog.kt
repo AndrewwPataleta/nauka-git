@@ -14,13 +14,16 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.flow.collectLatest
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.ChatFunctionsEvent
 import uddug.com.naukoteka.mvvm.chat.ChatFunctionsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,9 +38,21 @@ fun ChatFunctionsBottomSheetDialog(
     onSelectMessages: () -> Unit,
     onPinChange: (Long, Boolean) -> Unit = { _, _ -> },
     onNotificationsChange: (Long, Boolean) -> Unit = { _, _ -> },
+    onChatDeleted: () -> Unit = {},
     viewModel: ChatFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collectLatest { event ->
+            when (event) {
+                ChatFunctionsEvent.ChatDeleted -> {
+                    onDismissRequest()
+                    onChatDeleted()
+                }
+            }
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,

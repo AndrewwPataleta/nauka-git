@@ -155,6 +155,9 @@ fun ChatListComponent(
             },
             onNotificationsChange = { dialogId, disabled ->
                 viewModel.updateDialogNotifications(dialogId, disabled)
+            },
+            onChatDeleted = {
+                viewModel.refreshChats()
             }
         )
     }
