@@ -18,11 +18,8 @@ import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.await
 import javax.inject.Inject
-import io.reactivex.Single
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 @HiltViewModel
 class ChatCreateSingleViewModel @Inject constructor(
@@ -142,19 +139,6 @@ class ChatCreateSingleViewModel @Inject constructor(
         }
     }
 }
-
-/**
- * Простая корутинная обёртка для RxJava Single<T>,
- * чтобы не использовать blockingGet() и не блокировать поток.
- */
-private suspend fun <T> Single<T>.await(): T =
-    suspendCancellableCoroutine { cont ->
-        val d = this.subscribe(
-            { value -> if (cont.isActive) cont.resume(value) },
-            { error -> if (cont.isActive) cont.resumeWithException(error) }
-        )
-        cont.invokeOnCancellation { d.dispose() }
-    }
 
 sealed class ChatCreateSingleEvent {
     data class OpenDialogDetail(val interlocutorId: String) : ChatCreateSingleEvent()

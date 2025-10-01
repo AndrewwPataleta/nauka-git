@@ -10,6 +10,8 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.core.os.bundleOf
+import android.widget.Toast
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -19,6 +21,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatCreateMultiEvent
 import uddug.com.naukoteka.mvvm.chat.ChatCreateMultiViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatCreateMultiScreen
+import uddug.com.naukoteka.ui.chat.ChatCreateGroupFragment
 
 @AndroidEntryPoint
 class ChatCreateMultiFragment : Fragment() {
@@ -46,10 +49,18 @@ class ChatCreateMultiFragment : Fragment() {
         lifecycleScope.launch {
             viewModel.events.collectLatest { event ->
                 when (event) {
-                    is ChatCreateMultiEvent.GroupCreated -> {
-                        findNavController().getBackStackEntry(R.id.chatListFragment)
-                            .savedStateHandle["refreshChats"] = true
-                        findNavController().popBackStack(R.id.chatListFragment, false)
+                    is ChatCreateMultiEvent.OpenGroupDetails -> {
+                        val args = bundleOf(
+                            ChatCreateGroupFragment.SELECTED_USERS_ARG to ArrayList(event.selectedUsers)
+                        )
+                        findNavController().navigate(R.id.chatCreateGroupFragment, args)
+                    }
+                    ChatCreateMultiEvent.ShowMinimumMembersError -> {
+                        Toast.makeText(
+                            requireContext(),
+                            R.string.chat_create_group_min_members_error,
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
