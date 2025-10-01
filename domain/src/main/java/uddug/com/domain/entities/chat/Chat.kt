@@ -27,6 +27,7 @@ data class User(
     val nickname: String? = null,
     val userId: String? = null,
     val role: String? = null,
+    val isAdmin: Boolean = false,
 ) : Parcelable
 
 data class Image(
@@ -61,6 +62,6 @@ fun MessageChat.updateOwnerInfoFromDialog(dialogInfo: DialogInfo): MessageChat {
     return this.copy(
         ownerName = name,
         ownerAvatarUrl = avatarUrl,
-        ownerIsAdmin = ownerUser?.role == "admin"
+        ownerIsAdmin = ownerUser?.isAdmin == true || ownerUser?.role == "admin"
     )
 }

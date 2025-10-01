@@ -89,17 +89,23 @@ class ChatDialogDetailViewModel @Inject constructor(
                 .subscribe({
                     currentUser = it
                     viewModelScope.launch {
+                        val currentUserId = it.id
+                        val isAdmin = currentUserId?.let { id ->
+                            dialogInfo.users?.any { user -> user.userId == id && user.isAdmin }
+                        } ?: false
                         _uiState.value = ChatDetailUiState.Success(
                             profile = User(
                                 image = dialogInfo.interlocutor?.image.orEmpty(),
                                 fullName = dialogInfo.interlocutor?.fullName.orEmpty(),
-                                nickname = dialogInfo.interlocutor?.nickname.orEmpty()
+                                nickname = dialogInfo.interlocutor?.nickname.orEmpty(),
+                                isAdmin = dialogInfo.interlocutor?.isAdmin ?: false,
                             ),
                             media = emptyList(),
                             files = emptyList(),
                             voices = emptyList(),
                             notes = emptyList(),
-                            dialogId = dialogInfo.id
+                            dialogId = dialogInfo.id,
+                            isCurrentUserAdmin = isAdmin,
                         )
                         loadTabData(0)
                     }
@@ -244,6 +250,7 @@ sealed class ChatDetailUiState {
         val voices: List<MediaMessage>,
         val notes: List<MediaMessage>,
         val dialogId: Long,
+        val isCurrentUserAdmin: Boolean,
     ) : ChatDetailUiState()
 
     data class Error(val message: String) : ChatDetailUiState()

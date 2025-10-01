@@ -37,7 +37,8 @@ data class UserDto(
     val fullName: String,
     val nickname: String,
     val userId: String,
-    val role: String,
+    val role: String? = null,
+    val isAdmin: Boolean? = null,
 )
 
 data class ImageDto(

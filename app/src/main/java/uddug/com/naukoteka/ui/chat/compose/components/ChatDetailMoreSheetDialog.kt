@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.collectLatest
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatFunctionsEvent
 import uddug.com.naukoteka.mvvm.chat.ChatFunctionsViewModel
+import kotlin.collections.buildList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +32,8 @@ fun ChatDetailMoreSheetDialog(
     onNavigateToProfile: () -> Unit,
     onDismissRequest: () -> Unit,
     onChatDeleted: () -> Unit,
+    onEditGroup: () -> Unit,
+    isCurrentUserAdmin: Boolean,
     viewModel: ChatFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -55,19 +58,25 @@ fun ChatDetailMoreSheetDialog(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            val items = listOf(
-                R.string.chat_go_to_profile to {
+            val items = buildList {
+                if (isCurrentUserAdmin) {
+                    add(R.string.chat_edit_group to {
+                        onEditGroup()
+                        onDismissRequest()
+                    })
+                }
+                add(R.string.chat_go_to_profile to {
                     onNavigateToProfile()
                     onDismissRequest()
-                },
-                R.string.chat_disable_notifications to {
+                })
+                add(R.string.chat_disable_notifications to {
                     viewModel.disableNotifications(dialogId)
                     onDismissRequest()
-                },
-                R.string.chat_delete_chat to {
+                })
+                add(R.string.chat_delete_chat to {
                     viewModel.deleteChat(dialogId)
-                }
-            )
+                })
+            }
             items.forEach { (textRes, action) ->
                 Row(
                     modifier = Modifier

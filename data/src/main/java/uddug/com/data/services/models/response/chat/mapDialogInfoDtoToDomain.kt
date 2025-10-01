@@ -31,7 +31,8 @@ private fun mapUserDtoToDomain(dto: UserDto): User? {
             fullName = dto.fullName ?: "",
             nickname = dto.nickname ?: "",
             userId = dto.userId ?: return null,
-            role = dto.role ?: ""
+            role = dto.role ?: "",
+            isAdmin = dto.isAdmin ?: false,
         )
     } catch (e: Exception) {
         null

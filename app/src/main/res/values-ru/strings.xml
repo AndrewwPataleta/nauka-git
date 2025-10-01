@@ -189,4 +189,5 @@
     <item quantity="many">%d дней назад</item>
     <item quantity="other">%d дня назад</item>
   </plurals>
+  <string name="chat_edit_group">Редактировать группу</string>
 </resources>

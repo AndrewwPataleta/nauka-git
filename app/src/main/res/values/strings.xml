@@ -447,6 +447,7 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_pin">Закрепить в списке</string>
     <string name="chat_unpin">Открепить из списка</string>
     <string name="chat_go_to_profile">Перейти в профиль</string>
+    <string name="chat_edit_group">Редактировать группу</string>
     <string name="chat_disable_notifications">Отключить уведомления</string>
     <string name="chat_enable_notifications">Включить уведомления</string>
     <string name="chat_select_messages">Выделить сообщения</string>
