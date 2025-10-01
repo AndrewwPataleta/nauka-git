@@ -345,10 +345,19 @@ fun ChatTabBar(
                     val chats = state.chats
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(chats) { chat ->
+                            val displayName = when {
+                                chat.dialogType != 1 && chat.dialogName.isNotBlank() -> chat.dialogName
+                                !chat.interlocutor.fullName.isNullOrBlank() -> chat.interlocutor.fullName!!
+                                !chat.interlocutor.nickname.isNullOrBlank() -> chat.interlocutor.nickname!!
+                                chat.dialogName.isNotBlank() -> chat.dialogName
+                                else -> stringResource(R.string.group_chat)
+                            }
+                            val avatarUrl = chat.dialogImage?.path?.takeIf { it.isNotBlank() }
+                                ?: chat.interlocutor.image
                             ChatCard(
                                 dialogId = chat.dialogId,
-                                avatarUrl = chat.interlocutor.image,
-                                name = chat.interlocutor.fullName ?: stringResource(R.string.chat_unknown_user),
+                                avatarUrl = avatarUrl,
+                                name = displayName,
                                 message = chat.lastMessage.text ?: stringResource(R.string.chat_no_messages),
                                 time = chat.lastMessage.createdAt ?: stringResource(R.string.chat_unknown_time),
                                 newMessagesCount = chat.unreadMessages,
