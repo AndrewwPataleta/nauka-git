@@ -12,16 +12,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import uddug.com.domain.entities.chat.UserStatus
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import java.io.File
+import java.time.Instant
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatCreateGroupViewModel @Inject constructor(
     private val chatInteractor: ChatInteractor,
     private val userProfileRepository: UserProfileRepository,
+    private val chatStatusFormatter: ChatStatusFormatter,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -55,13 +58,14 @@ class ChatCreateGroupViewModel @Inject constructor(
                         add(GroupMember(user = participant, isCreator = false, isAdmin = false))
                     }
                 }
+                val membersWithStatus = enrichWithStatuses(members)
                 val defaultName = distinctParticipants
                     .mapNotNull { it.fullName }
                     .joinToString(separator = ", ")
                     .take(MAX_GROUP_NAME_LENGTH)
                 _uiState.value = ChatCreateGroupUiState.Success(
                     groupName = defaultName,
-                    members = members,
+                    members = membersWithStatus,
                     avatarPath = null,
                     avatarId = null,
                     isSaving = false,
@@ -213,12 +217,47 @@ class ChatCreateGroupViewModel @Inject constructor(
             _uiState.value = current.copy(members = updatedMembers)
         }
     }
+    private suspend fun enrichWithStatuses(members: List<GroupMember>): List<GroupMember> {
+        val userIds = members.mapNotNull { it.user.id }
+        if (userIds.isEmpty()) return members
+
+        val statusMap = runCatching {
+            withContext(Dispatchers.IO) {
+                chatInteractor.getUsersStatus(userIds)
+            }.associateBy { it.userId }
+        }.getOrElse { emptyMap() }
+
+        if (statusMap.isEmpty()) return members
+
+        return members.map { member ->
+            val statusText = member.user.id?.let { id ->
+                statusMap[id]?.let { status ->
+                    formatStatus(status)
+                }
+            }
+            member.copy(status = statusText)
+        }
+    }
+
+    private fun formatStatus(status: UserStatus): String? {
+        return if (status.isOnline) {
+            chatStatusFormatter.online()
+        } else {
+            status.lastSeen?.let { lastSeen ->
+                runCatching { Instant.parse(lastSeen) }
+                    .map { instant -> chatStatusFormatter.formatLastSeen(instant) }
+                    .getOrNull()
+                    ?.takeIf { it.isNotBlank() }
+            }
+        }
+    }
 }
 
 data class GroupMember(
     val user: UserProfileFullInfo,
     val isCreator: Boolean,
     val isAdmin: Boolean,
+    val status: String? = null,
 )
 
 sealed class ChatCreateGroupUiState {
