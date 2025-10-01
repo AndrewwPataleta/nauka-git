@@ -169,6 +169,46 @@ class ChatCreateGroupViewModel @Inject constructor(
             }
         }
     }
+
+    fun onGrantAdminRights(memberId: String) {
+        updateMembers { members ->
+            members.map { member ->
+                if (member.user.id == memberId && !member.isCreator) {
+                    member.copy(isAdmin = true)
+                } else {
+                    member
+                }
+            }
+        }
+    }
+
+    fun onRevokeAdminRights(memberId: String) {
+        updateMembers { members ->
+            members.map { member ->
+                if (member.user.id == memberId && !member.isCreator) {
+                    member.copy(isAdmin = false)
+                } else {
+                    member
+                }
+            }
+        }
+    }
+
+    fun onRemoveMember(memberId: String) {
+        updateMembers { members ->
+            members.filterNot { member ->
+                member.user.id == memberId && !member.isCreator
+            }
+        }
+    }
+
+    private fun updateMembers(transform: (List<GroupMember>) -> List<GroupMember>) {
+        val current = _uiState.value
+        if (current is ChatCreateGroupUiState.Success) {
+            val updatedMembers = transform(current.members)
+            _uiState.value = current.copy(members = updatedMembers)
+        }
+    }
 }
 
 data class GroupMember(
