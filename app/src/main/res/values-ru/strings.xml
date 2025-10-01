@@ -161,6 +161,15 @@
   <string name="chat_group_tab_files">Файлы</string>
   <string name="chat_group_info_title">Информация</string>
   <string name="chat_group_initial">Г</string>
+  <string name="chat_group_search_hint">Поиск участников</string>
+  <string name="chat_group_add_participant">Добавить участника</string>
+  <string name="chat_group_participant_actions_title">Действия с участником</string>
+  <string name="chat_group_make_admin">Назначить администратором</string>
+  <string name="chat_group_remove_admin">Снять права администратора</string>
+  <string name="chat_group_remove_participant">Удалить из группы</string>
+  <string name="chat_group_owner_label">Владелец</string>
+  <string name="chat_group_admin_label">Админ</string>
+  <string name="chat_group_tab_participants_count">Участники %1$d</string>
   <string name="chat_detail_tab_messages">Сообщения</string>
   <string name="chat_detail_tab_media">Медиа</string>
   <string name="chat_detail_tab_files">Файлы</string>
