@@ -36,15 +36,23 @@ class ChatGroupDetailViewModel @Inject constructor(
     val searchQuery: StateFlow<String> = _searchQuery
 
     private var currentUserId: String? = null
+    private var isMediaLoading = false
+    private var isFilesLoading = false
 
     fun selectTab(index: Int) {
         _selectedTabIndex.value = index
+        val currentState = _uiState.value as? ChatGroupDetailUiState.Success ?: return
+        when (index) {
+            1 -> if (!currentState.isMediaLoaded) loadMedia(currentState.dialogId)
+            2 -> if (!currentState.isFilesLoaded) loadFiles(currentState.dialogId)
+        }
     }
 
     fun loadDialogInfo(dialogId: Long) {
         viewModelScope.launch {
             try {
                 _searchQuery.value = ""
+                _selectedTabIndex.value = 0
                 val info = chatInteractor.getDialogInfo(dialogId)
                 setDialogInfo(info)
             } catch (e: Exception) {
@@ -61,24 +69,6 @@ class ChatGroupDetailViewModel @Inject constructor(
                     userProfileRepository.getProfileInfo().await()
                 }
                 currentUserId = currentUser.id
-                val media = chatInteractor.getDialogMedia(
-                    dialogInfo.id,
-                    category = 1,
-                    limit = 50,
-                    page = 1,
-                    query = null,
-                    sd = null,
-                    ed = null,
-                )
-                val files = chatInteractor.getDialogMedia(
-                    dialogInfo.id,
-                    category = 3,
-                    limit = 50,
-                    page = 1,
-                    query = null,
-                    sd = null,
-                    ed = null,
-                )
                 val users = dialogInfo.users.orEmpty()
                 val userIds = users.mapNotNull { it.userId }
                 val statuses = if (userIds.isNotEmpty()) chatInteractor.getUsersStatus(userIds) else emptyList()
@@ -103,11 +93,16 @@ class ChatGroupDetailViewModel @Inject constructor(
                     name = dialogInfo.name.orEmpty(),
                     image = dialogInfo.dialogImage?.path,
                     participants = participants,
-                    media = media,
-                    files = files,
+                    media = emptyList(),
+                    files = emptyList(),
                     dialogId = dialogInfo.id,
                     isCurrentUserAdmin = isCurrentUserAdmin,
+                    isMediaLoaded = false,
+                    isFilesLoaded = false,
                 )
+                _selectedTabIndex.value = 0
+                loadMedia(dialogInfo.id)
+                loadFiles(dialogInfo.id)
             } catch (e: Exception) {
                 _uiState.value = ChatGroupDetailUiState.Error(e.message ?: "Error")
             }
@@ -166,6 +161,59 @@ class ChatGroupDetailViewModel @Inject constructor(
         )
     }
 
+    private fun loadMedia(dialogId: Long) {
+        val currentState = _uiState.value as? ChatGroupDetailUiState.Success ?: return
+        if (isMediaLoading || currentState.isMediaLoaded) return
+        isMediaLoading = true
+        viewModelScope.launch {
+            try {
+                val media = chatInteractor.getDialogMedia(
+                    dialogId,
+                    category = 1,
+                    limit = 50,
+                    page = 1,
+                    query = null,
+                    sd = null,
+                    ed = null,
+                )
+                updateSuccessState { it.copy(media = media, isMediaLoaded = true) }
+            } catch (e: Exception) {
+                // Ignore and allow retry on next tab selection
+            } finally {
+                isMediaLoading = false
+            }
+        }
+    }
+
+    private fun loadFiles(dialogId: Long) {
+        val currentState = _uiState.value as? ChatGroupDetailUiState.Success ?: return
+        if (isFilesLoading || currentState.isFilesLoaded) return
+        isFilesLoading = true
+        viewModelScope.launch {
+            try {
+                val files = chatInteractor.getDialogMedia(
+                    dialogId,
+                    category = 3,
+                    limit = 50,
+                    page = 1,
+                    query = null,
+                    sd = null,
+                    ed = null,
+                )
+                updateSuccessState { it.copy(files = files, isFilesLoaded = true) }
+            } catch (e: Exception) {
+                // Ignore and allow retry on next tab selection
+            } finally {
+                isFilesLoading = false
+            }
+        }
+    }
+
+    private fun updateSuccessState(transform: (ChatGroupDetailUiState.Success) -> ChatGroupDetailUiState.Success) {
+        val currentState = _uiState.value as? ChatGroupDetailUiState.Success ?: return
+        _uiState.value = transform(currentState)
+    }
+
     private fun createParticipant(user: User, statusText: String?): Participant {
         val isOwner = isOwnerRole(user.role)
         val isAdmin = user.isAdmin || isAdminRole(user.role) || isOwner
@@ -215,6 +263,8 @@ sealed class ChatGroupDetailUiState {
         val files: List<MediaMessage>,
         val dialogId: Long,
         val isCurrentUserAdmin: Boolean,
+        val isMediaLoaded: Boolean = false,
+        val isFilesLoaded: Boolean = false,
     ) : ChatGroupDetailUiState()
 
     data class Error(val message: String) : ChatGroupDetailUiState()

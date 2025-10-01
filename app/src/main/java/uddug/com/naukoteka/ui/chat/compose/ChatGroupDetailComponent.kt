@@ -1,11 +1,27 @@
 package uddug.com.naukoteka.ui.chat.compose
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.stickyHeader
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
@@ -13,8 +29,15 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.*
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,16 +49,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
-import uddug.com.naukoteka.ui.chat.compose.components.Avatar
-import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailUiState
+import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailViewModel
 import uddug.com.naukoteka.mvvm.chat.Participant
+import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,229 +123,299 @@ fun ChatGroupDetailComponent(
                 }
             }
             is ChatGroupDetailUiState.Success -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.White)
-                        .padding(paddingValues)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Avatar(
-                            url = state.image,
-                            name = state.name,
-                            size = 100.dp,
-                            overrideInitials = if (state.image.isNullOrEmpty()) {
-                                stringResource(R.string.chat_group_initial)
-                            } else {
-                                null
-                            },
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = state.name,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = state.participants.joinToString(", ") { it.user.fullName.orEmpty() },
-                            fontSize = 14.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row {
-                            Column(
-                                Modifier
-                                    .weight(1f)
-                                    .padding(end = 4.dp)
-                                    .background(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFF5F5F9)
-                                    )
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) { }
-                                    .padding(12.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    modifier = Modifier
-                                        .padding(start = 2.dp)
-                                        .size(24.dp),
-                                    painter = painterResource(id = R.drawable.ic_profile_call),
-                                    contentDescription = "Call",
-                                    tint = Color(0xFF2E83D9)
-                                )
-                                Text(
-                                    text = stringResource(R.string.call_user),
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF8083A0)
-                                )
-                            }
-                            Column(
-                                Modifier
-                                    .weight(1f)
-                                    .padding(start = 4.dp, end = 4.dp)
-                                    .background(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFF5F5F9)
-                                    )
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) { }
-                                    .padding(12.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    modifier = Modifier
-                                        .padding(start = 2.dp)
-                                        .size(24.dp),
-                                    painter = painterResource(id = R.drawable.ic_profile_send),
-                                    contentDescription = "Share",
-                                    tint = Color(0xFF2E83D9)
-                                )
-                                Text(
-                                    text = stringResource(R.string.profile_shasre),
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF8083A0)
-                                )
-                            }
-                            Column(
-                                Modifier
-                                    .weight(1f)
-                                    .padding(start = 4.dp)
-                                    .background(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFF5F5F9)
-                                    )
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) { }
-                                    .padding(12.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    modifier = Modifier
-                                        .padding(start = 2.dp)
-                                        .size(24.dp),
-                                    painter = painterResource(id = R.drawable.ic_profile_more),
-                                    contentDescription = "More",
-                                    tint = Color(0xFF2E83D9)
-                                )
-                                Text(
-                                    text = stringResource(R.string.profile_more),
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF8083A0)
-                                )
-                            }
+                val tabTitles = listOf(
+                    stringResource(
+                        R.string.chat_group_tab_participants_count,
+                        state.participants.size
+                    ),
+                    stringResource(R.string.chat_group_tab_media),
+                    stringResource(R.string.chat_group_tab_files)
+                )
+
+                var selectedParticipant by remember { mutableStateOf<Participant?>(null) }
+                val filteredParticipants = remember(searchQuery, state.participants) {
+                    if (searchQuery.isBlank()) {
+                        state.participants
+                    } else {
+                        val queryLower = searchQuery.trim().lowercase()
+                        state.participants.filter { participant ->
+                            val name = participant.user.fullName.orEmpty().lowercase()
+                            val nickname = participant.user.nickname.orEmpty().lowercase()
+                            name.contains(queryLower) || nickname.contains(queryLower)
                         }
                     }
-                    val tabTitles = listOf(
-                        stringResource(
-                            R.string.chat_group_tab_participants_count,
-                            state.participants.size
-                        ),
-                        stringResource(R.string.chat_group_tab_media),
-                        stringResource(R.string.chat_group_tab_files)
-                    )
+                }
 
-                    TabRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.White),
+                if (selectedTabIndex == 0) {
+                    ParticipantsTabContent(
+                        paddingValues = paddingValues,
+                        state = state,
+                        tabTitles = tabTitles,
                         selectedTabIndex = selectedTabIndex,
-                        indicator = { tabPositions ->
-                            TabRowDefaults.Indicator(
-                                Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                                color = Color(0xFF2E83D9)
-                            )
-                        },
-                        divider = {}
+                        onTabSelected = viewModel::selectTab,
+                        searchQuery = searchQuery,
+                        onSearchQueryChange = viewModel::onSearchQueryChange,
+                        onClearSearch = viewModel::clearSearch,
+                        isCurrentUserAdmin = state.isCurrentUserAdmin,
+                        onAddParticipantClick = { onAddParticipantsClick(state.dialogId) },
+                        participants = filteredParticipants,
+                        onParticipantMoreClick = { participant ->
+                            selectedParticipant = participant
+                        }
+                    )
+                } else {
+                    OtherTabsContent(
+                        paddingValues = paddingValues,
+                        state = state,
+                        tabTitles = tabTitles,
+                        selectedTabIndex = selectedTabIndex,
+                        onTabSelected = viewModel::selectTab,
                     ) {
-                        tabTitles.forEachIndexed { index, title ->
-                            Tab(
-                                selected = selectedTabIndex == index,
-                                onClick = { viewModel.selectTab(index) },
-                                text = {
-                                    Text(
-                                        text = title,
-                                        maxLines = 1,
-                                        style = TextStyle(
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (selectedTabIndex == index) Color.Black else Color(0xFF8083A0)
-                                        )
-                                    )
-                                }
-                            )
+                        when (selectedTabIndex) {
+                            1 -> MediaContent(state.media)
+                            2 -> FilesContent(state.files)
+                            else -> Unit
                         }
                     }
-                    androidx.compose.material3.Divider(color = Color(0xFFEAEAF2))
-                    var selectedParticipant by remember { mutableStateOf<Participant?>(null) }
+                }
 
-                    when (selectedTabIndex) {
-                        0 -> ParticipantsContent(
-                            participants = state.participants,
-                            searchQuery = searchQuery,
-                            onSearchQueryChange = viewModel::onSearchQueryChange,
-                            onClearSearch = viewModel::clearSearch,
-                            isCurrentUserAdmin = state.isCurrentUserAdmin,
-                            onAddParticipantClick = { onAddParticipantsClick(state.dialogId) },
-                            onParticipantMoreClick = { participant ->
-                                selectedParticipant = participant
-                            }
-                        )
-                        1 -> MediaContent(state.media)
-                        2 -> FilesContent(state.files)
-                    }
-
-                    val participantForActions = selectedParticipant
-                    if (participantForActions != null) {
-                        ParticipantActionsBottomSheet(
-                            participant = participantForActions,
-                            onDismissRequest = { selectedParticipant = null },
-                            onGrantAdminClick = {
-                                participantForActions.user.userId?.let { viewModel.grantAdmin(it) }
-                            },
-                            onRevokeAdminClick = {
-                                participantForActions.user.userId?.let { viewModel.revokeAdmin(it) }
-                            },
-                            onRemoveClick = {
-                                participantForActions.user.userId?.let { viewModel.removeParticipant(it) }
-                            }
-                        )
-                    }
+                val participantForActions = selectedParticipant
+                if (participantForActions != null) {
+                    ParticipantActionsBottomSheet(
+                        participant = participantForActions,
+                        onDismissRequest = { selectedParticipant = null },
+                        onGrantAdminClick = {
+                            participantForActions.user.userId?.let { viewModel.grantAdmin(it) }
+                        },
+                        onRevokeAdminClick = {
+                            participantForActions.user.userId?.let { viewModel.revokeAdmin(it) }
+                        },
+                        onRemoveClick = {
+                            participantForActions.user.userId?.let { viewModel.removeParticipant(it) }
+                        }
+                    )
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ParticipantsContent(
-    participants: List<Participant>,
+private fun ParticipantsTabContent(
+    paddingValues: PaddingValues,
+    state: ChatGroupDetailUiState.Success,
+    tabTitles: List<String>,
+    selectedTabIndex: Int,
+    onTabSelected: (Int) -> Unit,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     onClearSearch: () -> Unit,
     isCurrentUserAdmin: Boolean,
     onAddParticipantClick: () -> Unit,
+    participants: List<Participant>,
     onParticipantMoreClick: (Participant) -> Unit,
+) {
+    val listState = rememberLazyListState()
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(paddingValues),
+        state = listState,
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
+        item {
+            GroupHeaderSection(state)
+        }
+        stickyHeader {
+            GroupTabRow(
+                tabTitles = tabTitles,
+                selectedTabIndex = selectedTabIndex,
+                onTabSelected = onTabSelected
+            )
+        }
+        participantsList(
+            isCurrentUserAdmin = isCurrentUserAdmin,
+            searchQuery = searchQuery,
+            onSearchQueryChange = onSearchQueryChange,
+            onClearSearch = onClearSearch,
+            onAddParticipantClick = onAddParticipantClick,
+            participants = participants,
+            onParticipantMoreClick = onParticipantMoreClick
+        )
+    }
+}
+
+@Composable
+private fun OtherTabsContent(
+    paddingValues: PaddingValues,
+    state: ChatGroupDetailUiState.Success,
+    tabTitles: List<String>,
+    selectedTabIndex: Int,
+    onTabSelected: (Int) -> Unit,
+    content: @Composable () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .padding(paddingValues)
     ) {
-        if (isCurrentUserAdmin) {
+        GroupHeaderSection(state)
+        GroupTabRow(
+            tabTitles = tabTitles,
+            selectedTabIndex = selectedTabIndex,
+            onTabSelected = onTabSelected
+        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun GroupHeaderSection(state: ChatGroupDetailUiState.Success) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Avatar(
+            url = state.image,
+            name = state.name,
+            size = 100.dp,
+            overrideInitials = if (state.image.isNullOrEmpty()) {
+                stringResource(R.string.chat_group_initial)
+            } else {
+                null
+            },
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = state.name,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = state.participants.joinToString(", ") { it.user.fullName.orEmpty() },
+            fontSize = 14.sp,
+            color = Color.Gray,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Row {
+            GroupHeaderAction(
+                icon = R.drawable.ic_profile_call,
+                label = stringResource(R.string.call_user),
+                modifier = Modifier.padding(end = 4.dp)
+            )
+            GroupHeaderAction(
+                icon = R.drawable.ic_profile_send,
+                label = stringResource(R.string.profile_shasre),
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            GroupHeaderAction(
+                icon = R.drawable.ic_profile_more,
+                label = stringResource(R.string.profile_more),
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.GroupHeaderAction(
+    icon: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .weight(1f)
+            .background(
+                shape = RoundedCornerShape(8.dp),
+                color = Color(0xFFF5F5F9)
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { }
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            modifier = Modifier
+                .padding(start = 2.dp)
+                .size(24.dp),
+            painter = painterResource(id = icon),
+            contentDescription = null,
+            tint = Color(0xFF2E83D9)
+        )
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = Color(0xFF8083A0)
+        )
+    }
+}
+
+@Composable
+private fun GroupTabRow(
+    tabTitles: List<String>,
+    selectedTabIndex: Int,
+    onTabSelected: (Int) -> Unit,
+) {
+    Column(modifier = Modifier.background(Color.White)) {
+        TabRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White),
+            selectedTabIndex = selectedTabIndex,
+            indicator = { tabPositions ->
+                val safeIndex = selectedTabIndex.coerceIn(tabTitles.indices)
+                TabRowDefaults.Indicator(
+                    Modifier.tabIndicatorOffset(tabPositions[safeIndex]),
+                    color = Color(0xFF2E83D9)
+                )
+            },
+            divider = {},
+        ) {
+            tabTitles.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { onTabSelected(index) },
+                    text = {
+                        Text(
+                            text = title,
+                            maxLines = 1,
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (selectedTabIndex == index) Color.Black else Color(0xFF8083A0)
+                            )
+                        )
+                    }
+                )
+            }
+        }
+        Divider(color = Color(0xFFEAEAF2))
+    }
+}
+
+private fun LazyListScope.participantsList(
+    isCurrentUserAdmin: Boolean,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onClearSearch: () -> Unit,
+    onAddParticipantClick: () -> Unit,
+    participants: List<Participant>,
+    onParticipantMoreClick: (Participant) -> Unit,
+) {
+    if (isCurrentUserAdmin) {
+        item {
             SearchField(
                 title = stringResource(R.string.chat_group_search_hint),
                 query = searchQuery,
@@ -330,6 +423,8 @@ fun ParticipantsContent(
                 showClearIcon = searchQuery.isNotEmpty(),
                 onClearClick = onClearSearch
             )
+        }
+        item {
             Text(
                 text = stringResource(R.string.chat_group_add_participant),
                 color = Color(0xFF2E83D9),
@@ -345,21 +440,10 @@ fun ParticipantsContent(
                     .padding(vertical = 4.dp)
             )
         }
+    }
 
-        val filteredParticipants = remember(searchQuery, participants) {
-            if (searchQuery.isBlank()) {
-                participants
-            } else {
-                val queryLower = searchQuery.trim().lowercase()
-                participants.filter { participant ->
-                    val name = participant.user.fullName.orEmpty().lowercase()
-                    val nickname = participant.user.nickname.orEmpty().lowercase()
-                    name.contains(queryLower) || nickname.contains(queryLower)
-                }
-            }
-        }
-
-        if (filteredParticipants.isEmpty()) {
+    if (participants.isEmpty()) {
+        item {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -368,28 +452,23 @@ fun ParticipantsContent(
             ) {
                 Text(text = stringResource(R.string.chat_search_no_results))
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(
-                    filteredParticipants,
-                    key = { participant ->
-                        participant.user.userId
-                            ?: participant.user.nickname
-                            ?: participant.user.fullName
-                            ?: participant.hashCode().toString()
-                    }
-                ) { participant ->
-                    ParticipantRow(
-                        participant = participant,
-                        isCurrentUserAdmin = isCurrentUserAdmin,
-                        onMoreClick = onParticipantMoreClick
-                    )
-                    Divider(color = Color(0xFFEAEAF2))
-                }
+        }
+    } else {
+        items(
+            participants,
+            key = { participant ->
+                participant.user.userId
+                    ?: participant.user.nickname
+                    ?: participant.user.fullName
+                    ?: participant.hashCode().toString()
             }
+        ) { participant ->
+            ParticipantRow(
+                participant = participant,
+                isCurrentUserAdmin = isCurrentUserAdmin,
+                onMoreClick = onParticipantMoreClick
+            )
+            Divider(color = Color(0xFFEAEAF2))
         }
     }
 }
