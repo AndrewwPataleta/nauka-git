@@ -1,6 +1,8 @@
 package uddug.com.naukoteka.ui.chat.compose
 
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,11 +46,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.List
-
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -404,20 +404,20 @@ fun FilesContent(items: List<MediaMessage>) {
 
 @Composable
 private fun FileItem(item: MediaMessage) {
-    val extension = remember(item.file.fileName) {
-        item.file.fileName.substringAfterLast('.', "").uppercase()
-    }
     val sizeText = remember(item.file.fileSize) { formatFileSize(item.file.fileSize) }
     val dateText = remember(item.createdAt) { formatFileDate(item.createdAt) }
-    val metaText = listOfNotNull(sizeText, dateText).joinToString(separator = " • ")
+    val metaText = remember(sizeText, dateText) {
+        listOfNotNull(sizeText, dateText).joinToString(separator = " • ")
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
         elevation = 0.dp,
-        backgroundColor = Color(0xFFF5F5F9),
-        shape = RoundedCornerShape(16.dp)
+        backgroundColor = Color.White,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(width = 1.dp, color = Color(0xFFE7E9EC))
     ) {
         Row(
             modifier = Modifier
@@ -425,7 +425,11 @@ private fun FileItem(item: MediaMessage) {
                 .padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            FileIcon(extension = extension)
+            Image(
+                painter = painterResource(id = R.drawable.ic_file_type_png),
+                contentDescription = null,
+                modifier = Modifier.size(48.dp)
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Column(
                 modifier = Modifier.weight(1f)
@@ -438,50 +442,29 @@ private fun FileItem(item: MediaMessage) {
                 )
                 if (metaText.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = metaText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF7F838D)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Download,
+                            contentDescription = null,
+                            tint = Color(0xFF7F838D),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = metaText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF7F838D)
+                        )
+                    }
                 }
             }
             IconButton(onClick = { }) {
                 Icon(
-                    imageVector = Icons.Filled.MoreVert,
+                    painter = painterResource(id = R.drawable.ic_more_vertical),
                     contentDescription = null,
                     tint = Color(0xFF7F838D)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun FileIcon(extension: String) {
-    val backgroundColor = remember(extension) { fileExtensionColor(extension) }
-    Box(
-        modifier = Modifier
-            .size(56.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(backgroundColor),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = Icons.Filled.List,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
-            )
-            if (extension.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = extension,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White
                 )
             }
         }
@@ -509,17 +492,6 @@ private fun formatFileDate(rawDate: String): String? {
         localDate.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru")))
     } catch (error: Exception) {
         null
-    }
-}
-
-private fun fileExtensionColor(extension: String): Color {
-    return when (extension.uppercase(Locale.getDefault())) {
-        "PDF" -> Color(0xFFE57373)
-        "DOC", "DOCX" -> Color(0xFF64B5F6)
-        "XLS", "XLSX" -> Color(0xFF81C784)
-        "JPG", "JPEG", "PNG" -> Color(0xFF9575CD)
-        "ZIP", "RAR" -> Color(0xFF4DD0E1)
-        else -> Color(0xFF90A4AE)
     }
 }
 
