@@ -473,6 +473,10 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_edit_group">Редактировать группу</string>
     <string name="chat_disable_notifications">Отключить уведомления</string>
     <string name="chat_enable_notifications">Включить уведомления</string>
+    <string name="chat_delete_group">Удалить группу</string>
+    <string name="chat_edit_group_remove_avatar">Удалить фото</string>
+    <string name="chat_edit_group_add_members_title">Добавить участников</string>
+    <string name="chat_edit_group_min_selection_error">Выберите хотя бы одного участника</string>
     <string name="chat_select_messages">Выделить сообщения</string>
     <string name="chat_block_chat">Заблокировать чат</string>
     <string name="chat_unblock_chat">Разблокировать чат</string>

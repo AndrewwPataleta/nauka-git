@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.mvvm.chat
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,11 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatCreateMultiViewModel @Inject constructor(
     private val chatInteractor: ChatInteractor,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+
+    private val minSelection: Int =
+        savedStateHandle.get<Int>(MIN_SELECTION_KEY)?.takeIf { it > 0 } ?: DEFAULT_MIN_SELECTION
 
     private val _uiState =
         MutableStateFlow<ChatCreateMultiUiState>(ChatCreateMultiUiState.Loading)
@@ -42,7 +47,8 @@ class ChatCreateMultiViewModel @Inject constructor(
                     query = "",
                     users = users,
                     searchResults = emptyList(),
-                    selected = emptySet<String>()
+                    selected = emptySet<String>(),
+                    minSelection = minSelection,
                 )
             } catch (e: Exception) {
                 _uiState.value = ChatCreateMultiUiState.Error(e.message ?: "Unknown error")
@@ -73,7 +79,8 @@ class ChatCreateMultiViewModel @Inject constructor(
                 query = query,
                 users = emptyList(),
                 searchResults = emptyList(),
-                selected = emptySet<String>()
+                selected = emptySet<String>(),
+                minSelection = minSelection,
             )
         }
     }
@@ -94,9 +101,9 @@ class ChatCreateMultiViewModel @Inject constructor(
                 .filter { user -> user.id?.let { current.selected.contains(it) } == true }
                 .distinctBy { it.id }
 
-            if (selectedUsers.size < 2) {
+            if (selectedUsers.size < minSelection) {
                 viewModelScope.launch {
-                    _events.emit(ChatCreateMultiEvent.ShowMinimumMembersError)
+                    _events.emit(ChatCreateMultiEvent.ShowMinimumMembersError(minSelection))
                 }
                 return
             }
@@ -110,7 +117,7 @@ class ChatCreateMultiViewModel @Inject constructor(
 
 sealed class ChatCreateMultiEvent {
     data class OpenGroupDetails(val selectedUsers: List<UserProfileFullInfo>) : ChatCreateMultiEvent()
-    object ShowMinimumMembersError : ChatCreateMultiEvent()
+    data class ShowMinimumMembersError(val minSelection: Int) : ChatCreateMultiEvent()
 }
 
 sealed class ChatCreateMultiUiState {
@@ -120,8 +127,12 @@ sealed class ChatCreateMultiUiState {
         val users: List<UserProfileFullInfo>,
         val searchResults: List<UserProfileFullInfo>,
         val selected: Set<String>,
+        val minSelection: Int,
     ) : ChatCreateMultiUiState()
 
     data class Error(val message: String) : ChatCreateMultiUiState()
 }
+
+private const val DEFAULT_MIN_SELECTION = 2
+const val MIN_SELECTION_KEY = "chat_create_multi_min_selection"
 

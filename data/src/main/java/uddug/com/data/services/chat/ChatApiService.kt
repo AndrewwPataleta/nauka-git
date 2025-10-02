@@ -15,8 +15,10 @@ import uddug.com.data.services.models.request.chat.ChatFolderRequestDto
 import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.PinMessageRequestDto
+import uddug.com.data.services.models.request.chat.DialogUserActionRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
+import uddug.com.data.services.models.request.chat.UpdateDialogRequestDto
 import uddug.com.data.services.models.response.chat.ChatDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
 import uddug.com.data.services.models.response.chat.FolderDetailsDto
@@ -114,6 +116,12 @@ interface ChatApiService {
         @Body request: CreateDialogRequestDto,
     ): DialogInfoDto
 
+    @PATCH("chat/v1/dialogs/{dialogId}")
+    suspend fun updateDialog(
+        @Path("dialogId") dialogId: Long,
+        @Body request: UpdateDialogRequestDto,
+    ): DialogInfoDto
+
     @POST("chat/v1/dialogs/pin/{dialogId}")
     suspend fun pinDialog(@Path("dialogId") dialogId: Long)
 
@@ -143,6 +151,24 @@ interface ChatApiService {
 
     @DELETE("chat/v1/dialogs/{dialogId}")
     suspend fun deleteDialog(@Path("dialogId") dialogId: Long)
+
+    @DELETE("chat/v1/dialogs/chat/{dialogId}")
+    suspend fun deleteGroupDialog(@Path("dialogId") dialogId: Long)
+
+    @PATCH("chat/v1/dialogs/leave/{dialogId}")
+    suspend fun leaveDialog(@Path("dialogId") dialogId: Long)
+
+    @POST("chat/v1/dialogs/make-admin/{dialogId}")
+    suspend fun makeAdmin(
+        @Path("dialogId") dialogId: Long,
+        @Body request: DialogUserActionRequestDto,
+    )
+
+    @PATCH("chat/v1/dialogs/remove-admin/{dialogId}")
+    suspend fun removeAdmin(
+        @Path("dialogId") dialogId: Long,
+        @Body request: DialogUserActionRequestDto,
+    )
 
     @PATCH("chat/v1/messages/update")
     suspend fun updateMessage(@Body request: UpdateMessageRequestDto): MessageDto

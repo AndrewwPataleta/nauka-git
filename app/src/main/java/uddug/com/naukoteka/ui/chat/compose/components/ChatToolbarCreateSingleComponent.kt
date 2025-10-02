@@ -25,11 +25,12 @@ fun ChatToolbarCreateSingleComponent(
     onBackPressed: () -> Unit,
     onActionClick: (() -> Unit)? = null,
     isActionEnabled: Boolean = true,
+    titleRes: Int = R.string.chat_create_single_title,
 ) {
     TopAppBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = stringResource(R.string.chat_create_single_title), fontSize = 20.sp, color = Color.Black)
+                Text(text = stringResource(titleRes), fontSize = 20.sp, color = Color.Black)
             }
         },
         actions = {

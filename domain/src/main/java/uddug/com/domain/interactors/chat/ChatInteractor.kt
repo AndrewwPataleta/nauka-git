@@ -101,6 +101,14 @@ class ChatInteractor @Inject constructor(
     ): Long =
         chatRepository.createGroupDialog(dialogName = dialogName, userRoles = userRoles, imageId = imageId)
 
+    suspend fun updateDialog(
+        dialogId: Long,
+        name: String? = null,
+        imageId: String? = null,
+        clearImage: Boolean = false,
+        users: List<String>? = null,
+    ): DialogInfo = chatRepository.updateDialog(dialogId, name, imageId, clearImage, users)
+
     suspend fun searchUsers(query: String, limit: Int = 10, page: Int = 1): List<UserProfileFullInfo> =
         chatRepository.searchUsers(query, limit, page)
 
@@ -110,6 +118,10 @@ class ChatInteractor @Inject constructor(
     suspend fun pinDialog(dialogId: Long) = chatRepository.pinDialog(dialogId)
 
     suspend fun unpinDialog(dialogId: Long) = chatRepository.unpinDialog(dialogId)
+
+    suspend fun disableNotifications(dialogId: Long) = chatRepository.disableNotifications(dialogId)
+
+    suspend fun enableNotifications(dialogId: Long) = chatRepository.enableNotifications(dialogId)
 
     suspend fun pinMessage(dialogId: Long, messageId: Long) =
         chatRepository.pinMessage(dialogId, messageId)
@@ -143,4 +155,14 @@ class ChatInteractor @Inject constructor(
         query: String,
         lastMessageId: Long? = null,
     ): List<SearchMessage> = chatRepository.searchMessages(query, lastMessageId)
+
+    suspend fun deleteGroupDialog(dialogId: Long) = chatRepository.deleteGroupDialog(dialogId)
+
+    suspend fun leaveDialog(dialogId: Long) = chatRepository.leaveDialog(dialogId)
+
+    suspend fun makeDialogAdmin(dialogId: Long, userId: String) =
+        chatRepository.makeDialogAdmin(dialogId, userId)
+
+    suspend fun removeDialogAdmin(dialogId: Long, userId: String) =
+        chatRepository.removeDialogAdmin(dialogId, userId)
 }

@@ -11,10 +11,13 @@ import com.google.gson.JsonPrimitive
 import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.DialogImageRequestDto
+import uddug.com.data.services.models.request.chat.DialogUserActionRequestDto
 import uddug.com.data.services.models.request.chat.PinMessageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageFileDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
+import uddug.com.data.services.models.request.chat.UpdateDialogRequestDto
+import uddug.com.data.services.models.request.chat.UpdateDialogImageRequestDto
 import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
 import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.chat.FolderDetailsDto
@@ -278,6 +281,27 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateDialog(
+        dialogId: Long,
+        name: String?,
+        imageId: String?,
+        clearImage: Boolean,
+        users: List<String>?,
+    ): DialogInfo {
+        val imageRequest = when {
+            imageId != null -> UpdateDialogImageRequestDto(id = imageId)
+            clearImage -> UpdateDialogImageRequestDto(id = "")
+            else -> null
+        }
+        val request = UpdateDialogRequestDto(
+            name = name,
+            image = imageRequest,
+            users = users?.takeIf { it.isNotEmpty() }
+        )
+        val dialogInfoDto = apiService.updateDialog(dialogId, request)
+        return mapDialogInfoDtoToDomain(dialogInfoDto)
+    }
+
     override suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int) {
         val request = ReadMessagesRequestDto(dialogId, messages, status)
         apiService.markMessagesRead(request)
@@ -321,6 +345,22 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun deleteDialog(dialogId: Long) {
         apiService.deleteDialog(dialogId)
+    }
+
+    override suspend fun deleteGroupDialog(dialogId: Long) {
+        apiService.deleteGroupDialog(dialogId)
+    }
+
+    override suspend fun leaveDialog(dialogId: Long) {
+        apiService.leaveDialog(dialogId)
+    }
+
+    override suspend fun makeDialogAdmin(dialogId: Long, userId: String) {
+        apiService.makeAdmin(dialogId, DialogUserActionRequestDto(userId))
+    }
+
+    override suspend fun removeDialogAdmin(dialogId: Long, userId: String) {
+        apiService.removeAdmin(dialogId, DialogUserActionRequestDto(userId))
     }
 
     override suspend fun pinMessage(dialogId: Long, messageId: Long) {

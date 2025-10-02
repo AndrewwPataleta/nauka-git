@@ -28,11 +28,14 @@ fun ChatCreateMultiScreen(
     modifier: Modifier = Modifier,
     viewModel: ChatCreateMultiViewModel,
     onBackPressed: () -> Unit,
+    titleRes: Int = R.string.chat_create_single_title,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     val successState = uiState as? ChatCreateMultiUiState.Success
-    val isActionEnabled = (successState?.selected?.size ?: 0) >= 2
+    val isActionEnabled = successState?.let { state ->
+        state.selected.size >= state.minSelection
+    } ?: false
 
     Column(
         modifier = Modifier
@@ -42,7 +45,8 @@ fun ChatCreateMultiScreen(
         ChatToolbarCreateSingleComponent(
             onBackPressed = onBackPressed,
             onActionClick = { viewModel.onCreateGroupClick() },
-            isActionEnabled = isActionEnabled
+            isActionEnabled = isActionEnabled,
+            titleRes = titleRes
         )
 
         when (uiState) {

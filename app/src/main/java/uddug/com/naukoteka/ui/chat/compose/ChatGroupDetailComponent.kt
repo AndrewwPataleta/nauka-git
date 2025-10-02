@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -37,6 +38,10 @@ import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailUiState
 import uddug.com.naukoteka.mvvm.chat.Participant
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.NotificationsOff
+import androidx.compose.material.icons.outlined.Delete
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,10 +50,12 @@ fun ChatGroupDetailComponent(
     onBackPressed: () -> Unit,
     onSearchClick: () -> Unit,
     onAddParticipantsClick: (Long) -> Unit,
+    onEditGroupClick: (Long) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    var showFunctionsSheet by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             androidx.compose.material.TopAppBar(
@@ -205,8 +212,13 @@ fun ChatGroupDetailComponent(
                                     )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) { }
+                                        indication = null,
+                                        enabled = state.isCurrentUserAdmin
+                                    ) {
+                                        if (state.isCurrentUserAdmin) {
+                                            showFunctionsSheet = true
+                                        }
+                                    }
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
@@ -298,6 +310,25 @@ fun ChatGroupDetailComponent(
                             },
                             onRemoveClick = {
                                 participantForActions.user.userId?.let { viewModel.removeParticipant(it) }
+                            }
+                        )
+                    }
+
+                    if (showFunctionsSheet && state.isCurrentUserAdmin) {
+                        GroupFunctionsBottomSheet(
+                            notificationsDisabled = state.notificationsDisabled,
+                            onDismissRequest = { showFunctionsSheet = false },
+                            onEditClick = {
+                                showFunctionsSheet = false
+                                onEditGroupClick(state.dialogId)
+                            },
+                            onToggleNotifications = {
+                                showFunctionsSheet = false
+                                viewModel.toggleNotifications()
+                            },
+                            onDeleteClick = {
+                                showFunctionsSheet = false
+                                viewModel.deleteGroup()
                             }
                         )
                     }
@@ -540,6 +571,106 @@ private fun ParticipantActionRow(
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Text(
+            text = text,
+            color = textColor,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GroupFunctionsBottomSheet(
+    notificationsDisabled: Boolean,
+    onDismissRequest: () -> Unit,
+    onEditClick: () -> Unit,
+    onToggleNotifications: () -> Unit,
+    onDeleteClick: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.chat_functions_title),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp,
+                color = Color.Black
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            GroupFunctionRow(
+                icon = Icons.Outlined.Edit,
+                iconTint = Color(0xFF2E83D9),
+                text = stringResource(R.string.chat_edit_group),
+                textColor = Color.Black,
+                onClick = onEditClick
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            val notificationText = if (notificationsDisabled) {
+                stringResource(R.string.chat_enable_notifications)
+            } else {
+                stringResource(R.string.chat_disable_notifications)
+            }
+            val notificationIcon = if (notificationsDisabled) {
+                Icons.Outlined.Notifications
+            } else {
+                Icons.Outlined.NotificationsOff
+            }
+            GroupFunctionRow(
+                icon = notificationIcon,
+                iconTint = Color(0xFF2E83D9),
+                text = notificationText,
+                textColor = Color.Black,
+                onClick = onToggleNotifications
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            GroupFunctionRow(
+                icon = Icons.Outlined.Delete,
+                iconTint = Color(0xFFFF3B30),
+                text = stringResource(R.string.chat_delete_group),
+                textColor = Color(0xFFFF3B30),
+                onClick = onDeleteClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun GroupFunctionRow(
+    icon: ImageVector,
+    iconTint: Color,
+    text: String,
+    textColor: Color,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { onClick() }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconTint
+        )
+        Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
             color = textColor,
