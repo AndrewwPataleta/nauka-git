@@ -24,6 +24,7 @@ import uddug.com.naukoteka.R
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
 import uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment.Companion.ARG_AVATAR_PATH
+import uddug.com.naukoteka.ui.chat.ChatEditGroupFragment
 @AndroidEntryPoint
 class ChatDetailDialogFragment : Fragment() {
 
@@ -72,6 +73,18 @@ class ChatDetailDialogFragment : Fragment() {
                 }
             }
         }
+
+        findNavController().currentBackStackEntry?.savedStateHandle
+            ?.getLiveData<Boolean>("refreshDialogInfo")
+            ?.observe(viewLifecycleOwner) { shouldRefresh ->
+                if (shouldRefresh == true) {
+                    val dialogId = (viewModel.uiState.value as? ChatDetailUiState.Success)?.dialogId
+                        ?: arguments?.getLong(DIALOG_ID)
+                        ?: return@observe
+                    viewModel.loadDialogInfo(dialogId)
+                    findNavController().currentBackStackEntry?.savedStateHandle?.set("refreshDialogInfo", false)
+                }
+            }
     }
 
     override fun onCreateView(
@@ -115,6 +128,12 @@ class ChatDetailDialogFragment : Fragment() {
                                     putString(ARG_AVATAR_PATH, avatarPath)
                                 }
                             )
+                        },
+                        onEditGroup = { id ->
+                            val args = Bundle().apply {
+                                putLong(ChatEditGroupFragment.ARG_DIALOG_ID, id)
+                            }
+                            findNavController().navigate(R.id.chatEditGroupFragment, args)
                         }
                     )
                 }

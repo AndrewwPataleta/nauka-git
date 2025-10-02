@@ -99,6 +99,7 @@ fun ChatDetailDialogComponent(
     onSearchClick: () -> Unit,
     onChatDeleted: () -> Unit,
     onViewAvatar: (String) -> Unit,
+    onEditGroup: (Long) -> Unit,
 ) {
     val scrollState = rememberLazyListState()
     val uiState by viewModel.uiState.collectAsState()
@@ -407,13 +408,15 @@ fun ChatDetailDialogComponent(
                     if (showMoreDialog) {
                         ChatDetailMoreSheetDialog(
                             dialogId = state.dialogId,
+                            isGroup = true,
                             onNavigateToProfile = onNavigateToProfile,
                             onDismissRequest = { showMoreDialog = false },
                             onChatDeleted = onChatDeleted,
-                            onEditGroup = {
-
-                            },
-                            isCurrentUserAdmin = false
+                            onEditGroup = { onEditGroup(state.dialogId) },
+                            isCurrentUserAdmin = state.isCurrentUserAdmin,
+                            notificationsDisabled = false,
+                            onLeaveGroup = {},
+                            onNotificationsChanged = {}
                         )
                     }
                     if (showAvatarDialog) {

@@ -118,4 +118,7 @@
   <string name="chat_file_attachment_unknown_type">ملف</string>
   <string name="chat_file_download_started">جاري تنزيل الملف…</string>
   <string name="labor_activity_name">%1$s в <font color="#2E83D9">%2$s</font></string>
+  <string name="chat_delete_group">حذف المجموعة</string>
+  <string name="chat_leave_group">مغادرة المجموعة</string>
+  <string name="chat_edit_group_remove_avatar">إزالة صورة المجموعة</string>
 </resources>

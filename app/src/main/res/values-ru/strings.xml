@@ -224,4 +224,7 @@
     <item quantity="other">%d дня назад</item>
   </plurals>
   <string name="chat_edit_group">Редактировать группу</string>
+  <string name="chat_delete_group">Удалить группу</string>
+  <string name="chat_leave_group">Покинуть группу</string>
+  <string name="chat_edit_group_remove_avatar">Удалить фото группы</string>
 </resources>

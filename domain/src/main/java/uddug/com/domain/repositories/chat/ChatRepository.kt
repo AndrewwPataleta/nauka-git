@@ -102,6 +102,14 @@ interface ChatRepository {
         removeImage: Boolean = false,
     ): DialogInfo
 
+    suspend fun updateGroupDialog(
+        dialogId: Long,
+        dialogName: String? = null,
+        imageId: String? = null,
+        removeImage: Boolean = false,
+        users: List<String>? = null,
+    ): DialogInfo
+
     suspend fun searchUsers(searchField: String, limit: Int = 10, page: Int = 1): List<UserProfileFullInfo>
 
     suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int)
@@ -125,6 +133,14 @@ interface ChatRepository {
     suspend fun clearDialog(dialogId: Long)
 
     suspend fun deleteDialog(dialogId: Long)
+
+    suspend fun deleteGroupDialog(dialogId: Long)
+
+    suspend fun leaveGroupDialog(dialogId: Long)
+
+    suspend fun makeDialogAdmin(dialogId: Long, userId: String)
+
+    suspend fun removeDialogAdmin(dialogId: Long, userId: String)
 
     suspend fun pinMessage(dialogId: Long, messageId: Long)
 

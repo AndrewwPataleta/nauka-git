@@ -57,6 +57,12 @@
     </fragment>
 
     <fragment
+        android:id="@+id/chatEditGroupFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatEditGroupFragment">
+
+    </fragment>
+
+    <fragment
         android:id="@+id/chatFolderSettingsFragment"
         android:name="uddug.com.naukoteka.ui.chat.ChatFolderSettingsFragment">
 
