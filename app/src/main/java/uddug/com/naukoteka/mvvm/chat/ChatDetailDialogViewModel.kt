@@ -84,6 +84,16 @@ class ChatDialogDetailViewModel @Inject constructor(
         currentDialogInfo = dialogInfo
         _selectedTabIndex.value = 0
 
+        val profile = if (dialogInfo.type == 1) {
+            dialogInfo.interlocutor ?: User()
+        } else {
+            User(
+                image = dialogInfo.dialogImage?.path,
+                fullName = dialogInfo.name,
+                nickname = dialogInfo.name,
+            )
+        }
+
         viewModelScope.launch {
             userRepository.getProfileInfo().subscribeOn(Schedulers.io())
                 .subscribe({
@@ -94,12 +104,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                             dialogInfo.users?.any { user -> user.userId == id && user.isAdmin }
                         } ?: false
                         _uiState.value = ChatDetailUiState.Success(
-                            profile = User(
-                                image = dialogInfo.interlocutor?.image.orEmpty(),
-                                fullName = dialogInfo.interlocutor?.fullName.orEmpty(),
-                                nickname = dialogInfo.interlocutor?.nickname.orEmpty(),
-                                isAdmin = dialogInfo.interlocutor?.isAdmin ?: false,
-                            ),
+                            profile = profile,
                             media = emptyList(),
                             files = emptyList(),
                             voices = emptyList(),
