@@ -122,7 +122,7 @@ class ChatDialogViewModel @Inject constructor(
                             }
                             val image: String = when {
                                 info.interlocutor != null -> info.interlocutor?.image.orEmpty()
-                                else -> info.name.orEmpty()
+                                else -> info.dialogImage?.path.orEmpty()
                             }
                             val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
                             var status: String? = null
@@ -199,10 +199,14 @@ class ChatDialogViewModel @Inject constructor(
                             val dialogId = info.id
 
                             val name = info.interlocutor?.fullName.orEmpty()
-                            val image = info.interlocutor?.image.orEmpty()
+                            val isGroup = (info.users?.size ?: 0) > 2
+                            val image = if (isGroup) {
+                                info.dialogImage?.path.orEmpty()
+                            } else {
+                                info.interlocutor?.image.orEmpty()
+                            }
                             val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
                             var status: String? = null
-                            val isGroup = (info.users?.size ?: 0) > 2
                             if (!isGroup) {
                                 val userId = info.interlocutor?.userId
                                 if (userId != null) {
