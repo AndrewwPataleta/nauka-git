@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.await
 import kotlinx.coroutines.withContext
@@ -17,6 +20,7 @@ import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.mvvm.chat.ChatStatusFormatter
 import uddug.com.naukoteka.mvvm.chat.ChatStatusTextMode.GENERIC
 import java.time.Instant
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -36,8 +40,12 @@ class ChatGroupDetailViewModel @Inject constructor(
     val searchQuery: StateFlow<String> = _searchQuery
 
     private var currentUserId: String? = null
+    private var currentDialogInfo: DialogInfo? = null
     private var isMediaLoading = false
     private var isFilesLoading = false
+
+    private val _avatarEvents = MutableSharedFlow<AvatarUpdateEvent>()
+    val avatarEvents: SharedFlow<AvatarUpdateEvent> = _avatarEvents.asSharedFlow()
 
     fun selectTab(index: Int) {
         _selectedTabIndex.value = index
@@ -54,6 +62,7 @@ class ChatGroupDetailViewModel @Inject constructor(
                 _searchQuery.value = ""
                 _selectedTabIndex.value = 0
                 val info = chatInteractor.getDialogInfo(dialogId)
+                currentDialogInfo = info
                 setDialogInfo(info)
             } catch (e: Exception) {
                 _uiState.value = ChatGroupDetailUiState.Error(e.message ?: "Error")
@@ -65,6 +74,7 @@ class ChatGroupDetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _searchQuery.value = ""
+                currentDialogInfo = dialogInfo
                 val currentUser = withContext(Dispatchers.IO) {
                     userProfileRepository.getProfileInfo().await()
                 }
@@ -92,6 +102,7 @@ class ChatGroupDetailViewModel @Inject constructor(
                 _uiState.value = ChatGroupDetailUiState.Success(
                     name = dialogInfo.name.orEmpty(),
                     image = dialogInfo.dialogImage?.path,
+                    imageId = dialogInfo.dialogImage?.id,
                     participants = participants,
                     media = emptyList(),
                     files = emptyList(),
@@ -99,12 +110,79 @@ class ChatGroupDetailViewModel @Inject constructor(
                     isCurrentUserAdmin = isCurrentUserAdmin,
                     isMediaLoaded = false,
                     isFilesLoaded = false,
+                    isAvatarUpdating = false,
                 )
                 _selectedTabIndex.value = 0
                 loadMedia(dialogInfo.id)
                 loadFiles(dialogInfo.id)
             } catch (e: Exception) {
                 _uiState.value = ChatGroupDetailUiState.Error(e.message ?: "Error")
+            }
+        }
+    }
+
+    fun onAvatarSelected(file: File) {
+        val currentState = _uiState.value as? ChatGroupDetailUiState.Success ?: return
+        if (!currentState.isCurrentUserAdmin || currentState.isAvatarUpdating) return
+
+        updateSuccessState { it.copy(isAvatarUpdating = true) }
+
+        viewModelScope.launch {
+            try {
+                val uploaded = withContext(Dispatchers.IO) {
+                    chatInteractor.uploadFiles(listOf(file), raw = false)
+                }.firstOrNull()
+
+                if (uploaded != null) {
+                    val updatedInfo = chatInteractor.updateDialogInfo(
+                        dialogId = currentState.dialogId,
+                        imageId = uploaded.id,
+                        removeImage = false,
+                    )
+                    currentDialogInfo = updatedInfo
+                    updateSuccessState {
+                        it.copy(
+                            image = updatedInfo.dialogImage?.path,
+                            imageId = updatedInfo.dialogImage?.id,
+                            isAvatarUpdating = false,
+                        )
+                    }
+                    _avatarEvents.emit(AvatarUpdateEvent.Success)
+                } else {
+                    updateSuccessState { it.copy(isAvatarUpdating = false) }
+                    _avatarEvents.emit(AvatarUpdateEvent.Error(null))
+                }
+            } catch (e: Exception) {
+                updateSuccessState { it.copy(isAvatarUpdating = false) }
+                _avatarEvents.emit(AvatarUpdateEvent.Error(e.message))
+            }
+        }
+    }
+
+    fun onAvatarDeleted() {
+        val currentState = _uiState.value as? ChatGroupDetailUiState.Success ?: return
+        if (!currentState.isCurrentUserAdmin || currentState.isAvatarUpdating) return
+
+        updateSuccessState { it.copy(isAvatarUpdating = true) }
+
+        viewModelScope.launch {
+            try {
+                val updatedInfo = chatInteractor.updateDialogInfo(
+                    dialogId = currentState.dialogId,
+                    removeImage = true,
+                )
+                currentDialogInfo = updatedInfo
+                updateSuccessState {
+                    it.copy(
+                        image = updatedInfo.dialogImage?.path,
+                        imageId = updatedInfo.dialogImage?.id,
+                        isAvatarUpdating = false,
+                    )
+                }
+                _avatarEvents.emit(AvatarUpdateEvent.Success)
+            } catch (e: Exception) {
+                updateSuccessState { it.copy(isAvatarUpdating = false) }
+                _avatarEvents.emit(AvatarUpdateEvent.Error(e.message))
             }
         }
     }
@@ -258,6 +336,7 @@ sealed class ChatGroupDetailUiState {
     data class Success(
         val name: String,
         val image: String?,
+        val imageId: String?,
         val participants: List<Participant>,
         val media: List<MediaMessage>,
         val files: List<MediaMessage>,
@@ -265,6 +344,7 @@ sealed class ChatGroupDetailUiState {
         val isCurrentUserAdmin: Boolean,
         val isMediaLoaded: Boolean = false,
         val isFilesLoaded: Boolean = false,
+        val isAvatarUpdating: Boolean = false,
     ) : ChatGroupDetailUiState()
 
     data class Error(val message: String) : ChatGroupDetailUiState()

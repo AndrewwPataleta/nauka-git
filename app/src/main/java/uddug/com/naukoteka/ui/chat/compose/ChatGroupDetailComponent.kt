@@ -1,5 +1,8 @@
 package uddug.com.naukoteka.ui.chat.compose
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,6 +42,7 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -55,11 +60,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.AvatarUpdateEvent
 import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailUiState
 import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailViewModel
 import uddug.com.naukoteka.mvvm.chat.Participant
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
+import uddug.com.naukoteka.ui.chat.compose.components.ChatAvatarActionDialog
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
+import uddug.com.naukoteka.ui.chat.compose.util.uriToFile
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,10 +76,41 @@ fun ChatGroupDetailComponent(
     onBackPressed: () -> Unit,
     onSearchClick: () -> Unit,
     onAddParticipantsClick: (Long) -> Unit,
+    onViewAvatar: (String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val context = LocalContext.current
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            val file = uriToFile(context, uri)
+            if (file != null) {
+                viewModel.onAvatarSelected(file)
+            } else {
+                Toast.makeText(
+                    context,
+                    R.string.chat_avatar_update_file_error,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.avatarEvents.collect { event ->
+            when (event) {
+                is AvatarUpdateEvent.Error -> {
+                    val message = event.message?.takeIf { it.isNotBlank() }
+                        ?: context.getString(R.string.chat_avatar_update_error)
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+                AvatarUpdateEvent.Success -> Unit
+            }
+        }
+    }
     Scaffold(
         topBar = {
             androidx.compose.material.TopAppBar(
@@ -133,6 +172,7 @@ fun ChatGroupDetailComponent(
                 )
 
                 var selectedParticipant by remember { mutableStateOf<Participant?>(null) }
+                var showAvatarDialog by remember { mutableStateOf(false) }
                 val filteredParticipants = remember(searchQuery, state.participants) {
                     if (searchQuery.isBlank()) {
                         state.participants
@@ -161,6 +201,11 @@ fun ChatGroupDetailComponent(
                         participants = filteredParticipants,
                         onParticipantMoreClick = { participant ->
                             selectedParticipant = participant
+                        },
+                        onAvatarClick = {
+                            if (state.isCurrentUserAdmin && !state.isAvatarUpdating) {
+                                showAvatarDialog = true
+                            }
                         }
                     )
                 } else {
@@ -170,6 +215,11 @@ fun ChatGroupDetailComponent(
                         tabTitles = tabTitles,
                         selectedTabIndex = selectedTabIndex,
                         onTabSelected = viewModel::selectTab,
+                        onAvatarClick = {
+                            if (state.isCurrentUserAdmin && !state.isAvatarUpdating) {
+                                showAvatarDialog = true
+                            }
+                        }
                     ) {
                         when (selectedTabIndex) {
                             1 -> MediaContent(state.media)
@@ -195,6 +245,22 @@ fun ChatGroupDetailComponent(
                         }
                     )
                 }
+                if (showAvatarDialog) {
+                    ChatAvatarActionDialog(
+                        onDismissRequest = { showAvatarDialog = false },
+                        onViewClick = {
+                            state.image?.let { onViewAvatar(it) }
+                        },
+                        onReplaceClick = {
+                            imagePickerLauncher.launch("image/*")
+                        },
+                        onDeleteClick = {
+                            viewModel.onAvatarDeleted()
+                        },
+                        canView = !state.image.isNullOrBlank(),
+                        canDelete = !state.imageId.isNullOrBlank(),
+                    )
+                }
             }
         }
     }
@@ -215,6 +281,7 @@ private fun ParticipantsTabContent(
     onAddParticipantClick: () -> Unit,
     participants: List<Participant>,
     onParticipantMoreClick: (Participant) -> Unit,
+    onAvatarClick: () -> Unit,
 ) {
     val listState = rememberLazyListState()
     LazyColumn(
@@ -226,7 +293,12 @@ private fun ParticipantsTabContent(
         contentPadding = PaddingValues(bottom = 16.dp)
     ) {
         item {
-            GroupHeaderSection(state)
+            GroupHeaderSection(
+                state = state,
+                onAvatarClick = onAvatarClick,
+                isCurrentUserAdmin = isCurrentUserAdmin,
+                isAvatarUpdating = state.isAvatarUpdating,
+            )
         }
         stickyHeader {
             GroupTabRow(
@@ -254,6 +326,7 @@ private fun OtherTabsContent(
     tabTitles: List<String>,
     selectedTabIndex: Int,
     onTabSelected: (Int) -> Unit,
+    onAvatarClick: () -> Unit,
     content: @Composable () -> Unit,
 ) {
     Column(
@@ -262,7 +335,12 @@ private fun OtherTabsContent(
             .background(Color.White)
             .padding(paddingValues)
     ) {
-        GroupHeaderSection(state)
+        GroupHeaderSection(
+            state = state,
+            onAvatarClick = onAvatarClick,
+            isCurrentUserAdmin = state.isCurrentUserAdmin,
+            isAvatarUpdating = state.isAvatarUpdating,
+        )
         GroupTabRow(
             tabTitles = tabTitles,
             selectedTabIndex = selectedTabIndex,
@@ -275,23 +353,56 @@ private fun OtherTabsContent(
 }
 
 @Composable
-private fun GroupHeaderSection(state: ChatGroupDetailUiState.Success) {
+private fun GroupHeaderSection(
+    state: ChatGroupDetailUiState.Success,
+    onAvatarClick: () -> Unit,
+    isCurrentUserAdmin: Boolean,
+    isAvatarUpdating: Boolean,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Avatar(
-            url = state.image,
-            name = state.name,
-            size = 100.dp,
-            overrideInitials = if (state.image.isNullOrEmpty()) {
-                stringResource(R.string.chat_group_initial)
-            } else {
-                null
-            },
-        )
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .clip(RoundedCornerShape(50.dp))
+                .clickable(
+                    enabled = isCurrentUserAdmin && !isAvatarUpdating,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    onAvatarClick()
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Avatar(
+                url = state.image,
+                name = state.name,
+                size = 100.dp,
+                overrideInitials = if (state.image.isNullOrEmpty()) {
+                    stringResource(R.string.chat_group_initial)
+                } else {
+                    null
+                },
+            )
+            if (isAvatarUpdating) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = 0.4f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(28.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                }
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = state.name,

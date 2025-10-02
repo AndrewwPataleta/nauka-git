@@ -95,6 +95,13 @@ interface ChatRepository {
         imageId: String? = null,
     ): Long
 
+    suspend fun updateDialogInfo(
+        dialogId: Long,
+        dialogName: String? = null,
+        imageId: String? = null,
+        removeImage: Boolean = false,
+    ): DialogInfo
+
     suspend fun searchUsers(searchField: String, limit: Int = 10, page: Int = 1): List<UserProfileFullInfo>
 
     suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int)

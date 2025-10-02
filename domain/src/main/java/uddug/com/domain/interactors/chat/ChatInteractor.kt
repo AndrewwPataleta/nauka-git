@@ -101,6 +101,14 @@ class ChatInteractor @Inject constructor(
     ): Long =
         chatRepository.createGroupDialog(dialogName = dialogName, userRoles = userRoles, imageId = imageId)
 
+    suspend fun updateDialogInfo(
+        dialogId: Long,
+        dialogName: String? = null,
+        imageId: String? = null,
+        removeImage: Boolean = false,
+    ): DialogInfo =
+        chatRepository.updateDialogInfo(dialogId, dialogName, imageId, removeImage)
+
     suspend fun searchUsers(query: String, limit: Int = 10, page: Int = 1): List<UserProfileFullInfo> =
         chatRepository.searchUsers(query, limit, page)
 

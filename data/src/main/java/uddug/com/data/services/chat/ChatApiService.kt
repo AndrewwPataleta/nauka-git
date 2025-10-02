@@ -16,6 +16,7 @@ import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.PinMessageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
+import uddug.com.data.services.models.request.chat.UpdateDialogInfoRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.response.chat.ChatDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
@@ -112,6 +113,12 @@ interface ChatApiService {
     @POST("chat/v2/dialogs/create")
     suspend fun createGroupDialog(
         @Body request: CreateDialogRequestDto,
+    ): DialogInfoDto
+
+    @PATCH("chat/v1/dialogs/info/{dialogId}")
+    suspend fun updateDialogInfo(
+        @Path("dialogId") dialogId: Long,
+        @Body request: UpdateDialogInfoRequestDto,
     ): DialogInfoDto
 
     @POST("chat/v1/dialogs/pin/{dialogId}")
