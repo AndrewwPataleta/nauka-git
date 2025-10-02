@@ -4,12 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
@@ -24,6 +26,7 @@ import com.google.firebase.dynamiclinks.ktx.androidParameters
 import com.google.firebase.dynamiclinks.ktx.dynamicLinks
 import com.google.firebase.dynamiclinks.ktx.shortLinkAsync
 import com.google.firebase.ktx.Firebase
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -48,6 +51,9 @@ class ChatDialogDetailViewModel @Inject constructor(
 
     private var currentDialogInfo: DialogInfo? = null
     private var currentUser: UserProfileFullInfo? = null
+
+    private val _avatarEvents = MutableSharedFlow<AvatarUpdateEvent>()
+    val avatarEvents: SharedFlow<AvatarUpdateEvent> = _avatarEvents.asSharedFlow()
 
     private val _searchMessages = MutableStateFlow<List<SearchMessage>>(emptyList())
     val searchMessages: StateFlow<List<SearchMessage>> = _searchMessages
@@ -103,6 +109,8 @@ class ChatDialogDetailViewModel @Inject constructor(
                         val isAdmin = currentUserId?.let { id ->
                             dialogInfo.users?.any { user -> user.userId == id && user.isAdmin }
                         } ?: false
+                        val avatarPath = dialogInfo.dialogImage?.path
+                            ?: dialogInfo.interlocutor?.image
                         _uiState.value = ChatDetailUiState.Success(
                             profile = profile,
                             media = emptyList(),
@@ -111,12 +119,89 @@ class ChatDialogDetailViewModel @Inject constructor(
                             notes = emptyList(),
                             dialogId = dialogInfo.id,
                             isCurrentUserAdmin = isAdmin,
+                            avatarPath = avatarPath,
+                            avatarId = dialogInfo.dialogImage?.id,
+                            isAvatarUpdating = false,
                         )
                         loadTabData(0)
                     }
 
                 }, {})
 
+        }
+    }
+
+    fun onAvatarSelected(file: File) {
+        val currentState = _uiState.value as? ChatDetailUiState.Success ?: return
+        if (!currentState.isCurrentUserAdmin || currentState.isAvatarUpdating) return
+
+        _uiState.value = currentState.copy(isAvatarUpdating = true)
+
+        viewModelScope.launch {
+            try {
+                val uploaded = withContext(Dispatchers.IO) {
+                    chatInteractor.uploadFiles(listOf(file), raw = false)
+                }.firstOrNull()
+
+                if (uploaded != null) {
+                    val updatedInfo = chatInteractor.updateDialogInfo(
+                        dialogId = currentState.dialogId,
+                        imageId = uploaded.id,
+                        removeImage = false,
+                    )
+                    currentDialogInfo = updatedInfo
+                    val avatarPath = updatedInfo.dialogImage?.path
+                        ?: updatedInfo.interlocutor?.image
+                    val updatedProfile = currentState.profile.copy(
+                        image = updatedInfo.interlocutor?.image ?: currentState.profile.image
+                    )
+                    _uiState.value = currentState.copy(
+                        profile = updatedProfile,
+                        avatarPath = avatarPath,
+                        avatarId = updatedInfo.dialogImage?.id,
+                        isAvatarUpdating = false,
+                    )
+                    _avatarEvents.emit(AvatarUpdateEvent.Success)
+                } else {
+                    _uiState.value = currentState.copy(isAvatarUpdating = false)
+                    _avatarEvents.emit(AvatarUpdateEvent.Error(null))
+                }
+            } catch (e: Exception) {
+                _uiState.value = currentState.copy(isAvatarUpdating = false)
+                _avatarEvents.emit(AvatarUpdateEvent.Error(e.message))
+            }
+        }
+    }
+
+    fun onAvatarDeleted() {
+        val currentState = _uiState.value as? ChatDetailUiState.Success ?: return
+        if (!currentState.isCurrentUserAdmin || currentState.isAvatarUpdating) return
+
+        _uiState.value = currentState.copy(isAvatarUpdating = true)
+
+        viewModelScope.launch {
+            try {
+                val updatedInfo = chatInteractor.updateDialogInfo(
+                    dialogId = currentState.dialogId,
+                    removeImage = true,
+                )
+                currentDialogInfo = updatedInfo
+                val avatarPath = updatedInfo.dialogImage?.path
+                    ?: updatedInfo.interlocutor?.image
+                val updatedProfile = currentState.profile.copy(
+                    image = updatedInfo.interlocutor?.image ?: currentState.profile.image
+                )
+                _uiState.value = currentState.copy(
+                    profile = updatedProfile,
+                    avatarPath = avatarPath,
+                    avatarId = updatedInfo.dialogImage?.id,
+                    isAvatarUpdating = false,
+                )
+                _avatarEvents.emit(AvatarUpdateEvent.Success)
+            } catch (e: Exception) {
+                _uiState.value = currentState.copy(isAvatarUpdating = false)
+                _avatarEvents.emit(AvatarUpdateEvent.Error(e.message))
+            }
         }
     }
 
@@ -256,6 +341,9 @@ sealed class ChatDetailUiState {
         val notes: List<MediaMessage>,
         val dialogId: Long,
         val isCurrentUserAdmin: Boolean,
+        val avatarPath: String?,
+        val avatarId: String?,
+        val isAvatarUpdating: Boolean,
     ) : ChatDetailUiState()
 
     data class Error(val message: String) : ChatDetailUiState()

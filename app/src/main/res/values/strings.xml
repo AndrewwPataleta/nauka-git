@@ -254,6 +254,13 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_detail_tab_voice">Voice</string>
     <string name="chat_detail_tab_records">Notes</string>
     <string name="chat_search_no_results">No results</string>
+    <string name="chat_avatar_action_view">View avatar</string>
+    <string name="chat_avatar_action_replace">Replace photo</string>
+    <string name="chat_avatar_action_delete">Remove</string>
+    <string name="chat_avatar_update_error">Unable to update avatar. Please try again.</string>
+    <string name="chat_avatar_update_file_error">Failed to load the selected image.</string>
+    <string name="chat_avatar_preview_title">Avatar</string>
+    <string name="chat_avatar_preview_empty">Avatar is not available yet.</string>
     <string name="chat_status_online">Online</string>
     <string name="chat_status_last_seen_minutes">was %1$d min ago</string>
     <string name="chat_status_last_seen_hours">was %1$d h ago</string>

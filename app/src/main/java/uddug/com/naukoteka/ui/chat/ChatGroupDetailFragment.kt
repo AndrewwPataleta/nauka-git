@@ -21,6 +21,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailUiState
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatGroupDetailComponent
+import uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment.Companion.ARG_AVATAR_PATH
 
 @AndroidEntryPoint
 class ChatGroupDetailFragment : Fragment() {
@@ -85,6 +86,12 @@ class ChatGroupDetailFragment : Fragment() {
                         },
                         onAddParticipantsClick = {
                             findNavController().navigate(R.id.chatCreateMultiFragment)
+                        },
+                        onViewAvatar = { avatarPath ->
+                            findNavController().navigate(
+                                R.id.chatAvatarPreviewFragment,
+                                Bundle().apply { putString(ARG_AVATAR_PATH, avatarPath) }
+                            )
                         }
                     )
                 }

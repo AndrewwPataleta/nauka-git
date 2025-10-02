@@ -23,6 +23,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailEvent
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
+import uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment.Companion.ARG_AVATAR_PATH
 @AndroidEntryPoint
 class ChatDetailDialogFragment : Fragment() {
 
@@ -107,7 +108,14 @@ class ChatDetailDialogFragment : Fragment() {
                         onChatDeleted = {
                             findNavController().popBackStack(R.id.chatListFragment, false)
                         },
-
+                        onViewAvatar = { avatarPath ->
+                            findNavController().navigate(
+                                R.id.chatAvatarPreviewFragment,
+                                Bundle().apply {
+                                    putString(ARG_AVATAR_PATH, avatarPath)
+                                }
+                            )
+                        }
                     )
                 }
             }

@@ -1,6 +1,9 @@
 package uddug.com.naukoteka.ui.chat.compose
 
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,14 +24,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,6 +45,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Phone
@@ -65,6 +67,7 @@ import androidx.compose.runtime.LaunchedEffect
 
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -75,10 +78,13 @@ import coil.compose.AsyncImage
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.AvatarUpdateEvent
 import uddug.com.naukoteka.mvvm.chat.ChatDetailUiState
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
+import uddug.com.naukoteka.ui.chat.compose.components.ChatAvatarActionDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailShimmer
+import uddug.com.naukoteka.ui.chat.compose.util.uriToFile
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -92,14 +98,42 @@ fun ChatDetailDialogComponent(
     onNavigateToProfile: () -> Unit,
     onSearchClick: () -> Unit,
     onChatDeleted: () -> Unit,
+    onViewAvatar: (String) -> Unit,
 ) {
     val scrollState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-
     val uiState by viewModel.uiState.collectAsState()
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
+
+    val context = LocalContext.current
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            val file = uriToFile(context, uri)
+            if (file != null) {
+                viewModel.onAvatarSelected(file)
+            } else {
+                Toast.makeText(
+                    context,
+                    R.string.chat_avatar_update_file_error,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.avatarEvents.collect { event ->
+            when (event) {
+                is AvatarUpdateEvent.Error -> {
+                    val message = event.message?.takeIf { it.isNotBlank() }
+                        ?: context.getString(R.string.chat_avatar_update_error)
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+                AvatarUpdateEvent.Success -> Unit
+            }
+        }
+    }
 
 
     val tabs = listOf(
@@ -166,6 +200,7 @@ fun ChatDetailDialogComponent(
 
             is ChatDetailUiState.Success -> {
                 var showMoreDialog by remember { mutableStateOf(false) }
+                var showAvatarDialog by remember { mutableStateOf(false) }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -180,11 +215,40 @@ fun ChatDetailDialogComponent(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
 
-                        Avatar(
-                            state.profile.image.takeIf { it?.isNotEmpty() == true },
-                            state.profile.fullName,
-                            size = 100.dp
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(Color.Transparent)
+                                .clickable(
+                                    enabled = state.isCurrentUserAdmin && !state.isAvatarUpdating,
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    showAvatarDialog = true
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Avatar(
+                                state.avatarPath.takeIf { it?.isNotEmpty() == true },
+                                state.profile.fullName,
+                                size = 100.dp
+                            )
+                            if (state.isAvatarUpdating) {
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .background(Color.Black.copy(alpha = 0.4f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(28.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                }
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -350,6 +414,22 @@ fun ChatDetailDialogComponent(
 
                             },
                             isCurrentUserAdmin = false
+                        )
+                    }
+                    if (showAvatarDialog) {
+                        ChatAvatarActionDialog(
+                            onDismissRequest = { showAvatarDialog = false },
+                            onViewClick = {
+                                state.avatarPath?.let { onViewAvatar(it) }
+                            },
+                            onReplaceClick = {
+                                imagePickerLauncher.launch("image/*")
+                            },
+                            onDeleteClick = {
+                                viewModel.onAvatarDeleted()
+                            },
+                            canView = !state.avatarPath.isNullOrBlank(),
+                            canDelete = !state.avatarId.isNullOrBlank(),
                         )
                     }
                 }

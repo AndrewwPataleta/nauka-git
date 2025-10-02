@@ -15,6 +15,7 @@ import uddug.com.data.services.models.request.chat.PinMessageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageFileDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
+import uddug.com.data.services.models.request.chat.UpdateDialogInfoRequestDto
 import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
 import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.chat.FolderDetailsDto
@@ -274,6 +275,26 @@ class ChatRepositoryImpl @Inject constructor(
             dialog.id
         } catch (e: Exception) {
             println("Error creating group dialog: ${e.message}")
+            throw e
+        }
+    }
+
+    override suspend fun updateDialogInfo(
+        dialogId: Long,
+        dialogName: String?,
+        imageId: String?,
+        removeImage: Boolean,
+    ): DialogInfo {
+        return try {
+            val request = UpdateDialogInfoRequestDto(
+                dialogName = dialogName,
+                dialogImage = imageId?.let { DialogImageRequestDto(it) },
+                removeDialogImage = if (removeImage) true else null,
+            )
+            val dialogInfoDto = apiService.updateDialogInfo(dialogId, request)
+            mapDialogInfoDtoToDomain(dialogInfoDto)
+        } catch (e: Exception) {
+            println("Error updating dialog info: ${e.message}")
             throw e
         }
     }
