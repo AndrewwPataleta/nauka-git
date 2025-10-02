@@ -5,15 +5,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.DeleteForever
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Info
+
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -122,7 +125,7 @@ private data class AvatarAction(
 )
 
 private enum class AvatarActionIcon(val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    View(Icons.Outlined.Visibility),
-    Replace(Icons.Outlined.Image),
-    Delete(Icons.Outlined.DeleteForever)
+    View(Icons.Outlined.Info),
+    Replace(Icons.Outlined.AccountCircle),
+    Delete(Icons.Outlined.Delete)
 }
