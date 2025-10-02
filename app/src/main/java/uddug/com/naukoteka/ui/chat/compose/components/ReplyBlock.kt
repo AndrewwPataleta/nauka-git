@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -10,13 +11,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.sharp.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +33,7 @@ fun ReplyBlock(
     isMine: Boolean,
     modifier: Modifier = Modifier,
     backgroundColor: Color? = null,
+    onReplyClick: (Long) -> Unit = {},
 ) {
     val resolvedBackgroundColor = backgroundColor ?: if (isMine) {
         Color.White.copy(alpha = 0.1f)
@@ -46,21 +44,13 @@ fun ReplyBlock(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .clickable { onReplyClick(reply.id) }
             .clip(RoundedCornerShape(8.dp))
             .background(resolvedBackgroundColor)
             .height(IntrinsicSize.Min)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = Icons.Sharp.Share,
-            contentDescription = null,
-            tint = Color(0xFF2E83D9),
-            modifier = Modifier.size(16.dp)
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
         Box(
             modifier = Modifier
                 .fillMaxHeight()
@@ -75,9 +65,9 @@ fun ReplyBlock(
             Text(
                 text = reply.ownerName?.takeIf { it.isNotBlank() }
                     ?: stringResource(R.string.chat_reply_default_author),
-                color = Color(0xFF2E83D9),
+                color = if (isMine) Color.White else Color(0xFF2E83D9),
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

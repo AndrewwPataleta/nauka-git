@@ -71,6 +71,7 @@ fun ChatMessageItem(
     isSelected: Boolean = false,
     onSelectChange: () -> Unit = {},
     onLongPress: (MessageChat) -> Unit,
+    onReplyReferenceClick: (Long) -> Unit = {},
 ) {
     val isSystem = message.type == MessageType.SYSTEM
     Row(
@@ -166,7 +167,8 @@ fun ChatMessageItem(
                 if (message.replyTo != null) {
                     ReplyBlock(
                         reply = message.replyTo!!,
-                        isMine = isMine
+                        isMine = isMine,
+                        onReplyClick = onReplyReferenceClick
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
