@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.mvvm.chat
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,15 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatCreateMultiViewModel @Inject constructor(
     private val chatInteractor: ChatInteractor,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+
+    companion object {
+        const val MIN_SELECTION_KEY = "min_selection"
+        private const val DEFAULT_MIN_SELECTION = 2
+    }
+
+    private val minSelection = savedStateHandle.get<Int>(MIN_SELECTION_KEY) ?: DEFAULT_MIN_SELECTION
 
     private val _uiState =
         MutableStateFlow<ChatCreateMultiUiState>(ChatCreateMultiUiState.Loading)
@@ -94,7 +103,7 @@ class ChatCreateMultiViewModel @Inject constructor(
                 .filter { user -> user.id?.let { current.selected.contains(it) } == true }
                 .distinctBy { it.id }
 
-            if (selectedUsers.size < 2) {
+            if (selectedUsers.size < minSelection) {
                 viewModelScope.launch {
                     _events.emit(ChatCreateMultiEvent.ShowMinimumMembersError)
                 }

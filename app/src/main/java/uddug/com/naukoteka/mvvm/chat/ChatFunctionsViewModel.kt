@@ -98,7 +98,29 @@ class ChatFunctionsViewModel @Inject constructor(
                 chatRepository.deleteDialog(dialogId)
                 _events.emit(ChatFunctionsEvent.ChatDeleted)
             } catch (e: Exception) {
-                
+
+            }
+        }
+    }
+
+    fun deleteGroupChat(dialogId: Long) {
+        viewModelScope.launch {
+            try {
+                chatRepository.deleteGroupDialog(dialogId)
+                _events.emit(ChatFunctionsEvent.ChatDeleted)
+            } catch (e: Exception) {
+
+            }
+        }
+    }
+
+    fun leaveGroup(dialogId: Long) {
+        viewModelScope.launch {
+            try {
+                chatRepository.leaveGroupDialog(dialogId)
+                _events.emit(ChatFunctionsEvent.ChatDeleted)
+            } catch (e: Exception) {
+
             }
         }
     }

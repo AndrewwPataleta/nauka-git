@@ -30,6 +30,9 @@ class ChatCreateMultiFragment : Fragment() {
 
     private val viewModel: ChatCreateMultiViewModel by viewModels()
 
+    private val returnResult: Boolean
+        get() = arguments?.getBoolean(RETURN_RESULT_KEY) ?: false
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         navigationView = requireActivity() as ContainerNavigationView
@@ -50,10 +53,18 @@ class ChatCreateMultiFragment : Fragment() {
             viewModel.events.collectLatest { event ->
                 when (event) {
                     is ChatCreateMultiEvent.OpenGroupDetails -> {
-                        val args = bundleOf(
-                            ChatCreateGroupFragment.SELECTED_USERS_ARG to ArrayList(event.selectedUsers)
-                        )
-                        findNavController().navigate(R.id.chatCreateGroupFragment, args)
+                        if (returnResult) {
+                            findNavController().previousBackStackEntry?.savedStateHandle?.set(
+                                ChatCreateGroupFragment.SELECTED_USERS_ARG,
+                                ArrayList(event.selectedUsers)
+                            )
+                            findNavController().popBackStack()
+                        } else {
+                            val args = bundleOf(
+                                ChatCreateGroupFragment.SELECTED_USERS_ARG to ArrayList(event.selectedUsers)
+                            )
+                            findNavController().navigate(R.id.chatCreateGroupFragment, args)
+                        }
                     }
                     ChatCreateMultiEvent.ShowMinimumMembersError -> {
                         Toast.makeText(
@@ -82,6 +93,11 @@ class ChatCreateMultiFragment : Fragment() {
                 }
             }
         }
+    }
+
+    companion object {
+        const val RETURN_RESULT_KEY = "return_result"
+        const val MIN_SELECTION_ARG = ChatCreateMultiViewModel.MIN_SELECTION_KEY
     }
 }
 

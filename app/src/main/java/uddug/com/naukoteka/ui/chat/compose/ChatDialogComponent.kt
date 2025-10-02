@@ -55,6 +55,7 @@ import uddug.com.naukoteka.R
 import uddug.com.naukoteka.ui.chat.compose.components.ChatInputBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageDateBadge
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageItem
+import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.AttachOptionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
@@ -78,6 +79,8 @@ fun ChatDialogComponent(
     onSearchClick: () -> Unit,
     onContactClick: () -> Unit,
     onForwardMessage: (MessageChat) -> Unit,
+    onEditGroup: (Long) -> Unit,
+    onChatDeleted: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberLazyListState()
@@ -90,6 +93,10 @@ fun ChatDialogComponent(
     val selectedMessages by viewModel.selectedMessages.collectAsState()
     var showAttachmentSheet by remember { mutableStateOf(false) }
     var pendingPickerType by remember { mutableStateOf<AttachmentPickerType?>(null) }
+    var showMoreDialog by remember { mutableStateOf(false) }
+    val currentDialogId by viewModel.currentDialogId.collectAsState()
+    val isCurrentUserAdmin by viewModel.isCurrentUserAdmin.collectAsState()
+    val notificationsDisabled by viewModel.notificationsDisabled.collectAsState()
 
     val audioRecorder = remember { AudioRecorder(context) }
     val mediaPlayer = remember { MediaPlayer() }
@@ -200,6 +207,7 @@ fun ChatDialogComponent(
                         onDetailClick = {},
                         onSearchClick = onSearchClick,
                         onBackPressed = { onBackPressed() },
+                        onMoreClick = {}
                     )
                     Box(modifier = Modifier.weight(1f)) {
                         MessageListShimmer()
@@ -273,6 +281,7 @@ fun ChatDialogComponent(
                             },
                             onSearchClick = onSearchClick,
                             onBackPressed = { onBackPressed() },
+                            onMoreClick = { showMoreDialog = true }
                         )
                     }
                     
@@ -463,6 +472,34 @@ fun ChatDialogComponent(
                     onForwardMessage(msg)
                 }
             )
+        }
+        if (showMoreDialog) {
+            val dialogId = currentDialogId
+            if (dialogId != null) {
+                ChatDetailMoreSheetDialog(
+                    dialogId = dialogId,
+                    isGroup = (uiState as? ChatDialogUiState.Success)?.isGroup
+                        ?: (uiState as? ChatDialogUiState.Loading)?.isGroup
+                        ?: false,
+                    onNavigateToProfile = {
+                        viewModel.onChatDetailClick()
+                    },
+                    onDismissRequest = { showMoreDialog = false },
+                    onChatDeleted = {
+                        showMoreDialog = false
+                        onChatDeleted()
+                    },
+                    onEditGroup = { onEditGroup(dialogId) },
+                    isCurrentUserAdmin = isCurrentUserAdmin,
+                    notificationsDisabled = notificationsDisabled,
+                    onLeaveGroup = { onChatDeleted() },
+                    onNotificationsChanged = { disabled ->
+                        viewModel.updateNotificationsDisabled(disabled)
+                    }
+                )
+            } else {
+                showMoreDialog = false
+            }
         }
     }
 }

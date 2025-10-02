@@ -109,6 +109,15 @@ class ChatInteractor @Inject constructor(
     ): DialogInfo =
         chatRepository.updateDialogInfo(dialogId, dialogName, imageId, removeImage)
 
+    suspend fun updateGroupDialog(
+        dialogId: Long,
+        dialogName: String? = null,
+        imageId: String? = null,
+        removeImage: Boolean = false,
+        users: List<String>? = null,
+    ): DialogInfo =
+        chatRepository.updateGroupDialog(dialogId, dialogName, imageId, removeImage, users)
+
     suspend fun searchUsers(query: String, limit: Int = 10, page: Int = 1): List<UserProfileFullInfo> =
         chatRepository.searchUsers(query, limit, page)
 
@@ -140,6 +149,16 @@ class ChatInteractor @Inject constructor(
 
     suspend fun uploadFiles(files: List<JavaFile>, raw: Boolean = false): List<ChatFile> =
         chatRepository.uploadFiles(files, raw)
+
+    suspend fun deleteGroupDialog(dialogId: Long) = chatRepository.deleteGroupDialog(dialogId)
+
+    suspend fun leaveGroupDialog(dialogId: Long) = chatRepository.leaveGroupDialog(dialogId)
+
+    suspend fun makeDialogAdmin(dialogId: Long, userId: String) =
+        chatRepository.makeDialogAdmin(dialogId, userId)
+
+    suspend fun removeDialogAdmin(dialogId: Long, userId: String) =
+        chatRepository.removeDialogAdmin(dialogId, userId)
 
     suspend fun getUsersStatus(userIds: List<String>): List<UserStatus> =
         chatRepository.getUsersStatus(userIds)

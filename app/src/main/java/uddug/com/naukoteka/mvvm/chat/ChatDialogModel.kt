@@ -94,6 +94,15 @@ class ChatDialogViewModel @Inject constructor(
 
     private var currentUser: UserProfileFullInfo? = null
 
+    private val _currentDialogId = MutableStateFlow<Long?>(null)
+    val currentDialogId: StateFlow<Long?> = _currentDialogId
+
+    private val _isCurrentUserAdmin = MutableStateFlow(false)
+    val isCurrentUserAdmin: StateFlow<Boolean> = _isCurrentUserAdmin
+
+    private val _notificationsDisabled = MutableStateFlow(false)
+    val notificationsDisabled: StateFlow<Boolean> = _notificationsDisabled
+
     init {
         socketService.connect()
         socketService.setOnEvent("message") { message ->
@@ -115,6 +124,7 @@ class ChatDialogViewModel @Inject constructor(
                             val info = chatInteractor.getDialogInfo(dialogId)
                             currentDialogInfo = info
                             currentDialogID = dialogId
+                            _currentDialogId.value = dialogId
 
                             val name: String = when {
                                 info.interlocutor != null -> info.interlocutor?.fullName.orEmpty()
@@ -127,6 +137,8 @@ class ChatDialogViewModel @Inject constructor(
                             val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
                             var status: String? = null
                             val isGroup = (info.users?.size ?: 0) > 2
+                            val isAdmin = computeIsCurrentUserAdmin(info, it.id)
+                            _isCurrentUserAdmin.value = isAdmin
                             if (!isGroup) {
                                 val userId = info.interlocutor?.userId
                                 if (userId != null) {
@@ -197,6 +209,7 @@ class ChatDialogViewModel @Inject constructor(
                             val info = chatInteractor.getDialogInfoByPeer(interlocutorId)
                             currentDialogInfo = info
                             val dialogId = info.id
+                            _currentDialogId.value = dialogId
 
                             val name = info.interlocutor?.fullName.orEmpty()
                             val isGroup = (info.users?.size ?: 0) > 2
@@ -207,6 +220,8 @@ class ChatDialogViewModel @Inject constructor(
                             }
                             val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
                             var status: String? = null
+                            val isAdmin = computeIsCurrentUserAdmin(info, user.id)
+                            _isCurrentUserAdmin.value = isAdmin
                             if (!isGroup) {
                                 val userId = info.interlocutor?.userId
                                 if (userId != null) {
@@ -274,6 +289,52 @@ class ChatDialogViewModel @Inject constructor(
                 _uiState.value = ChatDialogUiState.Error(e.message ?: "Unknown error")
             }
         }
+    }
+
+    fun refreshDialogInfo() {
+        val dialogId = currentDialogID ?: return
+        viewModelScope.launch {
+            try {
+                val info = chatInteractor.getDialogInfo(dialogId)
+                currentDialogInfo = info
+                _currentDialogId.value = dialogId
+                _isCurrentUserAdmin.value = computeIsCurrentUserAdmin(info, currentUser?.id)
+                val isGroup = (info.users?.size ?: 0) > 2
+                val name: String = when {
+                    info.interlocutor != null -> info.interlocutor?.fullName.orEmpty()
+                    else -> info.name.orEmpty()
+                }
+                val image: String = when {
+                    info.interlocutor != null -> info.interlocutor?.image.orEmpty()
+                    else -> info.dialogImage?.path.orEmpty()
+                }
+                val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
+                when (val currentState = _uiState.value) {
+                    is ChatDialogUiState.Success -> {
+                        _uiState.value = currentState.copy(
+                            chatName = name,
+                            chatImage = image,
+                            isGroup = isGroup,
+                            firstParticipantName = firstParticipantName
+                        )
+                    }
+                    is ChatDialogUiState.Loading -> {
+                        _uiState.value = currentState.copy(
+                            chatName = name,
+                            chatImage = image,
+                            isGroup = isGroup,
+                            firstParticipantName = firstParticipantName
+                        )
+                    }
+                    else -> Unit
+                }
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    fun updateNotificationsDisabled(disabled: Boolean) {
+        _notificationsDisabled.value = disabled
     }
 
     fun updateCurrentMessage(newMessage: String) {
@@ -831,6 +892,25 @@ class ChatDialogViewModel @Inject constructor(
 }
 
 private const val READ_STATUS = 2
+
+private fun computeIsCurrentUserAdmin(info: DialogInfo, currentUserId: String?): Boolean {
+    if (currentUserId.isNullOrEmpty()) return false
+    return info.users.orEmpty().any { user ->
+        user.userId == currentUserId && (user.isAdmin || isOwnerRole(user.role) || isAdminRole(user.role))
+    }
+}
+
+private fun isOwnerRole(role: String?): Boolean {
+    if (role.isNullOrBlank()) return false
+    val normalized = role.lowercase()
+    return normalized == "37:201" || normalized.contains("owner") || normalized.contains("влад")
+}
+
+private fun isAdminRole(role: String?): Boolean {
+    if (role.isNullOrBlank()) return false
+    val normalized = role.lowercase()
+    return normalized == "37:202" || normalized.contains("admin") || normalized.contains("админ")
+}
 
 sealed class ChatDialogEvents {
     data class OpenChatProfileDetail(val dialogId: Long, val dialogInfo: DialogInfo) :

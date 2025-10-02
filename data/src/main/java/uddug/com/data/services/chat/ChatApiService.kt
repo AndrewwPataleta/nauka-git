@@ -17,6 +17,8 @@ import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.PinMessageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateDialogInfoRequestDto
+import uddug.com.data.services.models.request.chat.UpdateGroupAdminRequestDto
+import uddug.com.data.services.models.request.chat.UpdateGroupDialogRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.response.chat.ChatDto
 import uddug.com.data.services.models.response.chat.DialogInfoDto
@@ -121,6 +123,12 @@ interface ChatApiService {
         @Body request: UpdateDialogInfoRequestDto,
     ): DialogInfoDto
 
+    @PATCH("chat/v2/dialogs/{dialogId}")
+    suspend fun updateGroupDialog(
+        @Path("dialogId") dialogId: Long,
+        @Body request: UpdateGroupDialogRequestDto,
+    ): DialogInfoDto
+
     @POST("chat/v1/dialogs/pin/{dialogId}")
     suspend fun pinDialog(@Path("dialogId") dialogId: Long)
 
@@ -150,6 +158,24 @@ interface ChatApiService {
 
     @DELETE("chat/v1/dialogs/{dialogId}")
     suspend fun deleteDialog(@Path("dialogId") dialogId: Long)
+
+    @DELETE("chat/v2/dialogs/chat/{dialogId}")
+    suspend fun deleteGroupDialog(@Path("dialogId") dialogId: Long)
+
+    @PATCH("chat/v2/dialogs/leave/{dialogId}")
+    suspend fun leaveGroupDialog(@Path("dialogId") dialogId: Long)
+
+    @POST("chat/v2/dialogs/make-admin/{dialogId}")
+    suspend fun makeDialogAdmin(
+        @Path("dialogId") dialogId: Long,
+        @Body request: UpdateGroupAdminRequestDto,
+    )
+
+    @PATCH("chat/v2/dialogs/remove-admin/{dialogId}")
+    suspend fun removeDialogAdmin(
+        @Path("dialogId") dialogId: Long,
+        @Body request: UpdateGroupAdminRequestDto,
+    )
 
     @PATCH("chat/v1/messages/update")
     suspend fun updateMessage(@Body request: UpdateMessageRequestDto): MessageDto

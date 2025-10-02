@@ -16,6 +16,8 @@ import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageFileDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.request.chat.UpdateDialogInfoRequestDto
+import uddug.com.data.services.models.request.chat.UpdateGroupAdminRequestDto
+import uddug.com.data.services.models.request.chat.UpdateGroupDialogRequestDto
 import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
 import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.chat.FolderDetailsDto
@@ -299,6 +301,32 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateGroupDialog(
+        dialogId: Long,
+        dialogName: String?,
+        imageId: String?,
+        removeImage: Boolean,
+        users: List<String>?,
+    ): DialogInfo {
+        return try {
+            val imageRequest = when {
+                removeImage -> DialogImageRequestDto("")
+                imageId != null -> DialogImageRequestDto(imageId)
+                else -> null
+            }
+            val request = UpdateGroupDialogRequestDto(
+                name = dialogName,
+                image = imageRequest,
+                users = users
+            )
+            val dialogInfoDto = apiService.updateGroupDialog(dialogId, request)
+            mapDialogInfoDtoToDomain(dialogInfoDto)
+        } catch (e: Exception) {
+            println("Error updating group dialog: ${e.message}")
+            throw e
+        }
+    }
+
     override suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int) {
         val request = ReadMessagesRequestDto(dialogId, messages, status)
         apiService.markMessagesRead(request)
@@ -342,6 +370,22 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun deleteDialog(dialogId: Long) {
         apiService.deleteDialog(dialogId)
+    }
+
+    override suspend fun deleteGroupDialog(dialogId: Long) {
+        apiService.deleteGroupDialog(dialogId)
+    }
+
+    override suspend fun leaveGroupDialog(dialogId: Long) {
+        apiService.leaveGroupDialog(dialogId)
+    }
+
+    override suspend fun makeDialogAdmin(dialogId: Long, userId: String) {
+        apiService.makeDialogAdmin(dialogId, UpdateGroupAdminRequestDto(userId))
+    }
+
+    override suspend fun removeDialogAdmin(dialogId: Long, userId: String) {
+        apiService.removeDialogAdmin(dialogId, UpdateGroupAdminRequestDto(userId))
     }
 
     override suspend fun pinMessage(dialogId: Long, messageId: Long) {

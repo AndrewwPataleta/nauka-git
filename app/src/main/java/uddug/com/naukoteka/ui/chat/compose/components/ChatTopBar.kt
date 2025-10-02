@@ -42,6 +42,7 @@ fun ChatTopBar(
     onDetailClick: () -> Unit,
     onSearchClick: () -> Unit,
     onBackPressed: () -> Unit,
+    onMoreClick: () -> Unit,
 ) {
     Surface(elevation = 4.dp) {
         Column {
@@ -107,7 +108,7 @@ fun ChatTopBar(
                     )
                 }
 
-                IconButton(onClick = { }) {
+                IconButton(onClick = onMoreClick) {
                     Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color(0xFF2E83D9))
                 }
             }
