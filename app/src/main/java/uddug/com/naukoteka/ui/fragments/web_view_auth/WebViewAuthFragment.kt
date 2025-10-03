@@ -94,7 +94,7 @@ class WebViewAuthFragment : BaseFragment(R.layout.fragment_web_view), BackButton
     private fun setAcceptThirdPartyCookies(webView: WebView) {
         val cookieManager = CookieManager.getInstance()
 
-        // This is a safeguard, in case you've disabled cookies elsewhere
+        
         if (!cookieManager.acceptCookie()) {
             cookieManager.setAcceptCookie(true)
         }

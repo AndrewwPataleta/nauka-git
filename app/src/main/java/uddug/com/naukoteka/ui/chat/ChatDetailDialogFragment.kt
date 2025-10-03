@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.ui.chat
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,23 +12,19 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.DialogInfo
-import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
-import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatListUiState
-import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
+import uddug.com.naukoteka.mvvm.chat.ChatDetailUiState
+import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailEvent
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
-import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.PROFILE_ARGS
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
-import uddug.com.naukoteka.ui.chat.compose.ChatDialogComponent
-import uddug.com.naukoteka.ui.chat.compose.ChatListComponent
-
+import uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment.Companion.ARG_AVATAR_PATH
+import uddug.com.naukoteka.ui.chat.ChatEditGroupFragment
 @AndroidEntryPoint
 class ChatDetailDialogFragment : Fragment() {
 
@@ -63,6 +60,31 @@ class ChatDetailDialogFragment : Fragment() {
                 }
             }
         }
+        lifecycleScope.launch {
+            viewModel.events.collectLatest { event ->
+                when (event) {
+                    is ChatDialogDetailEvent.Share -> {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, event.link)
+                        }
+                        startActivity(Intent.createChooser(shareIntent, getString(R.string.share)))
+                    }
+                }
+            }
+        }
+
+        findNavController().currentBackStackEntry?.savedStateHandle
+            ?.getLiveData<Boolean>("refreshDialogInfo")
+            ?.observe(viewLifecycleOwner) { shouldRefresh ->
+                if (shouldRefresh == true) {
+                    val dialogId = (viewModel.uiState.value as? ChatDetailUiState.Success)?.dialogId
+                        ?: arguments?.getLong(DIALOG_ID)
+                        ?: return@observe
+                    viewModel.loadDialogInfo(dialogId)
+                    findNavController().currentBackStackEntry?.savedStateHandle?.set("refreshDialogInfo", false)
+                }
+            }
     }
 
     override fun onCreateView(
@@ -74,6 +96,7 @@ class ChatDetailDialogFragment : Fragment() {
 
         arguments?.getParcelable<DialogInfo>(DIALOG_DETAIL)
             ?.let { viewModel.setDialogInfo(it) }
+            ?: arguments?.getLong(DIALOG_ID)?.let { viewModel.loadDialogInfo(it) }
 
         return ComposeView(requireContext()).apply {
             setContent {
@@ -82,6 +105,35 @@ class ChatDetailDialogFragment : Fragment() {
                         viewModel = viewModel,
                         onBackPressed = {
                             requireActivity().onBackPressed()
+                        },
+                        onNavigateToProfile = {
+                            viewModel.getCurrentUser()?.let { navigationView?.selectShowEditFragment(it) }
+                        },
+                        onSearchClick = {
+                            val dialogId = (viewModel.uiState.value as? ChatDetailUiState.Success)?.dialogId
+                                ?: arguments?.getLong(DIALOG_ID)
+                                ?: 0L
+                            findNavController().navigate(
+                                R.id.chatDetailSearchFragment,
+                                Bundle().apply { putLong(DIALOG_ID, dialogId) }
+                            )
+                        },
+                        onChatDeleted = {
+                            findNavController().popBackStack(R.id.chatListFragment, false)
+                        },
+                        onViewAvatar = { avatarPath ->
+                            findNavController().navigate(
+                                R.id.chatAvatarPreviewFragment,
+                                Bundle().apply {
+                                    putString(ARG_AVATAR_PATH, avatarPath)
+                                }
+                            )
+                        },
+                        onEditGroup = { id ->
+                            val args = Bundle().apply {
+                                putLong(ChatEditGroupFragment.ARG_DIALOG_ID, id)
+                            }
+                            findNavController().navigate(R.id.chatEditGroupFragment, args)
                         }
                     )
                 }

@@ -1,7 +1,13 @@
 package uddug.com.naukoteka.ui.chat.compose
 
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -10,24 +16,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -37,14 +43,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Share
+
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -61,40 +67,92 @@ import androidx.compose.runtime.LaunchedEffect
 
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.AvatarUpdateEvent
 import uddug.com.naukoteka.mvvm.chat.ChatDetailUiState
+import uddug.com.naukoteka.ui.chat.compose.components.Avatar
+import uddug.com.naukoteka.ui.chat.compose.components.ChatAvatarActionDialog
+import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
+import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailShimmer
+import uddug.com.naukoteka.ui.chat.compose.util.uriToFile
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPressed: () -> Unit) {
+fun ChatDetailDialogComponent(
+    viewModel: ChatDialogDetailViewModel,
+    onBackPressed: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+    onSearchClick: () -> Unit,
+    onChatDeleted: () -> Unit,
+    onViewAvatar: (String) -> Unit,
+    onEditGroup: (Long) -> Unit,
+) {
     val scrollState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-
     val uiState by viewModel.uiState.collectAsState()
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
 
+    val context = LocalContext.current
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            val file = uriToFile(context, uri)
+            if (file != null) {
+                viewModel.onAvatarSelected(file)
+            } else {
+                Toast.makeText(
+                    context,
+                    R.string.chat_avatar_update_file_error,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
 
-    val tabs = listOf("Медиа", "Файлы", "Голосовые", "Записи")
+    LaunchedEffect(Unit) {
+        viewModel.avatarEvents.collect { event ->
+            when (event) {
+                is AvatarUpdateEvent.Error -> {
+                    val message = event.message?.takeIf { it.isNotBlank() }
+                        ?: context.getString(R.string.chat_avatar_update_error)
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+                AvatarUpdateEvent.Success -> Unit
+            }
+        }
+    }
+
+
+    val tabs = listOf(
+        stringResource(R.string.chat_detail_tab_media),
+        stringResource(R.string.chat_detail_tab_files),
+        stringResource(R.string.chat_detail_tab_voice),
+        stringResource(R.string.chat_detail_tab_records)
+    )
 
     Scaffold(
         topBar = {
             androidx.compose.material.TopAppBar(
                 title = {
-                    Text(text = "Информация", fontSize = 20.sp, color = Color.Black)
+                    Text(text = stringResource(R.string.chat_group_info_title), fontSize = 20.sp, color = Color.Black)
                 },
                 actions = {
 
-                    androidx.compose.material.IconButton(onClick = { }) {
+                    androidx.compose.material.IconButton(onClick = { onSearchClick() }) {
                         androidx.compose.material.Icon(
                             painter = painterResource(id = R.drawable.ic_search_chat),
                             contentDescription = "Edit Icon",
@@ -124,9 +182,9 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.TopStart
                 ) {
-                    CircularProgressIndicator()
+                    ChatDetailShimmer()
                 }
             }
 
@@ -142,6 +200,8 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
             }
 
             is ChatDetailUiState.Success -> {
+                var showMoreDialog by remember { mutableStateOf(false) }
+                var showAvatarDialog by remember { mutableStateOf(false) }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -155,19 +215,45 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
                             .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Аватарка
-                        AsyncImage(
-                            model = BuildConfig.IMAGE_SERVER_URL.plus(state.profile.image),
-                            contentDescription = "Аватар",
+
+                        Box(
                             modifier = Modifier
                                 .size(100.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(Color.Transparent)
+                                .clickable(
+                                    enabled = state.isCurrentUserAdmin && !state.isAvatarUpdating,
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    showAvatarDialog = true
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Avatar(
+                                state.avatarPath.takeIf { it?.isNotEmpty() == true },
+                                state.profile.fullName,
+                                size = 100.dp
+                            )
+                            if (state.isAvatarUpdating) {
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .background(Color.Black.copy(alpha = 0.4f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(28.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                }
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Имя и титул
+
                         Text(
                             text = state.profile.fullName.orEmpty(),
                             fontSize = 20.sp,
@@ -196,7 +282,10 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
                                         shape = RoundedCornerShape(8.dp),
                                         color = Color(0xFFF5F5F9)
                                     )
-                                    .clickable {
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) {
 
                                     }
                                     .padding(12.dp),
@@ -224,8 +313,11 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
                                         shape = RoundedCornerShape(8.dp),
                                         color = Color(0xFFF5F5F9)
                                     )
-                                    .clickable {
-
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) {
+                                        viewModel.shareDialog()
                                     }
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
@@ -252,7 +344,10 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
                                         shape = RoundedCornerShape(8.dp),
                                         color = Color(0xFFF5F5F9)
                                     )
-                                    .clickable { }
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) { showMoreDialog = true }
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
@@ -303,22 +398,6 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
                                                 )
                                             )
                                         )
-//                            Spacer(modifier = Modifier.width(4.dp))
-//                            if (tabCounts[index].isNotEmpty()) {
-//                                Box(
-//                                    contentAlignment = Alignment.Center,
-//                                    modifier = Modifier
-//                                        .size(20.dp)
-//                                        .background(Color.Blue, shape = CircleShape)
-//                                ) {
-//                                    Text(
-//                                        text = tabCounts[index],
-//                                        color = Color.White,
-//                                        fontSize = 12.sp,
-//                                        fontWeight = FontWeight.Bold
-//                                    )
-//                                }
-//                            }
                                     }
                                 }
                             )
@@ -326,12 +405,42 @@ fun ChatDetailDialogComponent(viewModel: ChatDialogDetailViewModel, onBackPresse
                     }
                     Divider()
 
-                    // Контент табов
+
                     when (selectedTabIndex) {
-                        0 -> MediaContent(state.currentMedia)
-                        1 -> FilesContent()
-                        2 -> VoiceContent()
-                        3 -> NotesContent()
+                        0 -> MediaContent(state.media)
+                        1 -> FilesContent(state.files)
+                        2 -> VoiceContent(state.voices)
+                        3 -> NotesContent(state.notes)
+                    }
+                    if (showMoreDialog) {
+                        ChatDetailMoreSheetDialog(
+                            dialogId = state.dialogId,
+                            isGroup = true,
+                            onNavigateToProfile = onNavigateToProfile,
+                            onDismissRequest = { showMoreDialog = false },
+                            onChatDeleted = onChatDeleted,
+                            onEditGroup = { onEditGroup(state.dialogId) },
+                            isCurrentUserAdmin = state.isCurrentUserAdmin,
+                            notificationsDisabled = false,
+                            onLeaveGroup = {},
+                            onNotificationsChanged = {}
+                        )
+                    }
+                    if (showAvatarDialog) {
+                        ChatAvatarActionDialog(
+                            onDismissRequest = { showAvatarDialog = false },
+                            onViewClick = {
+                                state.avatarPath?.let { onViewAvatar(it) }
+                            },
+                            onReplaceClick = {
+                                imagePickerLauncher.launch("image/*")
+                            },
+                            onDeleteClick = {
+                                viewModel.onAvatarDeleted()
+                            },
+                            canView = !state.avatarPath.isNullOrBlank(),
+                            canDelete = !state.avatarId.isNullOrBlank(),
+                        )
                     }
                 }
             }
@@ -346,7 +455,7 @@ fun MediaContent(items: List<MediaMessage>) {
         contentAlignment = Alignment.TopStart
     ) {
         LazyVerticalGrid(
-            columns = GridCells.Fixed(3), // 2 столбца
+            columns = GridCells.Fixed(3),
             modifier = Modifier.padding(8.dp)
         ) {
             items(items) { item ->
@@ -371,31 +480,139 @@ fun MediaContent(items: List<MediaMessage>) {
 }
 
 @Composable
-fun FilesContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+fun FilesContent(items: List<MediaMessage>) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
     ) {
-
+        items(items, key = { it.file.id }) { item ->
+            FileItem(item)
+        }
     }
 }
 
 @Composable
-fun VoiceContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+private fun FileItem(item: MediaMessage) {
+    val sizeText = remember(item.file.fileSize) { formatFileSize(item.file.fileSize) }
+    val dateText = remember(item.createdAt) { formatFileDate(item.createdAt) }
+    val metaText = remember(sizeText, dateText) {
+        listOfNotNull(sizeText, dateText).joinToString(separator = " • ")
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        elevation = 0.dp,
+        backgroundColor = Color.White,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(width = 1.dp, color = Color(0xFFE7E9EC))
     ) {
-        Text("Голосовые сообщения")
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_file_type_png),
+                contentDescription = null,
+                modifier = Modifier.size(48.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = item.file.fileName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (metaText.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_file_download),
+                            contentDescription = null,
+                            tint = Color(0xFF7F838D),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = metaText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF7F838D)
+                        )
+                    }
+                }
+            }
+            IconButton(onClick = { }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_more_vertical),
+                    contentDescription = null,
+                    tint = Color(0xFF7F838D)
+                )
+            }
+        }
+    }
+}
+
+private fun formatFileSize(sizeInBytes: Int?): String? {
+    val size = sizeInBytes ?: return null
+    if (size <= 0) return null
+    val units = listOf("B", "KB", "MB", "GB", "TB")
+    var value = size.toDouble()
+    var unitIndex = 0
+    while (value >= 1024 && unitIndex < units.lastIndex) {
+        value /= 1024
+        unitIndex++
+    }
+    val pattern = if (value >= 10 || unitIndex == 0) "%.0f" else "%.1f"
+    return String.format(Locale.getDefault(), pattern, value) + units[unitIndex].lowercase(Locale.getDefault())
+}
+
+private fun formatFileDate(rawDate: String): String? {
+    return try {
+        val instant = Instant.parse(rawDate)
+        val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+        localDate.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru")))
+    } catch (error: Exception) {
+        null
     }
 }
 
 @Composable
-fun NotesContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+fun VoiceContent(items: List<MediaMessage>) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
     ) {
-        Text("Записи")
+        items(items) { item ->
+            Text(
+                text = item.file.fileName,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun NotesContent(items: List<MediaMessage>) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
+    ) {
+        items(items) { item ->
+            Text(
+                text = item.file.fileName,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
     }
 }

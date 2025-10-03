@@ -3,7 +3,7 @@ package uddug.com.domain.entities.chat
 import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
 
-// DialogInfo.kt
+
 @Parcelize
 data class DialogInfo(
     val id: Long,
@@ -26,7 +26,7 @@ data class File(
     val id: String,
     val path: String,
     val fileName: String? = null,
-    val contentType: String,
+    val contentType: String? = null,
     val fileSize: Int? = null,
     val fileType: Int? = null,
     val fileKind: Int? = null,

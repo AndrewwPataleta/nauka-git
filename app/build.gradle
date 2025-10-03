@@ -85,23 +85,18 @@ android {
     buildFeatures {
         viewBinding true
         dataBinding true
-        compose true // Включаем поддержку Compose
+        compose true 
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion '1.5.3' // Используйте актуальную версию
+        kotlinCompilerExtensionVersion '1.5.3' 
     }
 
     namespace 'uddug.com.naukoteka'
 }
 
-configurations {
-    cleanedAnnotations
-    implementation.exclude group: 'org.jetbrains', module: 'annotations'
-}
-
 dependencies {
-    // Основные зависимости
+    
     implementation presentation.kotlin
     implementation presentation.ktxCore
     implementation ui.appcompat
@@ -111,7 +106,8 @@ dependencies {
     implementation ui.lifecycleCommon
     implementation ui.localeChanger
 
-    // MVVM и Compose зависимости
+
+    
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2"
@@ -123,8 +119,10 @@ dependencies {
     implementation "androidx.compose.material3:material3:1.1.2"
     implementation "androidx.compose.runtime:runtime-livedata:1.5.4"
     implementation "androidx.navigation:navigation-compose:2.7.4"
+    implementation "org.burnoutcrew.composereorderable:reorderable:0.9.6"
+    implementation "com.valentinilk.shimmer:compose-shimmer:1.0.5"
 
-    // Остальные зависимости
+    
     implementation ui.glide
     implementation ui.glideAnnotation
     kapt ui.glideProcessor
@@ -136,6 +134,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging:24.1.0'
     implementation 'com.google.firebase:firebase-inappmessaging-display:21.0.1'
     implementation 'com.google.firebase:firebase-config:22.1.0'
+    implementation 'com.google.firebase:firebase-dynamic-links-ktx:21.1.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
 
     implementation ui.cicerone
@@ -217,5 +216,5 @@ dependencies {
 }
 
 kapt {
-    correctErrorTypes = true  // Важно для корректной работы Hilt
+    correctErrorTypes = true  
 }

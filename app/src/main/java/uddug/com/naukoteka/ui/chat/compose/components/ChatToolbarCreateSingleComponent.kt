@@ -2,9 +2,6 @@ package uddug.com.naukoteka.ui.chat.compose.components
 
 
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
@@ -15,41 +12,43 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
-import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatToolbarCreateSingleComponent(
     modifier: Modifier = Modifier,
-    viewModel: ChatCreateSingleViewModel,
     onBackPressed: () -> Unit,
+    onActionClick: (() -> Unit)? = null,
+    isActionEnabled: Boolean = true,
 ) {
     TopAppBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Создать чат", fontSize = 20.sp, color = Color.Black)
+                Text(text = stringResource(R.string.chat_create_single_title), fontSize = 20.sp, color = Color.Black)
             }
         },
         actions = {
-            IconButton(onClick = { }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_chat_create_apply),
-                    contentDescription = "Edit Icon",
-                )
+            if (onActionClick != null) {
+                IconButton(onClick = { onActionClick() }, enabled = isActionEnabled) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_chat_create_apply),
+                        contentDescription = "Edit Icon",
+                        tint = if (isActionEnabled) Color(0xFF2E83D9) else Color(0x4D2E83D9)
+                    )
+                }
             }
         },
         navigationIcon = {
-            IconButton(onClick = {
-                onBackPressed()
-            }) {
+            IconButton(onClick = { onBackPressed() }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_chat_back),
                     contentDescription = "Edit Icon",
+                    tint = Color(0xFF2E83D9)
                 )
             }
         },

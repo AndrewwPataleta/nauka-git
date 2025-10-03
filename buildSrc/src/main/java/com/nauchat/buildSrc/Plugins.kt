@@ -17,18 +17,18 @@ object Plugins {
     const val FIREBASE_BUILD_GRADLE = "com.google.firebase:firebase-crashlytics-gradle:2.9.2"
 
 
-    /*
-         Project Level
-      */
+    
+
+
     const val GRADLE = "com.android.tools.build:gradle"
     const val DETEKT = "io.gitlab.arturbosch.detekt"
     const val KTLINT = "org.jlleitschuh.gradle.ktlint"
     const val GIT_HOOKS = "plugins.git-hooks"
     const val GRAPH_QL = "com.apollographql.apollo3"
 
-    /*
-        Module Level
-     */
+    
+
+
     const val DAGGER_HILT_PLUGIN = "dagger.hilt.android.plugin"
     const val ANDROID_APPLICATION_PLUGIN = "com.android.application"
     const val ANDROID_DYNAMIC_FEATURE_PLUGIN = "com.android.dynamic-feature"

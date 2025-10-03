@@ -9,7 +9,7 @@ data class UpdateUserProfileLaborDto(
     @SerializedName("sd") var sd: String? = null,
     @SerializedName("ed") var ed: String? = null,
     @SerializedName("rOrg") var rOrg: String? = null,
-    //@SerializedName("rOrgItem") var rOrgItemDto: ROrgItemDto? = ROrgItemDto(),
+    
     @SerializedName("orgName") var orgName: String? = null,
     @SerializedName("cPosition") var cPosition: String? = null,
     @SerializedName("position") var position: String? = null,

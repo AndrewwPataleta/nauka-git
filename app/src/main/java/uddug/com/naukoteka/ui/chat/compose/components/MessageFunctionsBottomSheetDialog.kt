@@ -1,0 +1,107 @@
+package uddug.com.naukoteka.ui.chat.compose.components
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import android.widget.Toast
+import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.MessageType
+import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.MessageFunctionsViewModel
+import uddug.com.naukoteka.utils.copyToClipboard
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MessageFunctionsBottomSheetDialog(
+    message: MessageChat,
+    onDismissRequest: () -> Unit,
+    onSelectMessage: () -> Unit,
+    onReply: (MessageChat) -> Unit,
+    onEdit: (MessageChat) -> Unit,
+    onForward: (MessageChat) -> Unit,
+    viewModel: MessageFunctionsViewModel = hiltViewModel(),
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
+
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 20.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.message_functions_title),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = MaterialTheme.typography.titleMedium.fontSize * 1.3f
+                )
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            val items = buildList<Pair<Int, () -> Unit>> {
+                add(R.string.chat_message_reply to { onReply(message) })
+                if (message.isMine && message.type == MessageType.TEXT) {
+                    add(R.string.chat_message_edit to { onEdit(message) })
+                }
+                add(R.string.chat_message_forward to { onForward(message) })
+                add(R.string.chat_message_copy to {
+                    message.text?.let {
+                        context.copyToClipboard(it)
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.chat_message_copied),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    viewModel.copy(message.id)
+                })
+                add(R.string.chat_message_select to {
+                    viewModel.select(message.id)
+                    onSelectMessage()
+                })
+                add(R.string.chat_message_show_original to { viewModel.showOriginal(message.id) })
+                add(R.string.chat_message_delete to { viewModel.delete(message.id) })
+            }
+            items.forEach { (textRes, action) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            action()
+                            onDismissRequest()
+                        }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(id = textRes),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+            }
+        }
+    }
+}

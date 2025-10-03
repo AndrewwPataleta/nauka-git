@@ -17,7 +17,7 @@ class SocketServiceImpl(private val cookiesCache: CookiesCache) : SocketService 
         private const val MAX_RECONNECTION_ATTEMPTS = 5
         private const val RECONNECTION_DELAY_MS = 1000
 
-        // Строковые константы для событий, так как их нет в версии 2.1.2
+        
         private const val EVENT_RECONNECT_ATTEMPT = "reconnect_attempt"
         private const val EVENT_RECONNECT_ERROR = "reconnect_error"
         private const val EVENT_RECONNECT_FAILED = "reconnect_failed"
@@ -124,7 +124,7 @@ class SocketServiceImpl(private val cookiesCache: CookiesCache) : SocketService 
                 Log.e(TAG, "🔥 Connection error: $error")
             }
 
-            // Используем строковые константы вместо отсутствующих в этой версии
+            
             on(EVENT_RECONNECT_ATTEMPT) {
                 Log.d(TAG, "🔄 Reconnection attempt #${socket.io().reconnectionAttempts()}")
             }

@@ -1,6 +1,6 @@
 package uddug.com.data.services.models.response.chat
 
-// DialogInfoDto.kt
+
 data class DialogInfoDto(
     val id: Long,
     val name: String?,
@@ -22,7 +22,7 @@ data class FileDto(
     val id: String,
     val path: String,
     val fileName: String,
-    val contentType: String,
+    val contentType: String? = null,
     val fileSize: Int,
     val fileType: Int,
     val fileKind: Int,

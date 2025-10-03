@@ -50,7 +50,7 @@ class TutorialFragment : BaseFragment(R.layout.fragment_tutorial_search), Tutori
                     }
                 }
             })
-         //   springDotsIndicator.setViewPager2(viewPager)
+         
         }
     }
 

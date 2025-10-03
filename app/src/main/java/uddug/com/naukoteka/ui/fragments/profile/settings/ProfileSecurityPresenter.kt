@@ -2,6 +2,8 @@ package uddug.com.naukoteka.ui.fragments.profile.settings
 
 import moxy.InjectViewState
 import toothpick.InjectConstructor
+import uddug.com.data.cache.cookies.CookiesCache
+import uddug.com.data.cache.user_id.UserIdCache
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.user_profile.UserProfileInteractor
 import uddug.com.naukoteka.global.base.BasePresenterImpl
@@ -9,7 +11,9 @@ import uddug.com.naukoteka.global.base.BasePresenterImpl
 @InjectConstructor
 @InjectViewState
 class ProfileSecurityPresenter(
-    private val userProfileInteractor: UserProfileInteractor
+    private val userProfileInteractor: UserProfileInteractor,
+    private val cookiesCache: CookiesCache,
+    private val userIdCache: UserIdCache
 ) : BasePresenterImpl<ProfileSecurityView>() {
 
     var userProfileFullInfo: UserProfileFullInfo? = null
@@ -21,6 +25,12 @@ class ProfileSecurityPresenter(
 
     fun selectExitProfile() {
         viewState.openLogoutDialog()
+    }
+
+    fun selectConfirmExit() {
+        cookiesCache.clear()
+        userIdCache.clear()
+        viewState.openLoginPage()
     }
 
     fun selectDeleteAccount() {

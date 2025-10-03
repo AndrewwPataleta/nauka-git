@@ -12,23 +12,17 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.Chat
-import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleEvent
-import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleUiState
 import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatListEvents
-import uddug.com.naukoteka.mvvm.chat.ChatListUiState
-import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
-import uddug.com.naukoteka.ui.chat.ChatDialogFragment.Companion.DIALOG_ID
+import uddug.com.naukoteka.ui.chat.ChatDialogFragment.Companion.INTERLOCUTOR_ID
 import uddug.com.naukoteka.ui.chat.compose.ChatCreateSingleScreen
-import uddug.com.naukoteka.ui.chat.compose.ChatListComponent
 
 @AndroidEntryPoint
 class ChatCreateSingleFragment : Fragment() {
@@ -56,18 +50,21 @@ class ChatCreateSingleFragment : Fragment() {
 
     private fun setupObservers() {
         lifecycleScope.launch {
-
-        }
-        lifecycleScope.launch {
             viewModel.events.collectLatest { state ->
                 when (state) {
                     is ChatCreateSingleEvent.OpenDialogDetail -> {
-                        findNavController().navigate(
+                        val navController = findNavController()
+                        navController.getBackStackEntry(R.id.chatListFragment).savedStateHandle["refreshChats"] = true
+                        navController.navigate(
                             R.id.chatDialogFragment,
-                            args = Bundle().apply {
-                                putLong(DIALOG_ID, state.dialogId)
+                            Bundle().apply { putString(INTERLOCUTOR_ID, state.interlocutorId) },
+                            navOptions {
+                                popUpTo(R.id.chatCreateSingleFragment) { inclusive = true }
                             }
                         )
+                    }
+                    ChatCreateSingleEvent.OpenMultiCreate -> {
+                        findNavController().navigate(R.id.chatCreateMultiFragment)
                     }
                 }
             }

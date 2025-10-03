@@ -5,7 +5,7 @@ import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.File
 import uddug.com.domain.entities.chat.User
 
-// Mappers.kt
+
 fun mapDialogInfoDtoToDomain(dto: DialogInfoDto): DialogInfo {
     return DialogInfo(
         id = dto.id,
@@ -31,7 +31,8 @@ private fun mapUserDtoToDomain(dto: UserDto): User? {
             fullName = dto.fullName ?: "",
             nickname = dto.nickname ?: "",
             userId = dto.userId ?: return null,
-            role = dto.role ?: ""
+            role = dto.role ?: "",
+            isAdmin = dto.isAdmin ?: false,
         )
     } catch (e: Exception) {
         null

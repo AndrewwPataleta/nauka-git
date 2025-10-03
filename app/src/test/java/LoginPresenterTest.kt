@@ -67,7 +67,7 @@ class LoginPresenterTest {
     fun setup() {
         `when`(interactor.login("romanakamoran@gmail.com", "123QWEasdZXC$"))
             .thenReturn(Completable.complete())
-        //loginPresenter = initPresenter()
+        
     }
 
     @Test

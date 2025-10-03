@@ -1,7 +1,6 @@
 package uddug.com.domain.entities.chat
 
 
-import uddug.com.domain.entities.profile.Image
 import java.time.Instant
 
 data class MessageChat(
@@ -25,7 +24,7 @@ data class Attachment(
     val kind: FileKind,
     val name: String,
     val type: FileType,
-    val contentType: String
+    val contentType: String?
 )
 
 enum class MessageType {

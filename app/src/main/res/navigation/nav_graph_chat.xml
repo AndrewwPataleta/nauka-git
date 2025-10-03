@@ -24,6 +24,18 @@
         android:name="uddug.com.naukoteka.ui.chat.ChatDetailDialogFragment">
 
     </fragment>
+    <fragment
+        android:id="@+id/chatGroupDetailFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatGroupDetailFragment">
+
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/chatDetailSearchFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatDetailDialogSearchFragment">
+
+    </fragment>
 
 
     <fragment
@@ -31,5 +43,41 @@
         android:name="uddug.com.naukoteka.ui.chat.ChatCreateSingleFragment">
 
     </fragment>
+
+    <fragment
+        android:id="@+id/chatCreateMultiFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatCreateMultiFragment">
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/chatCreateGroupFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatCreateGroupFragment">
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/chatEditGroupFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatEditGroupFragment">
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/chatFolderSettingsFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatFolderSettingsFragment">
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/sendContactFragment"
+        android:name="uddug.com.naukoteka.ui.chat.SendContactFragment"/>
+
+    <fragment
+        android:id="@+id/forwardMessageFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ForwardMessageFragment"/>
+
+    <fragment
+        android:id="@+id/chatAvatarPreviewFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment" />
 
 </navigation>

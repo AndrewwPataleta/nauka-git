@@ -7,10 +7,9 @@ import uddug.com.domain.entities.chat.FileKind
 import uddug.com.domain.entities.chat.FileType
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
-import uddug.com.domain.entities.profile.Image
 import java.time.Instant
 
-// ChatDto.kt
+
 
 data class ChatDto(
     val dialogs: List<DialogDto>,
@@ -22,63 +21,66 @@ data class DialogDto(
     val dialogId: Long,
     val dialogName: String,
     val dialogType: Int,
+    val dialogImage: ImageDto? = null,
     val messageId: Long,
     val isPinned: Boolean,
     val isUnread: Boolean,
-    val users: List<UserDto>,
-    val interlocutor: UserDto,
-    val lastMessage: MessageDto,
+    val users: List<UserDto>?,
+    val interlocutor: UserDto? = null,
+    val lastMessage: MessageDto? = null,
     val unreadMessages: Int,
     val notificationsDisable: Boolean,
+    val isBlocked: Boolean = false,
 )
 
 data class UserDto(
     val image: ImageDto? = null,
-    val fullName: String,
-    val nickname: String,
-    val userId: String,
-    val role: String,
+    val fullName: String? = null,
+    val nickname: String? = null,
+    val userId: String? = null,
+    val role: String? = null,
+    val isAdmin: Boolean? = null,
 )
 
 data class ImageDto(
-    val id: String,
+    val id: String? = null,
     val path: String? = null,
-    val fileName: String,
-    val contentType: String,
-    val fileSize: Int,
-    val fileType: Int,
-    val fileKind: Int,
-    val duration: String,
-    val viewCount: Int,
+    val fileName: String? = null,
+    val contentType: String? = null,
+    val fileSize: Int? = null,
+    val fileType: Int? = null,
+    val fileKind: Int? = null,
+    val duration: String? = null,
+    val viewCount: Int? = null,
 ) {
-    fun toDomain() : File {
+    fun toDomain(): File {
         return File(
-            id = this.id,
+            id = this.id.orEmpty(),
             contentType = this.contentType,
             path = this.path.orEmpty(),
-            fileName = this.fileName
+            fileName = this.fileName.orEmpty()
         )
     }
 }
 
 data class MessageDto(
-    val id: Long,
-    val text: String,
-    val type: Int,
-    val files: List<ImageDto>,
-    val read: Int,
-    val ownerId: String,
-    val createdAt: String,
-    val isPinned: Boolean,
+    val id: Long? = null,
+    val text: String? = null,
+    val type: Int? = null,
+    val files: List<ImageDto>? = null,
+    val read: Int? = null,
+    val ownerId: String? = null,
+    val createdAt: String? = null,
+    val isPinned: Boolean? = null,
 ) {
     fun toDomain(currentUserId: String): MessageChat = MessageChat(
 
-        id = id,
+        id = id ?: 0L,
         text = text,
-        type = MessageType.fromInt(type),
-        files = files.map { it.toDomain() },
+        type = MessageType.fromInt(type ?: 0),
+        files = files?.map { it.toDomain() } ?: emptyList(),
         ownerId = ownerId,
-        createdAt = Instant.now(),
+        createdAt = createdAt?.let { Instant.parse(it) } ?: Instant.EPOCH,
         readCount = read,
         isMine = ownerId == currentUserId
     )

@@ -42,16 +42,16 @@ class SplashFragment : BaseFragment(R.layout.fragment_splash), SplashView {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-//        contentView.rootSplash.run {
-//            Handler(Looper.getMainLooper()).postDelayed({
-//                println(cookiesCache.getAuthCookies())
-//                if (!cookiesCache.getAuthCookies().isNotNullOrEmpty()) {
-//                    router.newRootScreen(Screens.Tutorial())
-//                } else  {
-//                    startActivity(Intent(requireContext(), ContainerActivity::class.java))
-//                }
-//            }, 1000L)
-//        }
+
+
+
+
+
+
+
+
+
+
     }
 
     override fun showContainerActivity() {

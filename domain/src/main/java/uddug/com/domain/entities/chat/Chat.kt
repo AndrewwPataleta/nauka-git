@@ -3,12 +3,13 @@ package uddug.com.domain.entities.chat
 import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
 
-// Chat.kt
+
 
 data class Chat(
     val dialogId: Long,
     val dialogName: String,
     val dialogType: Int,
+    val dialogImage: Image? = null,
     val messageId: Long,
     val isPinned: Boolean,
     val isUnread: Boolean,
@@ -17,6 +18,7 @@ data class Chat(
     val lastMessage: Message,
     val unreadMessages: Int,
     val notificationsDisable: Boolean,
+    val isBlocked: Boolean,
 )
 
 @Parcelize
@@ -26,10 +28,18 @@ data class User(
     val nickname: String? = null,
     val userId: String? = null,
     val role: String? = null,
+    val isAdmin: Boolean = false,
 ) : Parcelable
 
 data class Image(
+    val id: String? = null,
     val path: String? = null,
+    val fileName: String? = null,
+    val contentType: String? = null,
+    val fileSize: Int? = null,
+    val fileType: Int? = null,
+    val fileKind: Int? = null,
+    val duration: String? = null,
 )
 
 data class Message(
@@ -60,6 +70,6 @@ fun MessageChat.updateOwnerInfoFromDialog(dialogInfo: DialogInfo): MessageChat {
     return this.copy(
         ownerName = name,
         ownerAvatarUrl = avatarUrl,
-        ownerIsAdmin = ownerUser?.role == "admin"
+        ownerIsAdmin = ownerUser?.isAdmin == true || ownerUser?.role == "admin"
     )
 }

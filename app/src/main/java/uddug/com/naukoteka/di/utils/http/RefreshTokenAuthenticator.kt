@@ -32,18 +32,18 @@ class RefreshTokenAuthenticator(
 
         if (response.request.header("Authorization") == "Bearer $refreshToken") {
             logger.info("Refresh token request has failed. Giving up")
-            //sessionInteractor.onSessionExpired()
+            
             return null
         }
 
-        /*authApi.refreshToken("Bearer $refreshToken")
-            .doOnSuccess {
-                logger.info("Tokens were successfully refreshed")
-                serverTokenCache.entity = mapper.mapAuthTokenToDomain(it)
-            }
-            .ignoreElement()
-            .onErrorComplete()
-            .blockingAwait()*/
+        
+
+
+
+
+
+
+
 
         return response.request.newBuilder()
             .removeHeader("Authorization")

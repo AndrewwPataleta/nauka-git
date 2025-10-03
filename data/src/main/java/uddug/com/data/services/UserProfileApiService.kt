@@ -39,8 +39,8 @@ interface UserProfileApiService {
 
     @POST("core/user_profile/info")
     fun setUser(
-        //@Header("Cookie") _nkts: String? = null,
-        //@Header(" _nkthnt") _nkthnt: String? = null,
+        
+        
         @Body userProfileRequestDto: UserProfileRequestDto
     ): Single<String>
 

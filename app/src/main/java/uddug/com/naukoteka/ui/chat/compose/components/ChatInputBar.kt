@@ -1,44 +1,82 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
+import coil.compose.AsyncImage
 import uddug.com.naukoteka.R
+import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.profile.UserProfileFullInfo
+import uddug.com.naukoteka.mvvm.chat.ContactInfo
+import java.io.File
+import java.util.Locale
 
 @Composable
 fun ChatInputBar(
     modifier: Modifier = Modifier,
     currentMessage: String,
+    attachedFiles: List<File>,
+    replyMessage: MessageChat?,
+    editingMessage: MessageChat?,
+    isRecording: Boolean,
+    recordedAudio: File?,
+    recordingTime: String,
+    selectedContact: UserProfileFullInfo?,
+    attachedContact: ContactInfo?,
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
-    isVoiceMessage: Boolean = false,
-    voiceDuration: String = "0:00",
-    onDeleteVoiceClick: () -> Unit = {},
-    onPlayVoiceClick: () -> Unit = {}
+    onVoiceClick: () -> Unit,
+    onCancelRecording: () -> Unit,
+    onAttachClick: () -> Unit,
+    onRemoveFile: (File) -> Unit,
+    onCancelReply: () -> Unit,
+    onCancelEditing: () -> Unit,
+    onRemoveSelectedContact: () -> Unit,
+    onRemoveAttachedContact: () -> Unit,
+    onDeleteRecording: () -> Unit,
+    onSendRecording: () -> Unit,
+    onPlayRecording: () -> Unit,
+    isRecordingPlaying: Boolean,
 ) {
     Column(
         modifier = modifier
@@ -52,109 +90,446 @@ fun ChatInputBar(
                 .height(1.dp)
         )
 
-        if (isVoiceMessage) {
-            Row(
+        replyMessage?.let { reply ->
+            ReplyInfoBlock(reply = reply, onCancelReply = onCancelReply)
+        }
+
+        editingMessage?.let { message ->
+            EditInfoBlock(message = message, onCancelEdit = onCancelEditing)
+        }
+
+        if (attachedFiles.isNotEmpty()) {
+            LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White)
                     .padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(attachedFiles) { file ->
+                    val isImage = file.isImageFile()
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isImage) Color.Transparent else Color(0xFFE4E8F1))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { onRemoveFile(file) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isImage) {
+                            AsyncImage(
+                                model = file,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.matchParentSize()
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .size(16.dp)
+                                    .background(Color.Red, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Remove",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                            }
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_attached_file_dialog),
+                                contentDescription = null,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        selectedContact?.let { contact ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onDeleteVoiceClick) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_trash),
-                        contentDescription = "Delete voice",
-                        tint = Color(0xFFEB5545)
+                Avatar(
+                    url = contact.image?.path,
+                    name = contact.fullName,
+                    size = 40.dp
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = contact.fullName.orEmpty(),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color(0xFF1F1F1F)
                     )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp)
-                        .background(Color(0xFF2E83D9), RoundedCornerShape(40.dp))
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = onPlayVoiceClick,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(Color.White, CircleShape)
-                    ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = Color(0xFF2E83D9))
+                    val phone = contact.phone ?: contact.phone2 ?: contact.phone3
+                    phone?.takeIf { it.isNotBlank() }?.let {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = it,
+                            fontSize = 12.sp,
+                            color = Color(0xFF8083A0)
+                        )
                     }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Icon(
-                        painter = painterResource(id = R.drawable.background_voice_wave),
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(24.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(text = voiceDuration, color = Color.White)
                 }
-
-                IconButton(
-                    onClick = onSendClick,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color(0xFF2E83D9), CircleShape)
-                ) {
+                IconButton(onClick = onRemoveSelectedContact) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_arrow_up),
-                        contentDescription = "Send",
-                        tint = Color.White
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Remove contact",
+                        tint = Color(0xFF8083A0)
                     )
                 }
             }
-        } else {
+        }
+
+        attachedContact?.let { contact ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White)
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { /* вложения */ }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_attach),
-                        contentDescription = "Attach",
-                        tint = Color(0XFF8083A0)
+                Avatar(
+                    url = null,
+                    name = contact.name,
+                    size = 40.dp
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = contact.name,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color(0xFF1F1F1F)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = contact.phone,
+                        fontSize = 12.sp,
+                        color = Color(0xFF8083A0)
                     )
                 }
+                IconButton(onClick = onRemoveAttachedContact) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Remove contact",
+                        tint = Color(0xFF8083A0)
+                    )
+                }
+            }
+        }
 
-                TextField(
-                    value = currentMessage,
-                    onValueChange = onMessageChange,
-                    placeholder = { Text("Напишите сообщение") },
+        when {
+            recordedAudio != null -> {
+                Row(
                     modifier = Modifier
-                        .padding(horizontal = 6.dp)
-                        .weight(1f)
-                        .height(54.dp)
-                        .border(
-                            width = 1.dp,
-                            color = Color(0xFFEAEAF2),
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                    colors = TextFieldDefaults.textFieldColors(
-                        backgroundColor = Color.White,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                )
+                        .fillMaxWidth()
+                        .background(Color.White)
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onDeleteRecording) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_trash),
+                            contentDescription = "Delete",
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(
+                                color = colorResource(R.color.object_main),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                    ) {
+                        RecordedAudioPreview(
+                            duration = recordingTime,
+                            isPlaying = isRecordingPlaying,
+                            onPlay = onPlayRecording
+                        )
+                    }
+                    IconButton(onClick = onSendRecording) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_send_message_new),
+                            contentDescription = "Send",
+                        )
+                    }
+                }
+            }
 
-                IconButton(onClick = onSendClick) {
-                    Icon(Icons.Default.Send, contentDescription = "Send", tint = Color(0XFF8083A0))
+            isRecording -> {
+                var dragAmount by remember { mutableStateOf(0f) }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White)
+                        .padding(horizontal = 8.dp, vertical = 8.dp)
+                        .pointerInput(Unit) {
+                            detectHorizontalDragGestures(
+                                onDragEnd = { dragAmount = 0f },
+                                onDragCancel = { dragAmount = 0f },
+                                onHorizontalDrag = { _, amount ->
+                                    dragAmount += amount
+                                    if (dragAmount < -100f) {
+                                        dragAmount = 0f
+                                        onCancelRecording()
+                                    }
+                                }
+                            )
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(Color.Red, CircleShape)
+                        )
+                        Text(
+                            text = recordingTime,
+                            color = Color(0XFF8083A0),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.chat_swipe_to_cancel),
+                        color = Color(0XFF8083A0),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = onVoiceClick) {
+                        val transition = rememberInfiniteTransition()
+                        val scale by transition.animateFloat(
+                            initialValue = 1f,
+                            targetValue = 1.3f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(500, easing = FastOutSlowInEasing),
+                                repeatMode = RepeatMode.Reverse
+                            )
+                        )
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_rec_mic_active),
+                            contentDescription = "Stop",
+                            modifier = Modifier.scale(scale)
+                        )
+                    }
+                }
+            }
+
+            else -> {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White)
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onAttachClick) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_attach),
+                            contentDescription = "Attach",
+                            tint = Color(0XFF8083A0)
+                        )
+                    }
+
+                    TextField(
+                        value = currentMessage,
+                        onValueChange = onMessageChange,
+                        placeholder = { Text(stringResource(R.string.chat_message_placeholder)) },
+                        modifier = Modifier
+                            .padding(horizontal = 6.dp)
+                            .weight(1f)
+                            .height(54.dp)
+                            .border(
+                                width = 1.dp,
+                                color = Color(0xFFEAEAF2),
+                                shape = RoundedCornerShape(12.dp)
+                            ),
+                        colors = TextFieldDefaults.textFieldColors(
+                            backgroundColor = Color.White,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                    )
+
+                    if (currentMessage.isBlank() && attachedFiles.isEmpty()) {
+                        IconButton(onClick = onVoiceClick) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_rec_mic_inactive),
+                                contentDescription = "Record",
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = onSendClick) {
+                            Icon(
+                                Icons.Default.Send,
+                                contentDescription = "Send",
+                                tint = Color(0XFF8083A0)
+                            )
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ReplyInfoBlock(reply: MessageChat, onCancelReply: () -> Unit) {
+    val iconColor = Color(0XFF8083A0)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_chat_reply),
+            contentDescription = null,
+            tint = iconColor
+        )
+        Image(
+            painter = painterResource(id = R.drawable.ic_chat_separator),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .width(2.dp)
+                .height(24.dp),
+            colorFilter = ColorFilter.tint(iconColor)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = reply.ownerName ?: "",
+                color = iconColor,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+            )
+            Text(
+                text = reply.text.orEmpty(),
+                color = iconColor,
+                fontSize = 12.sp,
+                maxLines = 1
+            )
+        }
+        IconButton(onClick = onCancelReply) {
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = stringResource(id = R.string.cancel_button),
+                tint = Color(0XFF8083A0)
+            )
+        }
+    }
+}
+
+@Composable
+private fun EditInfoBlock(message: MessageChat, onCancelEdit: () -> Unit) {
+    val accentColor = colorResource(id = R.color.object_main)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_chat_edit),
+            contentDescription = null,
+            tint = accentColor
+        )
+        Image(
+            painter = painterResource(id = R.drawable.ic_chat_separator),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .width(2.dp)
+                .height(24.dp),
+            colorFilter = ColorFilter.tint(accentColor)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(id = R.string.chat_editing_title),
+                color = accentColor,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+            )
+            Text(
+                text = message.text.orEmpty(),
+                color = Color(0XFF8083A0),
+                fontSize = 12.sp,
+                maxLines = 1
+            )
+        }
+        IconButton(onClick = onCancelEdit) {
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = stringResource(id = R.string.cancel_button),
+                tint = Color(0XFF8083A0)
+            )
+        }
+    }
+}
+
+@Composable
+fun RecordedAudioPreview(duration: String, isPlaying: Boolean, onPlay: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .height(40.dp)
+            .fillMaxWidth()
+            .clickable { onPlay() },
+        contentAlignment = Alignment.CenterStart
+    ) {
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .background(Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = if (isPlaying) painterResource(id = R.drawable.ic_stop_voice) else painterResource(
+                        id = R.drawable.ic_play_voice
+                    ),
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                )
+            }
+            Image(
+                painter = painterResource(id = R.drawable.background_voice_wave),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(horizontal = 10.dp)
+                    .weight(1f),
+                contentScale = ContentScale.FillWidth
+            )
+            Text(text = duration, color = Color.White)
+        }
+    }
+}
+
+private val IMAGE_FILE_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif")
+
+private fun File.isImageFile(): Boolean {
+    val extension = extension.lowercase(Locale.ROOT)
+    return IMAGE_FILE_EXTENSIONS.contains(extension)
 }

@@ -35,7 +35,7 @@ class OkHttpProvider(
         })
         .addNetworkInterceptor(statusCodeInterceptor)
         .addNetworkInterceptor(errorTransformerInterceptor)
-        //  .addInterceptor(authInterceptor)
+        
         .addInterceptor(UnauthorizedInterceptor(context))
         .addInterceptor(UserAgentInterceptor())
         .addInterceptor(ChuckerInterceptor(context))

@@ -117,7 +117,7 @@ class WallDetailFragment : BaseFragment(R.layout.fragment_wall_detail), WallDeta
 
                 postDate.text = feedContainer.pubDate?.let { formatPostDate(it) }
 
-                // Настройка репоста (upPost)
+                
                 body.upPost?.let { upPost ->
                     if (upPost.authorInfo?.fullName.isNotNullOrEmpty()) {
                         originalContainer.isVisible = true

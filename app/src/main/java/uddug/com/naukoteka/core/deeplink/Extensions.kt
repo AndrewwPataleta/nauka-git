@@ -11,10 +11,8 @@ import androidx.core.content.ContextCompat
 import uddug.com.naukoteka.R
 import java.net.URLDecoder
 import java.net.URLEncoder
-import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
 private const val ENCODING_SYSTEM = "utf-8"
@@ -41,7 +39,7 @@ fun Context.launchCustomTabsByUrl(
         builder.setInstantAppsEnabled(instantAppsEnabled)
         val customBuilder = builder.build()
         customBuilder.launchUrl(this, Uri.parse(link))
-      //  customBuilder.launchUrl(this, Uri.parse(getString(R.string.docs_link_to_google, link)))
+      
     } catch (e: ActivityNotFoundException) {
         onError()
     }
@@ -49,18 +47,20 @@ fun Context.launchCustomTabsByUrl(
 
 
 fun formatMessageTime(time: String): String {
-    val messageDate = ZonedDateTime.parse(time, DateTimeFormatter.ISO_DATE_TIME)
-    val currentDate = ZonedDateTime.now(ZoneOffset.UTC)
+    return runCatching {
+        val messageDate = ZonedDateTime.parse(time, DateTimeFormatter.ISO_DATE_TIME)
+            .withZoneSameInstant(ZoneId.systemDefault())
+        val currentDate = ZonedDateTime.now(ZoneId.systemDefault())
 
-    return when {
-        messageDate.toLocalDate().isEqual(currentDate.toLocalDate()) -> {
-            messageDate.format(DateTimeFormatter.ofPattern("HH:mm"))
+        when {
+            messageDate.toLocalDate().isEqual(currentDate.toLocalDate()) -> {
+                messageDate.format(DateTimeFormatter.ofPattern("HH:mm"))
+            }
+            messageDate.isAfter(currentDate.minusDays(7)) -> {
+                val dayOfWeek = messageDate.dayOfWeek
+                dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("ru"))
+            }
+            else -> messageDate.format(DateTimeFormatter.ofPattern("dd.MM.yy"))
         }
-        messageDate.isAfter(currentDate.minusDays(7)) -> {
-            val dayOfWeek = messageDate.dayOfWeek
-            val shortDay = dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("ru"))
-            shortDay
-        }
-        else -> messageDate.format(DateTimeFormatter.ofPattern("dd.MM.yy"))
-    }
+    }.getOrElse { time }
 }

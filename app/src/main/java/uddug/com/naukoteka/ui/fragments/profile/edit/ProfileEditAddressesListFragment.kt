@@ -108,7 +108,7 @@ class ProfileEditAddressesListFragment :
     }
 
     override fun setMainInformation(profileInfo: UserProfileFullInfo) {
-        //  contentView.countryBorn.text = profileInfo.addresses.first().country?.term.orEmpty()
+        
     }
 
     override fun setCountryBord(country: Country) {

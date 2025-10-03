@@ -64,8 +64,10 @@ class LoginFragment : BaseFragment(R.layout.fragment_login), LoginView, BackButt
                 showPopupMenu(it)
                 ivArrowDown.setImageResource(R.drawable.ic_arrow_up)
             }
-            tvLanguage.text =
-                SUPPORTED_LOCALES_CUSTOM.find { LocaleChanger.getLocale() == it.locale }?.languageName
+            tvLanguage.text = SUPPORTED_LOCALES_CUSTOM
+                .find { LocaleChanger.getLocale() == it.locale }
+                ?.let { getString(it.languageNameRes) }
+                ?: getString(R.string.language_russian)
         }
     }
 

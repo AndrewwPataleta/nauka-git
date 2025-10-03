@@ -24,7 +24,7 @@ class CalendarTypeAdapter : TypeAdapter<Calendar>() {
         if (value == null) writer.nullValue()
         else {
             val dateFormat = SimpleDateFormat(MAIN_SERVER_DATE_FORMAT, Locale.getDefault())
-//                dateFormat.timeZone = timeZone
+
             writer.value(dateFormat.format(value.time))
         }
     }

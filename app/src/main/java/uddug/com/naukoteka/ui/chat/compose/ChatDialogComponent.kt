@@ -1,71 +1,194 @@
 package uddug.com.naukoteka.ui.chat.compose
 
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.media.MediaPlayer
+import android.net.Uri
+import android.os.Build
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imeNestedScroll
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
 import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
-import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
+import uddug.com.naukoteka.mvvm.chat.ContactInfo
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.ui.chat.compose.components.ChatInputBar
+import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageDateBadge
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageItem
-import uddug.com.naukoteka.ui.chat.compose.components.ChatMessagesList
-import uddug.com.naukoteka.ui.chat.compose.components.ChatTabBar
-import uddug.com.naukoteka.ui.chat.compose.components.ChatToolbarComponent
+import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
+import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
+import uddug.com.naukoteka.ui.chat.compose.components.AttachOptionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
-import uddug.com.naukoteka.ui.chat.compose.components.SearchField
-import androidx.compose.foundation.layout.navigationBarsPadding
+import uddug.com.naukoteka.ui.chat.compose.components.MessageListShimmer
+import uddug.com.naukoteka.ui.chat.compose.util.uriToFile
+import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.naukoteka.ui.chat.AudioRecorder
+import uddug.com.naukoteka.ui.chat.compose.formatMessageDate
+import uddug.com.naukoteka.ui.chat.compose.messageDate
+import uddug.com.naukoteka.ui.chat.compose.shouldShowDateBadge
+import java.io.File
+import java.time.ZoneId
 
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.imeNestedScroll
-import androidx.compose.foundation.layout.isImeVisible
-import androidx.compose.material.Scaffold
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+private enum class AttachmentPickerType { MEDIA, FILE }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Unit) {
+fun ChatDialogComponent(
+    viewModel: ChatDialogViewModel,
+    onBackPressed: () -> Unit,
+    onSearchClick: () -> Unit,
+    onContactClick: () -> Unit,
+    onForwardMessage: (MessageChat) -> Unit,
+    onEditGroup: (Long) -> Unit,
+    onChatDeleted: () -> Unit,
+) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
+    val zoneId = remember { ZoneId.systemDefault() }
+    var selectedMessage by remember { mutableStateOf<MessageChat?>(null) }
+    val isSelectionMode by viewModel.isSelectionMode.collectAsState()
+    val selectedMessages by viewModel.selectedMessages.collectAsState()
+    var showAttachmentSheet by remember { mutableStateOf(false) }
+    var pendingPickerType by remember { mutableStateOf<AttachmentPickerType?>(null) }
+    var showMoreDialog by remember { mutableStateOf(false) }
+    val currentDialogId by viewModel.currentDialogId.collectAsState()
+    val isCurrentUserAdmin by viewModel.isCurrentUserAdmin.collectAsState()
+    val notificationsDisabled by viewModel.notificationsDisabled.collectAsState()
+
+    val audioRecorder = remember { AudioRecorder(context) }
+    val mediaPlayer = remember { MediaPlayer() }
+    var isRecording by remember { mutableStateOf(false) }
+    var recordedAudio by remember { mutableStateOf<File?>(null) }
+    var recordingTime by remember { mutableStateOf(0L) }
+    var isRecordingPlaying by remember { mutableStateOf(false) }
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted: Boolean ->
+        if (granted) {
+            audioRecorder.start()
+            recordedAudio = null
+            recordingTime = 0L
+            isRecording = true
+        }
+    }
+
+    LaunchedEffect(isRecording) {
+        if (isRecording) {
+            while (isRecording) {
+                delay(1000)
+                recordingTime += 1000
+            }
+        }
+    }
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris: List<Uri> ->
+        val files = uris.mapNotNull { uri -> uriToFile(context, uri) }
+        if (files.isNotEmpty()) {
+            viewModel.attachFiles(files)
+        }
+    }
+
+    val mediaPermissions = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO
+            )
+        } else {
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+    }
+    val filePermissions = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            emptyArray()
+        } else {
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+    }
+
+    fun attachMediaFiles(uris: List<Uri>) {
+        val files = uris.mapNotNull { uri -> uriToFile(context, uri) }
+        if (files.isNotEmpty()) {
+            viewModel.attachFiles(files)
+        }
+    }
+
+    val mediaPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia()
+    ) { uris ->
+        attachMediaFiles(uris)
+    }
+
+    fun openMediaPicker() {
+        mediaPickerLauncher.launch(
+            PickVisualMediaRequest(PickVisualMedia.ImageAndVideo)
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.values.all { it }
+        if (granted) {
+            when (pendingPickerType) {
+                AttachmentPickerType.MEDIA -> openMediaPicker()
+                AttachmentPickerType.FILE -> filePickerLauncher.launch(arrayOf("*/*"))
+                null -> Unit
+            }
+        }
+        pendingPickerType = null
+    }
 
     Box(
         modifier = Modifier
             .background(Color.White)
             .fillMaxSize()
-            .systemBarsPadding() // Учитываем панель состояния (статус бар)
+            .systemBarsPadding() 
     ) {
         Column(
             modifier = Modifier
@@ -73,94 +196,339 @@ fun ChatDialogComponent(viewModel: ChatDialogViewModel, onBackPressed: () -> Uni
         ) {
 
 
-            when (uiState) {
+            when (val state = uiState) {
                 is ChatDialogUiState.Loading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                    ChatTopBar(
+                        name = state.chatName,
+                        image = state.chatImage,
+                        isGroup = state.isGroup,
+                        status = state.status,
+                        firstParticipantName = state.firstParticipantName,
+                        onDetailClick = {},
+                        onSearchClick = onSearchClick,
+                        onBackPressed = { onBackPressed() },
+                        onMoreClick = {}
+                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        MessageListShimmer()
                     }
                 }
 
                 is ChatDialogUiState.Error -> {
-                    val error = (uiState as ChatDialogUiState.Error).message
+                    val error = state.message
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(text = error, color = Color.Red)
                     }
                 }
 
                 is ChatDialogUiState.Success -> {
-                    val state = uiState as ChatDialogUiState.Success
                     val messages = state.chats
-                    ChatTopBar(
-                        name = state.chatName,
-                        image = state.chatImage,
-                        isGroup = state.isGroup,
-                        status = state.status,
-                        onBackPressed = { onBackPressed() },
-                        onDetailClick = {
-                            viewModel.onChatDetailClick()
+                    val messageIndexById = remember(messages) {
+                        messages.mapIndexed { index, message -> message.id to index }.toMap()
+                    }
+
+                    LaunchedEffect(messages.size) {
+                        if (messages.isNotEmpty()) {
+                            scrollState.scrollToItem(messages.size - 1)
                         }
-                    )
-                    // LazyColumn будет использовать оставшееся пространство
-                    Box(
+                    }
+                    if (isSelectionMode) {
+                        Surface(elevation = 4.dp) {
+                            Column {
+                                TopAppBar(
+                                    modifier = Modifier.height(68.dp),
+                                    title = {
+                                        Text(text = selectedMessages.size.toString(), fontSize = 20.sp, color = Color.Black)
+                                    },
+                                    navigationIcon = {
+                                        IconButton(onClick = { viewModel.clearSelection() }) {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_close),
+                                                contentDescription = "Close",
+                                                tint = Color.Black
+                                            )
+                                        }
+                                    },
+                                    actions = {
+                                        IconButton(onClick = { viewModel.deleteSelectedMessages() }) {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_trash),
+                                                contentDescription = "Delete",
+                                                tint = Color.Black
+                                            )
+                                        }
+                                    },
+                                    backgroundColor = Color.White,
+                                    elevation = 0.dp
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(Color(0xFFEAEAF2))
+                                )
+                            }
+                        }
+                    } else {
+                        ChatTopBar(
+                            name = state.chatName,
+                            image = state.chatImage,
+                            isGroup = state.isGroup,
+                            status = state.status,
+                            firstParticipantName = state.firstParticipantName,
+                            onDetailClick = {
+                                viewModel.onChatDetailClick()
+                            },
+                            onSearchClick = onSearchClick,
+                            onBackPressed = { onBackPressed() },
+                            onMoreClick = { showMoreDialog = true }
+                        )
+                    }
+                    
+                    LazyColumn(
+                        state = scrollState,
                         modifier = Modifier
+                            .weight(1f)
                             .fillMaxWidth()
-                            .weight(1f) // Занимает оставшееся место
+                            .padding(vertical = 10.dp)
                     ) {
-                        if (messages.isEmpty()) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 32.dp),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = stringResource(id = R.string.chat_empty_title),
-                                    style = MaterialTheme.typography.h6,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.Gray
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = stringResource(id = R.string.chat_empty_description),
-                                    style = MaterialTheme.typography.body2,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.Gray
+                        itemsIndexed(messages) { index, message ->
+                            val previousMessage = messages.getOrNull(index - 1)
+                            if (shouldShowDateBadge(previousMessage, message, zoneId)) {
+                                ChatMessageDateBadge(
+                                    text = formatMessageDate(
+                                        context = context,
+                                        date = message.messageDate(zoneId),
+                                        zoneId = zoneId
+                                    )
                                 )
                             }
-                        } else {
-                            LazyColumn(
-                                state = scrollState,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 10.dp),
-                                reverseLayout = true,
-                            ) {
-                                items(messages) { message ->
-                                    ChatMessageItem(message, isMine = message.isMine)
+                            ChatMessageItem(
+                                message = message,
+                                isMine = message.isMine,
+                                selectionMode = isSelectionMode,
+                                isSelected = selectedMessages.contains(message.id),
+                                onSelectChange = { viewModel.toggleMessageSelection(message.id) },
+                                onLongPress = { selectedMessage = it },
+                                onReplyReferenceClick = { targetId ->
+                                    messageIndexById[targetId]?.let { index ->
+                                        scope.launch {
+                                            scrollState.animateScrollToItem(index)
+                                        }
+                                    }
                                 }
-                            }
+                            )
                         }
                     }
 
-                    // ChatInputBar остается внизу экрана
+                    
                     ChatInputBar(
                         currentMessage = state.currentMessage,
+                        attachedFiles = state.attachedFiles,
+                        replyMessage = state.replyMessage,
+                        editingMessage = state.editingMessage,
+                        isRecording = isRecording,
+                        recordedAudio = recordedAudio,
+                        recordingTime = String.format("%02d:%02d", recordingTime / 60000, (recordingTime / 1000) % 60),
+                        selectedContact = state.selectedContact,
+                        attachedContact = state.attachedContact,
                         onMessageChange = { newMessage ->
                             viewModel.updateCurrentMessage(newMessage)
                         },
                         onSendClick = {
                             scope.launch {
                                 viewModel.sendMessage(state.currentMessage)
-                                scrollState.animateScrollToItem(0)
-                                // keyboardController?.hide()
+                                scrollState.animateScrollToItem(messages.size - 1)
+                                
                             }
                         },
-
-
-                        )
+                        onVoiceClick = {
+                            if (isRecording) {
+                                recordedAudio = audioRecorder.stop()
+                                isRecording = false
+                            } else {
+                                audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
+                        },
+                        onCancelRecording = {
+                            audioRecorder.stop()?.delete()
+                            recordedAudio = null
+                            recordingTime = 0L
+                            isRecording = false
+                        },
+                        onAttachClick = {
+                            showAttachmentSheet = true
+                        },
+                        onRemoveFile = { file ->
+                            viewModel.removeAttachedFile(file)
+                        },
+                        onCancelReply = {
+                            viewModel.clearReplyMessage()
+                        },
+                        onCancelEditing = {
+                            viewModel.clearEditingMessage()
+                        },
+                        onRemoveSelectedContact = {
+                            viewModel.clearSelectedContact()
+                        },
+                        onRemoveAttachedContact = {
+                            viewModel.clearAttachedContact()
+                        },
+                        onDeleteRecording = {
+                            recordedAudio?.delete()
+                            recordedAudio = null
+                            recordingTime = 0L
+                            if (isRecordingPlaying) {
+                                mediaPlayer.stop()
+                                isRecordingPlaying = false
+                            }
+                        },
+                        onSendRecording = {
+                            recordedAudio?.let { file ->
+                                scope.launch {
+                                    viewModel.sendVoiceMessage(file)
+                                    scrollState.animateScrollToItem(messages.size - 1)
+                                }
+                            }
+                            recordedAudio = null
+                            recordingTime = 0L
+                            if (isRecordingPlaying) {
+                                mediaPlayer.stop()
+                                isRecordingPlaying = false
+                            }
+                        },
+                        onPlayRecording = {
+                            recordedAudio?.let { file ->
+                                if (isRecordingPlaying) {
+                                    mediaPlayer.pause()
+                                    isRecordingPlaying = false
+                                } else {
+                                    mediaPlayer.reset()
+                                    mediaPlayer.setDataSource(file.absolutePath)
+                                    mediaPlayer.prepare()
+                                    mediaPlayer.start()
+                                    isRecordingPlaying = true
+                                    mediaPlayer.setOnCompletionListener {
+                                        isRecordingPlaying = false
+                                    }
+                                }
+                            }
+                        },
+                        isRecordingPlaying = isRecordingPlaying
+                    )
                 }
             }
         }
+        if (showAttachmentSheet) {
+            AttachOptionsBottomSheetDialog(
+                onDismissRequest = { showAttachmentSheet = false },
+                onMediaClick = {
+                    showAttachmentSheet = false
+                    val hasPermissions = mediaPermissions.all { permission ->
+                        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+                    }
+                    if (hasPermissions) {
+                        openMediaPicker()
+                    } else {
+                        pendingPickerType = AttachmentPickerType.MEDIA
+                        permissionLauncher.launch(mediaPermissions)
+                    }
+                },
+                onFileClick = {
+                    showAttachmentSheet = false
+                    val hasPermissions = filePermissions.all { permission ->
+                        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+                    }
+                    if (hasPermissions) {
+                        filePickerLauncher.launch(arrayOf("*/*"))
+                    } else {
+                        pendingPickerType = AttachmentPickerType.FILE
+                        permissionLauncher.launch(filePermissions)
+                    }
+                },
+                onPollClick = { showAttachmentSheet = false },
+                onContactClick = {
+                    showAttachmentSheet = false
+                    onContactClick()
+                }
+            )
+        }
+        selectedMessage?.let { message ->
+            MessageFunctionsBottomSheetDialog(
+                message = message,
+                onDismissRequest = { selectedMessage = null },
+                onSelectMessage = {
+                    viewModel.startSelection(message.id)
+                    selectedMessage = null
+                },
+                onReply = { msg ->
+                    viewModel.setReplyMessage(msg)
+                },
+                onEdit = { msg ->
+                    viewModel.startEditingMessage(msg)
+                    selectedMessage = null
+                },
+                onForward = { msg ->
+                    onForwardMessage(msg)
+                }
+            )
+        }
+        if (showMoreDialog) {
+            val dialogId = currentDialogId
+            if (dialogId != null) {
+                ChatDetailMoreSheetDialog(
+                    dialogId = dialogId,
+                    isGroup = (uiState as? ChatDialogUiState.Success)?.isGroup
+                        ?: (uiState as? ChatDialogUiState.Loading)?.isGroup
+                        ?: false,
+                    onNavigateToProfile = {
+                        viewModel.onChatDetailClick()
+                    },
+                    onDismissRequest = { showMoreDialog = false },
+                    onChatDeleted = {
+                        showMoreDialog = false
+                        onChatDeleted()
+                    },
+                    onEditGroup = { onEditGroup(dialogId) },
+                    isCurrentUserAdmin = isCurrentUserAdmin,
+                    notificationsDisabled = notificationsDisabled,
+                    onLeaveGroup = { onChatDeleted() },
+                    onNotificationsChanged = { disabled ->
+                        viewModel.updateNotificationsDisabled(disabled)
+                    }
+                )
+            } else {
+                showMoreDialog = false
+            }
+        }
     }
+}
+
+private fun getContactInfo(context: Context, uri: Uri): ContactInfo? {
+    val projection = arrayOf(
+        ContactsContract.Contacts._ID,
+        ContactsContract.Contacts.DISPLAY_NAME
+    )
+    val cursor = context.contentResolver.query(uri, projection, null, null, null)
+    cursor?.use {
+        if (it.moveToFirst()) {
+            val id = it.getString(it.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
+            val name = it.getString(it.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME))
+            var phone = ""
+            val phoneCursor = context.contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                arrayOf(id),
+                null
+            )
+            phoneCursor?.use { pc ->
+                if (pc.moveToFirst()) {
+                    phone = pc.getString(pc.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                }
+            }
+            return ContactInfo(name = name, phone = phone)
+        }
+    }
+    return null
 }
