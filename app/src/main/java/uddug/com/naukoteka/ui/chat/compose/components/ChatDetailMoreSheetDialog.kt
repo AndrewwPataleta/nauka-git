@@ -62,7 +62,7 @@ fun ChatDetailMoreSheetDialog(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            val items = buildList {
+            val items = buildList<Pair<Int, () -> Unit>> {
                 if (isGroup) {
                     if (isCurrentUserAdmin) {
                         add(R.string.chat_edit_group to {
