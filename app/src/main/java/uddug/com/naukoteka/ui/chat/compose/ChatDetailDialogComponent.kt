@@ -470,9 +470,11 @@ fun MediaContent(items: List<MediaMessage>) {
             modifier = Modifier.padding(8.dp)
         ) {
             itemsIndexed(items, key = { _, item -> item.file.id }) { index, item ->
-                Card(
+                Box(
                     modifier = Modifier
                         .padding(4.dp)
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(16.dp))
                         .clickable {
                             if (imageUrls.isNotEmpty()) {
                                 StfalconImageViewer.Builder<String>(context, imageUrls) { imageView, image ->
@@ -484,16 +486,12 @@ fun MediaContent(items: List<MediaMessage>) {
                                     .show()
                             }
                         }
-
                 ) {
                     AsyncImage(
                         model = BuildConfig.IMAGE_SERVER_URL + item.file.path,
-                        contentDescription = "Avatar",
+                        contentDescription = "Media",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .size(120.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
