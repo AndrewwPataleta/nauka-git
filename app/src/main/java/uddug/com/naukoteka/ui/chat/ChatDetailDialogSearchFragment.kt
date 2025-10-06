@@ -9,7 +9,9 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogSearchComponent
 
@@ -32,7 +34,14 @@ class ChatDetailDialogSearchFragment : Fragment() {
                 MaterialTheme {
                     ChatDetailDialogSearchComponent(
                         viewModel = viewModel,
-                        onBackPressed = { requireActivity().onBackPressed() }
+                        onBackPressed = { requireActivity().onBackPressed() },
+                        onMessageSelected = { dialogId, messageId ->
+                            val args = Bundle().apply {
+                                putLong(ChatDialogFragment.DIALOG_ID, dialogId)
+                                putLong(ChatDialogFragment.MESSAGE_ID, messageId)
+                            }
+                            findNavController().navigate(R.id.chatDialogFragment, args)
+                        }
                     )
                 }
             }

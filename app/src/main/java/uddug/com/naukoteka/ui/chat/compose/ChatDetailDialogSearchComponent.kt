@@ -46,6 +46,7 @@ import uddug.com.naukoteka.ui.chat.compose.components.SearchResultItem
 fun ChatDetailDialogSearchComponent(
     viewModel: ChatDialogDetailViewModel,
     onBackPressed: () -> Unit,
+    onMessageSelected: (dialogId: Long, messageId: Long) -> Unit,
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedTabIndex by remember { mutableStateOf(0) }
@@ -128,33 +129,35 @@ fun ChatDetailDialogSearchComponent(
 
             when (selectedTabIndex) {
                 0 -> if (searchMessages.isEmpty()) {
-                    NoResults()
+                    NoResults(searchQuery)
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(searchMessages) { message ->
                             SearchResultItem(
                                 result = SearchResult.Message(message),
                                 query = searchQuery,
-                                onClick = { _ -> }
+                                onClick = { _ ->
+                                    onMessageSelected(message.dialogId, message.messageId)
+                                }
                             )
                         }
                     }
                 }
 
                 1 -> if (searchMedia.isEmpty()) {
-                    NoResults()
+                    NoResults(searchQuery)
                 } else {
                     MediaContent(searchMedia)
                 }
 
                 2 -> if (searchFiles.isEmpty()) {
-                    NoResults()
+                    NoResults(searchQuery)
                 } else {
                     FilesContent(searchFiles)
                 }
 
                 3 -> if (searchNotes.isEmpty()) {
-                    NoResults()
+                    NoResults(searchQuery)
                 } else {
                     NotesContent(searchNotes)
                 }
@@ -164,13 +167,18 @@ fun ChatDetailDialogSearchComponent(
 }
 
 @Composable
-private fun NoResults() {
+private fun NoResults(searchQuery: String) {
+    val messageRes = if (searchQuery.isBlank()) {
+        R.string.chat_search_min_query
+    } else {
+        R.string.chat_search_no_results
+    }
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.TopCenter
     ) {
         Text(
-            text = stringResource(R.string.chat_search_no_results),
+            text = stringResource(messageRes),
             modifier = Modifier.padding(top = 24.dp)
         )
     }
