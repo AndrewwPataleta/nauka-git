@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Checkbox
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
@@ -73,6 +74,10 @@ fun ChatMessageItem(
     onLongPress: (MessageChat) -> Unit,
     onReplyReferenceClick: (Long) -> Unit = {},
     onImageClick: (ChatFile) -> Unit = {},
+    playingVoiceMessageId: Long? = null,
+    isVoicePlaying: Boolean = false,
+    isVoiceLoading: Boolean = false,
+    onVoicePlay: (MessageChat, ChatFile) -> Unit = { _, _ -> },
 ) {
     val isSystem = message.type == MessageType.SYSTEM
     Row(
@@ -222,6 +227,24 @@ fun ChatMessageItem(
                                 )
                             }
                         }
+                    } else if (file.isVoiceFile()) {
+                        val duration = formatVoiceDuration(file.duration) ?: "--:--"
+                        val sizeText = formatFileSize(file.fileSize)
+                        val infoItems = mutableListOf<String>()
+                        if (duration.isNotBlank()) {
+                            infoItems.add(duration)
+                        }
+                        sizeText?.takeIf { it.isNotBlank() }?.let(infoItems::add)
+                        val infoText = infoItems.joinToString(separator = " • ")
+                        VoiceMessageAttachment(
+                            isMine = isMine,
+                            infoText = infoText.ifBlank { duration },
+                            isPlaying = playingVoiceMessageId == message.id && isVoicePlaying,
+                            isLoading = playingVoiceMessageId == message.id && isVoiceLoading,
+                            selectionMode = selectionMode,
+                            onSelectChange = onSelectChange,
+                            onPlayClick = { onVoicePlay(message, file) }
+                        )
                     } else {
                         FileAttachmentCard(
                             file = file,
@@ -335,6 +358,117 @@ private fun FileAttachmentCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun VoiceMessageAttachment(
+    isMine: Boolean,
+    infoText: String,
+    isPlaying: Boolean,
+    isLoading: Boolean,
+    selectionMode: Boolean,
+    onSelectChange: () -> Unit,
+    onPlayClick: () -> Unit,
+) {
+    val backgroundColor = if (isMine) Color(0xFF2E83D9) else Color.White
+    val textColor = if (isMine) Color.White else Color(0xFF111827)
+    val accentColor = Color(0xFF2E83D9)
+    val buttonBackground = if (isMine) Color.White else accentColor
+    val iconTint = if (isMine) accentColor else Color.White
+    val interactionSource = remember { MutableInteractionSource() }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(backgroundColor)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null
+            ) {
+                if (selectionMode) {
+                    onSelectChange()
+                } else {
+                    onPlayClick()
+                }
+            }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(buttonBackground, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    isLoading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = iconTint
+                        )
+                    }
+                    else -> {
+                        val icon = if (isPlaying) R.drawable.ic_stop_voice else R.drawable.ic_play_voice
+                        Image(
+                            painter = painterResource(id = icon),
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(iconTint)
+                        )
+                    }
+                }
+            }
+            Image(
+                painter = painterResource(id = R.drawable.background_voice_wave),
+                contentDescription = null,
+                modifier = Modifier.weight(1f),
+                contentScale = ContentScale.FillWidth,
+                colorFilter = ColorFilter.tint(if (isMine) Color.White else accentColor)
+            )
+        }
+        Text(
+            text = infoText,
+            color = textColor,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+private const val VOICE_FILE_TYPE = 21
+private val VOICE_EXTENSIONS = setOf("m4a", "aac", "amr", "3gp", "mp3", "wav", "flac", "ogg", "oga", "opus")
+
+private fun ChatFile.isVoiceFile(): Boolean {
+    val extension = fileName?.substringAfterLast('.', "")?.lowercase(Locale.getDefault())
+    val mimeType = contentType?.lowercase(Locale.getDefault())
+    return (fileType == VOICE_FILE_TYPE)
+        || (extension != null && extension in VOICE_EXTENSIONS)
+        || (mimeType?.startsWith("audio") == true)
+}
+
+private fun formatVoiceDuration(duration: String?): String? {
+    val value = duration?.trim().orEmpty()
+    if (value.isEmpty()) return null
+    if (value.contains(':')) return value
+    val numeric = value.toLongOrNull() ?: return value
+    val totalSeconds = when {
+        numeric <= 0L -> return null
+        numeric > 86_400L && numeric % 1000L == 0L -> numeric / 1000L
+        numeric in 1L..86_400L -> numeric
+        else -> numeric / 1000L
+    }
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return if (hours > 0) {
+        String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
     }
 }
 
