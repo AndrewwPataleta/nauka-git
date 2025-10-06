@@ -783,11 +783,13 @@ class ChatDialogViewModel @Inject constructor(
 
             val ownerId = if (fileDescriptors.isNotEmpty()) null else currentUser?.id.orEmpty()
 
+            val messageText = sanitizedText.takeIf { it.isNotEmpty() }
+
             val message = if (dialog.id != 0L) {
                 ChatSocketMessage(
                     dialog = dialog.id,
                     cType = cType,
-                    text = sanitizedText,
+                    text = messageText,
                     owner = ownerId,
                     files = fileDescriptors.ifEmpty { null },
                     answered = replyId
@@ -797,7 +799,7 @@ class ChatDialogViewModel @Inject constructor(
                 ChatSocketMessage(
                     interlocutor = peer,
                     cType = cType,
-                    text = sanitizedText,
+                    text = messageText,
                     owner = ownerId,
                     files = fileDescriptors.ifEmpty { null },
                     answered = replyId
@@ -832,7 +834,7 @@ class ChatDialogViewModel @Inject constructor(
                 ChatSocketMessage(
                     dialog = dialog.id,
                     cType = 4,
-                    text = "",
+                    text = null,
                     owner = null,
                     files = descriptor?.let { listOf(it) }
                 )
@@ -841,7 +843,7 @@ class ChatDialogViewModel @Inject constructor(
                 ChatSocketMessage(
                     interlocutor = peer,
                     cType = 4,
-                    text = "",
+                    text = null,
                     owner = null,
                     files = descriptor?.let { listOf(it) }
                 )
