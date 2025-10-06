@@ -390,7 +390,7 @@ fun ChatTabBar(
                                 dialogId = chat.dialogId,
                                 avatarUrl = avatarUrl,
                                 name = displayName,
-                                message = chat.lastMessage.text ?: stringResource(R.string.chat_no_messages),
+                                message = chat.lastMessage.text.orEmpty(),
                                 time = chat.lastMessage.createdAt ?: stringResource(R.string.chat_unknown_time),
                                 newMessagesCount = chat.unreadMessages,
                                 attachmentPreview = attachmentPreview,
