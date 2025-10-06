@@ -39,6 +39,7 @@ class ChatDialogFragment : Fragment() {
     private val viewModel: ChatDialogViewModel by viewModels()
 
     private var dialogId: Long = 0
+    private var initialMessageId: Long? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -53,6 +54,7 @@ class ChatDialogFragment : Fragment() {
     companion object {
         const val DIALOG_ID = "DIALOG_ID"
         const val INTERLOCUTOR_ID = "INTERLOCUTOR_ID"
+        const val MESSAGE_ID = "MESSAGE_ID"
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -60,6 +62,12 @@ class ChatDialogFragment : Fragment() {
         setupObservers()
         dialogId = arguments?.getLong(DIALOG_ID) ?: 0
         val peerId = arguments?.getString(INTERLOCUTOR_ID)
+        initialMessageId = arguments?.let { bundle ->
+            if (bundle.containsKey(MESSAGE_ID)) bundle.getLong(MESSAGE_ID) else null
+        }?.takeIf { it != 0L }
+        if (arguments?.containsKey(MESSAGE_ID) == true) {
+            arguments?.remove(MESSAGE_ID)
+        }
         if (dialogId != 0L) {
             viewModel.loadMessages(dialogId)
         } else if (!peerId.isNullOrEmpty()) {
@@ -152,7 +160,8 @@ class ChatDialogFragment : Fragment() {
                         onChatDeleted = {
                             findNavController().previousBackStackEntry?.savedStateHandle?.set("refreshChats", true)
                             findNavController().popBackStack()
-                        }
+                        },
+                        initialMessageId = initialMessageId
                     )
                 }
             }

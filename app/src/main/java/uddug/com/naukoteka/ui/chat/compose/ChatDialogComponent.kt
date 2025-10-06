@@ -85,6 +85,7 @@ fun ChatDialogComponent(
     onForwardMessage: (MessageChat) -> Unit,
     onEditGroup: (Long) -> Unit,
     onChatDeleted: () -> Unit,
+    initialMessageId: Long? = null,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberLazyListState()
@@ -236,13 +237,22 @@ fun ChatDialogComponent(
 
                 is ChatDialogUiState.Success -> {
                     val messages = state.chats
+                    var pendingMessageId by remember(initialMessageId) { mutableStateOf(initialMessageId) }
                     val messageIndexById = remember(messages) {
                         messages.mapIndexed { index, message -> message.id to index }.toMap()
                     }
 
                     LaunchedEffect(messages.size) {
-                        if (messages.isNotEmpty()) {
+                        if (initialMessageId == null && messages.isNotEmpty()) {
                             scrollState.scrollToItem(messages.size - 1)
+                        }
+                    }
+                    LaunchedEffect(messages, pendingMessageId) {
+                        val targetId = pendingMessageId ?: return@LaunchedEffect
+                        val index = messageIndexById[targetId]
+                        if (index != null) {
+                            scrollState.scrollToItem(index)
+                            pendingMessageId = null
                         }
                     }
                     if (isSelectionMode) {
