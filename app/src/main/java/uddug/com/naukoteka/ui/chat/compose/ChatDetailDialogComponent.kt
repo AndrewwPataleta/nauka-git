@@ -1,11 +1,18 @@
 package uddug.com.naukoteka.ui.chat.compose
 
 
+import android.app.DownloadManager
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Environment
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -70,13 +77,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.bumptech.glide.Glide
 import com.stfalcon.imageviewer.StfalconImageViewer
+import uddug.com.domain.entities.chat.MediaFile
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
@@ -86,7 +93,10 @@ import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatAvatarActionDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailShimmer
+import uddug.com.naukoteka.ui.chat.compose.components.FileFunctionAction
+import uddug.com.naukoteka.ui.chat.compose.components.FileFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.util.uriToFile
+import uddug.com.naukoteka.utils.copyToClipboard
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -491,19 +501,62 @@ fun MediaContent(items: List<MediaMessage>) {
 
 @Composable
 fun FilesContent(items: List<MediaMessage>) {
+    val context = LocalContext.current
+    var selectedItem by remember { mutableStateOf<MediaMessage?>(null) }
+    val linkCopiedText = stringResource(R.string.chat_file_link_copied)
+    val notAvailableText = stringResource(R.string.chat_file_action_not_available)
+    val shareTitle = stringResource(R.string.chat_file_share_title)
+
+    selectedItem?.let { mediaMessage ->
+        FileFunctionsBottomSheetDialog(
+            fileName = mediaMessage.file.fileName,
+            onDismissRequest = { selectedItem = null },
+            onActionSelected = { action ->
+                when (action) {
+                    FileFunctionAction.COPY_LINK -> {
+                        val link = BuildConfig.IMAGE_SERVER_URL + mediaMessage.file.path
+                        context.copyToClipboard(link)
+                        Toast.makeText(context, linkCopiedText, Toast.LENGTH_SHORT).show()
+                    }
+
+                    FileFunctionAction.DOWNLOAD -> {
+                        downloadMediaFile(context, mediaMessage.file)
+                    }
+
+                    FileFunctionAction.SHARE -> {
+                        shareMediaFile(context, mediaMessage.file, shareTitle)
+                    }
+
+                    FileFunctionAction.EDIT_INFO,
+                    FileFunctionAction.SELECT,
+                    FileFunctionAction.DELETE -> {
+                        Toast.makeText(context, notAvailableText, Toast.LENGTH_SHORT).show()
+                    }
+                }
+                selectedItem = null
+            }
+        )
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp)
     ) {
         items(items, key = { it.file.id }) { item ->
-            FileItem(item)
+            FileItem(
+                item = item,
+                onShowOptions = { selectedItem = it }
+            )
         }
     }
 }
 
 @Composable
-private fun FileItem(item: MediaMessage) {
+private fun FileItem(
+    item: MediaMessage,
+    onShowOptions: (MediaMessage) -> Unit,
+) {
     val sizeText = remember(item.file.fileSize) { formatFileSize(item.file.fileSize) }
     val dateText = remember(item.createdAt) { formatFileDate(item.createdAt) }
     val metaText = remember(sizeText, dateText) {
@@ -513,7 +566,11 @@ private fun FileItem(item: MediaMessage) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(vertical = 6.dp)
+            .combinedClickable(
+                onClick = {},
+                onLongClick = { onShowOptions(item) }
+            ),
         elevation = 0.dp,
         backgroundColor = Color.White,
         shape = RoundedCornerShape(16.dp),
@@ -560,7 +617,7 @@ private fun FileItem(item: MediaMessage) {
                     }
                 }
             }
-            IconButton(onClick = { }) {
+            IconButton(onClick = { onShowOptions(item) }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_more_vertical),
                     contentDescription = null,
@@ -592,6 +649,34 @@ private fun formatFileDate(rawDate: String): String? {
         localDate.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru")))
     } catch (error: Exception) {
         null
+    }
+}
+
+private fun downloadMediaFile(context: Context, file: MediaFile) {
+    val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return
+    val fileName = file.fileName.ifBlank { "chat_file_${file.id}" }
+    val request = DownloadManager.Request(Uri.parse(BuildConfig.IMAGE_SERVER_URL + file.path))
+        .setTitle(fileName)
+        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+        .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, fileName)
+        .setAllowedOverMetered(true)
+        .setAllowedOverRoaming(true)
+    file.contentType?.let { request.setMimeType(it) }
+    downloadManager.enqueue(request)
+    Toast.makeText(context, context.getString(R.string.chat_file_download_started), Toast.LENGTH_SHORT).show()
+}
+
+private fun shareMediaFile(context: Context, file: MediaFile, chooserTitle: String) {
+    val link = BuildConfig.IMAGE_SERVER_URL + file.path
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, link)
+    }
+    val chooserIntent = Intent.createChooser(intent, chooserTitle)
+    try {
+        context.startActivity(chooserIntent)
+    } catch (error: ActivityNotFoundException) {
+        Toast.makeText(context, context.getString(R.string.chat_file_share_error), Toast.LENGTH_SHORT).show()
     }
 }
 
