@@ -247,7 +247,7 @@ class ChatGroupDetailViewModel @Inject constructor(
             try {
                 val media = chatInteractor.getDialogMedia(
                     dialogId,
-                    category = 1,
+                    category = MEDIA_CATEGORY,
                     limit = 50,
                     page = 1,
                     query = null,
@@ -271,7 +271,7 @@ class ChatGroupDetailViewModel @Inject constructor(
             try {
                 val files = chatInteractor.getDialogMedia(
                     dialogId,
-                    category = 3,
+                    category = FILES_CATEGORY,
                     limit = 50,
                     page = 1,
                     query = null,
@@ -328,6 +328,8 @@ class ChatGroupDetailViewModel @Inject constructor(
     companion object {
         private const val ROLE_OWNER = "37:201"
         private const val ROLE_ADMIN = "37:202"
+        private const val MEDIA_CATEGORY = 5
+        private const val FILES_CATEGORY = 3
     }
 }
 
