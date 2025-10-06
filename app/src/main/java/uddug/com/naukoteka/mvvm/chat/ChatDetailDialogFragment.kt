@@ -104,6 +104,12 @@ class ChatDetailDialogFragment : Fragment() {
                                 putLong(ARG_MESSAGE_ID, message.id)
                             }
                             findNavController().navigate(R.id.forwardMessageFragment, args)
+                        },
+                        onEditGroup = {
+
+                        },
+                        onChatDeleted = {
+
                         }
                     )
                 }

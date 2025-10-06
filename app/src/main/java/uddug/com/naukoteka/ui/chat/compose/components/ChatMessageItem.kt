@@ -176,7 +176,7 @@ fun ChatMessageItem(
                 when {
                     message.type == MessageType.CONTACT && message.contact != null -> {
                         ContactMessageContent(
-                            contact = message.contact,
+                            contact = message.contact!!,
                             isMine = isMine
                         )
                     }
