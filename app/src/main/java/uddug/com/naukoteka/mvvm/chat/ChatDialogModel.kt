@@ -92,6 +92,8 @@ class ChatDialogViewModel @Inject constructor(
 
     private var selectedUser: UserProfileFullInfo? = null
 
+    private val pendingContactMessages = mutableListOf<PendingContactMessage>()
+
     private var currentUser: UserProfileFullInfo? = null
 
     private val _currentDialogId = MutableStateFlow<Long?>(null)
@@ -574,6 +576,56 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    private fun addPendingContactMessage(payload: String, replyMessage: MessageChat?) {
+        val currentState = _uiState.value as? ChatDialogUiState.Success ?: return
+        val pendingId = -System.currentTimeMillis()
+        val pendingMessage = MessageChat(
+            id = pendingId,
+            text = payload,
+            type = MessageType.TEXT,
+            files = emptyList(),
+            ownerId = currentUser?.id,
+            createdAt = Instant.now(),
+            readCount = 1,
+            ownerName = currentUser?.fullName,
+            ownerAvatarUrl = currentUser?.image?.path,
+            ownerIsAdmin = _isCurrentUserAdmin.value,
+            isMine = true,
+            replyTo = replyMessage
+        )
+        pendingContactMessages.add(
+            PendingContactMessage(
+                id = pendingId,
+                rawPayload = payload,
+                jsonPayload = runCatching { JSONObject(payload) }.getOrNull()
+            )
+        )
+        _uiState.value = currentState.copy(
+            chats = currentState.chats + pendingMessage,
+            currentMessage = "",
+            replyMessage = null
+        )
+    }
+
+    private fun removePendingContactMessage(payload: String) {
+        val incomingJson = runCatching { JSONObject(payload) }.getOrNull()
+        val index = pendingContactMessages.indexOfFirst { pending ->
+            when {
+                incomingJson != null && pending.jsonPayload != null ->
+                    pending.jsonPayload.similar(incomingJson)
+
+                else -> pending.rawPayload == payload
+            }
+        }
+        if (index == -1) return
+        val pending = pendingContactMessages.removeAt(index)
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            val updatedChats = currentState.chats.filterNot { it.id == pending.id }
+            _uiState.value = currentState.copy(chats = updatedChats)
+        }
+    }
+
     fun sendMessage(text: String) {
         viewModelScope.launch {
             val dialog = currentDialogInfo ?: return@launch
@@ -585,13 +637,11 @@ class ChatDialogViewModel @Inject constructor(
             selectedUser?.let { user ->
                 val payload = buildUserContactPayload(user) ?: return@launch
                 val message = createContactSocketMessage(dialog, payload, replyId) ?: return@launch
+                addPendingContactMessage(payload, successState?.replyMessage)
                 socketService.sendMessage("message", message)
                 selectedUser = null
-                if (currentState is ChatDialogUiState.Success) {
-                    _uiState.value = currentState.copy(
-                        currentMessage = "",
-                        selectedContact = null
-                    )
+                (_uiState.value as? ChatDialogUiState.Success)?.let { state ->
+                    _uiState.value = state.copy(selectedContact = null)
                 }
                 clearReplyMessage()
                 return@launch
@@ -600,13 +650,11 @@ class ChatDialogViewModel @Inject constructor(
             attachedContact?.let { contact ->
                 val payload = buildPhoneContactPayload(contact)
                 val message = createContactSocketMessage(dialog, payload, replyId) ?: return@launch
+                addPendingContactMessage(payload, successState?.replyMessage)
                 socketService.sendMessage("message", message)
                 attachedContact = null
-                if (currentState is ChatDialogUiState.Success) {
-                    _uiState.value = currentState.copy(
-                        currentMessage = "",
-                        attachedContact = null
-                    )
+                (_uiState.value as? ChatDialogUiState.Success)?.let { state ->
+                    _uiState.value = state.copy(attachedContact = null)
                 }
                 clearReplyMessage()
                 return@launch
@@ -804,6 +852,12 @@ class ChatDialogViewModel @Inject constructor(
                 val gson = Gson()
                 val socketMessage = gson.fromJson(jsonString, ChatSocketMessage::class.java)
 
+                if (socketMessage.cType == 7 && socketMessage.owner == currentUser?.id) {
+                    socketMessage.text?.let { payload ->
+                        removePendingContactMessage(payload)
+                    }
+                }
+
                 if ((currentDialogInfo?.id ?: 0L) == 0L && (socketMessage.dialog ?: 0L) != 0L) {
                     currentDialogInfo = currentDialogInfo?.copy(id = socketMessage.dialog!!)
                     currentDialogID = socketMessage.dialog
@@ -893,6 +947,12 @@ class ChatDialogViewModel @Inject constructor(
 }
 
 private const val READ_STATUS = 2
+
+private data class PendingContactMessage(
+    val id: Long,
+    val rawPayload: String,
+    val jsonPayload: JSONObject?
+)
 
 private fun computeIsCurrentUserAdmin(info: DialogInfo, currentUserId: String?): Boolean {
     if (currentUserId.isNullOrEmpty()) return false
