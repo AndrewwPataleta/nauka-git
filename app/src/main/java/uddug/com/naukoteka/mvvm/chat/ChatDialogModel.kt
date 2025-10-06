@@ -679,7 +679,7 @@ class ChatDialogViewModel @Inject constructor(
                 )
             }
 
-            val cType = if (fileDescriptors.isEmpty()) 1 else 3
+            val cType = 1
 
             val message = if (dialog.id != 0L) {
                 ChatSocketMessage(
@@ -715,8 +715,7 @@ class ChatDialogViewModel @Inject constructor(
         viewModelScope.launch {
             val dialog = currentDialogInfo ?: return@launch
             val uploaded = try {
-                val requiresRawUpload = determineFileType(file) != IMAGE_FILE_TYPE
-                chatInteractor.uploadFiles(listOf(file), requiresRawUpload)
+                chatInteractor.uploadFiles(listOf(file), true)
             } catch (e: Exception) {
                 e.printStackTrace()
                 emptyList()
@@ -724,7 +723,7 @@ class ChatDialogViewModel @Inject constructor(
             val descriptor = uploaded.firstOrNull()?.let { uploadedFile ->
                 FileDescriptor(
                     id = uploadedFile.id,
-                    fileType = determineFileType(file)
+                    fileType = VOICE_FILE_TYPE
                 )
             }
             val message = if (dialog.id != 0L) {
