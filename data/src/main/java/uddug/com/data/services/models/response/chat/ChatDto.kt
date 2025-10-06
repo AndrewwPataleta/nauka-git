@@ -1,5 +1,6 @@
 package uddug.com.data.services.models.response.chat
 
+import com.google.gson.annotations.SerializedName
 import uddug.com.data.repositories.chat.dto.FileDto
 import uddug.com.domain.entities.chat.Attachment
 import uddug.com.domain.entities.chat.File
@@ -72,6 +73,8 @@ data class MessageDto(
     val ownerId: String? = null,
     val createdAt: String? = null,
     val isPinned: Boolean? = null,
+    @SerializedName("ansPreview")
+    val answerPreview: AnswerPreviewDto? = null,
 ) {
     fun toDomain(currentUserId: String): MessageChat = MessageChat(
 
@@ -82,7 +85,8 @@ data class MessageDto(
         ownerId = ownerId,
         createdAt = createdAt?.let { Instant.parse(it) } ?: Instant.EPOCH,
         readCount = read,
-        isMine = ownerId == currentUserId
+        isMine = ownerId == currentUserId,
+        replyTo = answerPreview?.toDomain(currentUserId)
     )
 
     fun FileDto.toDomain(): Attachment = Attachment(
@@ -97,7 +101,41 @@ data class MessageDto(
         },
         contentType = contentType
     )
+}
 
+data class AnswerPreviewDto(
+    @SerializedName("i")
+    val id: Long,
+    @SerializedName("o")
+    val owner: PreviewOwnerDto? = null,
+    @SerializedName("t")
+    val text: String? = null,
+)
 
+data class PreviewOwnerDto(
+    @SerializedName("i")
+    val id: String? = null,
+    @SerializedName("fn")
+    val fullName: String? = null,
+    @SerializedName("im")
+    val avatarUrl: String? = null,
+)
+
+private fun AnswerPreviewDto.toDomain(currentUserId: String): MessageChat {
+    val ownerId = owner?.id
+    return MessageChat(
+        id = id,
+        text = text,
+        type = MessageType.TEXT,
+        files = emptyList(),
+        ownerId = ownerId,
+        createdAt = Instant.now(),
+        readCount = 0,
+        ownerName = owner?.fullName,
+        ownerAvatarUrl = owner?.avatarUrl,
+        ownerIsAdmin = false,
+        isMine = ownerId == currentUserId,
+        replyTo = null,
+    )
 }
 
