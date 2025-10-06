@@ -182,12 +182,14 @@ fun ChatCard(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(top = if (isGroupChat) 4.dp else 0.dp)
                     ) {
-                        attachmentPreview?.let { preview ->
-                            AttachmentPreview(
-                                preview = preview,
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
-                        }
+                        attachmentPreview
+                            ?.takeUnless { it.type == ChatAttachmentType.FILE }
+                            ?.let { preview ->
+                                AttachmentPreview(
+                                    preview = preview,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                            }
                         Text(
                             text = messageText,
                             style = TextStyle(
