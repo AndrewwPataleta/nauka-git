@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 import org.json.JSONObject
 import uddug.com.domain.entities.chat.ChatContact
 import uddug.com.domain.entities.chat.ChatSocketMessage
@@ -651,7 +652,7 @@ class ChatDialogViewModel @Inject constructor(
         val index = pendingContactMessages.indexOfFirst { pending ->
             when {
                 incomingJson != null && pending.jsonPayload != null ->
-                    pending.jsonPayload.similar(incomingJson)
+                    pending.jsonPayload.isSimilarTo(incomingJson)
 
                 else -> pending.rawPayload == payload
             }
@@ -1035,6 +1036,41 @@ private fun computeIsCurrentUserAdmin(info: DialogInfo, currentUserId: String?):
     return info.users.orEmpty().any { user ->
         user.userId == currentUserId && (user.isAdmin || isOwnerRole(user.role) || isAdminRole(user.role))
     }
+}
+
+private fun JSONObject.isSimilarTo(other: JSONObject): Boolean {
+    if (this === other) return true
+    if (length() != other.length()) return false
+    return keys().asSequence().all { key ->
+        if (!other.has(key)) return false
+        val left = opt(key)
+        val right = other.opt(key)
+        when {
+            left === right -> true
+            left == JSONObject.NULL && right == JSONObject.NULL -> true
+            left is JSONObject && right is JSONObject -> left.isSimilarTo(right)
+            left is JSONArray && right is JSONArray -> left.isSimilarTo(right)
+            else -> left == right
+        }
+    }
+}
+
+private fun JSONArray.isSimilarTo(other: JSONArray): Boolean {
+    if (this === other) return true
+    if (length() != other.length()) return false
+    for (index in 0 until length()) {
+        val left = opt(index)
+        val right = other.opt(index)
+        val isSame = when {
+            left === right -> true
+            left == JSONObject.NULL && right == JSONObject.NULL -> true
+            left is JSONObject && right is JSONObject -> left.isSimilarTo(right)
+            left is JSONArray && right is JSONArray -> left.isSimilarTo(right)
+            else -> left == right
+        }
+        if (!isSame) return false
+    }
+    return true
 }
 
 private fun isOwnerRole(role: String?): Boolean {

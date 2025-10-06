@@ -14,13 +14,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uddug.com.domain.entities.chat.ChatMediaCategory
 import uddug.com.domain.entities.chat.DialogInfo
-import uddug.com.domain.entities.chat.File
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.User
 import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.mvvm.chat.ChatStatusFormatter
 import uddug.com.naukoteka.mvvm.chat.ChatStatusTextMode.GENERIC
+import java.io.File
 import java.time.Instant
 import javax.inject.Inject
 
