@@ -42,7 +42,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.CircularProgressIndicator
@@ -75,6 +75,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.bumptech.glide.Glide
+import com.stfalcon.imageviewer.StfalconImageViewer
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
@@ -442,6 +444,11 @@ fun ChatDetailDialogComponent(
 
 @Composable
 fun MediaContent(items: List<MediaMessage>) {
+    val context = LocalContext.current
+    val imageUrls = remember(items) {
+        items.map { BuildConfig.IMAGE_SERVER_URL + it.file.path }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.TopStart
@@ -450,10 +457,21 @@ fun MediaContent(items: List<MediaMessage>) {
             columns = GridCells.Fixed(3),
             modifier = Modifier.padding(8.dp)
         ) {
-            items(items) { item ->
+            itemsIndexed(items, key = { _, item -> item.file.id }) { index, item ->
                 Card(
                     modifier = Modifier
                         .padding(4.dp)
+                        .clickable {
+                            if (imageUrls.isNotEmpty()) {
+                                StfalconImageViewer.Builder<String>(context, imageUrls) { imageView, image ->
+                                    Glide.with(context)
+                                        .load(image)
+                                        .into(imageView)
+                                }
+                                    .withStartPosition(index)
+                                    .show()
+                            }
+                        }
 
                 ) {
                     AsyncImage(
