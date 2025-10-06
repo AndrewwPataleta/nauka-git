@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import uddug.com.domain.entities.chat.ChatContact
 import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
@@ -574,6 +575,44 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    private fun createLocalContactMessage(contact: ChatContact, reply: MessageChat?): MessageChat {
+        val owner = currentUser
+        val ownerName = owner?.fullName ?: owner?.nickname
+        val ownerAvatar = owner?.image?.path
+        return MessageChat(
+            id = -System.currentTimeMillis(),
+            text = contact.displayName,
+            type = MessageType.CONTACT,
+            files = emptyList(),
+            ownerId = owner?.id,
+            createdAt = Instant.now(),
+            readCount = 1,
+            ownerName = ownerName,
+            ownerAvatarUrl = ownerAvatar,
+            ownerIsAdmin = false,
+            isMine = true,
+            replyTo = reply,
+            cType = 7,
+            contact = contact,
+        )
+    }
+
+    private fun UserProfileFullInfo.toChatContact(): ChatContact = ChatContact(
+        id = id,
+        fullName = fullName
+            ?: listOfNotNull(firstName, lastName)
+                .joinToString(" ")
+                .takeIf { it.isNotBlank() },
+        nickname = nickname,
+        phone = listOfNotNull(phone, phone2, phone3).firstOrNull(),
+        image = image?.path,
+    )
+
+    private fun ContactInfo.toChatContact(): ChatContact = ChatContact(
+        fullName = name,
+        phone = phone,
+    )
+
     fun sendMessage(text: String) {
         viewModelScope.launch {
             val dialog = currentDialogInfo ?: return@launch
@@ -587,8 +626,11 @@ class ChatDialogViewModel @Inject constructor(
                 val message = createContactSocketMessage(dialog, payload, replyId) ?: return@launch
                 socketService.sendMessage("message", message)
                 selectedUser = null
-                if (currentState is ChatDialogUiState.Success) {
-                    _uiState.value = currentState.copy(
+                if (successState != null) {
+                    val contact = user.toChatContact()
+                    val localMessage = createLocalContactMessage(contact, successState.replyMessage)
+                    _uiState.value = successState.copy(
+                        chats = successState.chats + localMessage,
                         currentMessage = "",
                         selectedContact = null
                     )
@@ -602,8 +644,11 @@ class ChatDialogViewModel @Inject constructor(
                 val message = createContactSocketMessage(dialog, payload, replyId) ?: return@launch
                 socketService.sendMessage("message", message)
                 attachedContact = null
-                if (currentState is ChatDialogUiState.Success) {
-                    _uiState.value = currentState.copy(
+                if (successState != null) {
+                    val contactInfo = contact.toChatContact()
+                    val localMessage = createLocalContactMessage(contactInfo, successState.replyMessage)
+                    _uiState.value = successState.copy(
+                        chats = successState.chats + localMessage,
                         currentMessage = "",
                         attachedContact = null
                     )
@@ -808,10 +853,16 @@ class ChatDialogViewModel @Inject constructor(
                 }
 
                 val replyPreview = socketMessage.ansPreview?.let { preview ->
+                    val previewType = MessageType.fromInt(preview.mt ?: 1)
+                    val contact = if (previewType == MessageType.CONTACT) {
+                        ChatContact.fromPayload(preview.t)
+                    } else {
+                        null
+                    }
                     MessageChat(
                         id = preview.i,
-                        text = preview.t,
-                        type = MessageType.TEXT,
+                        text = contact?.displayName ?: preview.t,
+                        type = previewType,
                         files = emptyList(),
                         ownerId = preview.o?.i,
                         createdAt = Instant.now(),
@@ -820,7 +871,9 @@ class ChatDialogViewModel @Inject constructor(
                         ownerAvatarUrl = preview.o?.im,
                         ownerIsAdmin = false,
                         isMine = preview.o?.i == currentUser?.id,
-                        replyTo = null
+                        replyTo = null,
+                        cType = preview.mt ?: 1,
+                        contact = contact,
                     )
                 }
 
@@ -835,6 +888,12 @@ class ChatDialogViewModel @Inject constructor(
                 val currentState = _uiState.value
                 if (currentState is ChatDialogUiState.Success) {
                     val updatedChats = currentState.chats.toMutableList().apply {
+                        if (newMessage.isMine && newMessage.type == MessageType.CONTACT) {
+                            val placeholderIndex = indexOfLast { it.isMine && it.type == MessageType.CONTACT && it.id < 0 }
+                            if (placeholderIndex >= 0) {
+                                removeAt(placeholderIndex)
+                            }
+                        }
                         add(newMessage)
                     }
                     _uiState.value = currentState.copy(chats = updatedChats)
@@ -850,12 +909,21 @@ class ChatDialogViewModel @Inject constructor(
         val createdAtInstant = parseInstantOrNow(createdAt)
         val attachments = files?.mapNotNull { it.toChatFile() } ?: emptyList()
         val isMineMessage = owner == currentUser?.id
-        val type = if (cType == 5) MessageType.SYSTEM else MessageType.TEXT
+        val messageType = when (cType) {
+            5 -> MessageType.SYSTEM
+            7 -> MessageType.CONTACT
+            else -> MessageType.TEXT
+        }
+        val contact = if (messageType == MessageType.CONTACT) {
+            ChatContact.fromPayload(text)
+        } else {
+            null
+        }
 
         return MessageChat(
             id = id ?: 0L,
-            text = text,
-            type = type,
+            text = contact?.displayName ?: text,
+            type = messageType,
             files = attachments,
             ownerId = owner,
             createdAt = createdAtInstant,
@@ -864,7 +932,9 @@ class ChatDialogViewModel @Inject constructor(
             ownerAvatarUrl = ownerAvatarUrl,
             ownerIsAdmin = false,
             isMine = isMineMessage,
-            replyTo = replyPreview
+            replyTo = replyPreview,
+            cType = cType,
+            contact = contact,
         )
     }
 
