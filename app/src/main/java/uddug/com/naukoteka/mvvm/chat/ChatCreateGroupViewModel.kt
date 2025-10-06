@@ -126,6 +126,13 @@ class ChatCreateGroupViewModel @Inject constructor(
         }
     }
 
+    fun onAvatarRemoved() {
+        val current = _uiState.value
+        if (current is ChatCreateGroupUiState.Success && !current.isAvatarUploading) {
+            _uiState.value = current.copy(avatarPath = null, avatarId = null)
+        }
+    }
+
     fun onCreateGroupClick() {
         val current = _uiState.value
         if (current is ChatCreateGroupUiState.Success) {
