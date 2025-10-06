@@ -47,12 +47,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import uddug.com.domain.entities.chat.ChatContact
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
 import uddug.com.naukoteka.BuildConfig
@@ -173,12 +173,20 @@ fun ChatMessageItem(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
-                if (!message.text.isNullOrBlank()) {
-                    Text(
-                        text = message.text.orEmpty(),
-                        color = if (isMine) Color.White else Color.Black,
-                        fontSize = 14.sp
-                    )
+                when {
+                    message.type == MessageType.CONTACT && message.contact != null -> {
+                        ContactMessageContent(
+                            contact = message.contact,
+                            isMine = isMine
+                        )
+                    }
+                    !message.text.isNullOrBlank() -> {
+                        Text(
+                            text = message.text.orEmpty(),
+                            color = if (isMine) Color.White else Color.Black,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
 
                 message.files.firstOrNull()?.let { file ->
@@ -327,6 +335,51 @@ private fun FileAttachmentCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ContactMessageContent(
+    contact: ChatContact,
+    isMine: Boolean,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Avatar(
+                url = contact.image,
+                name = contact.displayName,
+                size = 44.dp
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = contact.displayName,
+                    color = if (isMine) Color.White else Color(0xFF1F1F1F),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                contact.subtitle?.let { subtitle ->
+                    Text(
+                        text = subtitle,
+                        color = if (isMine) Color.White.copy(alpha = 0.75f) else Color(0xFF6F6F7B),
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+        Text(
+            text = stringResource(id = R.string.chat_go_to_profile),
+            color = if (isMine) Color.White else Color(0xFF2E83D9),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
