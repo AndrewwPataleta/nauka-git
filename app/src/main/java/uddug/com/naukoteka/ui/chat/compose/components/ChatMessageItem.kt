@@ -58,6 +58,8 @@ import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.ui.chat.compose.Avatar
+import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDuration
 import uddug.com.domain.entities.chat.File as ChatFile
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -449,27 +451,6 @@ private fun ChatFile.isVoiceFile(): Boolean {
     return (fileType == VOICE_FILE_TYPE)
         || (extension != null && extension in VOICE_EXTENSIONS)
         || (mimeType?.startsWith("audio") == true)
-}
-
-private fun formatVoiceDuration(duration: String?): String? {
-    val value = duration?.trim().orEmpty()
-    if (value.isEmpty()) return null
-    if (value.contains(':')) return value
-    val numeric = value.toLongOrNull() ?: return value
-    val totalSeconds = when {
-        numeric <= 0L -> return null
-        numeric > 86_400L && numeric % 1000L == 0L -> numeric / 1000L
-        numeric in 1L..86_400L -> numeric
-        else -> numeric / 1000L
-    }
-    val hours = totalSeconds / 3600
-    val minutes = (totalSeconds % 3600) / 60
-    val seconds = totalSeconds % 60
-    return if (hours > 0) {
-        String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
-    }
 }
 
 @Composable

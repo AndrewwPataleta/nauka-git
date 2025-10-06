@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -64,7 +65,11 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.AttachOptionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
+import uddug.com.naukoteka.ui.chat.compose.components.VoicePlaybackBanner
 import uddug.com.naukoteka.ui.chat.compose.components.MessageListShimmer
+import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDuration
+import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDurationFromMillis
+import uddug.com.naukoteka.ui.chat.compose.util.parseVoiceDurationToMillis
 import uddug.com.naukoteka.ui.chat.compose.util.uriToFile
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.File as ChatAttachmentFile
@@ -112,6 +117,9 @@ fun ChatDialogComponent(
     var recordingTime by remember { mutableStateOf(0L) }
     var isRecordingPlaying by remember { mutableStateOf(false) }
     var voicePlayingMessageId by remember { mutableStateOf<Long?>(null) }
+    var voicePlayingMessage by remember { mutableStateOf<MessageChat?>(null) }
+    var voicePlayingFile by remember { mutableStateOf<ChatAttachmentFile?>(null) }
+    var voiceRemainingTime by remember { mutableStateOf(0L) }
     var isVoicePlaying by remember { mutableStateOf(false) }
     var isVoicePreparing by remember { mutableStateOf(false) }
     val audioPermissionLauncher = rememberLauncherForActivityResult(
@@ -146,19 +154,34 @@ fun ChatDialogComponent(
 
     fun resetVoicePlayback() {
         voicePlayingMessageId = null
+        voicePlayingMessage = null
+        voicePlayingFile = null
+        voiceRemainingTime = 0L
         isVoicePlaying = false
         isVoicePreparing = false
         mediaPlayer.setOnPreparedListener(null)
         mediaPlayer.setOnCompletionListener(null)
     }
 
+    fun updateVoiceRemainingTimeFromPlayer() {
+        val remaining = runCatching {
+            val duration = mediaPlayer.duration
+            val position = mediaPlayer.currentPosition
+            (duration - position).coerceAtLeast(0)
+        }.getOrDefault(0)
+        voiceRemainingTime = remaining.toLong()
+    }
+
     fun handleVoiceMessageClick(message: MessageChat, file: ChatAttachmentFile) {
+        voicePlayingMessage = message
+        voicePlayingFile = file
         if (voicePlayingMessageId == message.id) {
             if (isVoicePreparing) return
             if (isVoicePlaying) {
                 try {
                     mediaPlayer.pause()
                     isVoicePlaying = false
+                    updateVoiceRemainingTimeFromPlayer()
                 } catch (_: IllegalStateException) {
                     resetVoicePlayback()
                 }
@@ -166,6 +189,7 @@ fun ChatDialogComponent(
                 try {
                     mediaPlayer.start()
                     isVoicePlaying = true
+                    updateVoiceRemainingTimeFromPlayer()
                 } catch (_: IllegalStateException) {
                     resetVoicePlayback()
                 }
@@ -173,6 +197,7 @@ fun ChatDialogComponent(
             return
         }
 
+        voiceRemainingTime = parseVoiceDurationToMillis(file.duration) ?: 0L
         voicePlayingMessageId = message.id
         isVoicePreparing = true
         isVoicePlaying = false
@@ -190,6 +215,7 @@ fun ChatDialogComponent(
             mediaPlayer.setOnPreparedListener { player ->
                 isVoicePreparing = false
                 isVoicePlaying = true
+                voiceRemainingTime = player.duration.toLong()
                 player.start()
             }
             mediaPlayer.setOnCompletionListener {
@@ -210,6 +236,30 @@ fun ChatDialogComponent(
                 context.getString(R.string.chat_voice_message_playback_error),
                 Toast.LENGTH_SHORT
             ).show()
+        }
+    }
+
+    fun stopVoicePlayback() {
+        try {
+            mediaPlayer.stop()
+        } catch (_: IllegalStateException) {
+        }
+        try {
+            mediaPlayer.reset()
+        } catch (_: IllegalStateException) {
+        }
+        resetVoicePlayback()
+    }
+
+    LaunchedEffect(voicePlayingMessageId, isVoicePlaying) {
+        if (voicePlayingMessageId == null) {
+            voiceRemainingTime = 0L
+            return@LaunchedEffect
+        }
+        updateVoiceRemainingTimeFromPlayer()
+        while (isVoicePlaying) {
+            delay(250)
+            updateVoiceRemainingTimeFromPlayer()
         }
     }
 
@@ -339,6 +389,9 @@ fun ChatDialogComponent(
                             pendingMessageId = null
                         }
                     }
+                    val playbackMessage = voicePlayingMessage
+                    val playbackFile = voicePlayingFile
+
                     if (isSelectionMode) {
                         Surface(elevation = 4.dp) {
                             Column {
@@ -391,7 +444,30 @@ fun ChatDialogComponent(
                             onMoreClick = { showMoreDialog = true }
                         )
                     }
-                    
+
+                    if (playbackMessage != null) {
+                        val playbackName = playbackMessage.ownerName?.takeIf { it.isNotBlank() }
+                            ?: stringResource(id = R.string.chat_unknown_user)
+                        val remainingText = if (voiceRemainingTime > 0L) {
+                            formatVoiceDurationFromMillis(voiceRemainingTime)
+                        } else {
+                            formatVoiceDuration(playbackFile?.duration)
+                                ?: stringResource(id = R.string.chat_unknown_time)
+                        }
+                        VoicePlaybackBanner(
+                            isPlaying = isVoicePlaying,
+                            isLoading = isVoicePreparing,
+                            senderName = playbackName,
+                            remainingTimeText = remainingText,
+                            onPlayPauseClick = {
+                                if (playbackFile != null) {
+                                    handleVoiceMessageClick(playbackMessage, playbackFile)
+                                }
+                            },
+                            onCloseClick = { stopVoicePlayback() }
+                        )
+                    }
+
                     LazyColumn(
                         state = scrollState,
                         modifier = Modifier
