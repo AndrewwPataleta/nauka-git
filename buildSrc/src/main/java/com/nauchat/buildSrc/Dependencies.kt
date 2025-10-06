@@ -287,7 +287,7 @@ object Deps {
 
     const val glassmorphic = "com.github.jakhongirmadaminov:glassmorphic-composables:0.0.7"
     const val kotlin_immutable = "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5"
-    const val image_viewer = "com.github.stfalcon-studio:StfalconImageViewer:v1.0.1"
+    const val image_viewer = "com.github.stfalcon-studio:StfalconImageViewer:1.0.1"
 
     const val accompanistWebView =
         "com.google.accompanist:accompanist-webview:${Version.accompanist}"
