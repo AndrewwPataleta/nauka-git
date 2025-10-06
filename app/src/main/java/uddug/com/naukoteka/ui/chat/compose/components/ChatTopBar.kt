@@ -67,7 +67,7 @@ fun ChatTopBar(
                         }
                 ) {
                     Avatar(
-                        url = image.takeIf { !isGroup && it.isNotEmpty() },
+                        url = image.takeIf { it.isNotEmpty() },
                         name = if (isGroup) null else name,
                         size = 36.dp,
                         overrideInitials = if (isGroup) stringResource(R.string.chat_group_initial) else null,
