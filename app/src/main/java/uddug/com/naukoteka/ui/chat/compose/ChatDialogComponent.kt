@@ -8,6 +8,7 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.provider.ContactsContract
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,6 +31,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -109,6 +111,9 @@ fun ChatDialogComponent(
     var recordedAudio by remember { mutableStateOf<File?>(null) }
     var recordingTime by remember { mutableStateOf(0L) }
     var isRecordingPlaying by remember { mutableStateOf(false) }
+    var voicePlayingMessageId by remember { mutableStateOf<Long?>(null) }
+    var isVoicePlaying by remember { mutableStateOf(false) }
+    var isVoicePreparing by remember { mutableStateOf(false) }
     val audioPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted: Boolean ->
@@ -127,6 +132,85 @@ fun ChatDialogComponent(
                 .load(image)
                 .into(imageView)
         }.show()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                mediaPlayer.reset()
+            } catch (_: IllegalStateException) {
+            }
+            mediaPlayer.release()
+        }
+    }
+
+    fun resetVoicePlayback() {
+        voicePlayingMessageId = null
+        isVoicePlaying = false
+        isVoicePreparing = false
+        mediaPlayer.setOnPreparedListener(null)
+        mediaPlayer.setOnCompletionListener(null)
+    }
+
+    fun handleVoiceMessageClick(message: MessageChat, file: ChatAttachmentFile) {
+        if (voicePlayingMessageId == message.id) {
+            if (isVoicePreparing) return
+            if (isVoicePlaying) {
+                try {
+                    mediaPlayer.pause()
+                    isVoicePlaying = false
+                } catch (_: IllegalStateException) {
+                    resetVoicePlayback()
+                }
+            } else {
+                try {
+                    mediaPlayer.start()
+                    isVoicePlaying = true
+                } catch (_: IllegalStateException) {
+                    resetVoicePlayback()
+                }
+            }
+            return
+        }
+
+        voicePlayingMessageId = message.id
+        isVoicePreparing = true
+        isVoicePlaying = false
+
+        if (isRecordingPlaying) {
+            try {
+                mediaPlayer.stop()
+            } catch (_: IllegalStateException) {
+            }
+            isRecordingPlaying = false
+        }
+
+        try {
+            mediaPlayer.reset()
+            mediaPlayer.setOnPreparedListener { player ->
+                isVoicePreparing = false
+                isVoicePlaying = true
+                player.start()
+            }
+            mediaPlayer.setOnCompletionListener {
+                try {
+                    mediaPlayer.reset()
+                } catch (_: IllegalStateException) {
+                }
+                resetVoicePlayback()
+            }
+            val source = BuildConfig.IMAGE_SERVER_URL + file.path
+            mediaPlayer.setDataSource(source)
+            mediaPlayer.prepareAsync()
+        } catch (_: Exception) {
+            mediaPlayer.reset()
+            resetVoicePlayback()
+            Toast.makeText(
+                context,
+                context.getString(R.string.chat_voice_message_playback_error),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     LaunchedEffect(isRecording) {
@@ -340,7 +424,11 @@ fun ChatDialogComponent(
                                         }
                                     }
                                 },
-                                onImageClick = ::openImageViewer
+                                onImageClick = ::openImageViewer,
+                                playingVoiceMessageId = voicePlayingMessageId,
+                                isVoicePlaying = isVoicePlaying,
+                                isVoiceLoading = isVoicePreparing,
+                                onVoicePlay = ::handleVoiceMessageClick
                             )
                         }
                     }
@@ -424,15 +512,38 @@ fun ChatDialogComponent(
                         onPlayRecording = {
                             recordedAudio?.let { file ->
                                 if (isRecordingPlaying) {
-                                    mediaPlayer.pause()
+                                    try {
+                                        mediaPlayer.pause()
+                                    } catch (_: IllegalStateException) {
+                                    }
                                     isRecordingPlaying = false
                                 } else {
-                                    mediaPlayer.reset()
-                                    mediaPlayer.setDataSource(file.absolutePath)
-                                    mediaPlayer.prepare()
-                                    mediaPlayer.start()
-                                    isRecordingPlaying = true
-                                    mediaPlayer.setOnCompletionListener {
+                                    if (voicePlayingMessageId != null || isVoicePreparing) {
+                                        try {
+                                            mediaPlayer.stop()
+                                        } catch (_: IllegalStateException) {
+                                        }
+                                        try {
+                                            mediaPlayer.reset()
+                                        } catch (_: IllegalStateException) {
+                                        }
+                                        resetVoicePlayback()
+                                    }
+                                    try {
+                                        mediaPlayer.reset()
+                                        mediaPlayer.setOnPreparedListener(null)
+                                        mediaPlayer.setDataSource(file.absolutePath)
+                                        mediaPlayer.prepare()
+                                        mediaPlayer.start()
+                                        isRecordingPlaying = true
+                                        mediaPlayer.setOnCompletionListener {
+                                            isRecordingPlaying = false
+                                        }
+                                    } catch (_: Exception) {
+                                        try {
+                                            mediaPlayer.reset()
+                                        } catch (_: IllegalStateException) {
+                                        }
                                         isRecordingPlaying = false
                                     }
                                 }

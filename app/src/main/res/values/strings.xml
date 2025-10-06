@@ -542,5 +542,6 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
 
     <string name="chat_file_attachment_unknown_type">FILE</string>
     <string name="chat_file_download_started">Downloading file…</string>
+    <string name="chat_voice_message_playback_error">Не удалось воспроизвести голосовое сообщение</string>
 
 </resources>
