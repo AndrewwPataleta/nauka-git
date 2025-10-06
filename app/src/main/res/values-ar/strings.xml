@@ -117,6 +117,17 @@
   <string name="search_contacts_hint">Поиск по контактам</string>
   <string name="chat_file_attachment_unknown_type">ملف</string>
   <string name="chat_file_download_started">جاري تنزيل الملف…</string>
+  <string name="chat_file_functions_title">Functions</string>
+  <string name="chat_file_action_copy_link">Copy link</string>
+  <string name="chat_file_action_download">Download file</string>
+  <string name="chat_file_action_share">Share</string>
+  <string name="chat_file_action_edit_info">Edit info</string>
+  <string name="chat_file_action_select">Select</string>
+  <string name="chat_file_action_delete">Delete file</string>
+  <string name="chat_file_link_copied">File link copied</string>
+  <string name="chat_file_action_not_available">Action is not available yet</string>
+  <string name="chat_file_share_title">Share file</string>
+  <string name="chat_file_share_error">No apps available to share</string>
   <string name="labor_activity_name">%1$s в <font color="#2E83D9">%2$s</font></string>
   <string name="chat_delete_group">حذف المجموعة</string>
   <string name="chat_leave_group">مغادرة المجموعة</string>

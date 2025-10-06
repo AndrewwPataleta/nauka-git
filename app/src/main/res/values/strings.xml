@@ -498,6 +498,17 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_message_show_original">Показать оригинал в чате</string>
     <string name="chat_message_delete">Удалить сообщение</string>
     <string name="chat_editing_title">Редактирование</string>
+    <string name="chat_file_functions_title">Функции</string>
+    <string name="chat_file_action_copy_link">Скопировать ссылку</string>
+    <string name="chat_file_action_download">Скачать файл</string>
+    <string name="chat_file_action_share">Поделиться</string>
+    <string name="chat_file_action_edit_info">Изменить информацию</string>
+    <string name="chat_file_action_select">Выбрать</string>
+    <string name="chat_file_action_delete">Удалить файл</string>
+    <string name="chat_file_link_copied">Ссылка на файл скопирована</string>
+    <string name="chat_file_action_not_available">Функция пока недоступна</string>
+    <string name="chat_file_share_title">Поделиться файлом</string>
+    <string name="chat_file_share_error">Не удалось открыть приложения для отправки</string>
     <string name="create_group_chat">Создать групповой чат</string>
     <string name="chat_create_group_title">Создать группу</string>
     <string name="chat_create_group_name_placeholder">Укажите название группы</string>
