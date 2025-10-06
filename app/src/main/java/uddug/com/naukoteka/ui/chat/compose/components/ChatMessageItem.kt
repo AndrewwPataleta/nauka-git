@@ -72,6 +72,7 @@ fun ChatMessageItem(
     onSelectChange: () -> Unit = {},
     onLongPress: (MessageChat) -> Unit,
     onReplyReferenceClick: (Long) -> Unit = {},
+    onImageClick: (ChatFile) -> Unit = {},
 ) {
     val isSystem = message.type == MessageType.SYSTEM
     Row(
@@ -183,6 +184,7 @@ fun ChatMessageItem(
                 message.files.firstOrNull()?.let { file ->
                     Spacer(modifier = Modifier.height(6.dp))
                     if (file.contentType?.startsWith("image") == true) {
+                        val imageInteractionSource = remember { MutableInteractionSource() }
                         Column {
                             AsyncImage(
                                 model = BuildConfig.IMAGE_SERVER_URL.plus(file.path),
@@ -190,6 +192,16 @@ fun ChatMessageItem(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
+                                    .clickable(
+                                        interactionSource = imageInteractionSource,
+                                        indication = null
+                                    ) {
+                                        if (selectionMode) {
+                                            onSelectChange()
+                                        } else {
+                                            onImageClick(file)
+                                        }
+                                    }
                                     .fillMaxWidth()
                                     .height(140.dp)
                             )

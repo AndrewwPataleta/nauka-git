@@ -37,6 +37,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.bumptech.glide.Glide
+import com.stfalcon.imageviewer.StfalconImageViewer
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
+import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
 import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
@@ -62,6 +65,7 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
 import uddug.com.naukoteka.ui.chat.compose.components.MessageListShimmer
 import uddug.com.naukoteka.ui.chat.compose.util.uriToFile
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.File as ChatAttachmentFile
 import uddug.com.naukoteka.ui.chat.AudioRecorder
 import uddug.com.naukoteka.ui.chat.compose.formatMessageDate
 import uddug.com.naukoteka.ui.chat.compose.messageDate
@@ -113,6 +117,15 @@ fun ChatDialogComponent(
             recordingTime = 0L
             isRecording = true
         }
+    }
+
+    fun openImageViewer(file: ChatAttachmentFile) {
+        val imageUrl = BuildConfig.IMAGE_SERVER_URL + file.path
+        StfalconImageViewer.Builder<String>(context, listOf(imageUrl)) { imageView, image ->
+            Glide.with(context)
+                .load(image)
+                .into(imageView)
+        }.show()
     }
 
     LaunchedEffect(isRecording) {
@@ -316,7 +329,8 @@ fun ChatDialogComponent(
                                             scrollState.animateScrollToItem(index)
                                         }
                                     }
-                                }
+                                },
+                                onImageClick = ::openImageViewer
                             )
                         }
                     }
