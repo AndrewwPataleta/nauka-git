@@ -331,7 +331,7 @@ class ChatDialogDetailViewModel @Inject constructor(
 
 }
 
-private const val CATEGORY_MEDIA = 5
+private const val CATEGORY_MEDIA = 1
 private const val CATEGORY_FILES = 3
 private const val CATEGORY_VOICE = 6
 private const val CATEGORY_NOTES = 7

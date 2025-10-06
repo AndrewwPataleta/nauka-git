@@ -328,7 +328,7 @@ class ChatGroupDetailViewModel @Inject constructor(
     companion object {
         private const val ROLE_OWNER = "37:201"
         private const val ROLE_ADMIN = "37:202"
-        private const val MEDIA_CATEGORY = 5
+        private const val MEDIA_CATEGORY = 1
         private const val FILES_CATEGORY = 3
     }
 }
