@@ -37,10 +37,10 @@ class ChatDialogDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val tabToCategoryMap = mapOf(
-        0 to 1, 
-        1 to 3, 
-        2 to 6, 
-        3 to 7, 
+        0 to CATEGORY_MEDIA,
+        1 to CATEGORY_FILES,
+        2 to CATEGORY_VOICE,
+        3 to CATEGORY_NOTES,
     )
 
     private val _uiState = MutableStateFlow<ChatDetailUiState>(ChatDetailUiState.Loading)
@@ -232,7 +232,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                 }
                 _searchMedia.value = chatInteractor.getDialogMedia(
                     dialogId,
-                    category = 1,
+                    category = CATEGORY_MEDIA,
                     limit = 50,
                     page = 1,
                     query = query,
@@ -241,7 +241,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                 )
                 _searchFiles.value = chatInteractor.getDialogMedia(
                     dialogId,
-                    category = 3,
+                    category = CATEGORY_FILES,
                     limit = 50,
                     page = 1,
                     query = query,
@@ -250,7 +250,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                 )
                 _searchNotes.value = chatInteractor.getDialogMedia(
                     dialogId,
-                    category = 7,
+                    category = CATEGORY_NOTES,
                     limit = 50,
                     page = 1,
                     query = query,
@@ -330,6 +330,11 @@ class ChatDialogDetailViewModel @Inject constructor(
     }
 
 }
+
+private const val CATEGORY_MEDIA = 5
+private const val CATEGORY_FILES = 3
+private const val CATEGORY_VOICE = 6
+private const val CATEGORY_NOTES = 7
 
 sealed class ChatDetailUiState {
     object Loading : ChatDetailUiState()
