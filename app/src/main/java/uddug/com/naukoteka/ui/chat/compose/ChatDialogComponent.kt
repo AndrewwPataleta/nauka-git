@@ -251,9 +251,12 @@ fun ChatDialogComponent(
         resetVoicePlayback()
     }
 
-    LaunchedEffect(voicePlayingMessageId, isVoicePlaying) {
+    LaunchedEffect(voicePlayingMessageId, isVoicePlaying, isVoicePreparing) {
         if (voicePlayingMessageId == null) {
             voiceRemainingTime = 0L
+            return@LaunchedEffect
+        }
+        if (isVoicePreparing) {
             return@LaunchedEffect
         }
         updateVoiceRemainingTimeFromPlayer()
