@@ -16,18 +16,35 @@ class NaukotekaCookieJar(private val cookiesCache: CookiesCache) : CookieJar {
     }
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
-        println("try to get cook")
-        if (cookies != null) {
-            return cookies?.filter { it.value.isNotEmpty() }!!
-        } else {
-            return listOf(
-                Cookie.parse(url, "${NKTS_COOKIE}${cookiesCache.getAuthCookies()}")!!
-            )
+        val storedCookies = cookies?.filter { it.value.isNotEmpty() }
+        val cachedCookie = cookiesCache.getAuthCookies()
+
+        if (!storedCookies.isNullOrEmpty() && cachedCookie.isNotBlank()) {
+            return storedCookies
         }
+
+        if (cachedCookie.isBlank()) {
+            cookies = null
+            return emptyList()
+        }
+
+        return Cookie.parse(url, "${NKTS_COOKIE}$cachedCookie")
+            ?.let { parsedCookie ->
+                cookies = listOf(parsedCookie)
+                cookies!!
+            }
+            ?: emptyList()
     }
 
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-        this.cookies = cookies
-        cookiesCache.entity = cookies.find { it.value.isNotEmpty() }?.value.toString()
+        val nonEmptyCookies = cookies.filter { it.value.isNotEmpty() }
+        this.cookies = if (nonEmptyCookies.isEmpty()) null else nonEmptyCookies
+
+        val authCookieValue = nonEmptyCookies.firstOrNull()?.value
+        if (authCookieValue != null) {
+            cookiesCache.entity = authCookieValue
+        } else {
+            cookiesCache.clear()
+        }
     }
 }
