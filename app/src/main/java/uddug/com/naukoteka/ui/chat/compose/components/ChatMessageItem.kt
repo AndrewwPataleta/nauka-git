@@ -377,7 +377,7 @@ private fun VoiceMessageAttachment(
     val textColor = if (isMine) Color.White else Color(0xFF111827)
     val accentColor = Color(0xFF2E83D9)
     val buttonBackground = if (isMine) Color.White else accentColor
-    val iconTint = if (isMine) accentColor else Color.White
+    val indicatorColor = if (isMine) accentColor else Color.White
     val interactionSource = remember { MutableInteractionSource() }
     Column(
         modifier = Modifier
@@ -412,15 +412,14 @@ private fun VoiceMessageAttachment(
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             strokeWidth = 2.dp,
-                            color = iconTint
+                            color = indicatorColor
                         )
                     }
                     else -> {
                         val icon = if (isPlaying) R.drawable.ic_stop_voice else R.drawable.ic_play_voice
                         Image(
                             painter = painterResource(id = icon),
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(iconTint)
+                            contentDescription = null
                         )
                     }
                 }
