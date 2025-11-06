@@ -17,6 +17,7 @@ buildscript {
         google()
         jcenter()
         mavenCentral()
+        maven { url "https://maven.flashphoner.com/repository/maven-public/" }
     }
     dependencies {
         apply from: 'dependencies.gradle'
@@ -45,6 +46,7 @@ allprojects {
         google()
         jcenter()
         maven { url 'https://androidx.dev/storage/compose-compiler/repository/' }
+        maven { url "https://maven.flashphoner.com/repository/maven-public/" }
     }
 }
 
