@@ -3,12 +3,14 @@ package uddug.com.data.repositories.chat
 import uddug.com.data.mapper.mapChatDtoToDomain
 import uddug.com.data.mapper.mapFolderDtoToDomain
 import uddug.com.data.services.chat.ChatApiService
+import uddug.com.data.services.models.request.chat.AnswerPollRequestDto
 import uddug.com.data.services.models.request.chat.ChatFolderRequestDto
 import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
+import uddug.com.data.services.models.request.chat.CreatePollRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.DialogImageRequestDto
 import uddug.com.data.services.models.request.chat.PinMessageRequestDto
@@ -18,6 +20,7 @@ import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.request.chat.UpdateDialogInfoRequestDto
 import uddug.com.data.services.models.request.chat.UpdateGroupAdminRequestDto
 import uddug.com.data.services.models.request.chat.UpdateGroupDialogRequestDto
+import uddug.com.data.services.models.request.chat.PollOptionRequestDto
 import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
 import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.chat.FolderDetailsDto
@@ -27,6 +30,7 @@ import uddug.com.data.services.models.response.chat.UserStatusDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
 import uddug.com.data.services.models.response.chat.SearchDialogDto
 import uddug.com.data.services.models.response.chat.SearchMessageDto
+import uddug.com.data.services.models.response.chat.toDomain
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.ChatFolderDetails
@@ -46,6 +50,8 @@ import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.Poll
+import uddug.com.domain.entities.chat.PollOptionInput
 import uddug.com.domain.entities.chat.SearchDialog
 import uddug.com.domain.entities.chat.SearchMessage
 import uddug.com.domain.entities.chat.UserStatus
@@ -482,6 +488,52 @@ class ChatRepositoryImpl @Inject constructor(
             println("get users status error ${e.message}")
             emptyList()
         }
+    }
+
+    override suspend fun createPoll(
+        subject: String,
+        isAnonymous: Boolean,
+        multipleAnswers: Boolean,
+        isQuiz: Boolean,
+        options: List<PollOptionInput>,
+    ): Poll {
+        val request = CreatePollRequestDto(
+            subject = subject,
+            isAnonymous = isAnonymous,
+            multipleAnswers = multipleAnswers,
+            isQuiz = isQuiz,
+            options = options.map {
+                PollOptionRequestDto(
+                    value = it.value,
+                    isRightAnswer = it.isRightAnswer,
+                    dsc = it.description,
+                )
+            },
+        )
+        return apiService.createPoll(request).toDomain()
+    }
+
+    override suspend fun stopPoll(pollId: String): Boolean = apiService.stopPoll(pollId)
+
+    override suspend fun deletePoll(pollId: String) {
+        apiService.deletePoll(pollId)
+    }
+
+    override suspend fun getPoll(pollId: String): Poll = apiService.getPoll(pollId).toDomain()
+
+    override suspend fun answerPoll(pollId: String, optionIds: List<String>): Poll {
+        val request = AnswerPollRequestDto(optionIds)
+        return apiService.answerPoll(pollId, request).toDomain()
+    }
+
+    override suspend fun getPollAnswerUsers(
+        pollId: String,
+        optionId: String,
+        limit: Int,
+        page: Int,
+    ): List<UserProfileFullInfo> {
+        return apiService.getPollAnswerUsers(pollId, optionId, limit, page)
+            .map { it.toDomain() }
     }
 }
 
