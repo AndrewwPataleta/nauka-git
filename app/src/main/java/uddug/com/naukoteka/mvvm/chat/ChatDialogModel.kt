@@ -711,6 +711,32 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    fun sendPoll(pollId: String) {
+        viewModelScope.launch {
+            val dialog = currentDialogInfo ?: return@launch
+            val ownerId = currentUser?.id.orEmpty()
+
+            val message = if (dialog.id != 0L) {
+                ChatSocketMessage(
+                    dialog = dialog.id,
+                    cType = 9,
+                    owner = ownerId,
+                    pollId = pollId
+                )
+            } else {
+                val peer = dialog.interlocutor?.userId ?: return@launch
+                ChatSocketMessage(
+                    interlocutor = peer,
+                    cType = 9,
+                    owner = ownerId,
+                    pollId = pollId
+                )
+            }
+
+            socketService.sendMessage("message", message)
+        }
+    }
+
     fun sendVoiceMessage(file: File) {
         viewModelScope.launch {
             val dialog = currentDialogInfo ?: return@launch

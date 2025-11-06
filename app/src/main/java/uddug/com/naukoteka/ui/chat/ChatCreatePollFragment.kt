@@ -18,6 +18,7 @@ import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatCreatePollEvent
 import uddug.com.naukoteka.mvvm.chat.ChatCreatePollViewModel
 import uddug.com.naukoteka.ui.chat.compose.ChatCreatePollScreen
+import uddug.com.naukoteka.ui.chat.ChatDialogFragment.Companion.CREATED_POLL_ID_KEY
 
 @AndroidEntryPoint
 class ChatCreatePollFragment : Fragment() {
@@ -36,6 +37,10 @@ class ChatCreatePollFragment : Fragment() {
                         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
                     }
                     is ChatCreatePollEvent.PollCreated -> {
+                        findNavController().previousBackStackEntry?.savedStateHandle?.set(
+                            CREATED_POLL_ID_KEY,
+                            event.poll.id
+                        )
                         Toast.makeText(
                             requireContext(),
                             R.string.chat_create_poll_created_success,
