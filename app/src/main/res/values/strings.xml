@@ -528,7 +528,8 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_create_poll_option_placeholder">Добавить ответ</string>
     <string name="chat_create_poll_create_button">Создать опрос</string>
     <string name="chat_create_poll_validation_error">Укажите вопрос и минимум два варианта ответа.</string>
-    <string name="chat_create_poll_created_stub">Опрос будет отправлен в ближайшем обновлении.</string>
+    <string name="chat_create_poll_quiz_validation_error">Выберите правильный ответ.</string>
+    <string name="chat_create_poll_created_success">Опрос создан и отправлен.</string>
     <string name="subs">Подписки</string>
 
 

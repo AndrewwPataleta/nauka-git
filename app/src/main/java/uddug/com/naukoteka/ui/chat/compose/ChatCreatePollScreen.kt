@@ -8,12 +8,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Checkbox
+import androidx.compose.material.CheckboxDefaults
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.OutlinedTextField
@@ -50,7 +54,10 @@ fun ChatCreatePollScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    val canCreate = state.question.isNotBlank() && state.options.count { it.text.isNotBlank() } >= 2
+    val hasQuestion = state.question.isNotBlank()
+    val filledOptions = state.options.count { it.text.isNotBlank() }
+    val hasCorrectAnswer = !state.isQuizMode || state.options.any { it.isCorrect && it.text.isNotBlank() }
+    val canCreate = hasQuestion && filledOptions >= 2 && hasCorrectAnswer
 
     Scaffold(
         topBar = {
@@ -109,14 +116,16 @@ fun ChatCreatePollScreen(
                     onQuizModeChange = viewModel::onQuizModeChange
                 )
                 OptionsSection(
+                    isQuizMode = state.isQuizMode,
                     options = state.options,
-                    onOptionChange = viewModel::onOptionChange
+                    onOptionChange = viewModel::onOptionChange,
+                    onCorrectAnswerToggle = viewModel::onCorrectAnswerToggle
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = viewModel::onCreatePoll,
-                enabled = canCreate,
+                enabled = canCreate && !state.isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 16.dp),
@@ -128,11 +137,19 @@ fun ChatCreatePollScreen(
                     disabledContentColor = Color.White
                 )
             ) {
-                Text(
-                    text = stringResource(R.string.chat_create_poll_create_button),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+                if (state.isSubmitting) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.chat_create_poll_create_button),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }
@@ -253,8 +270,10 @@ private fun PollSettingItem(
 
 @Composable
 private fun OptionsSection(
+    isQuizMode: Boolean,
     options: List<PollOptionUi>,
     onOptionChange: (Long, String) -> Unit,
+    onCorrectAnswerToggle: (Long, Boolean) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
@@ -266,8 +285,11 @@ private fun OptionsSection(
         options.forEach { option ->
             key(option.id) {
                 PollOptionField(
+                    isQuizMode = isQuizMode,
                     value = option.text,
-                    onValueChange = { onOptionChange(option.id, it) }
+                    isCorrect = option.isCorrect,
+                    onValueChange = { onOptionChange(option.id, it) },
+                    onCorrectToggle = { checked -> onCorrectAnswerToggle(option.id, checked) }
                 )
             }
         }
@@ -276,8 +298,11 @@ private fun OptionsSection(
 
 @Composable
 private fun PollOptionField(
+    isQuizMode: Boolean,
     value: String,
+    isCorrect: Boolean,
     onValueChange: (String) -> Unit,
+    onCorrectToggle: (Boolean) -> Unit,
 ) {
     TextField(
         value = value,
@@ -285,28 +310,43 @@ private fun PollOptionField(
         modifier = Modifier.fillMaxWidth(),
         placeholder = {
             Text(
-                text = stringResource(R.string.chat_create_poll_option_placeholder),
-                color = Color(0xFF8F8FA0)
+                    text = stringResource(R.string.chat_create_poll_option_placeholder),
+                    color = Color(0xFF8F8FA0)
+                )
+            },
+            leadingIcon = {
+                if (isQuizMode) {
+                    Checkbox(
+                        checked = isCorrect,
+                        onCheckedChange = onCorrectToggle,
+                        enabled = value.isNotBlank(),
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = Color(0xFF2E83D9),
+                            uncheckedColor = Color(0xFFB0B2C3),
+                            checkmarkColor = Color.White,
+                            disabledColor = Color(0xFFE0E0E8)
+                        )
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.RadioButtonUnchecked,
+                        contentDescription = null,
+                        tint = Color(0xFFB0B2C3)
+                    )
+                }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = TextFieldDefaults.textFieldColors(
+                backgroundColor = Color(0xFFF5F5F9),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+                cursorColor = Color(0xFF2E83D9),
+                textColor = Color(0xFF1F1F1F),
+                placeholderColor = Color(0xFF8F8FA0),
+                leadingIconColor = if (isQuizMode) Color.Unspecified else Color(0xFFB0B2C3),
+                disabledLeadingIconColor = if (isQuizMode) Color.Unspecified else Color(0xFFB0B2C3)
             )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Outlined.RadioButtonUnchecked,
-                contentDescription = null,
-                tint = Color(0xFFB0B2C3)
-            )
-        },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        colors = TextFieldDefaults.textFieldColors(
-            backgroundColor = Color(0xFFF5F5F9),
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-            cursorColor = Color(0xFF2E83D9),
-            textColor = Color(0xFF1F1F1F),
-            placeholderColor = Color(0xFF8F8FA0),
-            leadingIconColor = Color(0xFFB0B2C3)
         )
-    )
 }

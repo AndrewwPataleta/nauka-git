@@ -30,13 +30,15 @@ class ChatCreatePollFragment : Fragment() {
             viewModel.events.collectLatest { event ->
                 when (event) {
                     is ChatCreatePollEvent.ValidationError -> {
-                        val message = event.message ?: getString(R.string.chat_create_poll_validation_error)
+                        val message = event.message
+                            ?: event.messageResId?.let { getString(it) }
+                            ?: getString(R.string.chat_create_poll_validation_error)
                         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
                     }
                     is ChatCreatePollEvent.PollCreated -> {
                         Toast.makeText(
                             requireContext(),
-                            R.string.chat_create_poll_created_stub,
+                            R.string.chat_create_poll_created_success,
                             Toast.LENGTH_SHORT
                         ).show()
                         findNavController().popBackStack()
