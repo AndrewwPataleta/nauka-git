@@ -137,6 +137,9 @@ class ChatDialogFragment : Fragment() {
                         onContactClick = {
                             findNavController().navigate(R.id.sendContactFragment)
                         },
+                        onCreatePoll = {
+                            findNavController().navigate(R.id.chatCreatePollFragment)
+                        },
                         onForwardMessage = { message ->
                             val args = Bundle().apply {
                                 putLong(ARG_MESSAGE_ID, message.id)
