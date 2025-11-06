@@ -513,6 +513,22 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_create_group_missing_participants_error">Добавьте участников</string>
     <string name="chat_create_group_generic_error">Произошла ошибка. Попробуйте еще раз</string>
     <string name="chat_create_group_min_members_error">Выберите минимум двух участников</string>
+    <string name="chat_create_poll_title">Добавить опрос</string>
+    <string name="chat_create_poll_description">Вы можете создать опрос внутри чата. Для этого вам необходимо создать хотя бы два варианта ответа и активировать дополнительные функции.</string>
+    <string name="chat_create_poll_question_section">Вопрос для опроса</string>
+    <string name="chat_create_poll_question_placeholder">Задайте вопрос</string>
+    <string name="chat_create_poll_settings_section">Настройки опроса</string>
+    <string name="chat_create_poll_setting_anonymous">Анонимное голосование</string>
+    <string name="chat_create_poll_setting_anonymous_description">Мы не будем показывать, кто и за какой вариант проголосовал.</string>
+    <string name="chat_create_poll_setting_multiple">Выбор нескольких ответов</string>
+    <string name="chat_create_poll_setting_multiple_description">Участники смогут выбрать более одного варианта.</string>
+    <string name="chat_create_poll_setting_quiz">Режим викторины</string>
+    <string name="chat_create_poll_setting_quiz_description">Позволяет отметить правильный ответ и проводить викторины.</string>
+    <string name="chat_create_poll_options_section">Варианты ответа</string>
+    <string name="chat_create_poll_option_placeholder">Добавить ответ</string>
+    <string name="chat_create_poll_create_button">Создать опрос</string>
+    <string name="chat_create_poll_validation_error">Укажите вопрос и минимум два варианта ответа.</string>
+    <string name="chat_create_poll_created_stub">Опрос будет отправлен в ближайшем обновлении.</string>
     <string name="subs">Подписки</string>
 
 

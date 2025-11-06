@@ -78,6 +78,7 @@ fun ChatDialogComponent(
     onBackPressed: () -> Unit,
     onSearchClick: () -> Unit,
     onContactClick: () -> Unit,
+    onCreatePoll: () -> Unit,
     onForwardMessage: (MessageChat) -> Unit,
     onEditGroup: (Long) -> Unit,
     onChatDeleted: () -> Unit,
@@ -446,7 +447,10 @@ fun ChatDialogComponent(
                         permissionLauncher.launch(filePermissions)
                     }
                 },
-                onPollClick = { showAttachmentSheet = false },
+                onPollClick = {
+                    showAttachmentSheet = false
+                    onCreatePoll()
+                },
                 onContactClick = {
                     showAttachmentSheet = false
                     onContactClick()
