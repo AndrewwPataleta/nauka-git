@@ -8,6 +8,7 @@ data class ChatSocketMessage(
     val owner: String? = null,
     val files: List<FileDescriptor>? = null,
     val answered: Long? = null,
+    val pollId: String? = null,
     val ansPreview: AnswerPreview? = null,
     val forwarded: Long? = null,
     val forwardedn: List<Long>? = null,

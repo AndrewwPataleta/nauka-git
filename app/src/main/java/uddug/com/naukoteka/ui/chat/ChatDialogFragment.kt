@@ -53,6 +53,7 @@ class ChatDialogFragment : Fragment() {
     companion object {
         const val DIALOG_ID = "DIALOG_ID"
         const val INTERLOCUTOR_ID = "INTERLOCUTOR_ID"
+        const val CREATED_POLL_ID_KEY = "createdPollId"
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -109,6 +110,16 @@ class ChatDialogFragment : Fragment() {
                 if (shouldRefresh == true) {
                     viewModel.refreshDialogInfo()
                     findNavController().currentBackStackEntry?.savedStateHandle?.set("refreshDialogInfo", false)
+                }
+            }
+
+        val savedStateHandle = findNavController().currentBackStackEntry?.savedStateHandle
+        savedStateHandle
+            ?.getLiveData<String>(CREATED_POLL_ID_KEY)
+            ?.observe(viewLifecycleOwner) { pollId ->
+                if (!pollId.isNullOrBlank()) {
+                    viewModel.sendPoll(pollId)
+                    savedStateHandle.remove<String>(CREATED_POLL_ID_KEY)
                 }
             }
     }
