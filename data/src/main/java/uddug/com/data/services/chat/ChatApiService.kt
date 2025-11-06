@@ -11,8 +11,10 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
+import uddug.com.data.services.models.request.chat.AnswerPollRequestDto
 import uddug.com.data.services.models.request.chat.ChatFolderRequestDto
 import uddug.com.data.services.models.request.chat.CreateDialogRequestDto
+import uddug.com.data.services.models.request.chat.CreatePollRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.PinMessageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
@@ -26,6 +28,7 @@ import uddug.com.data.services.models.response.chat.FolderDetailsDto
 import uddug.com.data.services.models.response.chat.FolderDialogsDto
 import uddug.com.data.services.models.response.chat.FolderDto
 import uddug.com.data.services.models.response.chat.FoldersDto
+import uddug.com.data.services.models.response.chat.PollDto
 import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
 import uddug.com.data.services.models.response.chat.UserStatusDto
 import uddug.com.data.services.models.response.chat.MessageDto
@@ -232,4 +235,30 @@ interface ChatApiService {
         @Part files: List<MultipartBody.Part>,
         @Query("raw") raw: Boolean = false,
     ): List<FileDto>
+
+    @POST("chat/v1/dialogs/poll")
+    suspend fun createPoll(@Body request: CreatePollRequestDto): PollDto
+
+    @POST("chat/v1/dialogs/poll/{pollId}/stop")
+    suspend fun stopPoll(@Path("pollId") pollId: String): Boolean
+
+    @DELETE("chat/v1/dialogs/poll/{pollId}")
+    suspend fun deletePoll(@Path("pollId") pollId: String)
+
+    @GET("chat/v1/dialogs/poll/{pollId}")
+    suspend fun getPoll(@Path("pollId") pollId: String): PollDto
+
+    @PUT("chat/v1/dialogs/poll/{pollId}/answer")
+    suspend fun answerPoll(
+        @Path("pollId") pollId: String,
+        @Body request: AnswerPollRequestDto,
+    ): PollDto
+
+    @GET("chat/v1/dialogs/poll/{pollId}/answer-users/{optionId}")
+    suspend fun getPollAnswerUsers(
+        @Path("pollId") pollId: String,
+        @Path("optionId") optionId: String,
+        @Query("limit") limit: Int = 10,
+        @Query("page") page: Int = 1,
+    ): List<UserProfileFullInfoDto>
 }

@@ -8,6 +8,8 @@ import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.Poll
+import uddug.com.domain.entities.chat.PollOptionInput
 import uddug.com.domain.entities.chat.SearchDialog
 import uddug.com.domain.entities.chat.SearchMessage
 import uddug.com.domain.entities.chat.UserStatus
@@ -167,4 +169,27 @@ interface ChatRepository {
         query: String,
         lastMessageId: Long? = null,
     ): List<SearchMessage>
+
+    suspend fun createPoll(
+        subject: String,
+        isAnonymous: Boolean,
+        multipleAnswers: Boolean,
+        isQuiz: Boolean,
+        options: List<PollOptionInput>,
+    ): Poll
+
+    suspend fun stopPoll(pollId: String): Boolean
+
+    suspend fun deletePoll(pollId: String)
+
+    suspend fun getPoll(pollId: String): Poll
+
+    suspend fun answerPoll(pollId: String, optionIds: List<String>): Poll
+
+    suspend fun getPollAnswerUsers(
+        pollId: String,
+        optionId: String,
+        limit: Int = 10,
+        page: Int = 1,
+    ): List<UserProfileFullInfo>
 }
