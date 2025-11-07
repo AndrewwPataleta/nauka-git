@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
+import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.ui.chat.compose.ChatFolderSettingsComponent
 
@@ -28,7 +29,8 @@ class ChatFolderSettingsFragment : Fragment() {
                 MaterialTheme {
                     ChatFolderSettingsComponent(
                         viewModel = viewModel,
-                        onBackPressed = { findNavController().popBackStack() }
+                        onBackPressed = { findNavController().popBackStack() },
+                        onCreateFolderClick = { findNavController().navigate(R.id.chatCreateFolderFragment) }
                     )
                 }
             }
@@ -38,5 +40,18 @@ class ChatFolderSettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewModel.loadFolders()
+        observeRefreshResult()
+    }
+
+    private fun observeRefreshResult() {
+        findNavController().currentBackStackEntry?.savedStateHandle
+            ?.getLiveData<Boolean>(ChatCreateFolderFragment.REFRESH_FOLDERS_KEY)
+            ?.observe(viewLifecycleOwner) { shouldRefresh ->
+                if (shouldRefresh == true) {
+                    viewModel.loadFolders()
+                    findNavController().currentBackStackEntry?.savedStateHandle
+                        ?.set(ChatCreateFolderFragment.REFRESH_FOLDERS_KEY, null)
+                }
+            }
     }
 }
