@@ -18,6 +18,7 @@ import uddug.com.data.services.models.request.chat.CreatePollRequestDto
 import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.PinMessageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
+import uddug.com.data.services.models.request.chat.ReorderFoldersRequestDto
 import uddug.com.data.services.models.request.chat.UpdateDialogInfoRequestDto
 import uddug.com.data.services.models.request.chat.UpdateGroupAdminRequestDto
 import uddug.com.data.services.models.request.chat.UpdateGroupDialogRequestDto
@@ -55,6 +56,9 @@ interface ChatApiService {
         @Path("folderId") folderId: Long,
         @Body request: ChatFolderRequestDto,
     ): FolderDto
+
+    @PATCH("chat/v1/dialogs/folder/reorder")
+    suspend fun reorderFolders(@Body request: ReorderFoldersRequestDto): FoldersDto
 
     @DELETE("chat/v1/dialogs/folder/{folderId}")
     suspend fun deleteFolder(@Path("folderId") folderId: Long)

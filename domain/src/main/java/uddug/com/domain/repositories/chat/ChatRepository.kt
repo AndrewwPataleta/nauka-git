@@ -22,6 +22,8 @@ interface ChatRepository {
 
     suspend fun getFolders(): List<ChatFolder>
 
+    suspend fun reorderFolders(folderIds: List<Long>): List<ChatFolder>
+
     suspend fun createFolder(
         name: String,
         dialogIds: List<Long> = emptyList(),
