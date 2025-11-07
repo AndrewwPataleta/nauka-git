@@ -62,7 +62,7 @@ import uddug.com.domain.entities.chat.MessageType
 import uddug.com.domain.entities.chat.Poll
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
-import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDuration
+
 import uddug.com.domain.entities.chat.File as ChatFile
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -360,8 +360,8 @@ private fun PollOptionItem(
             colors = RadioButtonDefaults.colors(
                 selectedColor = accentColor,
                 unselectedColor = accentColor.copy(alpha = 0.6f),
-                disabledSelectedColor = accentColor.copy(alpha = 0.6f),
-                disabledUnselectedColor = accentColor.copy(alpha = 0.4f),
+//                disabledSelectedColor = accentColor.copy(alpha = 0.6f),
+//                disabledUnselectedColor = accentColor.copy(alpha = 0.4f),
             ),
             enabled = isEnabled
         )

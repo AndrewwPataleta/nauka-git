@@ -3,6 +3,7 @@ package uddug.com.naukoteka.ui.chat.compose.components
 import ChatAttachmentPreview
 import ChatCard
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -15,7 +16,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Reorder
+
 import androidx.compose.material.icons.outlined.Settings
 
 import androidx.compose.material3.AlertDialog
@@ -36,6 +37,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
@@ -99,7 +101,6 @@ fun ChatTabBar(
                             onOpenFolderSettings()
                         }
                         if (!target.isMainFolder) {
-                            Divider()
                             FolderActionItem(
                                 icon = Icons.Outlined.Edit,
                                 text = stringResource(R.string.chat_folder_action_rename)
@@ -108,7 +109,6 @@ fun ChatTabBar(
                                 folderToRename = folder
                             }
                         }
-                        Divider()
                         FolderActionItem(
                             icon = Icons.Outlined.Done,
                             text = stringResource(R.string.chat_folder_action_mark_read)
@@ -116,9 +116,8 @@ fun ChatTabBar(
                             folderActionsTarget = null
                             viewModel.markFolderAsRead(folder.id)
                         }
-                        Divider()
                         FolderActionItem(
-                            icon = Icons.Outlined.Reorder,
+                            icon = Icons.Outlined.Edit,
                             text = stringResource(R.string.chat_folder_menu_change_order)
                         ) {
                             folderActionsTarget = null
@@ -402,7 +401,7 @@ private data class FolderActionsTarget(
 
 @Composable
 private fun FolderActionItem(
-    icon: ImageVector,
+    icon: Painter,
     text: String,
     onClick: () -> Unit,
 ) {
@@ -411,7 +410,7 @@ private fun FolderActionItem(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         leadingContent = {
-            Icon(icon, contentDescription = null, tint = Color(0xFF2E83D9))
+            Image(icon, contentDescription = null, tint = Color(0xFF2E83D9))
         },
         headlineContent = {
             Text(text = text)

@@ -30,7 +30,8 @@ import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.CheckCircle
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -56,7 +57,8 @@ fun ChatCreatePollScreen(
 
     val hasQuestion = state.question.isNotBlank()
     val filledOptions = state.options.count { it.text.isNotBlank() }
-    val hasCorrectAnswer = !state.isQuizMode || state.options.any { it.isCorrect && it.text.isNotBlank() }
+    val hasCorrectAnswer =
+        !state.isQuizMode || state.options.any { it.isCorrect && it.text.isNotBlank() }
     val canCreate = hasQuestion && filledOptions >= 2 && hasCorrectAnswer
 
     Scaffold(
@@ -170,7 +172,8 @@ private fun QuestionSection(
         OutlinedTextField(
             value = state.question,
             onValueChange = onQuestionChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth(),
             placeholder = {
                 Text(
                     text = stringResource(R.string.chat_create_poll_question_placeholder),
@@ -180,7 +183,7 @@ private fun QuestionSection(
             singleLine = false,
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                backgroundColor = Color.White,
+                backgroundColor = Color(0xFFF5F5F9),
                 focusedBorderColor = Color(0xFF2E83D9),
                 unfocusedBorderColor = Color(0xFFE0E0E8),
                 cursorColor = Color(0xFF2E83D9),
@@ -235,25 +238,25 @@ private fun PollSettingItem(
 ) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFF5F5F9), RoundedCornerShape(16.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .fillMaxWidth(),
+//            .background(Color(0xFFF5F5F9), RoundedCornerShape(16.dp))
+//            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                color = Color(0xFF1F1F1F),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = description,
                 color = Color(0xFF6F6F7B),
-                fontSize = 13.sp,
+                fontSize = 18.sp,
                 lineHeight = 18.sp
             )
+//            Spacer(modifier = Modifier.height(4.dp))
+//            Text(
+//                text = description,
+//                color = Color(0xFF6F6F7B),
+//                fontSize = 13.sp,
+//                lineHeight = 18.sp
+//            )
         }
         Switch(
             checked = checked,
@@ -310,43 +313,43 @@ private fun PollOptionField(
         modifier = Modifier.fillMaxWidth(),
         placeholder = {
             Text(
-                    text = stringResource(R.string.chat_create_poll_option_placeholder),
-                    color = Color(0xFF8F8FA0)
-                )
-            },
-            leadingIcon = {
-                if (isQuizMode) {
-                    Checkbox(
-                        checked = isCorrect,
-                        onCheckedChange = onCorrectToggle,
-                        enabled = value.isNotBlank(),
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = Color(0xFF2E83D9),
-                            uncheckedColor = Color(0xFFB0B2C3),
-                            checkmarkColor = Color.White,
-                            disabledColor = Color(0xFFE0E0E8)
-                        )
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Outlined.RadioButtonUnchecked,
-                        contentDescription = null,
-                        tint = Color(0xFFB0B2C3)
-                    )
-                }
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.textFieldColors(
-                backgroundColor = Color(0xFFF5F5F9),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                cursorColor = Color(0xFF2E83D9),
-                textColor = Color(0xFF1F1F1F),
-                placeholderColor = Color(0xFF8F8FA0),
-                leadingIconColor = if (isQuizMode) Color.Unspecified else Color(0xFFB0B2C3),
-                disabledLeadingIconColor = if (isQuizMode) Color.Unspecified else Color(0xFFB0B2C3)
+                text = stringResource(R.string.chat_create_poll_option_placeholder),
+                color = Color(0xFF8F8FA0)
             )
+        },
+        leadingIcon = {
+            if (isQuizMode) {
+                Checkbox(
+                    checked = isCorrect,
+                    onCheckedChange = onCorrectToggle,
+                    enabled = value.isNotBlank(),
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = Color(0xFF2E83D9),
+                        uncheckedColor = Color(0xFFB0B2C3),
+                        checkmarkColor = Color.White,
+                        disabledColor = Color(0xFFE0E0E8)
+                    )
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Outlined.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFFB0B2C3)
+                )
+            }
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = TextFieldDefaults.textFieldColors(
+            backgroundColor = Color(0xFFF5F5F9),
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            cursorColor = Color(0xFF2E83D9),
+            textColor = Color(0xFF1F1F1F),
+            placeholderColor = Color(0xFF8F8FA0),
+            leadingIconColor = if (isQuizMode) Color.Unspecified else Color(0xFFB0B2C3),
+            disabledLeadingIconColor = if (isQuizMode) Color.Unspecified else Color(0xFFB0B2C3)
         )
+    )
 }

@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.ui.chat.compose
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -136,7 +137,7 @@ fun ChatCreateFolderScreen(
                     fontSize = 16.sp,
                     modifier = Modifier
                         .align(Alignment.CenterVertically)
-                        .clickableNoRipple(onAddChatsClick)
+                        .clickable{ onAddChatsClick() }
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -205,9 +206,3 @@ private fun SelectedChatRow(
     }
 }
 
-private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier =
-    androidx.compose.foundation.clickable(
-        indication = null,
-        interactionSource = androidx.compose.foundation.interaction.MutableInteractionSource(),
-        onClick = onClick
-    )

@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
+import android.R.attr.action
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
@@ -129,25 +130,25 @@ fun ChatDetailMoreSheetDialog(
                     })
                 }
             }
-            items.forEach { (textRes, action) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            action()
-                        }
-                        .padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(id = textRes),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            }
+//            items.forEach { (textRes, action) ->
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .clickable(
+//                            interactionSource = remember { MutableInteractionSource() },
+//                            indication = null
+//                        ) {
+//                            action()
+//                        }
+//                        .padding(vertical = 12.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    Text(
+//                        text = stringResource(id = textRes),
+//                        style = MaterialTheme.typography.bodyLarge
+//                    )
+//                }
+//            }
         }
     }
 }

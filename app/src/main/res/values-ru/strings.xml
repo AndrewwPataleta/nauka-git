@@ -124,8 +124,7 @@
   <string name="gender_male">Мужчина</string>
   <string name="gender_female">Женщина</string>
   <string name="chat_folder_settings_title">Настроить папки</string>
-  <string name="chat_folder_settings_description">Вы можете создать папки с нужными чатами и переключаться между ними.
-Чтобы удалить папку или изменить порядок сортировки, нажмите кнопку «Изменить».</string>
+  <string name="chat_folder_settings_description">Вы можете создать папки с нужными чатами и переключаться между ними.\nЧтобы удалить папку или изменить порядок сортировки, нажмите кнопку «Изменить».</string>
   <string name="chat_folder_settings_selected_chats">Выбранные чаты или группы</string>
   <string name="chat_folder_settings_add_folder">Добавить новую папку</string>
   <string name="chat_folder_menu_configure">Настроить папки</string>

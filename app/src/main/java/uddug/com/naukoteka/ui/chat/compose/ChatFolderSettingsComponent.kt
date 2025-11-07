@@ -1,10 +1,12 @@
 package uddug.com.naukoteka.ui.chat.compose
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Scaffold
@@ -21,7 +23,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.burnoutcrew.reorderable.ReorderableItem
@@ -47,10 +51,19 @@ fun ChatFolderSettingsComponent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(R.string.chat_folder_settings_title), color = Color.Black) },
+                title = {
+                    Text(
+                        text = stringResource(R.string.chat_folder_settings_title),
+                        color = Color.Black
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = null, tint = Color(0xFF2E83D9))
+                        Icon(
+                            Icons.Filled.ArrowBack,
+                            contentDescription = null,
+                            tint = Color(0xFF2E83D9)
+                        )
                     }
                 },
                 actions = {
@@ -86,51 +99,64 @@ fun ChatFolderSettingsComponent(
                 text = stringResource(R.string.chat_folder_settings_selected_chats),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
                 color = Color.Black
             )
-            androidx.compose.material.TextButton(
-                onClick = onCreateFolderClick,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            ) {
-                Text(text = stringResource(R.string.chat_folder_settings_add_folder), color = Color(0xFF2E83D9))
-            }
-            LazyColumn(
-                state = reorderState.listState,
+            Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .reorderable(reorderState)
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp)
+                    .wrapContentHeight()
+                    .background(Color(0xFFf6f5f9), shape = RoundedCornerShape(16.dp))
             ) {
-                items(folders, key = { it.id }) { folder ->
-                    ReorderableItem(reorderState, key = folder.id) { _ ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .detectReorderAfterLongPress(reorderState),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Delete,
-                                contentDescription = null,
-                                tint = Color.Red
-                            )
-                            Text(
-                                text = folder.name,
+                androidx.compose.material.TextButton(
+                    onClick = onCreateFolderClick,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.chat_folder_settings_add_folder),
+                        color = Color(0xFF2E83D9)
+                    )
+                }
+                LazyColumn(
+                    state = reorderState.listState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .reorderable(reorderState)
+                ) {
+                    items(folders, key = { it.id }) { folder ->
+                        ReorderableItem(reorderState, key = folder.id) { _ ->
+                            Row(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .padding(horizontal = 16.dp),
-                                fontSize = 16.sp,
-                                color = Color.Black
-                            )
-                            Icon(
-                                imageVector = Icons.Filled.Menu,
-                                contentDescription = null,
-                                tint = Color(0xFF8083A0)
-                            )
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .detectReorderAfterLongPress(reorderState),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_remove_folder),
+                                    contentDescription = null,
+
+                                    )
+                                Text(
+                                    text = folder.name,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(horizontal = 16.dp),
+                                    fontSize = 16.sp,
+                                    color = Color.Black
+                                )
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_move_folders),
+                                    contentDescription = null,
+
+                                    )
+                            }
                         }
                     }
                 }
             }
+
         }
     }
 }

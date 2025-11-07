@@ -126,7 +126,7 @@ class ChatFolderAddChatsViewModel @Inject constructor(
         }
     }
 
-    private fun loadStatuses(dialogs: List<Chat>): Map<String, UserStatus> {
+    private suspend fun loadStatuses(dialogs: List<Chat>): Map<String, UserStatus> {
         val userIds = dialogs
             .filter { it.dialogType == 1 }
             .mapNotNull { it.interlocutor.userId }

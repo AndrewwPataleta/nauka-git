@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.ui.chat.compose
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -190,7 +191,7 @@ private fun SelectedChatsRow(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .padding(horizontal = 12.dp, vertical = 6.dp)
-                        .clickableNoRipple { onChipClick(item.dialogId) }
+                        .clickable { onChipClick(item.dialogId) }
                 ) {
                     Text(
                         text = item.title,
@@ -221,7 +222,7 @@ private fun SelectableChatRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickableNoRipple(onClick),
+            .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Avatar(url = item.avatarUrl, name = item.initials, size = 48.dp)
@@ -255,10 +256,3 @@ private fun SelectableChatRow(
         )
     }
 }
-
-private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier =
-    androidx.compose.foundation.clickable(
-        indication = null,
-        interactionSource = androidx.compose.foundation.interaction.MutableInteractionSource(),
-        onClick = onClick
-    )
