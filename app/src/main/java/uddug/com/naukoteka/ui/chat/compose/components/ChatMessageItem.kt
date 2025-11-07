@@ -78,6 +78,7 @@ fun ChatMessageItem(
     onSelectChange: () -> Unit = {},
     onLongPress: (MessageChat) -> Unit,
     onReplyReferenceClick: (Long) -> Unit = {},
+    onPollVote: (pollId: String, optionIds: List<String>) -> Unit = { _, _ -> },
 ) {
     val isSystem = message.type == MessageType.SYSTEM
     Row(
@@ -185,7 +186,7 @@ fun ChatMessageItem(
                         poll = message.poll!!,
                         question = message.text,
                         isMine = isMine,
-                        onVote = { /* Voting will be wired in upcoming iterations */ }
+                        onVote = { selected -> onPollVote(message.poll!!.id, selected) }
                     )
                 } else {
                     if (!message.text.isNullOrBlank()) {
@@ -261,7 +262,11 @@ private fun PollMessageContent(
     val buttonContentColor = if (isMine) Color(0xFF2E83D9) else Color.White
     val isMultiple = poll.multipleAnswers
     val isStopped = poll.isStopped
-    val selectedOptions = remember(poll.id) { mutableStateListOf<String>() }
+    val selectedOptions = remember(poll.id, poll.options) {
+        mutableStateListOf<String>().apply {
+            addAll(poll.options.filter { it.isVoted }.map { it.id })
+        }
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(

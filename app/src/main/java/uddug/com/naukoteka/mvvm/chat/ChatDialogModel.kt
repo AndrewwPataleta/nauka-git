@@ -741,6 +741,27 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    fun voteInPoll(pollId: String, optionIds: List<String>) {
+        viewModelScope.launch {
+            try {
+                val poll = chatInteractor.answerPoll(pollId, optionIds)
+                val currentState = _uiState.value
+                if (currentState is ChatDialogUiState.Success) {
+                    val updatedChats = currentState.chats.map { message ->
+                        when {
+                            poll.messageId != null && message.id == poll.messageId -> message.copy(poll = poll)
+                            message.poll?.id == poll.id -> message.copy(poll = poll)
+                            else -> message
+                        }
+                    }
+                    _uiState.value = currentState.copy(chats = updatedChats)
+                }
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "Failed to vote in poll", e)
+            }
+        }
+    }
+
     fun sendVoiceMessage(file: File) {
         viewModelScope.launch {
             val dialog = currentDialogInfo ?: return@launch

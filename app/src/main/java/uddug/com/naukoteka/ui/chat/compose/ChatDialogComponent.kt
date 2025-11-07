@@ -317,6 +317,9 @@ fun ChatDialogComponent(
                                             scrollState.animateScrollToItem(index)
                                         }
                                     }
+                                },
+                                onPollVote = { pollId, optionIds ->
+                                    viewModel.voteInPoll(pollId, optionIds)
                                 }
                             )
                         }
