@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.Edit
@@ -20,6 +21,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -265,74 +267,94 @@ fun ChatTabBar(
                 .background(Color.White),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (folders.isNotEmpty()) {
-                TabRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White),
-                    selectedTabIndex = selectedTabIndex,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
-                            Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                            color = Color(0xFF2E83D9)
-                        )
-                    },
-                    divider = {},
-                ) {
-                    folders.forEachIndexed { index, folder ->
-                        val onTabClick = {
-                            selectedTabIndex = index
-                            viewModel.onFolderSelected(folder.id)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .background(Color.White)
-                                .pointerInput(mainFolderId, folder.id) {
-                                    detectTapGestures(
-                                        onTap = { onTabClick() },
-                                        onLongPress = {
-                                            bottomSheetState = if (mainFolderId != null && folder.id == mainFolderId) {
-                                                FolderBottomSheetState.Main
-                                            } else {
-                                                FolderBottomSheetState.Folder(folder)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (folders.isNotEmpty()) {
+                    TabRow(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(Color.White),
+                        selectedTabIndex = selectedTabIndex,
+                        indicator = { tabPositions ->
+                            if (tabPositions.isNotEmpty()) {
+                                val safeIndex = selectedTabIndex.coerceIn(tabPositions.indices)
+                                TabRowDefaults.Indicator(
+                                    Modifier.tabIndicatorOffset(tabPositions[safeIndex]),
+                                    color = Color(0xFF2E83D9)
+                                )
+                            }
+                        },
+                        divider = {},
+                    ) {
+                        folders.forEachIndexed { index, folder ->
+                            val onTabClick = {
+                                selectedTabIndex = index
+                                viewModel.onFolderSelected(folder.id)
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .background(Color.White)
+                                    .pointerInput(mainFolderId, folder.id) {
+                                        detectTapGestures(
+                                            onTap = { onTabClick() },
+                                            onLongPress = {
+                                                bottomSheetState = if (mainFolderId != null && folder.id == mainFolderId) {
+                                                    FolderBottomSheetState.Main
+                                                } else {
+                                                    FolderBottomSheetState.Folder(folder)
+                                                }
                                             }
-                                        }
-                                    )
-                                }
-                        ) {
-                            Tab(
-                                selected = selectedTabIndex == index,
-                                onClick = onTabClick,
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = folder.name,
-                                            maxLines = 1,
-                                            style = TextStyle(
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (selectedTabIndex == index) Color.Black else Color(
-                                                    0xFF8083A0
+                                        )
+                                    }
+                            ) {
+                                Tab(
+                                    selected = selectedTabIndex == index,
+                                    onClick = onTabClick,
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = folder.name,
+                                                maxLines = 1,
+                                                style = TextStyle(
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (selectedTabIndex == index) Color.Black else Color(
+                                                        0xFF8083A0
+                                                    )
                                                 )
                                             )
-                                        )
-                                        if (folder.unreadCount > 0) {
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Badge(
-                                                containerColor = Color(0xFF2E83D9),
-                                                contentColor = Color.White
-                                            ) {
-                                                Text(
-                                                    text = folder.unreadCount.toString(),
-                                                    fontSize = 10.sp
-                                                )
+                                            if (folder.unreadCount > 0) {
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Badge(
+                                                    containerColor = Color(0xFF2E83D9),
+                                                    contentColor = Color.White
+                                                ) {
+                                                    Text(
+                                                        text = folder.unreadCount.toString(),
+                                                        fontSize = 10.sp
+                                                    )
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+
+                IconButton(onClick = onOpenFolderSettings) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = stringResource(R.string.chat_folder_menu_configure),
+                        tint = Color(0xFF8083A0)
+                    )
                 }
             }
 
