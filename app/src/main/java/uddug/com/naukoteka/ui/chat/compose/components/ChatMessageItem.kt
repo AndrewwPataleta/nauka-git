@@ -29,13 +29,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.Icon
+import androidx.compose.material.RadioButton
+import androidx.compose.material.RadioButtonDefaults
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +52,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -55,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
+import uddug.com.domain.entities.chat.Poll
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDuration
@@ -173,43 +178,54 @@ fun ChatMessageItem(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
-                if (!message.text.isNullOrBlank()) {
-                    Text(
-                        text = message.text.orEmpty(),
-                        color = if (isMine) Color.White else Color.Black,
-                        fontSize = 14.sp
-                    )
-                }
+                val isPollMessage = message.type == MessageType.POLL && message.poll != null
 
-                message.files.firstOrNull()?.let { file ->
-                    Spacer(modifier = Modifier.height(6.dp))
-                    if (file.contentType?.startsWith("image") == true) {
-                        Column {
-                            AsyncImage(
-                                model = BuildConfig.IMAGE_SERVER_URL.plus(file.path),
-                                contentDescription = "image",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .fillMaxWidth()
-                                    .height(140.dp)
-                            )
-                            file.fileName?.let { name ->
-                                Text(
-                                    modifier = Modifier.padding(top = 4.dp),
-                                    text = name,
-                                    fontSize = 12.sp,
-                                    color = Color.White
-                                )
-                            }
-                        }
-                    } else {
-                        FileAttachmentCard(
-                            file = file,
-                            isMine = isMine,
-                            selectionMode = selectionMode,
-                            onSelectChange = onSelectChange
+                if (isPollMessage) {
+                    PollMessageContent(
+                        poll = message.poll!!,
+                        question = message.text,
+                        isMine = isMine,
+                        onVote = { /* Voting will be wired in upcoming iterations */ }
+                    )
+                } else {
+                    if (!message.text.isNullOrBlank()) {
+                        Text(
+                            text = message.text.orEmpty(),
+                            color = if (isMine) Color.White else Color.Black,
+                            fontSize = 14.sp
                         )
+                    }
+
+                    message.files.firstOrNull()?.let { file ->
+                        Spacer(modifier = Modifier.height(6.dp))
+                        if (file.contentType?.startsWith("image") == true) {
+                            Column {
+                                AsyncImage(
+                                    model = BuildConfig.IMAGE_SERVER_URL.plus(file.path),
+                                    contentDescription = "image",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .fillMaxWidth()
+                                        .height(140.dp)
+                                )
+                                file.fileName?.let { name ->
+                                    Text(
+                                        modifier = Modifier.padding(top = 4.dp),
+                                        text = name,
+                                        fontSize = 12.sp,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        } else {
+                            FileAttachmentCard(
+                                file = file,
+                                isMine = isMine,
+                                selectionMode = selectionMode,
+                                onSelectChange = onSelectChange
+                            )
+                        }
                     }
                 }
 
@@ -226,6 +242,138 @@ fun ChatMessageItem(
             }
 
         }
+    }
+}
+
+@Composable
+private fun PollMessageContent(
+    poll: Poll,
+    question: String?,
+    isMine: Boolean,
+    onVote: (List<String>) -> Unit,
+) {
+    val headlineColor = if (isMine) Color.White else Color(0xFF2E83D9)
+    val primaryTextColor = if (isMine) Color.White else Color(0xFF111827)
+    val secondaryTextColor = if (isMine) Color.White.copy(alpha = 0.75f) else Color(0xFF6F7A90)
+    val optionBackground = if (isMine) Color.White.copy(alpha = 0.12f) else Color.White
+    val accentColor = if (isMine) Color.White else Color(0xFF2E83D9)
+    val buttonBackground = if (isMine) Color.White else Color(0xFF2E83D9)
+    val buttonContentColor = if (isMine) Color(0xFF2E83D9) else Color.White
+    val isMultiple = poll.multipleAnswers
+    val isStopped = poll.isStopped
+    val selectedOptions = remember(poll.id) { mutableStateListOf<String>() }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = stringResource(R.string.chat_poll_label),
+            color = headlineColor,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        if (!question.isNullOrBlank()) {
+            Text(
+                text = question,
+                color = primaryTextColor,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        val descriptionRes = if (isMultiple) {
+            R.string.chat_poll_description_multiple
+        } else {
+            R.string.chat_poll_description_single
+        }
+        Text(
+            text = stringResource(descriptionRes),
+            color = secondaryTextColor,
+            fontSize = 12.sp
+        )
+
+        poll.options.forEach { option ->
+            val isSelected = selectedOptions.contains(option.id)
+            PollOptionItem(
+                text = option.value,
+                isSelected = isSelected,
+                isEnabled = !isStopped,
+                backgroundColor = optionBackground,
+                accentColor = accentColor,
+                textColor = primaryTextColor,
+            ) {
+                if (isMultiple) {
+                    if (isSelected) {
+                        selectedOptions.remove(option.id)
+                    } else {
+                        selectedOptions.add(option.id)
+                    }
+                } else {
+                    selectedOptions.clear()
+                    selectedOptions.add(option.id)
+                }
+            }
+        }
+
+        Button(
+            onClick = { onVote(selectedOptions.toList()) },
+            enabled = selectedOptions.isNotEmpty() && !isStopped,
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = buttonBackground,
+                contentColor = buttonContentColor,
+                disabledBackgroundColor = buttonBackground.copy(alpha = 0.5f),
+                disabledContentColor = buttonContentColor.copy(alpha = 0.7f)
+            ),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.chat_poll_vote),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun PollOptionItem(
+    text: String,
+    isSelected: Boolean,
+    isEnabled: Boolean,
+    backgroundColor: Color,
+    accentColor: Color,
+    textColor: Color,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(backgroundColor)
+            .clickable(enabled = isEnabled) { onClick() }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = isSelected,
+            onClick = { if (isEnabled) onClick() },
+            colors = RadioButtonDefaults.colors(
+                selectedColor = accentColor,
+                unselectedColor = accentColor.copy(alpha = 0.6f),
+                disabledSelectedColor = accentColor.copy(alpha = 0.6f),
+                disabledUnselectedColor = accentColor.copy(alpha = 0.4f),
+            ),
+            enabled = isEnabled
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            color = textColor,
+            fontSize = 14.sp,
+            modifier = Modifier.weight(1f),
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

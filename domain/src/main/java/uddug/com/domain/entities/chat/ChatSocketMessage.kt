@@ -1,5 +1,7 @@
 package uddug.com.domain.entities.chat
 
+import com.google.gson.annotations.SerializedName
+
 data class ChatSocketMessage(
     val dialog: Long? = null,
     val interlocutor: String? = null,
@@ -9,6 +11,7 @@ data class ChatSocketMessage(
     val files: List<FileDescriptor>? = null,
     val answered: Long? = null,
     val pollId: String? = null,
+    val poll: ChatPoll? = null,
     val ansPreview: AnswerPreview? = null,
     val forwarded: Long? = null,
     val forwardedn: List<Long>? = null,
@@ -56,4 +59,23 @@ data class PreviewFile(
 data class PreviewFileStat(
     val c: Int? = null,
     val ft: Int? = null,
+)
+
+data class ChatPoll(
+    @SerializedName("i") val id: String? = null,
+    @SerializedName("s") val subject: String? = null,
+    @SerializedName("a") val isAnonymous: Boolean? = null,
+    @SerializedName("m") val multipleAnswers: Boolean? = null,
+    @SerializedName("q") val isQuiz: Boolean? = null,
+    @SerializedName("st") val isStopped: Boolean? = null,
+    @SerializedName("oo") val options: List<ChatPollOption>? = null,
+)
+
+data class ChatPollOption(
+    @SerializedName("i") val id: String? = null,
+    @SerializedName("v") val value: String? = null,
+    @SerializedName("dsc") val description: String? = null,
+    @SerializedName("pv") val voteCount: Int? = null,
+    @SerializedName("vd") val isVoted: Boolean? = null,
+    @SerializedName("ord") val order: Int? = null,
 )
