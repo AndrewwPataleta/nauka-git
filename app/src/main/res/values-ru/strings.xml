@@ -131,7 +131,7 @@
   <string name="chat_folder_menu_configure">Настроить папки</string>
   <string name="chat_folder_menu_change_order">Изменить порядок</string>
   <string name="chat_folder_action_rename">Переименовать папку</string>
-  <string name="chat_folder_action_mark_read">Отметить как прочитанное</string>
+  <string name="chat_folder_action_mark_read">Прочитать все</string>
   <string name="chat_folder_action_delete">Удалить папку</string>
   <string name="chat_folder_action_rename_title">Переименовать папку</string>
   <string name="chat_folder_action_rename_placeholder">Название папки</string>

@@ -209,7 +209,7 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_folder_menu_configure">Configure folders</string>
     <string name="chat_folder_menu_change_order">Change order</string>
     <string name="chat_folder_action_rename">Rename folder</string>
-    <string name="chat_folder_action_mark_read">Mark as read</string>
+    <string name="chat_folder_action_mark_read">Mark all as read</string>
     <string name="chat_folder_action_delete">Delete folder</string>
     <string name="chat_folder_action_rename_title">Rename folder</string>
     <string name="chat_folder_action_rename_placeholder">Folder name</string>
