@@ -2,6 +2,7 @@ package uddug.com.data.repositories.chat
 
 import uddug.com.data.mapper.mapChatDtoToDomain
 import uddug.com.data.mapper.mapFolderDtoToDomain
+import uddug.com.data.mapper.toDomain
 import uddug.com.data.services.chat.ChatApiService
 import uddug.com.data.services.models.request.chat.AnswerPollRequestDto
 import uddug.com.data.services.models.request.chat.ChatFolderRequestDto

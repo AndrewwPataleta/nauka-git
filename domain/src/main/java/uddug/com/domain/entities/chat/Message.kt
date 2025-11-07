@@ -16,6 +16,7 @@ data class MessageChat(
     val ownerIsAdmin: Boolean = false,
     val isMine: Boolean,
     val replyTo: MessageChat? = null,
+    val poll: Poll? = null,
 )
 
 data class Attachment(
@@ -28,12 +29,13 @@ data class Attachment(
 )
 
 enum class MessageType {
-    TEXT, SYSTEM, UNKNOWN;
+    TEXT, SYSTEM, POLL, UNKNOWN;
 
     companion object {
         fun fromInt(value: Int): MessageType = when (value) {
             1 -> TEXT
             5 -> SYSTEM
+            9 -> POLL
             else -> UNKNOWN
         }
     }

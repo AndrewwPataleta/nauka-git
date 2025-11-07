@@ -19,8 +19,12 @@ import org.json.JSONObject
 import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
+import uddug.com.domain.entities.chat.ChatPoll
+import uddug.com.domain.entities.chat.ChatPollOption
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
+import uddug.com.domain.entities.chat.Poll
+import uddug.com.domain.entities.chat.PollOption
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
@@ -877,7 +881,12 @@ class ChatDialogViewModel @Inject constructor(
         val createdAtInstant = parseInstantOrNow(createdAt)
         val attachments = files?.mapNotNull { it.toChatFile() } ?: emptyList()
         val isMineMessage = owner == currentUser?.id
-        val type = if (cType == 5) MessageType.SYSTEM else MessageType.TEXT
+        val type = when (cType) {
+            5 -> MessageType.SYSTEM
+            9 -> MessageType.POLL
+            else -> MessageType.TEXT
+        }
+        val pollDomain = poll?.toDomain(id, text)
 
         return MessageChat(
             id = id ?: 0L,
@@ -891,7 +900,8 @@ class ChatDialogViewModel @Inject constructor(
             ownerAvatarUrl = ownerAvatarUrl,
             ownerIsAdmin = false,
             isMine = isMineMessage,
-            replyTo = replyPreview
+            replyTo = replyPreview,
+            poll = pollDomain
         )
     }
 
@@ -916,6 +926,31 @@ class ChatDialogViewModel @Inject constructor(
     }
 
 }
+
+private fun ChatPoll.toDomain(messageId: Long?, questionFallback: String?): Poll {
+    val sortedOptions = options.orEmpty().sortedBy { it.order ?: Int.MAX_VALUE }
+    return Poll(
+        id = id.orEmpty(),
+        dialogId = null,
+        messageId = messageId,
+        subject = (subject ?: questionFallback).orEmpty(),
+        isAnonymous = isAnonymous ?: false,
+        multipleAnswers = multipleAnswers ?: false,
+        isQuiz = isQuiz ?: false,
+        isStopped = isStopped ?: false,
+        options = sortedOptions.map { it.toDomain() }
+    )
+}
+
+private fun ChatPollOption.toDomain(): PollOption = PollOption(
+    id = id.orEmpty(),
+    value = value.orEmpty(),
+    description = description,
+    isRightAnswer = null,
+    voteCount = voteCount ?: 0,
+    isVoted = isVoted ?: false,
+    answeredUsers = emptyList()
+)
 
 private const val READ_STATUS = 2
 

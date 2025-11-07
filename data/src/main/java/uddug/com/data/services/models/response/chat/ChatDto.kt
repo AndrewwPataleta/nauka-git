@@ -1,6 +1,8 @@
 package uddug.com.data.services.models.response.chat
 
+import uddug.com.data.mapper.toDomain
 import uddug.com.data.repositories.chat.dto.FileDto
+import uddug.com.data.services.models.response.chat.MessagePollDto
 import uddug.com.domain.entities.chat.Attachment
 import uddug.com.domain.entities.chat.File
 import uddug.com.domain.entities.chat.FileKind
@@ -72,6 +74,7 @@ data class MessageDto(
     val ownerId: String? = null,
     val createdAt: String? = null,
     val isPinned: Boolean? = null,
+    val poll: MessagePollDto? = null,
 ) {
     fun toDomain(currentUserId: String): MessageChat = MessageChat(
 
@@ -82,7 +85,8 @@ data class MessageDto(
         ownerId = ownerId,
         createdAt = createdAt?.let { Instant.parse(it) } ?: Instant.EPOCH,
         readCount = read,
-        isMine = ownerId == currentUserId
+        isMine = ownerId == currentUserId,
+        poll = poll?.toDomain(text, id ?: 0L)
     )
 
     fun FileDto.toDomain(): Attachment = Attachment(

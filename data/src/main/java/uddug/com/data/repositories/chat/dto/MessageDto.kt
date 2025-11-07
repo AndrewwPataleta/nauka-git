@@ -1,5 +1,6 @@
 package uddug.com.data.repositories.chat.dto
 
+import uddug.com.data.services.models.response.chat.MessagePollDto
 import java.io.Serializable
 
 
@@ -11,6 +12,7 @@ data class MessageDto(
     val ownerId: String? = null,
     val createdAt: String,
     val read: Int? = null,
+    val poll: MessagePollDto? = null,
 )
 
 

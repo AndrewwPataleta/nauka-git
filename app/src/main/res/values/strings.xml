@@ -530,6 +530,10 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_create_poll_validation_error">Укажите вопрос и минимум два варианта ответа.</string>
     <string name="chat_create_poll_quiz_validation_error">Выберите правильный ответ.</string>
     <string name="chat_create_poll_created_success">Опрос создан и отправлен.</string>
+    <string name="chat_poll_label">Опрос</string>
+    <string name="chat_poll_description_single">Вы можете выбрать один вариант ответа. Результаты будут доступны всем участникам чата.</string>
+    <string name="chat_poll_description_multiple">Вы можете выбрать несколько вариантов ответа. Результаты будут доступны всем участникам чата.</string>
+    <string name="chat_poll_vote">Проголосовать</string>
     <string name="subs">Подписки</string>
 
 
