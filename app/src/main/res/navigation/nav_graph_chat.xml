@@ -73,6 +73,14 @@
         android:name="uddug.com.naukoteka.ui.chat.ChatCreateFolderFragment" />
 
     <fragment
+        android:id="@+id/chatEditFolderFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatEditFolderFragment">
+        <argument
+            android:name="folder_id"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
         android:id="@+id/chatFolderAddChatsFragment"
         android:name="uddug.com.naukoteka.ui.chat.ChatFolderAddChatsFragment">
         <argument
