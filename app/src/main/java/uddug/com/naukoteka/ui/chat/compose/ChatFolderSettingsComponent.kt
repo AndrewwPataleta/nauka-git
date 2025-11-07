@@ -104,8 +104,9 @@ fun ChatFolderSettingsComponent(
             )
             Column(
                 modifier = Modifier
+                    .padding(top = 8.dp)
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp)
+                    .padding(horizontal = 20.dp, vertical = 20.dp)
                     .wrapContentHeight()
                     .background(Color(0xFFf6f5f9), shape = RoundedCornerShape(16.dp))
             ) {

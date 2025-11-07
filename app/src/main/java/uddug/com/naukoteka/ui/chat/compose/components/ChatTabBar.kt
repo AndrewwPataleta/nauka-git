@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -88,11 +89,10 @@ fun ChatTabBar(
             val folder = target.folder
             AlertDialog(
                 onDismissRequest = { folderActionsTarget = null },
-                title = { Text(text = folder.name) },
                 text = {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         FolderActionItem(
-                            icon = Icons.Outlined.Settings,
+                            icon = painterResource(R.drawable.ic_create_new_folder),
                             text = stringResource(R.string.chat_folder_menu_configure)
                         ) {
                             folderActionsTarget = null
@@ -100,7 +100,7 @@ fun ChatTabBar(
                         }
                         if (!target.isMainFolder) {
                             FolderActionItem(
-                                icon = Icons.Outlined.Edit,
+                                icon = painterResource(R.drawable.ic_settings),
                                 text = stringResource(R.string.chat_folder_action_rename)
                             ) {
                                 folderActionsTarget = null
@@ -108,14 +108,14 @@ fun ChatTabBar(
                             }
                         }
                         FolderActionItem(
-                            icon = Icons.Outlined.Done,
+                            icon = painterResource(R.drawable.ic_nonread_chat_folder),
                             text = stringResource(R.string.chat_folder_action_mark_read)
                         ) {
                             folderActionsTarget = null
                             viewModel.markFolderAsRead(folder.id)
                         }
                         FolderActionItem(
-                            icon = Icons.Outlined.Edit,
+                            icon = painterResource(R.drawable.ic_swap_possition_folder),
                             text = stringResource(R.string.chat_folder_menu_change_order)
                         ) {
                             folderActionsTarget = null
@@ -124,7 +124,7 @@ fun ChatTabBar(
                         if (!target.isMainFolder) {
                             Divider()
                             FolderActionItem(
-                                icon = Icons.Outlined.Delete,
+                                icon = painterResource(R.drawable.ic_remove_folder),
                                 text = stringResource(R.string.chat_folder_action_delete)
                             ) {
                                 folderActionsTarget = null
@@ -376,7 +376,7 @@ private fun FolderActionItem(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         leadingContent = {
-            Image(icon, contentDescription = null, tint = Color(0xFF2E83D9))
+            Image(painter = icon, contentDescription = null)
         },
         headlineContent = {
             Text(text = text)
