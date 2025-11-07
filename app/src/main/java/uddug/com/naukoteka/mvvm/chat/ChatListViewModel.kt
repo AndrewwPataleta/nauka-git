@@ -38,6 +38,11 @@ class ChatListViewModel @Inject constructor(
     private val _folders = MutableStateFlow<List<ChatFolder>>(emptyList())
     val folders: StateFlow<List<ChatFolder>> = _folders
 
+    private val _isFolderOrderChanged = MutableStateFlow(false)
+    val isFolderOrderChanged: StateFlow<Boolean> = _isFolderOrderChanged
+
+    private var lastSavedFolderOrder: List<Long> = emptyList()
+
     private val _currentFolderId = MutableStateFlow<Long?>(null)
     val currentFolderId: StateFlow<Long?> = _currentFolderId
 
@@ -71,7 +76,9 @@ class ChatListViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val folderList = chatRepository.getFolders()
-                _folders.value = folderList
+                applyFoldersUpdate(folderList)
+                lastSavedFolderOrder = folderList.map { it.id }
+                _isFolderOrderChanged.value = false
                 val selectedId = _currentFolderId.value
                 val initialFolderId = when {
                     selectedId != null && folderList.any { it.id == selectedId } -> selectedId
@@ -157,7 +164,46 @@ class ChatListViewModel @Inject constructor(
                 val item = mutable.removeAt(fromIndex)
                 mutable.add(if (toIndex > fromIndex) toIndex - 1 else toIndex, item)
             }
+            _isFolderOrderChanged.value = mutable.map { it.id } != lastSavedFolderOrder
             mutable
+        }
+    }
+
+    fun persistFolderOrder() {
+        val currentOrder = _folders.value.map { it.id }
+        if (currentOrder.isEmpty() || currentOrder == lastSavedFolderOrder) {
+            _isFolderOrderChanged.value = false
+            return
+        }
+        val selectedId = _currentFolderId.value
+        viewModelScope.launch {
+            try {
+                val updatedFolders = chatRepository.reorderFolders(currentOrder)
+                applyFoldersUpdate(updatedFolders)
+                if (selectedId != null && updatedFolders.none { it.id == selectedId }) {
+                    _currentFolderId.value = updatedFolders.firstOrNull()?.id
+                } else {
+                    _currentFolderId.value = selectedId
+                }
+                lastSavedFolderOrder = updatedFolders.map { it.id }
+            } catch (_: Exception) {
+                try {
+                    val refreshedFolders = chatRepository.getFolders()
+                    applyFoldersUpdate(refreshedFolders)
+                    lastSavedFolderOrder = refreshedFolders.map { it.id }
+                } catch (_: Exception) {
+                }
+            } finally {
+                _isFolderOrderChanged.value = false
+            }
+        }
+    }
+
+    private fun applyFoldersUpdate(folders: List<ChatFolder>) {
+        _folders.value = folders
+        val selectedId = _currentFolderId.value
+        if (selectedId != null && folders.none { it.id == selectedId }) {
+            _currentFolderId.value = folders.firstOrNull()?.id
         }
     }
 

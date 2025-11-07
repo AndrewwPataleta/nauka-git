@@ -13,6 +13,7 @@ import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -37,6 +38,7 @@ fun ChatFolderSettingsComponent(
     onBackPressed: () -> Unit,
 ) {
     val folders by viewModel.folders.collectAsState()
+    val isFolderOrderChanged by viewModel.isFolderOrderChanged.collectAsState()
     val reorderState = rememberReorderableLazyListState(onMove = { from, to ->
         viewModel.reorderFolders(from.index, to.index)
     })
@@ -48,6 +50,18 @@ fun ChatFolderSettingsComponent(
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = null, tint = Color(0xFF2E83D9))
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { viewModel.persistFolderOrder() },
+                        enabled = isFolderOrderChanged
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Done,
+                            contentDescription = null,
+                            tint = if (isFolderOrderChanged) Color(0xFF2E83D9) else Color(0xFFBFC4D5)
+                        )
                     }
                 },
                 backgroundColor = Color.White,

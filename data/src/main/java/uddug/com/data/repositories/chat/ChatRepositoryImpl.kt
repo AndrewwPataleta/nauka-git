@@ -16,6 +16,7 @@ import uddug.com.data.services.models.request.chat.DeleteMessagesRequestDto
 import uddug.com.data.services.models.request.chat.DialogImageRequestDto
 import uddug.com.data.services.models.request.chat.PinMessageRequestDto
 import uddug.com.data.services.models.request.chat.ReadMessagesRequestDto
+import uddug.com.data.services.models.request.chat.ReorderFoldersRequestDto
 import uddug.com.data.services.models.request.chat.UpdateMessageFileDto
 import uddug.com.data.services.models.request.chat.UpdateMessageRequestDto
 import uddug.com.data.services.models.request.chat.UpdateDialogInfoRequestDto
@@ -81,6 +82,16 @@ class ChatRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             println("get folders error ${e.message}")
             emptyList()
+        }
+    }
+
+    override suspend fun reorderFolders(folderIds: List<Long>): List<ChatFolder> {
+        return try {
+            apiService.reorderFolders(ReorderFoldersRequestDto(folderIds)).folders
+                .map { mapFolderDtoToDomain(it) }
+        } catch (e: Exception) {
+            println("reorder folders error ${e.message}")
+            throw e
         }
     }
 
