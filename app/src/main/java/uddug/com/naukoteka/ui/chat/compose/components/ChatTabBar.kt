@@ -26,13 +26,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +58,7 @@ fun ChatTabBar(
     onChatSelect: (Long) -> Unit,
     onOpenFolderSettings: () -> Unit,
     onChangeFolderOrder: () -> Unit,
+    onEditFolder: (Long) -> Unit,
 ) {
     var selectedTabIndex by remember { mutableStateOf(0) }
 
@@ -70,7 +69,6 @@ fun ChatTabBar(
 
     val mainFolderId = folders.firstOrNull()?.id
     var folderActionsTarget by remember { mutableStateOf<FolderActionsTarget?>(null) }
-    var folderToRename by remember { mutableStateOf<ChatFolder?>(null) }
     var folderToDelete by remember { mutableStateOf<ChatFolder?>(null) }
 
     LaunchedEffect(folders, currentFolderId) {
@@ -106,7 +104,7 @@ fun ChatTabBar(
                                 text = stringResource(R.string.chat_folder_action_rename)
                             ) {
                                 folderActionsTarget = null
-                                folderToRename = folder
+                                onEditFolder(folder.id)
                             }
                         }
                         FolderActionItem(
@@ -137,38 +135,6 @@ fun ChatTabBar(
                 },
                 confirmButton = {},
                 dismissButton = {}
-            )
-        }
-
-        folderToRename?.let { folder ->
-            var name by remember(folder) { mutableStateOf(folder.name) }
-            AlertDialog(
-                onDismissRequest = { folderToRename = null },
-                title = { Text(text = stringResource(R.string.chat_folder_action_rename_title)) },
-                text = {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        singleLine = true,
-                        label = { Text(stringResource(R.string.chat_folder_action_rename_placeholder)) }
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.renameFolder(folder.id, name.trim())
-                            folderToRename = null
-                        },
-                        enabled = name.isNotBlank()
-                    ) {
-                        Text(text = stringResource(R.string.chat_folder_action_rename_confirm))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { folderToRename = null }) {
-                        Text(text = stringResource(R.string.chat_folder_action_delete_confirm_negative))
-                    }
-                }
             )
         }
 

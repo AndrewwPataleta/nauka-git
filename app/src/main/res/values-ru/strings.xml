@@ -139,6 +139,10 @@
   <string name="chat_folder_action_delete_confirm_message">Вы уверены, что хотите удалить папку "%1$s"?</string>
   <string name="chat_folder_action_delete_confirm_positive">Удалить</string>
   <string name="chat_folder_action_delete_confirm_negative">Отмена</string>
+  <string name="chat_edit_folder_title">Настройка папки</string>
+  <string name="chat_edit_folder_description">Вы можете создать папки с нужными чатами и переключаться между ними.\nЧтобы удалить папку или изменить порядок сортировки, нажмите кнопку «Изменить».</string>
+  <string name="chat_edit_folder_generic_error">Не удалось загрузить информацию о папке</string>
+  <string name="chat_edit_folder_retry">Повторить</string>
   <string name="chat_unknown_user">Неизвестный</string>
   <string name="chat_no_messages">Нет сообщений</string>
   <string name="chat_unknown_time">Неизвестно</string>

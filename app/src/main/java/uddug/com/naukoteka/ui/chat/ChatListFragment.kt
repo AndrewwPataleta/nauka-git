@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.ChatEditFolderViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatListEvents
 import uddug.com.naukoteka.mvvm.chat.ChatListUiState
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
@@ -55,6 +56,26 @@ class ChatListFragment : Fragment() {
                 if (shouldRefresh) {
                     viewModel.refreshChats()
                     findNavController().currentBackStackEntry?.savedStateHandle?.remove<Boolean>("refreshChats")
+                }
+            }
+
+        findNavController().currentBackStackEntry?.savedStateHandle
+            ?.getLiveData<Boolean>(ChatEditFolderFragment.REFRESH_FOLDERS_KEY)
+            ?.observe(viewLifecycleOwner) { shouldRefresh ->
+                if (shouldRefresh == true) {
+                    viewModel.loadFolders()
+                    findNavController().currentBackStackEntry?.savedStateHandle
+                        ?.remove<Boolean>(ChatEditFolderFragment.REFRESH_FOLDERS_KEY)
+                }
+            }
+
+        findNavController().currentBackStackEntry?.savedStateHandle
+            ?.getLiveData<Boolean>(ChatEditFolderFragment.REFRESH_CHATS_KEY)
+            ?.observe(viewLifecycleOwner) { shouldRefresh ->
+                if (shouldRefresh == true) {
+                    viewModel.refreshChats()
+                    findNavController().currentBackStackEntry?.savedStateHandle
+                        ?.remove<Boolean>(ChatEditFolderFragment.REFRESH_CHATS_KEY)
                 }
             }
     }
@@ -133,6 +154,12 @@ class ChatListFragment : Fragment() {
                         },
                         onChangeFolderOrder = {
                             findNavController().navigate(R.id.chatFolderSettingsFragment)
+                        },
+                        onEditFolder = { folderId ->
+                            val args = Bundle().apply {
+                                putLong(ChatEditFolderViewModel.FOLDER_ID_ARG, folderId)
+                            }
+                            findNavController().navigate(R.id.chatEditFolderFragment, args)
                         }
                     )
                 }
