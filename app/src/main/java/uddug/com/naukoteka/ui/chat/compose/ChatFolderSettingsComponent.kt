@@ -36,6 +36,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 fun ChatFolderSettingsComponent(
     viewModel: ChatListViewModel,
     onBackPressed: () -> Unit,
+    onCreateFolderClick: () -> Unit,
 ) {
     val folders by viewModel.folders.collectAsState()
     val isFolderOrderChanged by viewModel.isFolderOrderChanged.collectAsState()
@@ -88,7 +89,7 @@ fun ChatFolderSettingsComponent(
                 color = Color.Black
             )
             androidx.compose.material.TextButton(
-                onClick = { },
+                onClick = onCreateFolderClick,
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
                 Text(text = stringResource(R.string.chat_folder_settings_add_folder), color = Color(0xFF2E83D9))

@@ -69,6 +69,19 @@
     </fragment>
 
     <fragment
+        android:id="@+id/chatCreateFolderFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatCreateFolderFragment" />
+
+    <fragment
+        android:id="@+id/chatFolderAddChatsFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatFolderAddChatsFragment">
+        <argument
+            android:name="selected_ids"
+            app:argType="long[]"
+            android:defaultValue="@null" />
+    </fragment>
+
+    <fragment
         android:id="@+id/sendContactFragment"
         android:name="uddug.com.naukoteka.ui.chat.SendContactFragment"/>
 
