@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.ui.chat.compose
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,8 @@ private val PrimaryTextColor = Color(0xFF111827)
 private val SecondaryTextColor = Color(0xFF6F7A90)
 private val AccentColor = Color(0xFF2E83D9)
 private val SurfaceColor = Color.White
+private val QuestionBackgroundColor = Color(0xFFF6F8FC)
+private val QuestionBorderColor = Color(0xFFE4E8F1)
 
 @Composable
 fun ChatPollResultsScreen(
@@ -132,15 +135,39 @@ private fun PollResultsContent(model: PollResultsUiModel) {
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = model.question,
-                color = PrimaryTextColor,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                lineHeight = 24.sp,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(id = R.string.chat_poll_results_question_label),
+                    color = SecondaryTextColor,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    lineHeight = 16.sp
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = QuestionBackgroundColor,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = QuestionBorderColor,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Text(
+                        text = model.question,
+                        color = PrimaryTextColor,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = 22.sp,
+                        maxLines = 6,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
             val pollTypeText = if (model.isAnonymous) {
                 stringResource(id = R.string.chat_poll_results_anonymous)
             } else {
