@@ -556,6 +556,7 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_poll_vote">Проголосовать</string>
     <string name="chat_poll_view_results">Посмотреть результаты</string>
     <string name="chat_poll_results_title">Результаты опроса</string>
+    <string name="chat_poll_results_question_label">Вопрос</string>
     <string name="chat_poll_results_anonymous">Анонимный опрос</string>
     <string name="chat_poll_results_public">Публичный опрос</string>
     <plurals name="chat_poll_results_votes">
