@@ -268,6 +268,7 @@ private fun PollMessageContent(
     val optionBackground = if (isMine) Color.White.copy(alpha = 0.12f) else Color.White
     val accentColor = if (isMine) Color.White else Color(0xFF2E83D9)
     val buttonContentColor = Color(0xFF9CCDFF)
+    val questionText = poll.subject.takeIf { it.isNotBlank() } ?: question
     val isMultiple = poll.multipleAnswers
     val isStopped = poll.isStopped
     val selectedOptions = remember(poll.id) { mutableStateListOf<String>() }
@@ -288,9 +289,9 @@ private fun PollMessageContent(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
 
-        if (!question.isNullOrBlank()) {
+        if (!questionText.isNullOrBlank()) {
             Text(
-                text = question,
+                text = questionText,
                 color = primaryTextColor,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
@@ -331,16 +332,6 @@ private fun PollMessageContent(
             }
         }
 
-        Text(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp).clickable() {
-                onVote(selectedOptions.toList())
-            },
-            text = stringResource(R.string.chat_poll_vote),
-            fontWeight = FontWeight.Normal,
-            textAlign = TextAlign.Center,
-            fontSize = 16.sp,
-            color = buttonContentColor,
-        )
         Button(
             onClick = { onVote(selectedOptions.toList()) },
             enabled = selectedOptions.isNotEmpty() && !isStopped,
@@ -368,12 +359,14 @@ private fun PollMessageContent(
             onClick = onShowResults,
             enabled = poll.options.isNotEmpty(),
             colors = textButtonColors,
-            modifier = Modifier.align(Alignment.End)
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text(
+                modifier = Modifier.fillMaxWidth(),
                 text = stringResource(R.string.chat_poll_view_results),
                 fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center
             )
         }
     }
