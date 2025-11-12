@@ -27,6 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -381,6 +382,10 @@ private fun FolderActionItem(
         },
         headlineContent = {
             Text(text = text)
-        }
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
     )
 }
