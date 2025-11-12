@@ -209,8 +209,6 @@ private fun PollResultOptionItem(option: PollResultOptionUi) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(background)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -220,7 +218,7 @@ private fun PollResultOptionItem(option: PollResultOptionUi) {
         ) {
             Text(
                 text = "${option.percent}%",
-                color = AccentColor,
+                color = Color.Black,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp
             )
@@ -261,7 +259,7 @@ private fun PollResultOptionItem(option: PollResultOptionUi) {
             progress = option.percent.coerceIn(0, 100) / 100f,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(6.dp)
+                .height(2.dp)
                 .clip(RoundedCornerShape(3.dp)),
             backgroundColor = Color(0xFFE4E8F1),
             color = AccentColor

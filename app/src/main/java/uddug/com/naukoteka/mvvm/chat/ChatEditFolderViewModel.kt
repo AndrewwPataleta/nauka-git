@@ -150,14 +150,14 @@ class ChatEditFolderViewModel @Inject constructor(
             !dialog.nickname.isNullOrBlank() -> dialog.nickname
             !dialog.name.isNullOrBlank() -> dialog.name
             else -> ""
-        }.ifBlank { dialog.name.orEmpty() }.ifBlank { dialog.dialogId.toString() }
+        }?.ifBlank { dialog.name.orEmpty() }?.ifBlank { dialog.dialogId.toString() }
         val subtitle = when {
             isGroup -> dialog.name?.takeIf { it.isNotBlank() && it != title }
             else -> null
         }
         return ChatFolderSelectionItem(
             dialogId = dialog.dialogId,
-            title = title,
+            title = title.orEmpty(),
             subtitle = subtitle,
             avatarUrl = dialog.imagePath,
             initials = title,

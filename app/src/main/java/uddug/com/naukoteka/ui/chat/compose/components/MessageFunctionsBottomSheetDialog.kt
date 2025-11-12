@@ -64,10 +64,10 @@ fun MessageFunctionsBottomSheetDialog(
             val items = if (message.type == MessageType.POLL) {
                 buildList {
                     add(R.string.chat_message_reply to { onReply(message) })
-                    if (message.poll != null && !message.poll.isStopped) {
+                    if (message.poll != null && message.poll?.isStopped == true) {
                         add(R.string.chat_message_revote to { onRevotePoll(message) })
                     }
-                    if (isCurrentUserAdmin && message.poll != null && !message.poll.isStopped) {
+                    if (isCurrentUserAdmin && message.poll != null && message.poll?.isStopped == false) {
                         add(R.string.chat_message_stop_quiz to { onStopPoll(message) })
                     }
                     add(R.string.chat_message_forward to { onForward(message) })

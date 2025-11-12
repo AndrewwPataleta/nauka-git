@@ -119,11 +119,11 @@ private fun BottomSheetItem(
             Image(
                 painter = icon,
                 contentDescription = text,
-                tint = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimary
-                } else {
-                    Color(0xFF8083A0)
-                },
+//                tint = if (isSelected) {
+//                    MaterialTheme.colorScheme.onPrimary
+//                } else {
+//                    Color(0xFF8083A0)
+//                },
                 modifier = Modifier.size(24.dp)
             )
         }
