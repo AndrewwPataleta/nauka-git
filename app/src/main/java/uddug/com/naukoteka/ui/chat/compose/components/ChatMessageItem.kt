@@ -272,12 +272,6 @@ private fun PollMessageContent(
         modifier = Modifier.padding(horizontal = 10.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
-            text = stringResource(R.string.chat_poll_label),
-            color = headlineColor,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold
-        )
 
         if (!question.isNullOrBlank()) {
             Text(
@@ -322,20 +316,16 @@ private fun PollMessageContent(
             }
         }
 
-        Button(
-            onClick = { onVote(selectedOptions.toList()) },
-            enabled = selectedOptions.isNotEmpty() && !isStopped,
-
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.chat_poll_vote),
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                color = buttonContentColor,
-            )
-        }
+        Text(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp).clickable() {
+                onVote(selectedOptions.toList())
+            },
+            text = stringResource(R.string.chat_poll_vote),
+            fontWeight = FontWeight.Normal,
+            textAlign = TextAlign.Center,
+            fontSize = 16.sp,
+            color = buttonContentColor,
+        )
     }
 }
 

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.Settings
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
+import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -151,7 +152,7 @@ fun ChatTabBar(
                     )
                 },
                 confirmButton = {
-                    TextButton(
+                    Button(
                         onClick = {
                             viewModel.deleteFolder(folder.id)
                             folderToDelete = null
@@ -161,7 +162,7 @@ fun ChatTabBar(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { folderToDelete = null }) {
+                    Button(onClick = { folderToDelete = null }) {
                         Text(text = stringResource(R.string.chat_folder_action_delete_confirm_negative))
                     }
                 }

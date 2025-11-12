@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -102,23 +103,24 @@ fun ChatFolderSettingsComponent(
                 fontWeight = FontWeight.Medium,
                 color = Color.Black
             )
+            androidx.compose.material.TextButton(
+                onClick = onCreateFolderClick,
+            ) {
+                Text(
+                    text = stringResource(R.string.chat_folder_settings_add_folder),
+                    color = Color(0xFF2E83D9),
+                    style = TextStyle.Default
+                )
+            }
             Column(
                 modifier = Modifier
                     .padding(top = 8.dp)
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
+                    .padding(start = 20.dp, end = 20.dp)
                     .wrapContentHeight()
                     .background(Color(0xFFf6f5f9), shape = RoundedCornerShape(16.dp))
             ) {
-                androidx.compose.material.TextButton(
-                    onClick = onCreateFolderClick,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.chat_folder_settings_add_folder),
-                        color = Color(0xFF2E83D9)
-                    )
-                }
+
                 LazyColumn(
                     state = reorderState.listState,
                     modifier = Modifier

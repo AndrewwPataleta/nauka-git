@@ -149,7 +149,7 @@ fun ChatCreatePollScreen(
                     Text(
                         text = stringResource(R.string.chat_create_poll_create_button),
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Normal
                     )
                 }
             }
@@ -329,12 +329,6 @@ private fun PollOptionField(
                         checkmarkColor = Color.White,
                         disabledColor = Color(0xFFE0E0E8)
                     )
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Outlined.CheckCircle,
-                    contentDescription = null,
-                    tint = Color(0xFFB0B2C3)
                 )
             }
         },
