@@ -37,6 +37,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.RadioButton
 import androidx.compose.material.RadioButtonDefaults
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
@@ -80,6 +81,7 @@ fun ChatMessageItem(
     onLongPress: (MessageChat) -> Unit,
     onReplyReferenceClick: (Long) -> Unit = {},
     onPollVote: (pollId: String, optionIds: List<String>) -> Unit = { _, _ -> },
+    onPollResults: (pollId: String) -> Unit = {},
     pollRevoteTrigger: Int = 0,
 ) {
     val isSystem = message.type == MessageType.SYSTEM
@@ -186,9 +188,11 @@ fun ChatMessageItem(
                     if (isPollMessage) {
                         PollMessageContent(
                             poll = message.poll!!,
-                            question = message.text,
+                            question = message.poll?.subject ?: message.text,
                             isMine = isMine,
                             onVote = { selected -> onPollVote(message.poll!!.id, selected) },
+                            onShowResults = { onPollResults(message.poll!!.id) },
+
                             revoteTrigger = pollRevoteTrigger
                         )
                     } else {
@@ -255,6 +259,7 @@ private fun PollMessageContent(
     question: String?,
     isMine: Boolean,
     onVote: (List<String>) -> Unit,
+    onShowResults: () -> Unit,
     revoteTrigger: Int = 0,
 ) {
     val headlineColor = if (isMine) Color.White else Color(0xFF2E83D9)
@@ -336,6 +341,41 @@ private fun PollMessageContent(
             fontSize = 16.sp,
             color = buttonContentColor,
         )
+        Button(
+            onClick = { onVote(selectedOptions.toList()) },
+            enabled = selectedOptions.isNotEmpty() && !isStopped,
+
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.chat_poll_vote),
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp,
+                color = buttonContentColor,
+            )
+        }
+
+        val textButtonColors = ButtonDefaults.textButtonColors(
+            contentColor = if (isMine) Color.White else accentColor,
+            disabledContentColor = if (isMine) {
+                Color.White.copy(alpha = 0.4f)
+            } else {
+                accentColor.copy(alpha = 0.4f)
+            }
+        )
+        TextButton(
+            onClick = onShowResults,
+            enabled = poll.options.isNotEmpty(),
+            colors = textButtonColors,
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text(
+                text = stringResource(R.string.chat_poll_view_results),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
     }
 }
 

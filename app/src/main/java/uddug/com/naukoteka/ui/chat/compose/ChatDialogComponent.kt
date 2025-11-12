@@ -80,6 +80,7 @@ fun ChatDialogComponent(
     onSearchClick: () -> Unit,
     onContactClick: () -> Unit,
     onCreatePoll: () -> Unit,
+    onOpenPollResults: (String) -> Unit,
     onForwardMessage: (MessageChat) -> Unit,
     onEditGroup: (Long) -> Unit,
     onChatDeleted: () -> Unit,
@@ -322,6 +323,9 @@ fun ChatDialogComponent(
                                 },
                                 onPollVote = { pollId, optionIds ->
                                     viewModel.voteInPoll(pollId, optionIds)
+                                },
+                                onPollResults = { pollId ->
+                                    onOpenPollResults(pollId)
                                 },
                                 pollRevoteTrigger = message.poll?.let { pollRevoteTriggers[it.id] ?: 0 } ?: 0
                             )

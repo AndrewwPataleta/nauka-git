@@ -102,6 +102,14 @@
         android:name="uddug.com.naukoteka.ui.chat.ChatCreatePollFragment" />
 
     <fragment
+        android:id="@+id/chatPollResultsFragment"
+        android:name="uddug.com.naukoteka.ui.chat.ChatPollResultsFragment">
+        <argument
+            android:name="pollId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
         android:id="@+id/chatAvatarPreviewFragment"
         android:name="uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment" />
 

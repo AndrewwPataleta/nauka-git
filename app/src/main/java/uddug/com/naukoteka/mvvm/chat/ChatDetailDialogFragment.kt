@@ -99,14 +99,17 @@ class ChatDetailDialogFragment : Fragment() {
                         onContactClick = {
 
                         },
+                        onCreatePoll = {
+
+                        },
+                        onOpenPollResults = {
+
+                        },
                         onForwardMessage = { message ->
                             val args = Bundle().apply {
                                 putLong(ARG_MESSAGE_ID, message.id)
                             }
                             findNavController().navigate(R.id.forwardMessageFragment, args)
-                        },
-                        onCreatePoll = {
-
                         },
                         onEditGroup = {
 
