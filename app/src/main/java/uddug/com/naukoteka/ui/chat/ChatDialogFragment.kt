@@ -27,9 +27,10 @@ import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.ChatDetailDialogFragment.Companion.DIALOG_DETAIL
 import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_MESSAGE_ID
-import uddug.com.naukoteka.ui.chat.ChatEditGroupFragment
 import uddug.com.naukoteka.ui.chat.compose.ChatDialogComponent
 import uddug.com.naukoteka.ui.chat.compose.ChatListComponent
+import uddug.com.naukoteka.ui.chat.ChatEditGroupFragment
+import uddug.com.naukoteka.ui.chat.ChatPollResultsFragment
 
 @AndroidEntryPoint
 class ChatDialogFragment : Fragment() {
@@ -150,6 +151,12 @@ class ChatDialogFragment : Fragment() {
                         },
                         onCreatePoll = {
                             findNavController().navigate(R.id.chatCreatePollFragment)
+                        },
+                        onOpenPollResults = { pollId ->
+                            val args = Bundle().apply {
+                                putString(ChatPollResultsFragment.ARG_POLL_ID, pollId)
+                            }
+                            findNavController().navigate(R.id.chatPollResultsFragment, args)
                         },
                         onForwardMessage = { message ->
                             val args = Bundle().apply {

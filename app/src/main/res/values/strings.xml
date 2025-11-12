@@ -552,6 +552,25 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_poll_description_single">Вы можете выбрать один вариант ответа. Результаты будут доступны всем участникам чата.</string>
     <string name="chat_poll_description_multiple">Вы можете выбрать несколько вариантов ответа. Результаты будут доступны всем участникам чата.</string>
     <string name="chat_poll_vote">Проголосовать</string>
+    <string name="chat_poll_view_results">Посмотреть результаты</string>
+    <string name="chat_poll_results_title">Результаты опроса</string>
+    <string name="chat_poll_results_anonymous">Анонимный опрос</string>
+    <string name="chat_poll_results_public">Публичный опрос</string>
+    <plurals name="chat_poll_results_votes">
+        <item quantity="one">%d голос</item>
+        <item quantity="few">%d голоса</item>
+        <item quantity="many">%d голосов</item>
+        <item quantity="other">%d голосов</item>
+    </plurals>
+    <string name="chat_poll_results_meta">%1$s • %2$s</string>
+    <string name="chat_poll_results_multiple_allowed">Можно выбрать несколько вариантов</string>
+    <string name="chat_poll_results_quiz_mode">Режим викторины</string>
+    <string name="chat_poll_results_options_section">Настройки опроса</string>
+    <string name="chat_poll_results_correct_answer">Правильный ответ</string>
+    <string name="chat_poll_results_your_choice">Ваш выбор</string>
+    <string name="chat_poll_results_stopped">Опрос завершён</string>
+    <string name="chat_poll_results_error">Не удалось загрузить результаты. Попробуйте снова.</string>
+    <string name="chat_poll_results_retry">Повторить</string>
     <string name="subs">Подписки</string>
 
 
