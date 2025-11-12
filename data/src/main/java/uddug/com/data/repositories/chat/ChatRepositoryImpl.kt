@@ -27,6 +27,7 @@ import uddug.com.data.services.models.request.chat.UsersStatusRequestDto
 import uddug.com.data.services.models.response.chat.FileDto
 import uddug.com.data.services.models.response.chat.FolderDetailsDto
 import uddug.com.data.services.models.response.chat.FolderDialogItemDto
+import uddug.com.data.services.models.response.chat.FolderDialogSummaryDto
 import uddug.com.data.services.models.response.chat.FolderDialogsDto
 import uddug.com.data.services.models.response.chat.UserStatusDto
 import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
@@ -37,6 +38,7 @@ import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.ChatFolderDetails
 import uddug.com.domain.entities.chat.ChatFolderDialog
+import uddug.com.domain.entities.chat.ChatFolderDialogSummary
 import uddug.com.domain.entities.chat.ChatFolderDialogsPage
 import android.webkit.MimeTypeMap
 import java.time.Instant
@@ -582,6 +584,16 @@ private fun FolderDetailsDto.toDomain(): ChatFolderDetails = ChatFolderDetails(
     ),
     dialogIds = dialogIds,
     dialogs = dialogs.map { it.toDomain() },
+)
+
+private fun FolderDialogSummaryDto.toDomain(): ChatFolderDialogSummary = ChatFolderDialogSummary(
+    dialogId = id,
+    name = name,
+    fullName = fullName,
+    nickname = nickname,
+    dialogType = dialogType,
+    folderNames = folderNames,
+    imagePath = image?.path,
 )
 
 private fun FolderDialogsDto.toDomain(): ChatFolderDialogsPage = ChatFolderDialogsPage(

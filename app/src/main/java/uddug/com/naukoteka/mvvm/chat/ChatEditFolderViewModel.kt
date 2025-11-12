@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolderDetails
-import uddug.com.domain.entities.chat.SearchDialog
+import uddug.com.domain.entities.chat.ChatFolderDialogSummary
 import uddug.com.domain.interactors.chat.ChatInteractor
 import javax.inject.Inject
 
@@ -116,7 +116,7 @@ class ChatEditFolderViewModel @Inject constructor(
             itemsById[chat.dialogId] = mapChatToSelection(chat)
         }
         details.dialogs.forEach { dialog ->
-            itemsById.putIfAbsent(dialog.dialogId, mapSearchDialogToSelection(dialog))
+            itemsById.putIfAbsent(dialog.dialogId, mapDialogSummaryToSelection(dialog))
         }
         return details.dialogIds.mapNotNull { id -> itemsById[id] }
     }
@@ -143,14 +143,25 @@ class ChatEditFolderViewModel @Inject constructor(
         )
     }
 
-    private fun mapSearchDialogToSelection(dialog: SearchDialog): ChatFolderSelectionItem {
+    private fun mapDialogSummaryToSelection(dialog: ChatFolderDialogSummary): ChatFolderSelectionItem {
+        val isGroup = dialog.dialogType != 1
+        val title = when {
+            !dialog.fullName.isNullOrBlank() -> dialog.fullName
+            !dialog.nickname.isNullOrBlank() -> dialog.nickname
+            !dialog.name.isNullOrBlank() -> dialog.name
+            else -> ""
+        }.ifBlank { dialog.name.orEmpty() }.ifBlank { dialog.dialogId.toString() }
+        val subtitle = when {
+            isGroup -> dialog.name?.takeIf { it.isNotBlank() && it != title }
+            else -> null
+        }
         return ChatFolderSelectionItem(
             dialogId = dialog.dialogId,
-            title = dialog.fullName,
-            subtitle = null,
-            avatarUrl = dialog.image,
-            initials = dialog.fullName,
-            isGroup = dialog.dialogType != 1,
+            title = title,
+            subtitle = subtitle,
+            avatarUrl = dialog.imagePath,
+            initials = title,
+            isGroup = isGroup,
         )
     }
 
