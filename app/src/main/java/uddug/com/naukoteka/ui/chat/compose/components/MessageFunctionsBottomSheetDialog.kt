@@ -37,6 +37,9 @@ fun MessageFunctionsBottomSheetDialog(
     onReply: (MessageChat) -> Unit,
     onEdit: (MessageChat) -> Unit,
     onForward: (MessageChat) -> Unit,
+    isCurrentUserAdmin: Boolean = false,
+    onRevotePoll: (MessageChat) -> Unit = {},
+    onStopPoll: (MessageChat) -> Unit = {},
     viewModel: MessageFunctionsViewModel = hiltViewModel(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -58,29 +61,43 @@ fun MessageFunctionsBottomSheetDialog(
                 )
             )
             Spacer(modifier = Modifier.height(10.dp))
-            val items = buildList<Pair<Int, () -> Unit>> {
-                add(R.string.chat_message_reply to { onReply(message) })
-                if (message.isMine && message.type == MessageType.TEXT) {
-                    add(R.string.chat_message_edit to { onEdit(message) })
-                }
-                add(R.string.chat_message_forward to { onForward(message) })
-                add(R.string.chat_message_copy to {
-                    message.text?.let {
-                        context.copyToClipboard(it)
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.chat_message_copied),
-                            Toast.LENGTH_SHORT
-                        ).show()
+            val items = if (message.type == MessageType.POLL) {
+                buildList {
+                    add(R.string.chat_message_reply to { onReply(message) })
+                    if (message.poll != null && !message.poll.isStopped) {
+                        add(R.string.chat_message_revote to { onRevotePoll(message) })
                     }
-                    viewModel.copy(message.id)
-                })
-                add(R.string.chat_message_select to {
-                    viewModel.select(message.id)
-                    onSelectMessage()
-                })
-                add(R.string.chat_message_show_original to { viewModel.showOriginal(message.id) })
-                add(R.string.chat_message_delete to { viewModel.delete(message.id) })
+                    if (isCurrentUserAdmin && message.poll != null && !message.poll.isStopped) {
+                        add(R.string.chat_message_stop_quiz to { onStopPoll(message) })
+                    }
+                    add(R.string.chat_message_forward to { onForward(message) })
+                    add(R.string.chat_message_delete to { viewModel.delete(message.id) })
+                }
+            } else {
+                buildList {
+                    add(R.string.chat_message_reply to { onReply(message) })
+                    if (message.isMine && message.type == MessageType.TEXT) {
+                        add(R.string.chat_message_edit to { onEdit(message) })
+                    }
+                    add(R.string.chat_message_forward to { onForward(message) })
+                    add(R.string.chat_message_copy to {
+                        message.text?.let {
+                            context.copyToClipboard(it)
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.chat_message_copied),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        viewModel.copy(message.id)
+                    })
+                    add(R.string.chat_message_select to {
+                        viewModel.select(message.id)
+                        onSelectMessage()
+                    })
+                    add(R.string.chat_message_show_original to { viewModel.showOriginal(message.id) })
+                    add(R.string.chat_message_delete to { viewModel.delete(message.id) })
+                }
             }
             items.forEach { (textRes, action) ->
                 Row(

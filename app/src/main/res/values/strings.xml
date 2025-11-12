@@ -501,6 +501,8 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_message_select">Выбрать сообщение</string>
     <string name="chat_message_show_original">Показать оригинал в чате</string>
     <string name="chat_message_delete">Удалить сообщение</string>
+    <string name="chat_message_revote">Переголосовать</string>
+    <string name="chat_message_stop_quiz">Остановить викторину</string>
     <string name="chat_editing_title">Редактирование</string>
     <string name="create_group_chat">Создать групповой чат</string>
     <string name="chat_create_group_title">Создать группу</string>
