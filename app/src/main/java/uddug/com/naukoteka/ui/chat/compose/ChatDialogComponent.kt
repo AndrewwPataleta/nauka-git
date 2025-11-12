@@ -32,6 +32,7 @@ import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -98,6 +99,7 @@ fun ChatDialogComponent(
     val currentDialogId by viewModel.currentDialogId.collectAsState()
     val isCurrentUserAdmin by viewModel.isCurrentUserAdmin.collectAsState()
     val notificationsDisabled by viewModel.notificationsDisabled.collectAsState()
+    val pollRevoteTriggers = remember { mutableStateMapOf<String, Int>() }
 
     val audioRecorder = remember { AudioRecorder(context) }
     val mediaPlayer = remember { MediaPlayer() }
@@ -320,7 +322,8 @@ fun ChatDialogComponent(
                                 },
                                 onPollVote = { pollId, optionIds ->
                                     viewModel.voteInPoll(pollId, optionIds)
-                                }
+                                },
+                                pollRevoteTrigger = message.poll?.let { pollRevoteTriggers[it.id] ?: 0 } ?: 0
                             )
                         }
                     }
@@ -477,6 +480,18 @@ fun ChatDialogComponent(
                 },
                 onForward = { msg ->
                     onForwardMessage(msg)
+                },
+                isCurrentUserAdmin = isCurrentUserAdmin,
+                onRevotePoll = { msg ->
+                    msg.poll?.id?.let { pollId ->
+                        val current = pollRevoteTriggers[pollId] ?: 0
+                        pollRevoteTriggers[pollId] = current + 1
+                    }
+                },
+                onStopPoll = { msg ->
+                    msg.poll?.id?.let { pollId ->
+                        viewModel.stopPoll(pollId)
+                    }
                 }
             )
         }

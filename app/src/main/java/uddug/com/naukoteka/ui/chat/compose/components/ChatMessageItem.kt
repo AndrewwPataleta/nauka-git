@@ -40,6 +40,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -79,6 +80,7 @@ fun ChatMessageItem(
     onLongPress: (MessageChat) -> Unit,
     onReplyReferenceClick: (Long) -> Unit = {},
     onPollVote: (pollId: String, optionIds: List<String>) -> Unit = { _, _ -> },
+    pollRevoteTrigger: Int = 0,
 ) {
     val isSystem = message.type == MessageType.SYSTEM
     Row(
@@ -186,7 +188,8 @@ fun ChatMessageItem(
                             poll = message.poll!!,
                             question = message.text,
                             isMine = isMine,
-                            onVote = { selected -> onPollVote(message.poll!!.id, selected) }
+                            onVote = { selected -> onPollVote(message.poll!!.id, selected) },
+                            revoteTrigger = pollRevoteTrigger
                         )
                     } else {
                         if (!message.text.isNullOrBlank()) {
@@ -252,19 +255,26 @@ private fun PollMessageContent(
     question: String?,
     isMine: Boolean,
     onVote: (List<String>) -> Unit,
+    revoteTrigger: Int = 0,
 ) {
     val headlineColor = if (isMine) Color.White else Color(0xFF2E83D9)
     val primaryTextColor = if (isMine) Color.White else Color(0xFF111827)
     val secondaryTextColor = if (isMine) Color.White.copy(alpha = 0.75f) else Color(0xFF6F7A90)
     val optionBackground = if (isMine) Color.White.copy(alpha = 0.12f) else Color.White
     val accentColor = if (isMine) Color.White else Color(0xFF2E83D9)
-    val buttonBackground = if (isMine) Color.White else Color(0xFF2E83D9)
     val buttonContentColor = Color(0xFF9CCDFF)
     val isMultiple = poll.multipleAnswers
     val isStopped = poll.isStopped
-    val selectedOptions = remember(poll.id, poll.options) {
-        mutableStateListOf<String>().apply {
-            addAll(poll.options.filter { it.isVoted }.map { it.id })
+    val selectedOptions = remember(poll.id) { mutableStateListOf<String>() }
+
+    LaunchedEffect(poll.id, poll.options) {
+        selectedOptions.clear()
+        selectedOptions.addAll(poll.options.filter { it.isVoted }.map { it.id })
+    }
+
+    LaunchedEffect(revoteTrigger) {
+        if (revoteTrigger > 0) {
+            selectedOptions.clear()
         }
     }
 
