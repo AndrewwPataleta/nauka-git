@@ -13,24 +13,29 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.sharp.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import uddug.com.naukoteka.R
+
+enum class AttachOption {
+    MEDIA,
+    FILE,
+    POLL,
+    CONTACT,
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +45,7 @@ fun AttachOptionsBottomSheetDialog(
     onFileClick: () -> Unit,
     onPollClick: () -> Unit,
     onContactClick: () -> Unit,
+    selected: AttachOption? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
@@ -53,23 +59,27 @@ fun AttachOptionsBottomSheetDialog(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             BottomSheetItem(
-                icon = Icons.Sharp.Info,
+                icon = painterResource(R.drawable.ic_bottom_image),
                 text = stringResource(R.string.chat_attach_photo_video),
+                isSelected = selected == AttachOption.MEDIA,
                 onClick = onMediaClick
             )
             BottomSheetItem(
-                icon = Icons.Sharp.Info,
+                icon = painterResource(R.drawable.ic_cloud),
                 text = stringResource(R.string.chat_attach_file),
+                isSelected = selected == AttachOption.FILE,
                 onClick = onFileClick
             )
             BottomSheetItem(
-                icon = Icons.Filled.List,
+                icon = painterResource(R.drawable.ic_bottom_poll),
                 text = stringResource(R.string.chat_attach_poll),
+                isSelected = selected == AttachOption.POLL,
                 onClick = onPollClick
             )
             BottomSheetItem(
-                icon = Icons.Filled.Person,
+                icon = painterResource(R.drawable.ic_bottom_contacts),
                 text = stringResource(R.string.chat_attach_contact),
+                isSelected = selected == AttachOption.CONTACT,
                 onClick = onContactClick
             )
         }
@@ -78,8 +88,9 @@ fun AttachOptionsBottomSheetDialog(
 
 @Composable
 private fun BottomSheetItem(
-    icon: ImageVector,
+    icon: Painter,
     text: String,
+    isSelected: Boolean,
     onClick: () -> Unit,
 ) {
     Column(
@@ -92,15 +103,23 @@ private fun BottomSheetItem(
             modifier = Modifier
                 .size(56.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.primary,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        Color(0xFFEAEAF2)
+                    },
                     shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = icon,
+                painter = icon,
                 contentDescription = text,
-                tint = MaterialTheme.colorScheme.onPrimary,
+                tint = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    Color(0xFF8083A0)
+                },
                 modifier = Modifier.size(24.dp)
             )
         }
