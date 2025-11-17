@@ -180,6 +180,7 @@ dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-reflect:1.9.23'
     implementation 'androidx.datastore:datastore-preferences-core:1.1.1'
     implementation 'io.github.vicmikhailau:MaskedEditText:5.0.3'
+    implementation 'com.flashphoner.sdk:flashphoner-android-sdk:1.1.0'
 
     implementation 'androidx.paging:paging-runtime-ktx:3.1.1'
     implementation 'androidx.paging:paging-rxjava2-ktx:3.1.1'
