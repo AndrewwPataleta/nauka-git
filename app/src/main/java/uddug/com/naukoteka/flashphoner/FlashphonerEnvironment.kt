@@ -4,6 +4,7 @@ import android.content.Context
 import com.flashphoner.fpwcsapi.Flashphoner
 import com.flashphoner.fpwcsapi.Session
 import com.flashphoner.fpwcsapi.SessionOptions
+import com.flashphoner.fpwcsapi.session.SessionOptions
 import javax.inject.Inject
 import javax.inject.Singleton
 import dagger.hilt.android.qualifiers.ApplicationContext

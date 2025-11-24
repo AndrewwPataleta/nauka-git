@@ -65,6 +65,7 @@ import uddug.com.domain.entities.chat.Poll
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 
+import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDuration
 import uddug.com.domain.entities.chat.File as ChatFile
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

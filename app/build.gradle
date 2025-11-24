@@ -18,7 +18,6 @@ android {
         exclude("META-INF/*.kotlin_module")
     }
 
-
     composeCompiler {
         reportsDestination = layout.buildDirectory.dir("compose_compiler")
         stabilityConfigurationFile = rootProject.layout.projectDirectory.file("stability_config.conf")
@@ -85,18 +84,18 @@ android {
     buildFeatures {
         viewBinding true
         dataBinding true
-        compose true 
+        compose true
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion '1.5.3' 
+        kotlinCompilerExtensionVersion '1.5.3'
     }
 
     namespace 'uddug.com.naukoteka'
 }
 
 dependencies {
-    
+
     implementation presentation.kotlin
     implementation presentation.ktxCore
     implementation ui.appcompat
@@ -106,8 +105,6 @@ dependencies {
     implementation ui.lifecycleCommon
     implementation ui.localeChanger
 
-
-    
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2"
@@ -122,7 +119,6 @@ dependencies {
     implementation "org.burnoutcrew.composereorderable:reorderable:0.9.6"
     implementation "com.valentinilk.shimmer:compose-shimmer:1.0.5"
 
-    
     implementation ui.glide
     implementation ui.glideAnnotation
     kapt ui.glideProcessor
@@ -172,20 +168,22 @@ dependencies {
     implementation lib.domain
     implementation lib.data
     implementation 'com.github.stfalcon-studio:StfalconImageViewer:1.0.1'
-    implementation("com.github.dhaval2404:imagepicker:2.1")
+    implementation "com.github.dhaval2404:imagepicker:2.1"
     debugImplementation "com.github.chuckerteam.chucker:library:4.0.0"
     releaseImplementation "com.github.chuckerteam.chucker:library-no-op:4.0.0"
-    implementation("com.vanniktech:android-image-cropper:4.6.0")
+    implementation "com.vanniktech:android-image-cropper:4.6.0"
     implementation "com.github.StephenVinouze:MaterialNumberPicker:1.1.0"
     implementation 'com.github.yalantis:ucrop:2.2.8'
     implementation 'org.jetbrains.kotlin:kotlin-reflect:1.9.23'
     implementation 'androidx.datastore:datastore-preferences-core:1.1.1'
     implementation 'io.github.vicmikhailau:MaskedEditText:5.0.3'
-    implementation 'com.flashphoner.sdk:flashphoner-android-sdk:1.1.0'
+
+    // Flashphoner SDK из локального .aar в app/libs
+    implementation files('libs/wcs-android-sdk-1.1.0.64.aar')
 
     implementation 'androidx.paging:paging-runtime-ktx:3.1.1'
     implementation 'androidx.paging:paging-rxjava2-ktx:3.1.1'
-    implementation("androidx.browser:browser:1.4.0")
+    implementation "androidx.browser:browser:1.4.0"
 
     testImplementation unitTest.junit
     testImplementation unitTest.testCore
@@ -210,13 +208,12 @@ dependencies {
     implementation 'androidx.activity:activity-ktx:1.8.0'
     implementation 'androidx.fragment:fragment-ktx:1.6.2'
     implementation "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.5.0"
-    implementation("io.coil-kt:coil-compose:2.1.0")
+    implementation "io.coil-kt:coil-compose:2.1.0"
     implementation("io.socket:socket.io-client:2.1.2") {
         exclude group: "org.json", module: "json"
     }
-
 }
 
 kapt {
-    correctErrorTypes = true  
+    correctErrorTypes = true
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="uddug.com.naukoteka"
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-feature
@@ -25,15 +26,14 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 
-    
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.MANAGE_DEVICE_POLICY_CAMERA"/>
-    <uses-permission android:name="android.permission.MANAGE_DEVICE_POLICY_ACROSS_USERS"/>
-    
+    <uses-permission android:name="android.permission.MANAGE_DEVICE_POLICY_CAMERA" />
+    <uses-permission android:name="android.permission.MANAGE_DEVICE_POLICY_ACROSS_USERS" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 
     <application
@@ -45,7 +45,8 @@
         android:roundIcon="@drawable/ic_logo"
         android:supportsRtl="false"
         android:theme="@style/AppTheme"
-        tools:replace="android:supportsRtl">
+        tools:replace="android:supportsRtl,android:allowBackup">
+
         <activity
             android:name="uddug.com.naukoteka.ui.activities.main.AuthActivity"
             android:configChanges="keyboardHidden|screenSize|orientation|layoutDirection"
@@ -56,7 +57,6 @@
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
@@ -67,6 +67,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             tools:ignore="AppLinkUrlError">
+
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -80,7 +81,6 @@
                     android:pathPrefix="@string/deep_link_verify_email" />
                 <data android:pathPrefix="@string/deep_link_social_login" />
                 <data android:pathPrefix="@string/deep_link_reset_credentials" />
-
             </intent-filter>
         </activity>
 
@@ -95,15 +95,12 @@
             android:launchMode="singleInstance"
             android:screenOrientation="portrait"
             android:theme="@style/ContainerAppTheme"
-            android:windowSoftInputMode="adjustPan">
-
-
-        </activity>
+            android:windowSoftInputMode="adjustPan" />
 
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -111,6 +108,7 @@
             android:exported="false"
             android:grantUriPermissions="true"
             tools:replace="android:authorities">
+
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/image_path"
@@ -122,6 +120,5 @@
             android:value="true" />
 
     </application>
-
 
 </manifest>
