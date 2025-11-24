@@ -9,14 +9,8 @@ apply plugin: 'kotlin-parcelize'
 apply plugin: 'com.google.firebase.firebase-perf'
 apply plugin: 'dagger.hilt.android.plugin'
 
-// Flashphoner SDK already bundles Gson classes, so exclude the Maven artifact from
-// runtime classpaths to avoid duplicate definitions while keeping it on the
-// compile classpath for modules that need it.
-configurations.configureEach {
-    if (name.contains("RuntimeClasspath")) {
-        exclude group: 'com.google.code.gson', module: 'gson'
-    }
-}
+// Keep Gson on the runtime classpath so libraries like Chucker see the up-to-date
+// Maven artifact instead of the older copy bundled inside the Flashphoner AAR.
 
 android {
     lintOptions {
@@ -164,7 +158,7 @@ dependencies {
     implementation presentation.toothpickLifeCycle
     kapt presentation.toothpickCompiler
 
-    compileOnly data.gson
+    implementation data.gson
     implementation data.retrofit
     implementation data.retrofitLogging
     implementation(data.gsonConverter) {
