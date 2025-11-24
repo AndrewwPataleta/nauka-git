@@ -31,8 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -81,37 +79,12 @@ fun CallScreen(
     Scaffold(
         containerColor = backgroundColor,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = backgroundColor,
-                    navigationIconContentColor = Color.White
-                ),
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onBackPressed) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_close),
-                            tint = Color.White,
-                            contentDescription = null,
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { isParticipantsSheetVisible = true }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_call_participants),
-                            tint = Color.White,
-                            contentDescription = stringResource(R.string.call_participants_title),
-                        )
-                    }
-                    IconButton(onClick = onMinimize) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_arrow_down),
-                            tint = Color.White,
-                            contentDescription = null,
-                        )
-                    }
-                }
+            CallTopBar(
+                callDurationSeconds = state.callDurationSeconds,
+                onOpenChat = {},
+                onShowParticipants = { isParticipantsSheetVisible = true },
+                onStartRecording = {},
+                onMinimize = onMinimize,
             )
         }
     ) { paddingValues ->
@@ -185,6 +158,75 @@ fun CallScreen(
             participant = participant,
             onDismiss = { participantForActions = null },
         )
+    }
+}
+
+@Composable
+private fun CallTopBar(
+    callDurationSeconds: Int,
+    onOpenChat: () -> Unit,
+    onShowParticipants: () -> Unit,
+    onStartRecording: () -> Unit,
+    onMinimize: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            color = Color(0xFF1D2239),
+            shape = RoundedCornerShape(8.dp),
+        ) {
+            Text(
+                text = formatCallDuration(callDurationSeconds),
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onOpenChat) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_chat),
+                    contentDescription = stringResource(R.string.call_chat),
+                    tint = Color.White,
+                )
+            }
+
+            IconButton(onClick = onShowParticipants) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_call_participants),
+                    contentDescription = stringResource(R.string.call_participants_title),
+                    tint = Color.White,
+                )
+            }
+
+            IconButton(onClick = onStartRecording) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_call_record),
+                    contentDescription = stringResource(R.string.call_record),
+                    tint = Color(0xFFFF5656),
+                )
+            }
+        }
+
+        IconButton(onClick = onMinimize) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_arrow_down),
+                contentDescription = stringResource(R.string.call_minimize),
+                tint = Color.White,
+            )
+        }
     }
 }
 
@@ -698,4 +740,11 @@ private fun SheetActionItem(
             style = MaterialTheme.typography.bodyLarge,
         )
     }
+}
+
+private fun formatCallDuration(callDurationSeconds: Int): String {
+    val safeSeconds = callDurationSeconds.coerceAtLeast(0)
+    val minutes = safeSeconds / 60
+    val seconds = safeSeconds % 60
+    return "%02d:%02d".format(minutes, seconds)
 }
