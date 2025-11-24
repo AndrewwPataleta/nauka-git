@@ -102,7 +102,7 @@ fun ChatCard(
                         .size(40.dp),
                     contentAlignment = Alignment.BottomEnd
                 ) {
-                    Avatar(avatarUrl, name, size = 40.dp)
+                    Avatar(url =avatarUrl, name = name, size = 40.dp)
                     if (selectionMode && isSelected) {
                         Box(
                             modifier = Modifier

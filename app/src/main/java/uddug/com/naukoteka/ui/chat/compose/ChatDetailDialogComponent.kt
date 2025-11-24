@@ -146,6 +146,7 @@ fun ChatDetailDialogComponent(
                         ?: context.getString(R.string.chat_avatar_update_error)
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 }
+
                 AvatarUpdateEvent.Success -> Unit
             }
         }
@@ -163,7 +164,11 @@ fun ChatDetailDialogComponent(
         topBar = {
             androidx.compose.material.TopAppBar(
                 title = {
-                    Text(text = stringResource(R.string.chat_group_info_title), fontSize = 20.sp, color = Color.Black)
+                    Text(
+                        text = stringResource(R.string.chat_group_info_title),
+                        fontSize = 20.sp,
+                        color = Color.Black
+                    )
                 },
                 actions = {
 
@@ -246,8 +251,8 @@ fun ChatDetailDialogComponent(
                             contentAlignment = Alignment.Center
                         ) {
                             Avatar(
-                                state.avatarPath.takeIf { it?.isNotEmpty() == true },
-                                state.profile.fullName,
+                                url = state.avatarPath.takeIf { it?.isNotEmpty() == true },
+                                name = state.profile.fullName,
                                 size = 100.dp
                             )
                             if (state.isAvatarUpdating) {
@@ -285,16 +290,16 @@ fun ChatDetailDialogComponent(
                                 Modifier
                                     .weight(1f)
                                     .padding(end = 4.dp)
-                                .background(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFFF5F5F9)
-                                )
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null
-                                ) {
-                                    onCallClick(state.profile.fullName, state.avatarPath)
-                                }
+                                    .background(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFFF5F5F9)
+                                    )
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) {
+                                        onCallClick(state.profile.fullName, state.avatarPath)
+                                    }
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
@@ -478,7 +483,10 @@ fun MediaContent(items: List<MediaMessage>) {
                         .clip(RoundedCornerShape(16.dp))
                         .clickable {
                             if (imageUrls.isNotEmpty()) {
-                                StfalconImageViewer.Builder<String>(context, imageUrls) { imageView, image ->
+                                StfalconImageViewer.Builder<String>(
+                                    context,
+                                    imageUrls
+                                ) { imageView, image ->
                                     Glide.with(context)
                                         .load(image)
                                         .into(imageView)
@@ -641,7 +649,11 @@ private fun formatFileSize(sizeInBytes: Int?): String? {
         unitIndex++
     }
     val pattern = if (value >= 10 || unitIndex == 0) "%.0f" else "%.1f"
-    return String.format(Locale.getDefault(), pattern, value) + units[unitIndex].lowercase(Locale.getDefault())
+    return String.format(
+        Locale.getDefault(),
+        pattern,
+        value
+    ) + units[unitIndex].lowercase(Locale.getDefault())
 }
 
 private fun formatFileDate(rawDate: String): String? {
@@ -655,7 +667,8 @@ private fun formatFileDate(rawDate: String): String? {
 }
 
 private fun downloadMediaFile(context: Context, file: MediaFile) {
-    val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return
+    val downloadManager =
+        context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return
     val fileName = file.fileName.ifBlank { "chat_file_${file.id}" }
     val request = DownloadManager.Request(Uri.parse(BuildConfig.IMAGE_SERVER_URL + file.path))
         .setTitle(fileName)
@@ -665,7 +678,11 @@ private fun downloadMediaFile(context: Context, file: MediaFile) {
         .setAllowedOverRoaming(true)
     file.contentType?.let { request.setMimeType(it) }
     downloadManager.enqueue(request)
-    Toast.makeText(context, context.getString(R.string.chat_file_download_started), Toast.LENGTH_SHORT).show()
+    Toast.makeText(
+        context,
+        context.getString(R.string.chat_file_download_started),
+        Toast.LENGTH_SHORT
+    ).show()
 }
 
 private fun shareMediaFile(context: Context, file: MediaFile, chooserTitle: String) {
@@ -678,7 +695,11 @@ private fun shareMediaFile(context: Context, file: MediaFile, chooserTitle: Stri
     try {
         context.startActivity(chooserIntent)
     } catch (error: ActivityNotFoundException) {
-        Toast.makeText(context, context.getString(R.string.chat_file_share_error), Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+            context,
+            context.getString(R.string.chat_file_share_error),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 }
 

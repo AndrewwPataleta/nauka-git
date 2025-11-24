@@ -137,7 +137,7 @@ fun ChatMessageItem(
         ) {
             if (!isMine && !isSystem) {
 
-                Avatar(message.ownerAvatarUrl, message.ownerName)
+                Avatar(url = message.ownerAvatarUrl, name = message.ownerName)
                 Spacer(modifier = Modifier.width(8.dp))
             }
 

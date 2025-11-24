@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.ui.call.overlay
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +37,7 @@ import uddug.com.naukoteka.mvvm.call.CallUiState
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CallOverlay(
     state: CallUiState,

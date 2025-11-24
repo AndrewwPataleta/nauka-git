@@ -27,8 +27,8 @@ fun CreateChatMemberCard(
     showCheckbox: Boolean = true,
     checkboxOnLeft: Boolean = false,
 ) {
-    
-  
+
+
     var isChecked by remember { mutableStateOf(false) }
 
     Card(
@@ -43,34 +43,34 @@ fun CreateChatMemberCard(
                     isChecked = !isChecked
                 }
                 onMemberClick()
-            },  
-        colors = CardDefaults.cardColors(containerColor = Color.White)  
+            },
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column {
-              Row(
-                  modifier = Modifier
-                      .fillMaxWidth()
-                      .padding(top = 16.dp, bottom = 16.dp, end = 16.dp),
-                  verticalAlignment = Alignment.CenterVertically
-              ) {
-                  if (showCheckbox && checkboxOnLeft) {
-                      Checkbox(
-                          checked = isChecked,
-                          onCheckedChange = {
-                              isChecked = it
-                              onMemberClick()
-                          },
-                          modifier = Modifier.size(24.dp),
-                          colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2E83D9))
-                      )
-                      Spacer(modifier = Modifier.width(16.dp))
-                  }
-                  Avatar(avatarUrl.takeIf { it.isNotEmpty() }, name, size = 40.dp)
-                  Spacer(modifier = Modifier.width(16.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, bottom = 16.dp, end = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (showCheckbox && checkboxOnLeft) {
+                    Checkbox(
+                        checked = isChecked,
+                        onCheckedChange = {
+                            isChecked = it
+                            onMemberClick()
+                        },
+                        modifier = Modifier.size(24.dp),
+                        colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2E83D9))
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                }
+                Avatar(url = avatarUrl.takeIf { it.isNotEmpty() }, name = name, size = 40.dp)
+                Spacer(modifier = Modifier.width(16.dp))
 
-                
+
                 Column(modifier = Modifier.weight(1f)) {
-                    
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = if (name.isEmpty()) {
@@ -83,21 +83,18 @@ fun CreateChatMemberCard(
 
                 }
 
-                  if (showCheckbox && !checkboxOnLeft) {
-                      Checkbox(
-                          checked = isChecked,
-                          onCheckedChange = {
-                              isChecked = it
-                              onMemberClick()
-                          },
-                          modifier = Modifier.size(24.dp),
-                          colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2E83D9))
-                      )
-                  }
+                if (showCheckbox && !checkboxOnLeft) {
+                    Checkbox(
+                        checked = isChecked,
+                        onCheckedChange = {
+                            isChecked = it
+                            onMemberClick()
+                        },
+                        modifier = Modifier.size(24.dp),
+                        colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2E83D9))
+                    )
+                }
             }
-
-
-
 
 
         }

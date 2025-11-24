@@ -613,8 +613,8 @@ private fun ParticipantRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Avatar(
-            participant.user.image,
-            participant.user.fullName,
+            url =participant.user.image,
+            name = participant.user.fullName,
             size = 44.dp
         )
         Spacer(modifier = Modifier.width(12.dp))

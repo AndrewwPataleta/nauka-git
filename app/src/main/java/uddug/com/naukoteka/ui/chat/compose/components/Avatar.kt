@@ -21,6 +21,7 @@ import uddug.com.naukoteka.BuildConfig
 
 @Composable
 fun Avatar(
+    modifier: Modifier = Modifier,
     url: String?,
     name: String?,
     size: Dp = 36.dp,
@@ -30,7 +31,7 @@ fun Avatar(
         AsyncImage(
             model = BuildConfig.IMAGE_SERVER_URL.plus(url),
             contentDescription = "avatar",
-            modifier = Modifier
+            modifier = modifier
                 .size(size)
                 .clip(CircleShape),
             contentScale = ContentScale.Crop
