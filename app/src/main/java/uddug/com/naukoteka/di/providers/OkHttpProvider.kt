@@ -38,7 +38,7 @@ class OkHttpProvider(
         
         .addInterceptor(UnauthorizedInterceptor(context))
         .addInterceptor(UserAgentInterceptor())
-        .addInterceptor(ChuckerInterceptor(context))
+       // .addInterceptor(ChuckerInterceptor(context))
         .authenticator(authenticator)
         .connectTimeout(2, TimeUnit.MINUTES)
         .readTimeout(2, TimeUnit.MINUTES)
