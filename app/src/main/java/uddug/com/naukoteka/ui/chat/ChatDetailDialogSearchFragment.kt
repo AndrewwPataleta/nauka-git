@@ -13,6 +13,7 @@ import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
+import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_MESSAGE_ID
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogSearchComponent
 
 @AndroidEntryPoint
@@ -38,7 +39,7 @@ class ChatDetailDialogSearchFragment : Fragment() {
                         onMessageSelected = { dialogId, messageId ->
                             val args = Bundle().apply {
                                 putLong(ChatDialogFragment.DIALOG_ID, dialogId)
-                                putLong(ChatDialogFragment.MESSAGE_ID, messageId)
+                                putLong(ARG_MESSAGE_ID, messageId)
                             }
                             findNavController().navigate(R.id.chatDialogFragment, args)
                         }
