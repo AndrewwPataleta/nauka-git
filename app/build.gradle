@@ -21,6 +21,10 @@ def stripWcsGsonFromAar = tasks.register("stripWcsGsonFromAar", Zip) {
     archiveFileName.set("wcs-android-sdk-1.1.0.64-no-gson.aar")
 }
 
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn(stripWcsGsonFromAar)
+}
+
 android {
     lintOptions {
         abortOnError false
@@ -195,7 +199,6 @@ dependencies {
     // Flashphoner SDK из локального .aar в app/libs без встроенного gson-2.7
     def strippedFlashphoner = tasks.named("stripWcsGsonFromAar")
     def strippedFlashphonerFiles = files(strippedFlashphoner.map { it.archiveFile })
-            .builtBy(strippedFlashphoner)
     implementation(strippedFlashphonerFiles)
 
     implementation 'androidx.paging:paging-runtime-ktx:3.1.1'
