@@ -30,13 +30,10 @@ class CallOverlayFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
                 Gravity.BOTTOM or Gravity.END,
-            ).apply {
-                val margin = (16 * resources.displayMetrics.density).roundToInt()
-                setMargins(margin, margin, margin, margin)
-            }
+            )
             setContent {
                 val state = viewModel.uiState.collectAsState().value
 
