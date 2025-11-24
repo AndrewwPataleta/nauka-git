@@ -80,6 +80,7 @@ fun CallScreen(
         containerColor = backgroundColor,
         topBar = {
             CallTopBar(
+                containerColor = backgroundColor,
                 callDurationSeconds = state.callDurationSeconds,
                 onOpenChat = {},
                 onShowParticipants = { isParticipantsSheetVisible = true },
@@ -136,9 +137,7 @@ fun CallScreen(
                 )
             }
 
-            CallControls(
-                onEndCall = onEndCall,
-            )
+            CallControls(onEndCall = onEndCall)
         }
     }
 
@@ -163,69 +162,72 @@ fun CallScreen(
 
 @Composable
 private fun CallTopBar(
+    containerColor: Color,
     callDurationSeconds: Int,
     onOpenChat: () -> Unit,
     onShowParticipants: () -> Unit,
     onStartRecording: () -> Unit,
     onMinimize: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Surface(
-            color = Color(0xFF1D2239),
-            shape = RoundedCornerShape(8.dp),
-        ) {
-            Text(
-                text = formatCallDuration(callDurationSeconds),
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            )
-        }
-
+    Surface(color = containerColor) {
         Row(
             modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onOpenChat) {
+            Surface(
+                color = Color(0xFF1D2239),
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Text(
+                    text = formatCallDuration(callDurationSeconds),
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onOpenChat) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_chat),
+                        contentDescription = stringResource(R.string.call_chat),
+                        tint = Color.White,
+                    )
+                }
+
+                IconButton(onClick = onShowParticipants) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_call_participants),
+                        contentDescription = stringResource(R.string.call_participants_title),
+                        tint = Color.White,
+                    )
+                }
+
+                IconButton(onClick = onStartRecording) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_call_record),
+                        contentDescription = stringResource(R.string.call_record),
+                        tint = Color(0xFFFF5656),
+                    )
+                }
+            }
+
+            IconButton(onClick = onMinimize) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_chat),
-                    contentDescription = stringResource(R.string.call_chat),
+                    painter = painterResource(id = R.drawable.ic_arrow_down),
+                    contentDescription = stringResource(R.string.call_minimize),
                     tint = Color.White,
                 )
             }
-
-            IconButton(onClick = onShowParticipants) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_call_participants),
-                    contentDescription = stringResource(R.string.call_participants_title),
-                    tint = Color.White,
-                )
-            }
-
-            IconButton(onClick = onStartRecording) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_call_record),
-                    contentDescription = stringResource(R.string.call_record),
-                    tint = Color(0xFFFF5656),
-                )
-            }
-        }
-
-        IconButton(onClick = onMinimize) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_arrow_down),
-                contentDescription = stringResource(R.string.call_minimize),
-                tint = Color.White,
-            )
         }
     }
 }
@@ -366,72 +368,38 @@ private fun ParticipantCard(
 private fun CallControls(
     onEndCall: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFF121732),
+        shape = RoundedCornerShape(16.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            CallActionButton(
-                iconRes = R.drawable.ic_rec_mic_active,
-                label = stringResource(R.string.call_microphone),
-                containerColor = Color(0xFF121732),
-                contentColor = Color.White,
-            ) {}
-            CallActionButton(
-                iconRes = R.drawable.ic_profile_call,
-                label = stringResource(R.string.call_primary_action),
-                containerColor = Color(0xFF121732),
-                contentColor = Color.White,
-            ) {}
-            CallActionButton(
-                iconRes = R.drawable.ic_profile_send,
-                label = stringResource(R.string.call_secondary_action),
-                containerColor = Color(0xFF121732),
-                contentColor = Color.White,
-            ) {}
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp)),
-            color = Color(0xFF1D2239),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CallActionButton(
-                    iconRes = R.drawable.ic_rec_mic_inactive,
-                    label = stringResource(R.string.call_microphone),
-                    containerColor = Color.Transparent,
-                    contentColor = Color.White,
-                ) {}
-                CallActionButton(
-                    iconRes = R.drawable.ic_mute_sound_folder,
-                    label = stringResource(R.string.call_speaker),
-                    containerColor = Color.Transparent,
-                    contentColor = Color.White,
-                ) {}
-                CallActionButton(
-                    iconRes = R.drawable.ic_close,
-                    label = stringResource(R.string.call_terminate_action),
-                    containerColor = Color(0xFFE64C4C),
-                    contentColor = Color.White,
-                    onClick = onEndCall,
-                )
-            }
+            CallActionButton(
+                iconRes = R.drawable.ic_rec_mic_inactive,
+                label = stringResource(R.string.call_microphone),
+                containerColor = Color.Transparent,
+                contentColor = Color.White,
+            ) {}
+            CallActionButton(
+                iconRes = R.drawable.ic_mute_sound_folder,
+                label = stringResource(R.string.call_speaker),
+                containerColor = Color.Transparent,
+                contentColor = Color.White,
+            ) {}
+            CallActionButton(
+                iconRes = R.drawable.ic_close,
+                label = stringResource(R.string.call_terminate_action),
+                containerColor = Color(0xFFE64C4C),
+                contentColor = Color.White,
+                onClick = onEndCall,
+            )
         }
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
