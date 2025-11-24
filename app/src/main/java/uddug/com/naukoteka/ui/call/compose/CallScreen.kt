@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.ui.call.compose
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -25,11 +27,18 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.call.CallParticipant
-
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallUiState
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
@@ -66,6 +74,8 @@ fun CallScreen(
         CallStatus.FINISHED -> stringResource(R.string.call_status_finished)
     }
     val resolvedCallTitle = callTitle ?: stringResource(R.string.call_status_in_call)
+    var isParticipantsSheetVisible by rememberSaveable { mutableStateOf(false) }
+    var participantForActions by remember { mutableStateOf<CallParticipant?>(null) }
 
     Scaffold(
         containerColor = backgroundColor,
@@ -86,6 +96,13 @@ fun CallScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { isParticipantsSheetVisible = true }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_call_participants),
+                            tint = Color.White,
+                            contentDescription = stringResource(R.string.call_participants_title),
+                        )
+                    }
                     IconButton(onClick = onMinimize) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_arrow_down),
@@ -149,6 +166,24 @@ fun CallScreen(
                 onEndCall = onEndCall,
             )
         }
+    }
+
+    if (isParticipantsSheetVisible) {
+        ParticipantsBottomSheet(
+            participants = state.participants,
+            onDismiss = { isParticipantsSheetVisible = false },
+            onParticipantClick = { participant ->
+                participantForActions = participant
+                isParticipantsSheetVisible = false
+            },
+        )
+    }
+
+    participantForActions?.let { participant ->
+        ParticipantActionsSheet(
+            participant = participant,
+            onDismiss = { participantForActions = null },
+        )
     }
 }
 
@@ -390,6 +425,276 @@ private fun CallActionButton(
             style = MaterialTheme.typography.bodySmall,
             color = contentColor,
             textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ParticipantsBottomSheet(
+    participants: List<CallParticipant>,
+    onDismiss: () -> Unit,
+    onParticipantClick: (CallParticipant) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color(0xFF0B1020),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.call_participants_title),
+                color = Color.White,
+                style = MaterialTheme.typography.titleLarge,
+            )
+
+            Text(
+                text = stringResource(R.string.call_participants_statuses),
+                color = Color(0xFFB0B3C5),
+                style = MaterialTheme.typography.bodySmall,
+            )
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFF121732),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                if (participants.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(color = Color.White)
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        contentPadding = PaddingValues(vertical = 4.dp),
+                    ) {
+                        items(participants) { participant ->
+                            ParticipantListItem(
+                                participant = participant,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onParticipantClick(participant) }
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                            )
+                        }
+                    }
+                }
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFF121732),
+                shape = RoundedCornerShape(12.dp),
+                onClick = onDismiss,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_profile_send),
+                        contentDescription = null,
+                        tint = Color.White,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = stringResource(R.string.call_participants_invite),
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun ParticipantListItem(
+    participant: CallParticipant,
+    modifier: Modifier = Modifier,
+) {
+    val statusText = if (participant.isMuted) {
+        stringResource(R.string.call_participant_status_muted)
+    } else {
+        stringResource(R.string.call_participant_status_active)
+    }
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Avatar(
+            url = participant.avatarUrl,
+            name = participant.name,
+            size = 48.dp,
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = participant.name.orEmpty(),
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    painter = painterResource(
+                        id = if (participant.isMuted) {
+                            R.drawable.ic_rec_mic_inactive
+                        } else {
+                            R.drawable.ic_rec_mic_active
+                        }
+                    ),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    text = statusText,
+                    color = Color(0xFFB0B3C5),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ParticipantActionsSheet(
+    participant: CallParticipant,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val muteActionLabel = if (participant.isMuted) {
+        stringResource(R.string.call_participant_action_unmute)
+    } else {
+        stringResource(R.string.call_participant_action_mute)
+    }
+    val muteIcon = if (participant.isMuted) {
+        R.drawable.ic_rec_mic_active
+    } else {
+        R.drawable.ic_rec_mic_inactive
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color(0xFF0B1020),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            ParticipantListItem(
+                participant = participant,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Text(
+                text = stringResource(R.string.call_participant_actions_title),
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium,
+            )
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFF121732),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    SheetActionItem(
+                        iconRes = muteIcon,
+                        label = muteActionLabel,
+                        onClick = onDismiss,
+                    )
+                    SheetActionItem(
+                        iconRes = R.drawable.ic_copy,
+                        label = stringResource(R.string.call_participant_action_copy),
+                        onClick = onDismiss,
+                    )
+                    SheetActionItem(
+                        iconRes = R.drawable.ic_profile_info,
+                        label = stringResource(R.string.call_participant_action_profile),
+                        onClick = onDismiss,
+                    )
+                }
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFF1D2239),
+                shape = RoundedCornerShape(12.dp),
+                onClick = onDismiss,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.call_sheet_close),
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun SheetActionItem(
+    iconRes: Int,
+    label: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = label,
+            color = Color.White,
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
