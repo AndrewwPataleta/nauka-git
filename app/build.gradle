@@ -12,6 +12,16 @@ apply plugin: 'dagger.hilt.android.plugin'
 // Keep Gson on the runtime classpath so libraries like Chucker see the up-to-date
 // Maven artifact instead of the older copy bundled inside the Flashphoner AAR.
 
+def stripWcsGsonFromAar = tasks.register("stripWcsGsonFromAar", Zip) {
+    from(zipTree("libs/wcs-android-sdk-1.1.0.64.aar")) {
+        exclude("libs/gson-2.7.jar")
+    }
+
+    destinationDirectory = layout.buildDirectory.dir("processed-libs")
+    archiveBaseName.set("wcs-android-sdk-1.1.0.64-no-gson")
+    archiveExtension.set("aar")
+}
+
 android {
     lintOptions {
         abortOnError false
@@ -184,7 +194,7 @@ dependencies {
     implementation 'io.github.vicmikhailau:MaskedEditText:5.0.3'
 
     // Flashphoner SDK из локального .aar в app/libs
-    implementation files('libs/wcs-android-sdk-1.1.0.64.aar')
+    implementation(files(tasks.named("stripWcsGsonFromAar").map { it.archiveFile }))
 
     implementation 'androidx.paging:paging-runtime-ktx:3.1.1'
     implementation 'androidx.paging:paging-rxjava2-ktx:3.1.1'
