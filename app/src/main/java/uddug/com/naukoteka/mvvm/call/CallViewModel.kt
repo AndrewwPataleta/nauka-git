@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.mvvm.call
 
 import android.app.Activity
+import android.os.Parcelable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -8,6 +9,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.parcelize.Parcelize
 import uddug.com.naukoteka.flashphoner.FlashphonerConfigProvider
 import uddug.com.naukoteka.flashphoner.FlashphonerEnvironment
 import uddug.com.naukoteka.flashphoner.FlashphonerSessionManager
@@ -24,13 +26,31 @@ class CallViewModel @Inject constructor(
 
     private var isCallStarted = false
 
-    fun startCall(activity: Activity, contactName: String?, avatarUrl: String?) {
+    fun startCall(
+        activity: Activity,
+        contactName: String?,
+        avatarUrl: String?,
+        participants: List<CallParticipant>? = null,
+        callTitle: String? = null,
+    ) {
         if (isCallStarted) return
         isCallStarted = true
 
+        val resolvedParticipants = participants?.takeIf { it.isNotEmpty() }
+            ?: contactName?.let { name ->
+                listOf(
+                    CallParticipant(
+                        id = name,
+                        name = name,
+                        avatarUrl = avatarUrl,
+                    )
+                )
+            }
+            ?: emptyList()
+
         _uiState.value = CallUiState(
-            contactName = contactName,
-            avatarUrl = avatarUrl,
+            callTitle = callTitle ?: contactName,
+            participants = resolvedParticipants,
             status = CallStatus.DIALING,
         )
 
@@ -55,10 +75,18 @@ class CallViewModel @Inject constructor(
 }
 
 data class CallUiState(
-    val contactName: String? = null,
-    val avatarUrl: String? = null,
+    val callTitle: String? = null,
+    val participants: List<CallParticipant> = emptyList(),
     val status: CallStatus = CallStatus.DIALING,
 )
+
+@Parcelize
+data class CallParticipant(
+    val id: String,
+    val name: String?,
+    val avatarUrl: String?,
+    val isMuted: Boolean = false,
+) : Parcelable
 
 enum class CallStatus {
     DIALING,

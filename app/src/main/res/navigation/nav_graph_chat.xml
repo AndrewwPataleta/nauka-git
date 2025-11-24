@@ -124,6 +124,10 @@
             android:name="avatar_url"
             app:argType="string"
             android:defaultValue="@null" />
+        <argument
+            android:name="call_title"
+            app:argType="string"
+            android:defaultValue="@null" />
     </fragment>
 
 </navigation>

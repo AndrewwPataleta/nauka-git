@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
+import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallViewModel
 import uddug.com.naukoteka.ui.call.compose.CallScreen
 
@@ -26,8 +27,16 @@ class CallFragment : Fragment() {
     ): View {
         val contactName = arguments?.getString(ARG_CONTACT_NAME)
         val avatarUrl = arguments?.getString(ARG_AVATAR_URL)
+        val callTitle = arguments?.getString(ARG_CALL_TITLE)
+        val participants = arguments?.getParcelableArrayList<CallParticipant>(ARG_PARTICIPANTS)
 
-        viewModel.startCall(requireActivity(), contactName, avatarUrl)
+        viewModel.startCall(
+            activity = requireActivity(),
+            contactName = contactName,
+            avatarUrl = avatarUrl,
+            participants = participants,
+            callTitle = callTitle,
+        )
 
         return ComposeView(requireContext()).apply {
             setContent {
@@ -49,5 +58,7 @@ class CallFragment : Fragment() {
     companion object {
         const val ARG_CONTACT_NAME = "contact_name"
         const val ARG_AVATAR_URL = "avatar_url"
+        const val ARG_CALL_TITLE = "call_title"
+        const val ARG_PARTICIPANTS = "participants"
     }
 }
