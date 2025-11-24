@@ -8,8 +8,10 @@ dependencies {
 
     implementation data.retrofit
     implementation data.retrofitRxJava
-    implementation data.gsonConverter
-    implementation data.gson
+    implementation(data.gsonConverter) {
+        exclude group: 'com.google.code.gson', module: 'gson'
+    }
+    compileOnly data.gson
     implementation data.retrofitLogging
     implementation ui.gmsPlayServicesLocation
 

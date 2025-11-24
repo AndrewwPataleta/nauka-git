@@ -155,10 +155,12 @@ dependencies {
     implementation presentation.toothpickLifeCycle
     kapt presentation.toothpickCompiler
 
-    implementation data.gson
+    compileOnly data.gson
     implementation data.retrofit
     implementation data.retrofitLogging
-    implementation data.gsonConverter
+    implementation(data.gsonConverter) {
+        exclude group: 'com.google.code.gson', module: 'gson'
+    }
     implementation data.retrofitRxJava
 
     implementation presentation.rxJavaKotlin
