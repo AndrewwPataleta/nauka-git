@@ -8,17 +8,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallViewModel
 import uddug.com.naukoteka.ui.call.compose.CallScreen
+import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
 
 @AndroidEntryPoint
 class CallFragment : Fragment() {
 
-    private val viewModel: CallViewModel by viewModels()
+    private val viewModel: CallViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,10 +49,32 @@ class CallFragment : Fragment() {
                         onEndCall = {
                             viewModel.endCall()
                             findNavController().popBackStack()
-                        }
+                            removeFloatingCall()
+                        },
+                        onMinimize = {
+                            showFloatingCall()
+                            findNavController().popBackStack()
+                        },
                     )
                 }
             }
+        }
+    }
+
+    private fun showFloatingCall() {
+        val fragmentManager = requireActivity().supportFragmentManager
+        if (fragmentManager.findFragmentByTag(CallOverlayFragment.TAG) == null) {
+            fragmentManager.beginTransaction()
+                .add(android.R.id.content, CallOverlayFragment(), CallOverlayFragment.TAG)
+                .commitAllowingStateLoss()
+        }
+    }
+
+    private fun removeFloatingCall() {
+        requireActivity().supportFragmentManager.findFragmentByTag(CallOverlayFragment.TAG)?.let {
+            requireActivity().supportFragmentManager.beginTransaction()
+                .remove(it)
+                .commitAllowingStateLoss()
         }
     }
 
