@@ -37,17 +37,6 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose' version '2.1.10' apply false
 }
 
-allprojects {
-    repositories {
-        mavenCentral()
-        maven { url "https://jitpack.io" }
-        maven { url "https://maven.google.com/" }
-        google()
-        jcenter()
-        maven { url 'https://androidx.dev/storage/compose-compiler/repository/' }
-    }
-}
-
 task getVersionCode {
     doLast {
         def version = "${getVersionMajor()}.${getVersionMinor()}.${getVersionPatch()}.${getVersionBuild()}"
