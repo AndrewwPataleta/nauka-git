@@ -155,7 +155,7 @@ dependencies {
     implementation presentation.toothpickLifeCycle
     kapt presentation.toothpickCompiler
 
-    implementation data.gson
+    compileOnly data.gson
     implementation data.retrofit
     implementation data.retrofitLogging
     implementation(data.gsonConverter) {
