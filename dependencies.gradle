@@ -69,7 +69,7 @@ ext {
             retrofitRxJava : "com.squareup.retrofit2:adapter-rxjava2:$versionRetrofit",
             retrofitLogging: "com.squareup.okhttp3:logging-interceptor:4.9.0",
             gsonConverter  : "com.squareup.retrofit2:converter-gson:$versionRetrofit",
-            gson           : 'com.google.code.gson:gson:2.8.6',
+            gson           : 'com.google.code.gson:gson:2.10.1',
 
     ]
 
