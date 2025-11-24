@@ -170,9 +170,9 @@ fun CallScreen(
     }
 
     if (isParticipantsSheetVisible) {
-        ParticipantsBottomSheet(
+        ParticipantsScreen(
             participants = state.participants,
-            onDismiss = { isParticipantsSheetVisible = false },
+            onBackClick = { isParticipantsSheetVisible = false },
             onParticipantClick = { participant ->
                 participantForActions = participant
                 isParticipantsSheetVisible = false
@@ -430,97 +430,112 @@ private fun CallActionButton(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ParticipantsBottomSheet(
+private fun ParticipantsScreen(
     participants: List<CallParticipant>,
-    onDismiss: () -> Unit,
+    onBackClick: () -> Unit,
     onParticipantClick: (CallParticipant) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val backgroundColor = Color(0xFF0B1020)
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = Color(0xFF0B1020),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.call_participants_title),
-                color = Color.White,
-                style = MaterialTheme.typography.titleLarge,
-            )
-
-            Text(
-                text = stringResource(R.string.call_participants_statuses),
-                color = Color(0xFFB0B3C5),
-                style = MaterialTheme.typography.bodySmall,
-            )
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFF121732),
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                if (participants.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(color = Color.White)
-                    }
-                } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        contentPadding = PaddingValues(vertical = 4.dp),
-                    ) {
-                        items(participants) { participant ->
-                            ParticipantListItem(
-                                participant = participant,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onParticipantClick(participant) }
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+    Surface(modifier = Modifier.fillMaxSize(), color = backgroundColor) {
+        Scaffold(
+            containerColor = backgroundColor,
+            topBar = {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = backgroundColor,
+                        navigationIconContentColor = Color.White,
+                        titleContentColor = Color.White,
+                    ),
+                    title = { Text(text = stringResource(R.string.call_participants_title)) },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_close),
+                                contentDescription = null,
+                                tint = Color.White,
                             )
+                        }
+                    },
+                )
+            },
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.call_participants_statuses),
+                    color = Color(0xFFB0B3C5),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = true),
+                    color = Color(0xFF121732),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    if (participants.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(color = Color.White)
+                        }
+                    } else {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            contentPadding = PaddingValues(vertical = 4.dp),
+                        ) {
+                            items(participants) { participant ->
+                                ParticipantListItem(
+                                    participant = participant,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onParticipantClick(participant) }
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFF121732),
-                shape = RoundedCornerShape(12.dp),
-                onClick = onDismiss,
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color(0xFF121732),
+                    shape = RoundedCornerShape(12.dp),
+                    onClick = onBackClick,
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_profile_send),
-                        contentDescription = null,
-                        tint = Color.White,
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(
-                        text = stringResource(R.string.call_participants_invite),
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_profile_send),
+                            contentDescription = null,
+                            tint = Color.White,
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = stringResource(R.string.call_participants_invite),
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
             }
-            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
