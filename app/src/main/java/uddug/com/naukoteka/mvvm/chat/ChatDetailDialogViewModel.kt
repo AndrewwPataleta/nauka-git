@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import uddug.com.domain.entities.chat.ChatMediaCategory
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.MessageChat
@@ -37,10 +38,10 @@ class ChatDialogDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val tabToCategoryMap = mapOf(
-        0 to 1, 
-        1 to 3, 
-        2 to 6, 
-        3 to 7, 
+        0 to ChatMediaCategory.MEDIA,
+        1 to ChatMediaCategory.FILES,
+        2 to ChatMediaCategory.VOICE_MESSAGES,
+        3 to ChatMediaCategory.CALL_RECORDINGS,
     )
 
     private val _uiState = MutableStateFlow<ChatDetailUiState>(ChatDetailUiState.Loading)
@@ -232,7 +233,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                 }
                 _searchMedia.value = chatInteractor.getDialogMedia(
                     dialogId,
-                    category = 1,
+                    category = ChatMediaCategory.MEDIA,
                     limit = 50,
                     page = 1,
                     query = query,
@@ -241,7 +242,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                 )
                 _searchFiles.value = chatInteractor.getDialogMedia(
                     dialogId,
-                    category = 3,
+                    category = ChatMediaCategory.FILES,
                     limit = 50,
                     page = 1,
                     query = query,
@@ -250,7 +251,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                 )
                 _searchNotes.value = chatInteractor.getDialogMedia(
                     dialogId,
-                    category = 7,
+                    category = ChatMediaCategory.CALL_RECORDINGS,
                     limit = 50,
                     page = 1,
                     query = query,

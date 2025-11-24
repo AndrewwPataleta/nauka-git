@@ -332,7 +332,7 @@ fun ChatTabBar(
                                 dialogId = chat.dialogId,
                                 avatarUrl = avatarUrl,
                                 name = displayName,
-                                message = chat.lastMessage.text ?: stringResource(R.string.chat_no_messages),
+                                message = chat.lastMessage.text.orEmpty(),
                                 time = chat.lastMessage.createdAt ?: stringResource(R.string.chat_unknown_time),
                                 newMessagesCount = chat.unreadMessages,
                                 attachmentPreview = attachmentPreview,
@@ -376,7 +376,8 @@ private fun FolderActionItem(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         leadingContent = {
             Image(painter = icon, contentDescription = null)
         },
@@ -386,6 +387,6 @@ private fun FolderActionItem(
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
     )
 }
+

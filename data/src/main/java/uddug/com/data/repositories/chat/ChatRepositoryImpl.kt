@@ -50,6 +50,7 @@ import java.net.URLConnection
 import java.util.Locale
 import javax.inject.Inject
 import uddug.com.data.utils.toDomain
+import uddug.com.domain.entities.chat.ChatMediaCategory
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MediaMessage
@@ -215,7 +216,7 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun getDialogMedia(
         dialogId: Long,
-        category: Int,
+        category: ChatMediaCategory,
         limit: Int,
         page: Int,
         query: String?,
@@ -225,7 +226,7 @@ class ChatRepositoryImpl @Inject constructor(
         return try {
             apiService.getDialogMedia(
                 dialogId,
-                category = category,
+                category = category.apiValue,
                 limit = limit,
                 page = page,
                 query = query,

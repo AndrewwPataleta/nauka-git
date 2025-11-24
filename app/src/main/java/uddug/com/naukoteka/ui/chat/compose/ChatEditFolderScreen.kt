@@ -189,9 +189,12 @@ private fun ChatEditFolderContent(
             modifier = Modifier
                 .fillMaxWidth(),
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                textColor = Color.Black,
+                backgroundColor = Color(0xFFF5F5F9),
                 focusedBorderColor = Color(0xFF2E83D9),
-                unfocusedBorderColor = Color(0xFFBFC4D5)
+                unfocusedBorderColor = Color(0xFFE0E0E8),
+                cursorColor = Color(0xFF2E83D9),
+                textColor = Color(0xFF1F1F1F),
+                placeholderColor = Color(0xFFB0B2C3)
             )
         )
         Spacer(modifier = Modifier.height(24.dp))

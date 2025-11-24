@@ -4,6 +4,7 @@ import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.ChatFolderDetails
 import uddug.com.domain.entities.chat.ChatFolderDialogsPage
+import uddug.com.domain.entities.chat.ChatMediaCategory
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
 import uddug.com.domain.entities.chat.MediaMessage
@@ -69,7 +70,7 @@ interface ChatRepository {
 
     suspend fun getDialogMedia(
         dialogId: Long,
-        category: Int,
+        category: ChatMediaCategory,
         limit: Int,
         page: Int,
         query: String?,

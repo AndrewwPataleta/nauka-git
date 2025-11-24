@@ -8,6 +8,7 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.provider.ContactsContract
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,6 +31,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -38,6 +40,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.bumptech.glide.Glide
+import com.stfalcon.imageviewer.StfalconImageViewer
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,10 +49,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
+import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
 import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
@@ -60,9 +66,14 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.AttachOptionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
+import uddug.com.naukoteka.ui.chat.compose.components.VoicePlaybackBanner
 import uddug.com.naukoteka.ui.chat.compose.components.MessageListShimmer
+import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDuration
+import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDurationFromMillis
+import uddug.com.naukoteka.ui.chat.compose.util.parseVoiceDurationToMillis
 import uddug.com.naukoteka.ui.chat.compose.util.uriToFile
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.File as ChatAttachmentFile
 import uddug.com.naukoteka.ui.chat.AudioRecorder
 import uddug.com.naukoteka.ui.chat.compose.formatMessageDate
 import uddug.com.naukoteka.ui.chat.compose.messageDate
@@ -84,6 +95,7 @@ fun ChatDialogComponent(
     onForwardMessage: (MessageChat) -> Unit,
     onEditGroup: (Long) -> Unit,
     onChatDeleted: () -> Unit,
+    initialMessageId: Long? = null,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberLazyListState()
@@ -108,6 +120,12 @@ fun ChatDialogComponent(
     var recordedAudio by remember { mutableStateOf<File?>(null) }
     var recordingTime by remember { mutableStateOf(0L) }
     var isRecordingPlaying by remember { mutableStateOf(false) }
+    var voicePlayingMessageId by remember { mutableStateOf<Long?>(null) }
+    var voicePlayingMessage by remember { mutableStateOf<MessageChat?>(null) }
+    var voicePlayingFile by remember { mutableStateOf<ChatAttachmentFile?>(null) }
+    var voiceRemainingTime by remember { mutableStateOf(0L) }
+    var isVoicePlaying by remember { mutableStateOf(false) }
+    var isVoicePreparing by remember { mutableStateOf(false) }
     val audioPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted: Boolean ->
@@ -116,6 +134,139 @@ fun ChatDialogComponent(
             recordedAudio = null
             recordingTime = 0L
             isRecording = true
+        }
+    }
+
+    fun openImageViewer(file: ChatAttachmentFile) {
+        val imageUrl = BuildConfig.IMAGE_SERVER_URL + file.path
+        StfalconImageViewer.Builder<String>(context, listOf(imageUrl)) { imageView, image ->
+            Glide.with(context)
+                .load(image)
+                .into(imageView)
+        }.show()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                mediaPlayer.reset()
+            } catch (_: IllegalStateException) {
+            }
+            mediaPlayer.release()
+        }
+    }
+
+    fun resetVoicePlayback() {
+        voicePlayingMessageId = null
+        voicePlayingMessage = null
+        voicePlayingFile = null
+        voiceRemainingTime = 0L
+        isVoicePlaying = false
+        isVoicePreparing = false
+        mediaPlayer.setOnPreparedListener(null)
+        mediaPlayer.setOnCompletionListener(null)
+    }
+
+    fun updateVoiceRemainingTimeFromPlayer() {
+        val remaining = runCatching {
+            val duration = mediaPlayer.duration
+            val position = mediaPlayer.currentPosition
+            (duration - position).coerceAtLeast(0)
+        }.getOrDefault(0)
+        voiceRemainingTime = remaining.toLong()
+    }
+
+    fun handleVoiceMessageClick(message: MessageChat, file: ChatAttachmentFile) {
+        voicePlayingMessage = message
+        voicePlayingFile = file
+        if (voicePlayingMessageId == message.id) {
+            if (isVoicePreparing) return
+            if (isVoicePlaying) {
+                try {
+                    mediaPlayer.pause()
+                    isVoicePlaying = false
+                    updateVoiceRemainingTimeFromPlayer()
+                } catch (_: IllegalStateException) {
+                    resetVoicePlayback()
+                }
+            } else {
+                try {
+                    mediaPlayer.start()
+                    isVoicePlaying = true
+                    updateVoiceRemainingTimeFromPlayer()
+                } catch (_: IllegalStateException) {
+                    resetVoicePlayback()
+                }
+            }
+            return
+        }
+
+        voiceRemainingTime = parseVoiceDurationToMillis(file.duration) ?: 0L
+        voicePlayingMessageId = message.id
+        isVoicePreparing = true
+        isVoicePlaying = false
+
+        if (isRecordingPlaying) {
+            try {
+                mediaPlayer.stop()
+            } catch (_: IllegalStateException) {
+            }
+            isRecordingPlaying = false
+        }
+
+        try {
+            mediaPlayer.reset()
+            mediaPlayer.setOnPreparedListener { player ->
+                isVoicePreparing = false
+                isVoicePlaying = true
+                voiceRemainingTime = player.duration.toLong()
+                player.start()
+            }
+            mediaPlayer.setOnCompletionListener {
+                try {
+                    mediaPlayer.reset()
+                } catch (_: IllegalStateException) {
+                }
+                resetVoicePlayback()
+            }
+            val source = BuildConfig.IMAGE_SERVER_URL + file.path
+            mediaPlayer.setDataSource(source)
+            mediaPlayer.prepareAsync()
+        } catch (_: Exception) {
+            mediaPlayer.reset()
+            resetVoicePlayback()
+            Toast.makeText(
+                context,
+                context.getString(R.string.chat_voice_message_playback_error),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    fun stopVoicePlayback() {
+        try {
+            mediaPlayer.stop()
+        } catch (_: IllegalStateException) {
+        }
+        try {
+            mediaPlayer.reset()
+        } catch (_: IllegalStateException) {
+        }
+        resetVoicePlayback()
+    }
+
+    LaunchedEffect(voicePlayingMessageId, isVoicePlaying, isVoicePreparing) {
+        if (voicePlayingMessageId == null) {
+            voiceRemainingTime = 0L
+            return@LaunchedEffect
+        }
+        if (isVoicePreparing) {
+            return@LaunchedEffect
+        }
+        updateVoiceRemainingTimeFromPlayer()
+        while (isVoicePlaying) {
+            delay(250)
+            updateVoiceRemainingTimeFromPlayer()
         }
     }
 
@@ -227,15 +378,27 @@ fun ChatDialogComponent(
 
                 is ChatDialogUiState.Success -> {
                     val messages = state.chats
+                    var pendingMessageId by remember(initialMessageId) { mutableStateOf(initialMessageId) }
                     val messageIndexById = remember(messages) {
                         messages.mapIndexed { index, message -> message.id to index }.toMap()
                     }
 
                     LaunchedEffect(messages.size) {
-                        if (messages.isNotEmpty()) {
+                        if (initialMessageId == null && messages.isNotEmpty()) {
                             scrollState.scrollToItem(messages.size - 1)
                         }
                     }
+                    LaunchedEffect(messages, pendingMessageId) {
+                        val targetId = pendingMessageId ?: return@LaunchedEffect
+                        val index = messageIndexById[targetId]
+                        if (index != null) {
+                            scrollState.scrollToItem(index)
+                            pendingMessageId = null
+                        }
+                    }
+                    val playbackMessage = voicePlayingMessage
+                    val playbackFile = voicePlayingFile
+
                     if (isSelectionMode) {
                         Surface(elevation = 4.dp) {
                             Column {
@@ -288,7 +451,30 @@ fun ChatDialogComponent(
                             onMoreClick = { showMoreDialog = true }
                         )
                     }
-                    
+
+                    if (playbackMessage != null) {
+                        val playbackName = playbackMessage.ownerName?.takeIf { it.isNotBlank() }
+                            ?: stringResource(id = R.string.chat_unknown_user)
+                        val remainingText = if (voiceRemainingTime > 0L) {
+                            formatVoiceDurationFromMillis(voiceRemainingTime)
+                        } else {
+                            formatVoiceDuration(playbackFile?.duration)
+                                ?: stringResource(id = R.string.chat_unknown_time)
+                        }
+                        VoicePlaybackBanner(
+                            isPlaying = isVoicePlaying,
+                            isLoading = isVoicePreparing,
+                            senderName = playbackName,
+                            remainingTimeText = remainingText,
+                            onPlayPauseClick = {
+                                if (playbackFile != null) {
+                                    handleVoiceMessageClick(playbackMessage, playbackFile)
+                                }
+                            },
+                            onCloseClick = { stopVoicePlayback() }
+                        )
+                    }
+
                     LazyColumn(
                         state = scrollState,
                         modifier = Modifier
@@ -411,15 +597,38 @@ fun ChatDialogComponent(
                         onPlayRecording = {
                             recordedAudio?.let { file ->
                                 if (isRecordingPlaying) {
-                                    mediaPlayer.pause()
+                                    try {
+                                        mediaPlayer.pause()
+                                    } catch (_: IllegalStateException) {
+                                    }
                                     isRecordingPlaying = false
                                 } else {
-                                    mediaPlayer.reset()
-                                    mediaPlayer.setDataSource(file.absolutePath)
-                                    mediaPlayer.prepare()
-                                    mediaPlayer.start()
-                                    isRecordingPlaying = true
-                                    mediaPlayer.setOnCompletionListener {
+                                    if (voicePlayingMessageId != null || isVoicePreparing) {
+                                        try {
+                                            mediaPlayer.stop()
+                                        } catch (_: IllegalStateException) {
+                                        }
+                                        try {
+                                            mediaPlayer.reset()
+                                        } catch (_: IllegalStateException) {
+                                        }
+                                        resetVoicePlayback()
+                                    }
+                                    try {
+                                        mediaPlayer.reset()
+                                        mediaPlayer.setOnPreparedListener(null)
+                                        mediaPlayer.setDataSource(file.absolutePath)
+                                        mediaPlayer.prepare()
+                                        mediaPlayer.start()
+                                        isRecordingPlaying = true
+                                        mediaPlayer.setOnCompletionListener {
+                                            isRecordingPlaying = false
+                                        }
+                                    } catch (_: Exception) {
+                                        try {
+                                            mediaPlayer.reset()
+                                        } catch (_: IllegalStateException) {
+                                        }
                                         isRecordingPlaying = false
                                     }
                                 }

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 import kotlinx.coroutines.withContext
+import uddug.com.domain.entities.chat.ChatMediaCategory
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.MediaMessage
 import uddug.com.domain.entities.chat.User
@@ -19,8 +20,8 @@ import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.mvvm.chat.ChatStatusFormatter
 import uddug.com.naukoteka.mvvm.chat.ChatStatusTextMode.GENERIC
-import java.time.Instant
 import java.io.File
+import java.time.Instant
 import javax.inject.Inject
 
 @HiltViewModel
@@ -247,7 +248,7 @@ class ChatGroupDetailViewModel @Inject constructor(
             try {
                 val media = chatInteractor.getDialogMedia(
                     dialogId,
-                    category = 1,
+                    category = ChatMediaCategory.MEDIA,
                     limit = 50,
                     page = 1,
                     query = null,
@@ -271,7 +272,7 @@ class ChatGroupDetailViewModel @Inject constructor(
             try {
                 val files = chatInteractor.getDialogMedia(
                     dialogId,
-                    category = 3,
+                    category = ChatMediaCategory.FILES,
                     limit = 50,
                     page = 1,
                     query = null,

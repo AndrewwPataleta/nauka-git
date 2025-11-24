@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
@@ -33,9 +34,9 @@ import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Add
-
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -186,6 +187,7 @@ fun ChatCreateGroupScreen(
                                 state = state,
                                 onAvatarClick = { imagePickerLauncher.launch("image/*") },
                                 onNameChanged = viewModel::onGroupNameChanged,
+                                onRemoveAvatar = viewModel::onAvatarRemoved,
                                 onAddParticipantsClick = onAddParticipantsClick
                             )
                             Spacer(modifier = Modifier.height(24.dp))
@@ -250,21 +252,30 @@ private fun GroupHeader(
     state: ChatCreateGroupUiState.Success,
     onAvatarClick: () -> Unit,
     onNameChanged: (String) -> Unit,
+    onRemoveAvatar: () -> Unit,
     onAddParticipantsClick: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            GroupAvatarPicker(
-                avatarPath = state.avatarPath,
-                isUploading = state.isAvatarUploading,
-                onClick = onAvatarClick
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFFEAEAF2))
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GroupAvatarPicker(
+                    avatarPath = state.avatarPath,
+                    isUploading = state.isAvatarUploading,
+                    onClick = onAvatarClick,
+                    onRemoveAvatar = onRemoveAvatar,
+                    showRemove = !state.avatarPath.isNullOrBlank() || !state.avatarId.isNullOrBlank()
+                )
+                Spacer(modifier = Modifier.width(12.dp))
                 OutlinedTextField(
                     value = state.groupName,
                     onValueChange = onNameChanged,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(1f),
                     placeholder = {
                         Text(
                             text = stringResource(R.string.chat_create_group_name_placeholder),
@@ -273,13 +284,18 @@ private fun GroupHeader(
                     },
                     singleLine = true,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        backgroundColor = Color.White,
-                        focusedBorderColor = Color(0xFF2E83D9),
-                        unfocusedBorderColor = Color(0xFFE0E0E8),
+                        backgroundColor = Color.Transparent,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        disabledBorderColor = Color.Transparent,
                         cursorColor = Color(0xFF2E83D9),
-                        textColor = Color.Black
+                        textColor = Color.Black,
+                        placeholderColor = Color(0xFFB0B2C3)
                     )
                 )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = stringResource(
                         R.string.chat_create_group_name_counter,
@@ -287,7 +303,7 @@ private fun GroupHeader(
                     ),
                     fontSize = 12.sp,
                     color = Color(0xFF8083A0),
-                    modifier = Modifier.align(Alignment.End)
+                    modifier = Modifier.align(Alignment.CenterEnd)
                 )
             }
         }
@@ -322,12 +338,14 @@ private fun GroupAvatarPicker(
     avatarPath: String?,
     isUploading: Boolean,
     onClick: () -> Unit,
+    onRemoveAvatar: () -> Unit,
+    showRemove: Boolean,
 ) {
     Box(
         modifier = Modifier
             .size(72.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFFF5F5F9))
+            .background(Color(0xFFEAEAF2))
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -355,6 +373,29 @@ private fun GroupAvatarPicker(
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            }
+        }
+
+        if (showRemove) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+                    .size(20.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onRemoveAvatar() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = stringResource(R.string.chat_edit_group_remove_avatar),
+                    tint = Color(0xFFFF3B30),
+                    modifier = Modifier.size(12.dp)
+                )
             }
         }
     }

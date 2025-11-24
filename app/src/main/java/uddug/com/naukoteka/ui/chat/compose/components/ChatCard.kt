@@ -151,7 +151,8 @@ fun ChatCard(
                         attachmentPreview != null -> when (attachmentPreview.type) {
                             ChatAttachmentType.IMAGE -> stringResource(R.string.chat_last_message_image)
                             ChatAttachmentType.VIDEO -> stringResource(R.string.chat_last_message_video)
-                            ChatAttachmentType.FILE -> message
+                            ChatAttachmentType.FILE -> message.takeIf { it.isNotBlank() }
+                                ?: stringResource(R.string.chat_last_message_file)
                         }
                         !isGroupChat && isFromMe -> stringResource(R.string.chat_last_message_from_me, message)
                         else -> message
@@ -182,12 +183,14 @@ fun ChatCard(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(top = if (isGroupChat) 4.dp else 0.dp)
                     ) {
-                        attachmentPreview?.let { preview ->
-                            AttachmentPreview(
-                                preview = preview,
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
-                        }
+                        attachmentPreview
+                            ?.takeUnless { it.type == ChatAttachmentType.FILE }
+                            ?.let { preview ->
+                                AttachmentPreview(
+                                    preview = preview,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                            }
                         Text(
                             text = messageText,
                             style = TextStyle(

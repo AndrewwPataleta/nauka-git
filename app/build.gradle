@@ -171,6 +171,7 @@ dependencies {
 
     implementation lib.domain
     implementation lib.data
+    implementation 'com.github.stfalcon-studio:StfalconImageViewer:1.0.1'
     implementation("com.github.dhaval2404:imagepicker:2.1")
     debugImplementation "com.github.chuckerteam.chucker:library:4.0.0"
     releaseImplementation "com.github.chuckerteam.chucker:library-no-op:4.0.0"

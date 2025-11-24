@@ -63,58 +63,23 @@ fun ChatDetailMoreSheetDialog(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            val items = buildList {
+            val items = buildList<Pair<Int, () -> Unit>> {
                 if (isGroup) {
                     if (isCurrentUserAdmin) {
-                        add(R.string.chat_edit_group to {
-                            onEditGroup()
-                            onDismissRequest()
-                        })
                         add(
-                            if (notificationsDisabled) R.string.chat_enable_notifications else R.string.chat_disable_notifications
-                                to {
-                                    if (notificationsDisabled) {
-                                        viewModel.enableNotifications(dialogId)
-                                        onNotificationsChanged(false)
-                                    } else {
-                                        viewModel.disableNotifications(dialogId)
-                                        onNotificationsChanged(true)
-                                    }
-                                    onDismissRequest()
-                                }
+                            R.string.chat_edit_group to {
+                                onEditGroup()
+                                onDismissRequest()
+                            }
                         )
-                        add(R.string.chat_delete_group to {
-                            viewModel.deleteGroupChat(dialogId)
-                            onDismissRequest()
-                        })
-                    } else {
+
                         add(
-                            if (notificationsDisabled) R.string.chat_enable_notifications else R.string.chat_disable_notifications
-                                to {
-                                    if (notificationsDisabled) {
-                                        viewModel.enableNotifications(dialogId)
-                                        onNotificationsChanged(false)
-                                    } else {
-                                        viewModel.disableNotifications(dialogId)
-                                        onNotificationsChanged(true)
-                                    }
-                                    onDismissRequest()
-                                }
-                        )
-                        add(R.string.chat_leave_group to {
-                            viewModel.leaveGroup(dialogId)
-                            onLeaveGroup()
-                            onDismissRequest()
-                        })
-                    }
-                } else {
-                    add(R.string.chat_go_to_profile to {
-                        onNavigateToProfile()
-                        onDismissRequest()
-                    })
-                    add(
-                        if (notificationsDisabled) R.string.chat_enable_notifications else R.string.chat_disable_notifications
-                            to {
+                            (
+                                    if (notificationsDisabled)
+                                        R.string.chat_enable_notifications
+                                    else
+                                        R.string.chat_disable_notifications
+                                    ) to {
                                 if (notificationsDisabled) {
                                     viewModel.enableNotifications(dialogId)
                                     onNotificationsChanged(false)
@@ -124,12 +89,75 @@ fun ChatDetailMoreSheetDialog(
                                 }
                                 onDismissRequest()
                             }
+                        )
+
+                        add(
+                            R.string.chat_delete_group to {
+                                viewModel.deleteGroupChat(dialogId)
+                                onDismissRequest()
+                            }
+                        )
+                    } else {
+                        add(
+                            (
+                                    if (notificationsDisabled)
+                                        R.string.chat_enable_notifications
+                                    else
+                                        R.string.chat_disable_notifications
+                                    ) to {
+                                if (notificationsDisabled) {
+                                    viewModel.enableNotifications(dialogId)
+                                    onNotificationsChanged(false)
+                                } else {
+                                    viewModel.disableNotifications(dialogId)
+                                    onNotificationsChanged(true)
+                                }
+                                onDismissRequest()
+                            }
+                        )
+
+                        add(
+                            R.string.chat_leave_group to {
+                                viewModel.leaveGroup(dialogId)
+                                onLeaveGroup()
+                                onDismissRequest()
+                            }
+                        )
+                    }
+                } else {
+                    add(
+                        R.string.chat_go_to_profile to {
+                            onNavigateToProfile()
+                            onDismissRequest()
+                        }
                     )
-                    add(R.string.chat_delete_chat to {
-                        viewModel.deleteChat(dialogId)
-                    })
+
+                    add(
+                        (
+                                if (notificationsDisabled)
+                                    R.string.chat_enable_notifications
+                                else
+                                    R.string.chat_disable_notifications
+                                ) to {
+                            if (notificationsDisabled) {
+                                viewModel.enableNotifications(dialogId)
+                                onNotificationsChanged(false)
+                            } else {
+                                viewModel.disableNotifications(dialogId)
+                                onNotificationsChanged(true)
+                            }
+                            onDismissRequest()
+                        }
+                    )
+
+                    add(
+                        R.string.chat_delete_chat to {
+                            viewModel.deleteChat(dialogId)
+                        }
+                    )
                 }
             }
+
 //            items.forEach { (textRes, action) ->
 //                Row(
 //                    modifier = Modifier
@@ -152,4 +180,3 @@ fun ChatDetailMoreSheetDialog(
         }
     }
 }
-

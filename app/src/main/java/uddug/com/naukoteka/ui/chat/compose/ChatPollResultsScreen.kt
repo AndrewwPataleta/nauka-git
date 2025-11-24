@@ -131,7 +131,7 @@ private fun PollResultsContent(model: PollResultsUiModel) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .background(SurfaceColor)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

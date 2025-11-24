@@ -259,6 +259,7 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_detail_tab_voice">Voice</string>
     <string name="chat_detail_tab_records">Notes</string>
     <string name="chat_search_no_results">No results</string>
+    <string name="chat_search_min_query">Enter 3 characters to search</string>
     <string name="chat_avatar_action_view">View avatar</string>
     <string name="chat_avatar_action_replace">Replace photo</string>
     <string name="chat_avatar_action_delete">Remove</string>
@@ -504,6 +505,17 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_message_revote">Переголосовать</string>
     <string name="chat_message_stop_quiz">Остановить викторину</string>
     <string name="chat_editing_title">Редактирование</string>
+    <string name="chat_file_functions_title">Функции</string>
+    <string name="chat_file_action_copy_link">Скопировать ссылку</string>
+    <string name="chat_file_action_download">Скачать файл</string>
+    <string name="chat_file_action_share">Поделиться</string>
+    <string name="chat_file_action_edit_info">Изменить информацию</string>
+    <string name="chat_file_action_select">Выбрать</string>
+    <string name="chat_file_action_delete">Удалить файл</string>
+    <string name="chat_file_link_copied">Ссылка на файл скопирована</string>
+    <string name="chat_file_action_not_available">Функция пока недоступна</string>
+    <string name="chat_file_share_title">Поделиться файлом</string>
+    <string name="chat_file_share_error">Не удалось открыть приложения для отправки</string>
     <string name="create_group_chat">Создать групповой чат</string>
     <string name="chat_create_group_title">Создать группу</string>
     <string name="chat_create_group_name_placeholder">Укажите название группы</string>
@@ -575,6 +587,8 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_poll_results_error">Не удалось загрузить результаты. Попробуйте снова.</string>
     <string name="chat_poll_results_retry">Повторить</string>
     <string name="subs">Подписки</string>
+    <string name="chat_empty_title">Здесь еще ничего нет</string>
+    <string name="chat_empty_description">Напишите сообщение, чтобы переписка сохранилась в списке чатов</string>
 
 
     <string name="chat_attach_photo_video">Фото и видео</string>
@@ -589,5 +603,6 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
 
     <string name="chat_file_attachment_unknown_type">FILE</string>
     <string name="chat_file_download_started">Downloading file…</string>
+    <string name="chat_voice_message_playback_error">Не удалось воспроизвести голосовое сообщение</string>
 
 </resources>
