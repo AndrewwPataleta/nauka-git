@@ -1,23 +1,18 @@
 package uddug.com.naukoteka.ui.call.overlay
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -29,10 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import uddug.com.naukoteka.R
@@ -49,6 +44,7 @@ fun CallOverlay(
     onClose: () -> Unit,
     onFinished: () -> Unit,
 ) {
+    val backgroundColor = Color(0xFF0B1020)
     val overlayWidth = 240.dp
     val overlayHeight = 160.dp
     val margin = 16.dp
@@ -82,6 +78,7 @@ fun CallOverlay(
                 .align(Alignment.TopStart)
                 .size(overlayWidth, overlayHeight)
                 .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
+                .combinedClickable(onClick = onExpand)
                 .pointerInput(screenWidth, screenHeight) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
@@ -93,37 +90,25 @@ fun CallOverlay(
                     }
                 },
             shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+            color = backgroundColor,
             tonalElevation = 8.dp,
             shadowElevation = 12.dp,
-            onClick = onExpand,
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(color = MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.05f))
                     .padding(12.dp)
             ) {
-                Row(
-                    modifier = Modifier.align(Alignment.TopEnd),
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .size(32.dp)
+                        .clip(CircleShape),
+                    color = Color(0xFFE64C4C),
+                    contentColor = Color.White,
+                    onClick = onEndCall,
                 ) {
-                    IconButton(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape),
-                        onClick = onClose,
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_arrow_down),
-                            contentDescription = null,
-                        )
-                    }
-                    IconButton(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape),
-                        onClick = onEndCall,
-                    ) {
+                    Box(contentAlignment = Alignment.Center) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_close),
                             contentDescription = null,
@@ -131,31 +116,42 @@ fun CallOverlay(
                     }
                 }
 
-                Column(
-                    modifier = Modifier.align(Alignment.CenterStart),
-                    horizontalAlignment = Alignment.Start,
+                IconButton(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(32.dp)
+                        .clip(CircleShape),
+                    onClick = onClose,
                 ) {
-                    Avatar(
-                        url = state.participants.firstOrNull()?.avatarUrl,
-                        name = state.participants.firstOrNull()?.name,
-                        size = 64.dp,
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_close),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = state.callTitle ?: state.participants.firstOrNull()?.name
-                        ?: stringResource(id = R.string.call_status_in_call),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = when (state.status) {
-                            CallStatus.DIALING -> stringResource(id = R.string.call_status_dialing)
-                            CallStatus.CONNECTING -> stringResource(id = R.string.call_status_connecting)
-                            CallStatus.IN_CALL -> stringResource(id = R.string.call_status_in_call)
-                            CallStatus.FINISHED -> stringResource(id = R.string.call_status_finished)
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
+                }
+
+                Avatar(
+                    modifier = Modifier.align(Alignment.Center),
+                    url = state.participants.firstOrNull()?.avatarUrl,
+                    name = state.participants.firstOrNull()?.name,
+                    size = 96.dp,
+                )
+
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(48.dp)
+                        .clip(CircleShape),
+                    color = Color(0xFF121732),
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    onClick = {},
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_rec_mic_inactive),
+                            contentDescription = null,
+                        )
+                    }
                 }
             }
         }
