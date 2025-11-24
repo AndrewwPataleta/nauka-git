@@ -473,6 +473,17 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="call_terminate_action">Завершить</string>
     <string name="call_microphone">Микрофон</string>
     <string name="call_speaker">Динамик</string>
+    <string name="call_participants_title">Участники звонка</string>
+    <string name="call_participants_statuses">Статусы</string>
+    <string name="call_participants_invite">Пригласить участника</string>
+    <string name="call_participant_status_muted">Выключен микрофон</string>
+    <string name="call_participant_status_active">Микрофон включен</string>
+    <string name="call_participant_actions_title">Функции</string>
+    <string name="call_participant_action_mute">Отключить звук</string>
+    <string name="call_participant_action_unmute">Включить звук</string>
+    <string name="call_participant_action_copy">Скопировать контакт</string>
+    <string name="call_participant_action_profile">Посмотреть профиль</string>
+    <string name="call_sheet_close">Закрыть</string>
     <string name="profile_shasre">Поделиться</string>
     <string name="profile_more">Еще</string>
     <string name="find_chat_message">Поиск чатов и сообщений</string>
