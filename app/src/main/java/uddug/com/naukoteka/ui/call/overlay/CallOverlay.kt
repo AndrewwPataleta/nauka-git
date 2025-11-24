@@ -76,84 +76,87 @@ fun CallOverlay(
         }
     }
 
-    Surface(
-        modifier = Modifier
-            .size(overlayWidth, overlayHeight)
-            .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
-            .pointerInput(screenWidth, screenHeight) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    val newOffset = offset + dragAmount
-                    offset = Offset(
-                        x = newOffset.x.coerceIn(marginPx, screenWidth - widthPx - marginPx),
-                        y = newOffset.y.coerceIn(marginPx, screenHeight - heightPx - marginPx),
-                    )
-                }
-            },
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-        tonalElevation = 8.dp,
-        shadowElevation = 12.dp,
-        onClick = onExpand,
-    ) {
-        Box(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Surface(
             modifier = Modifier
-                .fillMaxSize()
-                .background(color = MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.05f))
-                .padding(12.dp)
+                .align(Alignment.TopStart)
+                .size(overlayWidth, overlayHeight)
+                .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
+                .pointerInput(screenWidth, screenHeight) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        val newOffset = offset + dragAmount
+                        offset = Offset(
+                            x = newOffset.x.coerceIn(marginPx, screenWidth - widthPx - marginPx),
+                            y = newOffset.y.coerceIn(marginPx, screenHeight - heightPx - marginPx),
+                        )
+                    }
+                },
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+            tonalElevation = 8.dp,
+            shadowElevation = 12.dp,
+            onClick = onExpand,
         ) {
-            Row(
-                modifier = Modifier.align(Alignment.TopEnd),
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.05f))
+                    .padding(12.dp)
             ) {
-                IconButton(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape),
-                    onClick = onClose,
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd),
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_arrow_down),
-                        contentDescription = null,
-                    )
+                    IconButton(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape),
+                        onClick = onClose,
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_arrow_down),
+                            contentDescription = null,
+                        )
+                    }
+                    IconButton(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape),
+                        onClick = onEndCall,
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_close),
+                            contentDescription = null,
+                        )
+                    }
                 }
-                IconButton(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape),
-                    onClick = onEndCall,
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_close),
-                        contentDescription = null,
-                    )
-                }
-            }
 
-            Column(
-                modifier = Modifier.align(Alignment.CenterStart),
-                horizontalAlignment = Alignment.Start,
-            ) {
-                Avatar(
-                    url = state.participants.firstOrNull()?.avatarUrl,
-                    name = state.participants.firstOrNull()?.name,
-                    size = 64.dp,
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = state.callTitle ?: state.participants.firstOrNull()?.name
-                    ?: stringResource(id = R.string.call_status_in_call),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = when (state.status) {
-                        CallStatus.DIALING -> stringResource(id = R.string.call_status_dialing)
-                        CallStatus.CONNECTING -> stringResource(id = R.string.call_status_connecting)
-                        CallStatus.IN_CALL -> stringResource(id = R.string.call_status_in_call)
-                        CallStatus.FINISHED -> stringResource(id = R.string.call_status_finished)
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                Column(
+                    modifier = Modifier.align(Alignment.CenterStart),
+                    horizontalAlignment = Alignment.Start,
+                ) {
+                    Avatar(
+                        url = state.participants.firstOrNull()?.avatarUrl,
+                        name = state.participants.firstOrNull()?.name,
+                        size = 64.dp,
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = state.callTitle ?: state.participants.firstOrNull()?.name
+                        ?: stringResource(id = R.string.call_status_in_call),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = when (state.status) {
+                            CallStatus.DIALING -> stringResource(id = R.string.call_status_dialing)
+                            CallStatus.CONNECTING -> stringResource(id = R.string.call_status_connecting)
+                            CallStatus.IN_CALL -> stringResource(id = R.string.call_status_in_call)
+                            CallStatus.FINISHED -> stringResource(id = R.string.call_status_finished)
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
             }
         }
     }
