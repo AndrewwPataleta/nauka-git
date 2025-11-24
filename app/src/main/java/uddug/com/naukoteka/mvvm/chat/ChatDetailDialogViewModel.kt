@@ -269,14 +269,23 @@ class ChatDialogDetailViewModel @Inject constructor(
 
     fun shareDialog() {
         val dialogId = currentDialogInfo?.id ?: return
-        Firebase.dynamicLinks.shortLinkAsync {
-            link = Uri.parse("https://stage.naukotheka.ru/chat/$dialogId")
-            domainUriPrefix = "https://naukoteka.page.link"
-            androidParameters {}
-        }.addOnSuccessListener { shortLink ->
-            viewModelScope.launch {
-                _events.emit(ChatDialogDetailEvent.Share(shortLink.shortLink.toString()))
+        val defaultLink = "https://stage.naukotheka.ru/chat/$dialogId"
+        try {
+            Firebase.dynamicLinks.shortLinkAsync {
+                link = Uri.parse(defaultLink)
+                domainUriPrefix = "https://naukoteka.page.link"
+                androidParameters {}
             }
+                .addOnSuccessListener { shortLink ->
+                    viewModelScope.launch {
+                        _events.emit(ChatDialogDetailEvent.Share(shortLink.shortLink.toString()))
+                    }
+                }
+                .addOnFailureListener {
+                    viewModelScope.launch { _events.emit(ChatDialogDetailEvent.Share(defaultLink)) }
+                }
+        } catch (e: Exception) {
+            viewModelScope.launch { _events.emit(ChatDialogDetailEvent.Share(defaultLink)) }
         }
     }
     private fun MessageChat.toSearchMessage(
