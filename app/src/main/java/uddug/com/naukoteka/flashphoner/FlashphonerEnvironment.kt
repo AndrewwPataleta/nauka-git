@@ -1,13 +1,11 @@
 package uddug.com.naukoteka.flashphoner
 
-import android.content.Context
+import android.app.Activity
 import com.flashphoner.fpwcsapi.Flashphoner
-import com.flashphoner.fpwcsapi.Session
-import com.flashphoner.fpwcsapi.SessionOptions
+import com.flashphoner.fpwcsapi.session.Session
 import com.flashphoner.fpwcsapi.session.SessionOptions
 import javax.inject.Inject
 import javax.inject.Singleton
-import dagger.hilt.android.qualifiers.ApplicationContext
 
 /**
  * Central entry point to the Flashphoner Android SDK. The environment is responsible
@@ -15,9 +13,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
  * can be used by feature modules.
  */
 @Singleton
-class FlashphonerEnvironment @Inject constructor(
-    @ApplicationContext private val appContext: Context
-) {
+class FlashphonerEnvironment @Inject constructor() {
 
     private var isInitialised: Boolean = false
 
@@ -26,9 +22,9 @@ class FlashphonerEnvironment @Inject constructor(
      * the call is idempotent, therefore we protect it with an [isInitialised] flag to
      * avoid extra work on subsequent injections.
      */
-    fun ensureInitialised() {
+    fun ensureInitialised(activity: Activity) {
         if (!isInitialised) {
-            Flashphoner.init(appContext)
+            Flashphoner.init(activity)
             isInitialised = true
         }
     }
@@ -39,10 +35,11 @@ class FlashphonerEnvironment @Inject constructor(
      * callbacks according to the Flashphoner SDK documentation.
      */
     fun createSession(
+        activity: Activity,
         serverUrl: String,
         configure: SessionOptions.() -> Unit = {}
     ): Session {
-        ensureInitialised()
+        ensureInitialised(activity)
         val options = SessionOptions(serverUrl).apply(configure)
         return Flashphoner.createSession(options)
     }
