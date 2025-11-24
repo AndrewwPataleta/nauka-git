@@ -477,6 +477,8 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="call_minimize">Свернуть</string>
     <string name="call_speaker">Динамик</string>
     <string name="call_participants_title">Участники звонка</string>
+    <string name="call_participants_count">Участники %1$d</string>
+    <string name="call_participants_search_placeholder">Поиск</string>
     <string name="call_participants_statuses">Статусы</string>
     <string name="call_participants_invite">Пригласить участника</string>
     <string name="call_participant_status_muted">Выключен микрофон</string>

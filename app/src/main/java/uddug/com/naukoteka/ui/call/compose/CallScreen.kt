@@ -27,8 +27,12 @@ import androidx.compose.material.Text
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -145,10 +149,7 @@ fun CallScreen(
         ParticipantsScreen(
             participants = state.participants,
             onBackClick = { isParticipantsSheetVisible = false },
-            onParticipantClick = { participant ->
-                participantForActions = participant
-                isParticipantsSheetVisible = false
-            },
+            onParticipantClick = { participant -> participantForActions = participant },
         )
     }
 
@@ -447,6 +448,17 @@ private fun ParticipantsScreen(
     onParticipantClick: (CallParticipant) -> Unit,
 ) {
     val backgroundColor = Color(0xFF0B1020)
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val filteredParticipants = remember(participants, searchQuery) {
+        val queryLower = searchQuery.trim().lowercase()
+        if (queryLower.isEmpty()) {
+            participants
+        } else {
+            participants.filter { participant ->
+                participant.name?.lowercase()?.contains(queryLower) == true
+            }
+        }
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = backgroundColor) {
         Scaffold(
@@ -462,7 +474,7 @@ private fun ParticipantsScreen(
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_close),
+                                imageVector = Icons.Filled.ArrowBack,
                                 contentDescription = null,
                                 tint = Color.White,
                             )
@@ -476,75 +488,92 @@ private fun ParticipantsScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
                     .padding(horizontal = 24.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.call_participants_statuses),
-                    color = Color(0xFFB0B3C5),
-                    style = MaterialTheme.typography.bodySmall,
+                    text = stringResource(
+                        R.string.call_participants_count,
+                        participants.size
+                    ),
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_search),
+                            contentDescription = null,
+                            tint = Color(0xFF8083A0),
+                        )
+                    },
+                    placeholder = {
+                        Text(
+                            text = stringResource(R.string.call_participants_search_placeholder),
+                            color = Color(0xFF8083A0),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFF121732),
+                        unfocusedContainerColor = Color(0xFF121732),
+                        disabledContainerColor = Color(0xFF121732),
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        cursorColor = Color.White,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
                 )
 
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f, fill = true),
-                    color = Color(0xFF121732),
-                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFF0B1020),
+                    contentColor = Color.White,
                 ) {
-                    if (participants.isEmpty()) {
+                    if (filteredParticipants.isEmpty()) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center,
                         ) {
-                            CircularProgressIndicator(color = Color.White)
+                            Text(
+                                text = stringResource(R.string.chat_search_no_results),
+                                color = Color(0xFFB0B3C5),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
                         }
                     } else {
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.padding(vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(vertical = 8.dp),
                             contentPadding = PaddingValues(vertical = 4.dp),
                         ) {
-                            items(participants) { participant ->
-                                ParticipantListItem(
-                                    participant = participant,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { onParticipantClick(participant) }
-                                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                                )
+                            items(filteredParticipants) { participant ->
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = Color(0xFF121732),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    ParticipantListItem(
+                                        participant = participant,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { onParticipantClick(participant) }
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    )
+                                }
                             }
                         }
                     }
                 }
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Color(0xFF121732),
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = onBackClick,
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_profile_send),
-                            contentDescription = null,
-                            tint = Color.White,
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(
-                            text = stringResource(R.string.call_participants_invite),
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
