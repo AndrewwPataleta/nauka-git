@@ -65,8 +65,9 @@ class CallFragment : Fragment() {
         val fragmentManager = requireActivity().supportFragmentManager
         if (fragmentManager.findFragmentByTag(CallOverlayFragment.TAG) == null) {
             fragmentManager.beginTransaction()
+                .setReorderingAllowed(true)
                 .add(android.R.id.content, CallOverlayFragment(), CallOverlayFragment.TAG)
-                .commitAllowingStateLoss()
+                .commitNowAllowingStateLoss()
         }
     }
 
