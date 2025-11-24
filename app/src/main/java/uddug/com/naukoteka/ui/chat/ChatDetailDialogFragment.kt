@@ -25,6 +25,7 @@ import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationVi
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
 import uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment.Companion.ARG_AVATAR_PATH
 import uddug.com.naukoteka.ui.chat.ChatEditGroupFragment
+import uddug.com.naukoteka.ui.call.CallFragment
 @AndroidEntryPoint
 class ChatDetailDialogFragment : Fragment() {
 
@@ -116,6 +117,15 @@ class ChatDetailDialogFragment : Fragment() {
                             findNavController().navigate(
                                 R.id.chatDetailSearchFragment,
                                 Bundle().apply { putLong(DIALOG_ID, dialogId) }
+                            )
+                        },
+                        onCallClick = { name, avatar ->
+                            findNavController().navigate(
+                                R.id.callFragment,
+                                Bundle().apply {
+                                    putString(CallFragment.ARG_CONTACT_NAME, name)
+                                    putString(CallFragment.ARG_AVATAR_URL, avatar)
+                                }
                             )
                         },
                         onChatDeleted = {

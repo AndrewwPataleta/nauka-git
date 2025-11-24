@@ -77,6 +77,7 @@ fun ChatGroupDetailComponent(
     onBackPressed: () -> Unit,
     onSearchClick: () -> Unit,
     onAddParticipantsClick: (Long) -> Unit,
+    onCallClick: (String?, String?) -> Unit,
     onViewAvatar: (String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -207,7 +208,8 @@ fun ChatGroupDetailComponent(
                             if (state.isCurrentUserAdmin && !state.isAvatarUpdating) {
                                 showAvatarDialog = true
                             }
-                        }
+                        },
+                        onCallClick = { onCallClick(state.name, state.image) }
                     )
                 } else {
                     OtherTabsContent(
@@ -220,7 +222,8 @@ fun ChatGroupDetailComponent(
                             if (state.isCurrentUserAdmin && !state.isAvatarUpdating) {
                                 showAvatarDialog = true
                             }
-                        }
+                        },
+                        onCallClick = { onCallClick(state.name, state.image) }
                     ) {
                         when (selectedTabIndex) {
                             1 -> MediaContent(state.media)
@@ -283,6 +286,7 @@ private fun ParticipantsTabContent(
     participants: List<Participant>,
     onParticipantMoreClick: (Participant) -> Unit,
     onAvatarClick: () -> Unit,
+    onCallClick: () -> Unit,
 ) {
     val listState = rememberLazyListState()
     LazyColumn(
@@ -299,6 +303,7 @@ private fun ParticipantsTabContent(
                 onAvatarClick = onAvatarClick,
                 isCurrentUserAdmin = isCurrentUserAdmin,
                 isAvatarUpdating = state.isAvatarUpdating,
+                onCallClick = onCallClick,
             )
         }
         stickyHeader {
@@ -328,6 +333,7 @@ private fun OtherTabsContent(
     selectedTabIndex: Int,
     onTabSelected: (Int) -> Unit,
     onAvatarClick: () -> Unit,
+    onCallClick: () -> Unit,
     content: @Composable () -> Unit,
 ) {
     Column(
@@ -341,6 +347,7 @@ private fun OtherTabsContent(
             onAvatarClick = onAvatarClick,
             isCurrentUserAdmin = state.isCurrentUserAdmin,
             isAvatarUpdating = state.isAvatarUpdating,
+            onCallClick = onCallClick,
         )
         GroupTabRow(
             tabTitles = tabTitles,
@@ -359,6 +366,7 @@ private fun GroupHeaderSection(
     onAvatarClick: () -> Unit,
     isCurrentUserAdmin: Boolean,
     isAvatarUpdating: Boolean,
+    onCallClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -422,7 +430,8 @@ private fun GroupHeaderSection(
             GroupHeaderAction(
                 icon = R.drawable.ic_profile_call,
                 label = stringResource(R.string.call_user),
-                modifier = Modifier.padding(end = 4.dp)
+                modifier = Modifier.padding(end = 4.dp),
+                onClick = onCallClick
             )
             GroupHeaderAction(
                 icon = R.drawable.ic_profile_send,
@@ -443,6 +452,7 @@ private fun RowScope.GroupHeaderAction(
     icon: Int,
     label: String,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -454,7 +464,7 @@ private fun RowScope.GroupHeaderAction(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) { }
+            ) { onClick() }
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
