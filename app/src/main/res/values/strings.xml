@@ -463,6 +463,16 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="another_links_text">Прочие ссылки</string>
     <string name="group_chat">Групповой чат</string>
     <string name="call_user">Позвонить</string>
+    <string name="call_status_connecting">Подключаемся…</string>
+    <string name="call_status_dialing">Идет звонок</string>
+    <string name="call_status_finished">Звонок завершен</string>
+    <string name="call_status_loading">Загрузка…</string>
+    <string name="call_status_in_call">Звонок</string>
+    <string name="call_primary_action">Позвонить</string>
+    <string name="call_secondary_action">Сообщение</string>
+    <string name="call_terminate_action">Завершить</string>
+    <string name="call_microphone">Микрофон</string>
+    <string name="call_speaker">Динамик</string>
     <string name="profile_shasre">Поделиться</string>
     <string name="profile_more">Еще</string>
     <string name="find_chat_message">Поиск чатов и сообщений</string>

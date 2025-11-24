@@ -111,6 +111,7 @@ fun ChatDetailDialogComponent(
     onBackPressed: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onSearchClick: () -> Unit,
+    onCallClick: (String?, String?) -> Unit,
     onChatDeleted: () -> Unit,
     onViewAvatar: (String) -> Unit,
     onEditGroup: (Long) -> Unit,
@@ -284,16 +285,16 @@ fun ChatDetailDialogComponent(
                                 Modifier
                                     .weight(1f)
                                     .padding(end = 4.dp)
-                                    .background(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFF5F5F9)
-                                    )
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) {
-
-                                    }
+                                .background(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFFF5F5F9)
+                                )
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    onCallClick(state.profile.fullName, state.avatarPath)
+                                }
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {

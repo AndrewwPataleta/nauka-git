@@ -113,4 +113,17 @@
         android:id="@+id/chatAvatarPreviewFragment"
         android:name="uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment" />
 
+    <fragment
+        android:id="@+id/callFragment"
+        android:name="uddug.com.naukoteka.ui.call.CallFragment">
+        <argument
+            android:name="contact_name"
+            app:argType="string"
+            android:defaultValue="@null" />
+        <argument
+            android:name="avatar_url"
+            app:argType="string"
+            android:defaultValue="@null" />
+    </fragment>
+
 </navigation>
