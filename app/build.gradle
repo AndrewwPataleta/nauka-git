@@ -94,10 +94,6 @@ android {
     namespace 'uddug.com.naukoteka'
 }
 
-configurations.all {
-    exclude group: "com.google.code.gson", module: "gson"
-}
-
 dependencies {
 
     implementation presentation.kotlin
@@ -159,7 +155,7 @@ dependencies {
     implementation presentation.toothpickLifeCycle
     kapt presentation.toothpickCompiler
 
-    compileOnly data.gson
+    implementation data.gson
     implementation data.retrofit
     implementation data.retrofitLogging
     implementation(data.gsonConverter) {
