@@ -53,6 +53,7 @@ fun CallScreen(
     state: CallUiState,
     onBackPressed: () -> Unit,
     onEndCall: () -> Unit,
+    onMinimize: () -> Unit,
 ) {
     val backgroundColor = Color(0xFF0B1020)
     val isGroupCall = state.participants.size > 1
@@ -79,6 +80,15 @@ fun CallScreen(
                     IconButton(onClick = onBackPressed) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_close),
+                            tint = Color.White,
+                            contentDescription = null,
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onMinimize) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_arrow_down),
                             tint = Color.White,
                             contentDescription = null,
                         )
