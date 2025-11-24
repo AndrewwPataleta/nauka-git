@@ -1,9 +1,10 @@
 package uddug.com.naukoteka.flashphoner
 
-import com.flashphoner.fpwcsapi.Session
-import com.flashphoner.fpwcsapi.Stream
-import com.flashphoner.fpwcsapi.StreamOptions
-import com.flashphoner.fpwcsapi.SessionOptions
+import android.app.Activity
+import com.flashphoner.fpwcsapi.session.Session
+import com.flashphoner.fpwcsapi.session.Stream
+import com.flashphoner.fpwcsapi.session.StreamOptions
+import com.flashphoner.fpwcsapi.session.SessionOptions
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,11 +23,12 @@ class FlashphonerSessionManager @Inject constructor(
     private val streamRef = AtomicReference<Stream?>()
 
     fun prepareSession(
+        activity: Activity,
         serverUrl: String,
         configureOptions: SessionOptions.() -> Unit = {},
         onSessionReady: Session.() -> Unit = {}
     ): Session {
-        val session = environment.createSession(serverUrl, configureOptions)
+        val session = environment.createSession(activity, serverUrl, configureOptions)
         session.onSessionReady()
         sessionRef.set(session)
         return session
