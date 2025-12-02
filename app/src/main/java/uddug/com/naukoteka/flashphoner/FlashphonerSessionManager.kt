@@ -52,6 +52,9 @@ class FlashphonerSessionManager @Inject constructor(
 
     fun disconnectSession() {
         stopStream()
-        sessionRef.getAndSet(null)?.disconnect()
+        val session = sessionRef.getAndSet(null) ?: return
+        if (session.connection != null) {
+            session.disconnect()
+        }
     }
 }
