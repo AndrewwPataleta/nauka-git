@@ -1,6 +1,5 @@
 package uddug.com.naukoteka.mvvm.call
 
-import android.app.Activity
 import android.os.Parcelable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -41,7 +40,6 @@ class CallViewModel @Inject constructor(
     private var callDurationJob: Job? = null
 
     fun startCall(
-        activity: Activity,
         dialogId: Long,
         contactName: String?,
         avatarUrl: String?,
@@ -82,7 +80,6 @@ class CallViewModel @Inject constructor(
                 val streamName = buildStreamName(config, dialogId, username)
 
                 flashphonerSessionManager.prepareRoomManager(
-                    activity = activity,
                     serverUrl = config.serverUrl,
                     username = username,
                 )

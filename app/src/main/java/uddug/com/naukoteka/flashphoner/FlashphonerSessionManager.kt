@@ -1,6 +1,5 @@
 package uddug.com.naukoteka.flashphoner
 
-import android.app.Activity
 import com.flashphoner.fpwcsapi.bean.Data
 import com.flashphoner.fpwcsapi.room.Room
 import com.flashphoner.fpwcsapi.room.RoomManager
@@ -32,12 +31,11 @@ class FlashphonerSessionManager @Inject constructor(
     private val roomRef = AtomicReference<Room?>()
 
     fun prepareSession(
-        activity: Activity,
         serverUrl: String,
         configureOptions: SessionOptions.() -> Unit = {},
         onSessionReady: Session.() -> Unit = {}
     ): Session {
-        val session = environment.createSession(activity, serverUrl, configureOptions)
+        val session = environment.createSession(serverUrl, configureOptions)
         session.onSessionReady()
         sessionRef.set(session)
         return session
@@ -45,7 +43,7 @@ class FlashphonerSessionManager @Inject constructor(
 
     fun createStream(
         streamName: String,
-        configure: StreamOptions.() -> Unit = {}
+        configure: StreamOptions.() -> Unit = {},
     ): Stream {
         val session = sessionRef.get()
             ?: error("Flashphoner session must be prepared before creating streams")
@@ -56,13 +54,12 @@ class FlashphonerSessionManager @Inject constructor(
     }
 
     fun prepareRoomManager(
-        activity: Activity,
         serverUrl: String,
         username: String,
         configureOptions: SessionOptions.() -> Unit = {},
         onManagerReady: RoomManager.() -> Unit = {},
     ): RoomManager {
-        environment.ensureInitialised(activity)
+        environment.ensureInitialised()
         val options = RoomManagerOptions(serverUrl, username).apply(configureOptions)
         val manager = RoomManager(options)
         onManagerReady(manager)
