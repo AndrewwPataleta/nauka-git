@@ -8,12 +8,15 @@ import com.github.terrakok.cicerone.NavigatorHolder
 import com.google.gson.Gson
 import uddug.com.data.NaukotekaCookieJar
 import uddug.com.data.repositories.auth.AuthRepositoryImpl
+import uddug.com.data.repositories.call.CallRepositoryImpl
 import uddug.com.data.repositories.user_profile.UserProfileRepositoryImpl
 import uddug.com.data.services.auth.AuthApiHolder
 import uddug.com.data.services.AuthApiService
+import uddug.com.data.services.CallApiService
 import uddug.com.data.services.UserProfileApiService
 import uddug.com.domain.SchedulersProvider
 import uddug.com.domain.repositories.auth.AuthRepository
+import uddug.com.domain.repositories.call.CallRepository
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.domain.utils.logging.ILogger
 import uddug.com.naukoteka.di.ServerUrl
@@ -51,8 +54,10 @@ class AppModule(application: Application) : Module() {
 
         bind(AuthApiService::class.java).toProvider(AuthApiProvider::class.java).singleton()
         bind(UserProfileApiService::class.java).toProvider(UserProfileApiProvider::class.java).singleton()
+        bind(CallApiService::class.java).toProvider(CallApiProvider::class.java).singleton()
         bind(AuthApiHolder::class.java).singleton()
         bind(AuthRepository::class.java).to(AuthRepositoryImpl::class.java)
+        bind(CallRepository::class.java).to(CallRepositoryImpl::class.java)
         bind(UserProfileRepository::class.java).to(UserProfileRepositoryImpl::class.java)
         bind(LocationApiService::class.java).toProvider(LocationApiProvider::class.java).singleton()
         bind(LocationRepository::class.java).to(LocationRepositoryImpl::class.java)
