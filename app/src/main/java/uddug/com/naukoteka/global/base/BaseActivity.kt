@@ -4,6 +4,7 @@ import android.app.ActionBar
 import android.os.Bundle
 import android.view.View
 import androidx.viewbinding.ViewBinding
+import uddug.com.naukoteka.NaukotekaApplication
 import uddug.com.naukoteka.di.DI
 import uddug.com.naukoteka.di.modules.ActivityModule
 import moxy.MvpAppCompatActivity
@@ -24,8 +25,10 @@ abstract class BaseActivity : MvpAppCompatActivity() {
     }
 
     open fun getScope(): Scope {
+        val appScope = (application as NaukotekaApplication).scope
+
         return KTP.openRootScope()
-            .openSubScope(DI.APP_SCOPE)
+            .openSubScope(appScope.name)
             .openSubScope(DI.MAIN_ACTIVITY_SCOPE)
     }
 
