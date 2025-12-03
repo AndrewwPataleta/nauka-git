@@ -73,6 +73,8 @@ class ChatDetailDialogFragment : Fragment() {
                             }
                         )
                     }
+
+                    else -> {}
                 }
             }
         }

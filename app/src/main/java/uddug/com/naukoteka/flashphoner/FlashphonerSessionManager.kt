@@ -36,7 +36,7 @@ class FlashphonerSessionManager @Inject constructor(
         onSessionReady: Session.() -> Unit = {}
     ): Session {
         val session = environment.createSession(serverUrl) {
-            keepAlive = true
+
             configureOptions()
         }
         session.onSessionReady()
@@ -64,7 +64,6 @@ class FlashphonerSessionManager @Inject constructor(
     ): RoomManager {
         environment.ensureInitialised()
         val options = RoomManagerOptions(serverUrl, username).apply {
-            keepAlive = true
             configureOptions()
         }
         val manager = RoomManager(options)
@@ -79,7 +78,7 @@ class FlashphonerSessionManager @Inject constructor(
             ?: error("Flashphoner room manager must be prepared before connecting")
 
         manager.on(event)
-        manager.connect()
+
     }
 
     fun joinRoom(
