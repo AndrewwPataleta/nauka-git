@@ -89,11 +89,14 @@ class ChatGroupDetailFragment : Fragment() {
                             findNavController().navigate(R.id.chatCreateMultiFragment)
                         },
                         onCallClick = { name, avatar ->
+                            val dialogId = (viewModel.uiState.value as? ChatGroupDetailUiState.Success)?.dialogId
+                                ?: return@ChatGroupDetailComponent
                             findNavController().navigate(
                                 R.id.callFragment,
                                 Bundle().apply {
                                     putString(CallFragment.ARG_CONTACT_NAME, name)
                                     putString(CallFragment.ARG_AVATAR_URL, avatar)
+                                    putLong(CallFragment.ARG_DIALOG_ID, dialogId)
                                 }
                             )
                         },
