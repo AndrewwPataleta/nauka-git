@@ -18,6 +18,7 @@ import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.SearchDialog
 import uddug.com.domain.entities.chat.SearchMessage
 import uddug.com.domain.repositories.chat.ChatRepository
+import uddug.com.naukoteka.ui.chat.di.SocketService
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,6 +26,7 @@ class ChatListViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     userIdCache: UserIdCache,
     userUUIDCache: UserUUIDCache,
+    private val socketService: SocketService,
 ) : ViewModel() {
 
     private val currentUserIds: Set<String> = listOfNotNull(
@@ -66,6 +68,10 @@ class ChatListViewModel @Inject constructor(
 
     private var loadChatsJob: kotlinx.coroutines.Job? = null
     private var searchJob: Job? = null
+
+    init {
+        socketService.connect()
+    }
 
     fun isMessageFromMe(ownerId: String?): Boolean {
         return ownerId.isNullOrBlank() || currentUserIds.contains(ownerId)
