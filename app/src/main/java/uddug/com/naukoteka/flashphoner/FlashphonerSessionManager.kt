@@ -76,6 +76,7 @@ class FlashphonerSessionManager @Inject constructor(
             ?: error("Flashphoner room manager must be prepared before connecting")
 
         manager.on(event)
+        manager.connect()
     }
 
     fun joinRoom(
