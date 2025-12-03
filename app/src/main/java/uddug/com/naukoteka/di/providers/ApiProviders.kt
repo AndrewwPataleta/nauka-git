@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.di.providers
 
+import uddug.com.data.services.CallApiService
 import uddug.com.data.services.auth.AuthApiHolder
 import uddug.com.data.services.AuthApiService
 import uddug.com.data.services.UserProfileApiService
@@ -34,4 +35,12 @@ class LocationApiProvider(
 ) : Provider<LocationApiService> {
     override fun get() =
         retrofit.create(LocationApiService::class.java)
+}
+
+@InjectConstructor
+class CallApiProvider(
+    private val retrofit: Retrofit,
+) : Provider<CallApiService> {
+    override fun get() =
+        retrofit.create(CallApiService::class.java)
 }
