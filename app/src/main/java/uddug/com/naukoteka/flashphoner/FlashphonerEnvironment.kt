@@ -1,9 +1,10 @@
 package uddug.com.naukoteka.flashphoner
 
-import android.app.Activity
+import android.content.Context
 import com.flashphoner.fpwcsapi.Flashphoner
 import com.flashphoner.fpwcsapi.session.Session
 import com.flashphoner.fpwcsapi.session.SessionOptions
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,7 +14,9 @@ import javax.inject.Singleton
  * can be used by feature modules.
  */
 @Singleton
-class FlashphonerEnvironment @Inject constructor() {
+class FlashphonerEnvironment @Inject constructor(
+    @ApplicationContext private val appContext: Context,
+) {
 
     private var isInitialised: Boolean = false
 
@@ -22,9 +25,9 @@ class FlashphonerEnvironment @Inject constructor() {
      * the call is idempotent, therefore we protect it with an [isInitialised] flag to
      * avoid extra work on subsequent injections.
      */
-    fun ensureInitialised(activity: Activity) {
+    fun ensureInitialised() {
         if (!isInitialised) {
-            Flashphoner.init(activity)
+            Flashphoner.init(appContext.applicationContext)
             isInitialised = true
         }
     }
@@ -35,11 +38,10 @@ class FlashphonerEnvironment @Inject constructor() {
      * callbacks according to the Flashphoner SDK documentation.
      */
     fun createSession(
-        activity: Activity,
         serverUrl: String,
-        configure: SessionOptions.() -> Unit = {}
+        configure: SessionOptions.() -> Unit = {},
     ): Session {
-        ensureInitialised(activity)
+        ensureInitialised()
         val options = SessionOptions(serverUrl).apply(configure)
         return Flashphoner.createSession(options)
     }

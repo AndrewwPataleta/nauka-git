@@ -33,7 +33,6 @@ class CallFragment : Fragment() {
         val dialogId = arguments?.getLong(ARG_DIALOG_ID)
 
         viewModel.startCall(
-            activity = requireActivity(),
             dialogId = dialogId ?: viewModel.uiState.value.dialogId ?: 0L,
             contactName = contactName,
             avatarUrl = avatarUrl,
