@@ -1,10 +1,10 @@
 package uddug.com.naukoteka.flashphoner
 
-import android.content.Context
+import android.app.Activity
+import java.lang.ref.WeakReference
 import com.flashphoner.fpwcsapi.Flashphoner
 import com.flashphoner.fpwcsapi.session.Session
 import com.flashphoner.fpwcsapi.session.SessionOptions
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -14,20 +14,24 @@ import javax.inject.Singleton
  * can be used by feature modules.
  */
 @Singleton
-class FlashphonerEnvironment @Inject constructor(
-    @ApplicationContext private val appContext: Context,
-) {
+class FlashphonerEnvironment @Inject constructor() {
 
     private var isInitialised: Boolean = false
+    private var containerActivityRef: WeakReference<Activity?> = WeakReference(null)
+
+    fun attachContainerActivity(activity: Activity) {
+        containerActivityRef = WeakReference(activity)
+    }
 
     /**
      * Initialise Flashphoner lazily on first usage. According to the SDK documentation
      * the call is idempotent, therefore we protect it with an [isInitialised] flag to
      * avoid extra work on subsequent injections.
      */
-    fun ensureInitialised() {
+    fun ensureInitialised(activity: Activity? = containerActivityRef.get()) {
         if (!isInitialised) {
-            Flashphoner.init(appContext.applicationContext)
+            val hostActivity = activity ?: error("Container Activity must be attached before initializing Flashphoner")
+            Flashphoner.init(hostActivity)
             isInitialised = true
         }
     }

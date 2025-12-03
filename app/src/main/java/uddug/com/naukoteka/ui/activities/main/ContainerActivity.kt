@@ -13,10 +13,12 @@ import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.databinding.ActivityMainBinding
 import uddug.com.naukoteka.global.base.BaseActivity
+import uddug.com.naukoteka.flashphoner.FlashphonerEnvironment
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerPresenter
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerView
 import uddug.com.naukoteka.utils.viewBinding
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView {
@@ -26,6 +28,9 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
     @InjectPresenter
     lateinit var presenter: ContainerPresenter
+
+    @Inject
+    lateinit var flashphonerEnvironment: FlashphonerEnvironment
 
     private var pulseAnimation: Animation? = null
 
@@ -50,6 +55,9 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(contentView.root)
+
+        flashphonerEnvironment.attachContainerActivity(this)
+        flashphonerEnvironment.ensureInitialised(this)
 
         contentView.bottomNav.setOnNavigationItemSelectedListener {
             when (it.itemId) {
