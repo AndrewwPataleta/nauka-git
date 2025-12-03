@@ -876,6 +876,8 @@ class ChatDialogViewModel @Inject constructor(
                 val gson = Gson()
                 val socketMessage = gson.fromJson(jsonString, ChatSocketMessage::class.java)
 
+                handleIncomingCall(socketMessage)
+
                 if ((currentDialogInfo?.id ?: 0L) == 0L && (socketMessage.dialog ?: 0L) != 0L) {
                     currentDialogInfo = currentDialogInfo?.copy(id = socketMessage.dialog!!)
                     currentDialogID = socketMessage.dialog
@@ -968,6 +970,32 @@ class ChatDialogViewModel @Inject constructor(
         return runCatching { Instant.parse(value) }.getOrElse { Instant.now() }
     }
 
+    private fun handleIncomingCall(socketMessage: ChatSocketMessage) {
+        val dialogId = socketMessage.dialog ?: currentDialogID ?: return
+        val isCallMessage = socketMessage.cType in listOf(2, 3) &&
+            socketMessage.files.isNullOrEmpty() &&
+            socketMessage.text?.contains("звонок", ignoreCase = true) == true
+
+        if (!isCallMessage) return
+        if (socketMessage.owner == currentUser?.id) return
+        if (currentDialogID != null && dialogId != currentDialogID) return
+
+        val dialogInfo = currentDialogInfo
+        val contactName = dialogInfo?.interlocutor?.fullName ?: dialogInfo?.name
+        val avatarUrl = dialogInfo?.dialogImage?.path ?: dialogInfo?.interlocutor?.image
+        val callTitle = dialogInfo?.name ?: contactName
+
+        viewModelScope.launch {
+            _events.emit(
+                ChatDialogEvents.IncomingCall(
+                    dialogId = dialogId,
+                    contactName = contactName,
+                    avatarUrl = avatarUrl,
+                    callTitle = callTitle,
+                )
+            )
+        }
+    }
 }
 
 private fun ChatPoll.toDomain(messageId: Long?, questionFallback: String?): Poll {
@@ -1019,6 +1047,12 @@ private fun isAdminRole(role: String?): Boolean {
 sealed class ChatDialogEvents {
     data class OpenChatProfileDetail(val dialogId: Long, val dialogInfo: DialogInfo) :
         ChatDialogEvents()
+    data class IncomingCall(
+        val dialogId: Long,
+        val contactName: String?,
+        val avatarUrl: String?,
+        val callTitle: String?,
+    ) : ChatDialogEvents()
 }
 
 sealed class ChatDialogUiState {
