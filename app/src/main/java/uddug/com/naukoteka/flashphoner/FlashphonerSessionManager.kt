@@ -75,7 +75,7 @@ class FlashphonerSessionManager @Inject constructor(
         val manager = roomManagerRef.get()
             ?: error("Flashphoner room manager must be prepared before connecting")
 
-        manager.connect(event)
+        manager.on(event)
     }
 
     fun joinRoom(
