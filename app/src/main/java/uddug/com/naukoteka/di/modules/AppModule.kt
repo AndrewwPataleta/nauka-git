@@ -23,6 +23,8 @@ import uddug.com.naukoteka.di.ServerUrl
 import uddug.com.naukoteka.di.providers.*
 import uddug.com.naukoteka.di.utils.Logger
 import uddug.com.naukoteka.navigation.AppRouter
+import uddug.com.naukoteka.ui.chat.di.SocketService
+import uddug.com.naukoteka.ui.chat.di.SocketServiceImpl
 import okhttp3.CookieJar
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -61,6 +63,7 @@ class AppModule(application: Application) : Module() {
         bind(UserProfileRepository::class.java).to(UserProfileRepositoryImpl::class.java)
         bind(LocationApiService::class.java).toProvider(LocationApiProvider::class.java).singleton()
         bind(LocationRepository::class.java).to(LocationRepositoryImpl::class.java)
+        bind(SocketService::class.java).to(SocketServiceImpl::class.java).singleton()
 
     }
 
