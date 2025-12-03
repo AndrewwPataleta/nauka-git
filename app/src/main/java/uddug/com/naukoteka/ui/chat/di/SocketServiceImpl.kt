@@ -8,9 +8,12 @@ import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.engineio.client.transports.WebSocket
 import org.json.JSONObject
+import javax.inject.Inject
+import javax.inject.Singleton
 import uddug.com.data.cache.cookies.CookiesCache
 
-class SocketServiceImpl(private val cookiesCache: CookiesCache) : SocketService {
+@Singleton
+class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCache) : SocketService {
 
     companion object {
         private const val TAG = "SocketService"
