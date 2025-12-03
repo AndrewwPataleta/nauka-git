@@ -66,7 +66,7 @@ class FlashphonerSessionManager @Inject constructor(
         val manager = RoomManager(options)
         onManagerReady(manager)
         roomManagerRef.set(manager)
-        sessionRef.set(manager.session)
+
         return manager
     }
 
@@ -107,9 +107,7 @@ class FlashphonerSessionManager @Inject constructor(
     fun disconnectSession() {
         stopStream()
         val session = sessionRef.getAndSet(null) ?: return
-        if (session.connection != null) {
-            session.disconnect()
-        }
+        session.disconnect()
     }
 
     fun disconnectRoom() {

@@ -170,7 +170,7 @@ class CallViewModel @Inject constructor(
     private fun publishLocalStream(streamName: String) {
         runCatching {
             flashphonerSessionManager.publishToCurrentRoom(streamName) {
-                constraints = Constraints(audio = true, video = false)
+                constraints = Constraints(true,  false)
             }
         }.onSuccess {
             _uiState.value = _uiState.value.copy(status = CallStatus.IN_CALL)
