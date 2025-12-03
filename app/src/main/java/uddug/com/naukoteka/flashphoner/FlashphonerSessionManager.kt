@@ -35,7 +35,10 @@ class FlashphonerSessionManager @Inject constructor(
         configureOptions: SessionOptions.() -> Unit = {},
         onSessionReady: Session.() -> Unit = {}
     ): Session {
-        val session = environment.createSession(serverUrl, configureOptions)
+        val session = environment.createSession(serverUrl) {
+            keepAlive = true
+            configureOptions()
+        }
         session.onSessionReady()
         sessionRef.set(session)
         return session
@@ -60,7 +63,10 @@ class FlashphonerSessionManager @Inject constructor(
         onManagerReady: RoomManager.() -> Unit = {},
     ): RoomManager {
         environment.ensureInitialised()
-        val options = RoomManagerOptions(serverUrl, username).apply(configureOptions)
+        val options = RoomManagerOptions(serverUrl, username).apply {
+            keepAlive = true
+            configureOptions()
+        }
         val manager = RoomManager(options)
         onManagerReady(manager)
         roomManagerRef.set(manager)
