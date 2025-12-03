@@ -81,13 +81,15 @@ class CallViewModel @Inject constructor(
                 val username = resolveUsername()
                 val streamName = buildStreamName(config, dialogId, username)
 
-                val roomManager = flashphonerSessionManager.prepareRoomManager(
+                flashphonerSessionManager.prepareRoomManager(
                     activity = activity,
                     serverUrl = config.serverUrl,
                     username = username,
                 )
 
-                roomManager.on(createRoomManagerEvent(dialogId, streamName))
+                flashphonerSessionManager.connectRoomManager(
+                    createRoomManagerEvent(dialogId, streamName)
+                )
             }.onSuccess {
                 _uiState.value = _uiState.value.copy(status = CallStatus.CONNECTING)
             }.onFailure {

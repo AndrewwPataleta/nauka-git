@@ -5,6 +5,7 @@ import com.flashphoner.fpwcsapi.bean.Data
 import com.flashphoner.fpwcsapi.room.Room
 import com.flashphoner.fpwcsapi.room.RoomManager
 import com.flashphoner.fpwcsapi.room.RoomManagerOptions
+import com.flashphoner.fpwcsapi.room.RoomManagerEvent
 import com.flashphoner.fpwcsapi.room.RoomOptions
 import com.flashphoner.fpwcsapi.session.RestAppCommunicator
 import com.flashphoner.fpwcsapi.session.Session
@@ -68,6 +69,13 @@ class FlashphonerSessionManager @Inject constructor(
         roomManagerRef.set(manager)
 
         return manager
+    }
+
+    fun connectRoomManager(event: RoomManagerEvent) {
+        val manager = roomManagerRef.get()
+            ?: error("Flashphoner room manager must be prepared before connecting")
+
+        manager.connect(event)
     }
 
     fun joinRoom(
