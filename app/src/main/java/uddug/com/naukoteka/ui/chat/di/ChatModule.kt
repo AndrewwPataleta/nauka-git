@@ -5,7 +5,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
 import retrofit2.Retrofit
-import uddug.com.data.cache.cookies.CookiesCache
 import uddug.com.data.services.chat.ChatApiService
 import uddug.com.data.repositories.chat.ChatRepositoryImpl
 import uddug.com.domain.repositories.chat.ChatRepository
@@ -29,11 +28,6 @@ object ChatModule {
     @Provides
     fun provideChatInteractor(repository: ChatRepository): ChatInteractor {
         return ChatInteractor(repository)
-    }
-
-    @Provides
-    fun provideSocketService(cookiesCache: CookiesCache): SocketService {
-        return SocketServiceImpl(cookiesCache)
     }
 
 }

@@ -14,6 +14,7 @@ import uddug.com.naukoteka.R
 import uddug.com.naukoteka.databinding.ActivityMainBinding
 import uddug.com.naukoteka.global.base.BaseActivity
 import uddug.com.naukoteka.flashphoner.FlashphonerEnvironment
+import uddug.com.naukoteka.socket.SocketEnvironment
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerPresenter
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerView
@@ -31,6 +32,9 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
     @Inject
     lateinit var flashphonerEnvironment: FlashphonerEnvironment
+
+    @Inject
+    lateinit var socketEnvironment: SocketEnvironment
 
     private var pulseAnimation: Animation? = null
 
@@ -58,6 +62,8 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
         flashphonerEnvironment.attachContainerActivity(this)
         flashphonerEnvironment.ensureInitialised(this)
+
+        socketEnvironment.ensureConnected()
 
         contentView.bottomNav.setOnNavigationItemSelectedListener {
             when (it.itemId) {
