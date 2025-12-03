@@ -59,6 +59,7 @@ class CallOverlayFragment : Fragment() {
     private fun openFullScreen() {
         val navController = requireActivity().findNavController(R.id.main_nav_host_fragment)
         val args = Bundle().apply {
+            putLong(CallFragment.ARG_DIALOG_ID, viewModel.uiState.value.dialogId ?: 0L)
             putString(CallFragment.ARG_CALL_TITLE, viewModel.uiState.value.callTitle)
             putParcelableArrayList(
                 CallFragment.ARG_PARTICIPANTS,

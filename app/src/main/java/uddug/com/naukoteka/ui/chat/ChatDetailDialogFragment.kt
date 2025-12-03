@@ -120,11 +120,15 @@ class ChatDetailDialogFragment : Fragment() {
                             )
                         },
                         onCallClick = { name, avatar ->
+                            val dialogId = (viewModel.uiState.value as? ChatDetailUiState.Success)?.dialogId
+                                ?: arguments?.getLong(DIALOG_ID)
+                                ?: return@ChatDetailDialogComponent
                             findNavController().navigate(
                                 R.id.callFragment,
                                 Bundle().apply {
                                     putString(CallFragment.ARG_CONTACT_NAME, name)
                                     putString(CallFragment.ARG_AVATAR_URL, avatar)
+                                    putLong(CallFragment.ARG_DIALOG_ID, dialogId)
                                 }
                             )
                         },

@@ -1,6 +1,12 @@
 package uddug.com.naukoteka.flashphoner
 
 import android.app.Activity
+import com.flashphoner.fpwcsapi.bean.Data
+import com.flashphoner.fpwcsapi.room.Room
+import com.flashphoner.fpwcsapi.room.RoomManager
+import com.flashphoner.fpwcsapi.room.RoomManagerOptions
+import com.flashphoner.fpwcsapi.room.RoomOptions
+import com.flashphoner.fpwcsapi.session.RestAppCommunicator
 import com.flashphoner.fpwcsapi.session.Session
 import com.flashphoner.fpwcsapi.session.Stream
 import com.flashphoner.fpwcsapi.session.StreamOptions
@@ -21,6 +27,8 @@ class FlashphonerSessionManager @Inject constructor(
 
     private val sessionRef = AtomicReference<Session?>()
     private val streamRef = AtomicReference<Stream?>()
+    private val roomManagerRef = AtomicReference<RoomManager?>()
+    private val roomRef = AtomicReference<Room?>()
 
     fun prepareSession(
         activity: Activity,
@@ -46,6 +54,52 @@ class FlashphonerSessionManager @Inject constructor(
         return stream
     }
 
+    fun prepareRoomManager(
+        activity: Activity,
+        serverUrl: String,
+        username: String,
+        configureOptions: SessionOptions.() -> Unit = {},
+        onManagerReady: RoomManager.() -> Unit = {},
+    ): RoomManager {
+        environment.ensureInitialised(activity)
+        val options = RoomManagerOptions(serverUrl, username).apply(configureOptions)
+        val manager = RoomManager(options)
+        onManagerReady(manager)
+        roomManagerRef.set(manager)
+        sessionRef.set(manager.session)
+        return manager
+    }
+
+    fun joinRoom(
+        roomName: String,
+        roomEvent: ((Room) -> Unit)? = null,
+        onRoomReady: Room.() -> Unit = {},
+    ): Room {
+        val manager = roomManagerRef.get()
+            ?: error("Flashphoner room manager must be prepared before joining rooms")
+        val options = RoomOptions().apply { name = roomName }
+        val room = manager.join(options)
+        roomEvent?.invoke(room)
+        onRoomReady(room)
+        roomRef.set(room)
+        return room
+    }
+
+    fun publishToCurrentRoom(
+        streamName: String,
+        configure: StreamOptions.() -> Unit = {},
+    ): Stream {
+        val room = roomRef.get() ?: error("Room must be joined before publishing a stream")
+        val options = StreamOptions(streamName).apply(configure)
+        val stream = room.publish(null, options)
+        streamRef.set(stream)
+        return stream
+    }
+
+    fun leaveRoom() {
+        roomRef.getAndSet(null)?.leave(defaultHandler)
+    }
+
     fun stopStream() {
         streamRef.getAndSet(null)?.stop()
     }
@@ -56,5 +110,18 @@ class FlashphonerSessionManager @Inject constructor(
         if (session.connection != null) {
             session.disconnect()
         }
+    }
+
+    fun disconnectRoom() {
+        stopStream()
+        leaveRoom()
+        roomManagerRef.getAndSet(null)?.disconnect()
+        disconnectSession()
+    }
+
+    private val defaultHandler = object : RestAppCommunicator.Handler {
+        override fun onAccepted(data: Data) = Unit
+
+        override fun onRejected(data: Data) = Unit
     }
 }

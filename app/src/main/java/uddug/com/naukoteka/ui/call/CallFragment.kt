@@ -30,9 +30,11 @@ class CallFragment : Fragment() {
         val avatarUrl = arguments?.getString(ARG_AVATAR_URL)
         val callTitle = arguments?.getString(ARG_CALL_TITLE)
         val participants = arguments?.getParcelableArrayList<CallParticipant>(ARG_PARTICIPANTS)
+        val dialogId = arguments?.getLong(ARG_DIALOG_ID)
 
         viewModel.startCall(
             activity = requireActivity(),
+            dialogId = dialogId ?: viewModel.uiState.value.dialogId ?: 0L,
             contactName = contactName,
             avatarUrl = avatarUrl,
             participants = participants,
@@ -84,5 +86,6 @@ class CallFragment : Fragment() {
         const val ARG_AVATAR_URL = "avatar_url"
         const val ARG_CALL_TITLE = "call_title"
         const val ARG_PARTICIPANTS = "participants"
+        const val ARG_DIALOG_ID = "dialog_id"
     }
 }
