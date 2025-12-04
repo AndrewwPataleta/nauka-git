@@ -113,6 +113,11 @@ fun ChatDialogComponent(
     val isCurrentUserAdmin by viewModel.isCurrentUserAdmin.collectAsState()
     val notificationsDisabled by viewModel.notificationsDisabled.collectAsState()
     val pollRevoteTriggers = remember { mutableStateMapOf<String, Int>() }
+    val isGroupChat = when (val state = uiState) {
+        is ChatDialogUiState.Success -> state.isGroup
+        is ChatDialogUiState.Loading -> state.isGroup
+        else -> false
+    }
 
     val audioRecorder = remember { AudioRecorder(context) }
     val mediaPlayer = remember { MediaPlayer() }
@@ -673,7 +678,8 @@ fun ChatDialogComponent(
                 onContactClick = {
                     showAttachmentSheet = false
                     onContactClick()
-                }
+                },
+                isGroupChat = isGroupChat
             )
         }
         selectedMessage?.let { message ->

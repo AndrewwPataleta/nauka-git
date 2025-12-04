@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -25,9 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
-
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -50,6 +46,7 @@ fun AttachOptionsBottomSheetDialog(
     onPollClick: () -> Unit,
     onContactClick: () -> Unit,
     selected: AttachOption? = null,
+    isGroupChat: Boolean = true,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
@@ -74,12 +71,14 @@ fun AttachOptionsBottomSheetDialog(
                 isSelected = selected == AttachOption.FILE,
                 onClick = onFileClick
             )
-            BottomSheetItem(
-                icon = painterResource(R.drawable.ic_bottom_poll),
-                text = stringResource(R.string.chat_attach_poll),
-                isSelected = selected == AttachOption.POLL,
-                onClick = onPollClick
-            )
+            if (isGroupChat) {
+                BottomSheetItem(
+                    icon = painterResource(R.drawable.ic_bottom_poll),
+                    text = stringResource(R.string.chat_attach_poll),
+                    isSelected = selected == AttachOption.POLL,
+                    onClick = onPollClick
+                )
+            }
             BottomSheetItem(
                 icon = painterResource(R.drawable.ic_bottom_contacts),
                 text = stringResource(R.string.chat_attach_contact),
