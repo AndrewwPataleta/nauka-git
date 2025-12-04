@@ -208,7 +208,7 @@ fun ChatTabBar(
                             }
                             Box(
                                 modifier = Modifier
-                                    .background(Color.White)
+                                    .background(colorResource(id = R.color.main_background))
                                     .pointerInput(mainFolderId, folder.id) {
                                         detectTapGestures(
                                             onTap = { onTabClick() },

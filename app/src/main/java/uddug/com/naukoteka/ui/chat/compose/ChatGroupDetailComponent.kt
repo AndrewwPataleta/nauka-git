@@ -53,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -117,7 +118,11 @@ fun ChatGroupDetailComponent(
         topBar = {
             androidx.compose.material.TopAppBar(
                 title = {
-                    Text(text = stringResource(R.string.chat_group_info_title), fontSize = 20.sp, color = Color.Black)
+                    Text(
+                        text = stringResource(R.string.chat_group_info_title),
+                        fontSize = 20.sp,
+                        color = colorResource(id = R.color.main_text)
+                    )
                 },
                 actions = {
                     androidx.compose.material.IconButton(onClick = { onSearchClick() }) {
@@ -137,7 +142,7 @@ fun ChatGroupDetailComponent(
                         )
                     }
                 },
-                backgroundColor = Color.White,
+                backgroundColor = colorResource(id = R.color.main_background),
                 elevation = 0.dp
             )
         }
@@ -292,7 +297,7 @@ private fun ParticipantsTabContent(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(colorResource(id = R.color.main_background))
             .padding(paddingValues),
         state = listState,
         contentPadding = PaddingValues(bottom = 16.dp)
@@ -339,7 +344,7 @@ private fun OtherTabsContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(colorResource(id = R.color.main_background))
             .padding(paddingValues)
     ) {
         GroupHeaderSection(
@@ -416,12 +421,13 @@ private fun GroupHeaderSection(
         Text(
             text = state.name,
             fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = colorResource(id = R.color.main_text)
         )
         Text(
             text = state.participants.joinToString(", ") { it.user.fullName.orEmpty() },
             fontSize = 14.sp,
-            color = Color.Gray,
+            color = colorResource(id = R.color.secondary_text),
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
@@ -490,11 +496,11 @@ private fun GroupTabRow(
     selectedTabIndex: Int,
     onTabSelected: (Int) -> Unit,
 ) {
-    Column(modifier = Modifier.background(Color.White)) {
+    Column(modifier = Modifier.background(colorResource(id = R.color.main_background))) {
         TabRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White),
+                .background(colorResource(id = R.color.main_background)),
             selectedTabIndex = selectedTabIndex,
             indicator = { tabPositions ->
                 val safeIndex = selectedTabIndex.coerceIn(tabTitles.indices)
@@ -516,7 +522,11 @@ private fun GroupTabRow(
                             style = TextStyle(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (selectedTabIndex == index) Color.Black else Color(0xFF8083A0)
+                                color = if (selectedTabIndex == index) {
+                                    colorResource(id = R.color.main_text)
+                                } else {
+                                    colorResource(id = R.color.secondary_text)
+                                }
                             )
                         )
                     }

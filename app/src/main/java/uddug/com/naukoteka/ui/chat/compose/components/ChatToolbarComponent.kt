@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -37,13 +38,19 @@ fun ChatToolbarComponent(
 ) {
     if (isSelectionMode) {
         TopAppBar(
-            title = { Text(text = selectedCount.toString(), fontSize = 20.sp, color = Color.Black) },
+            title = {
+                Text(
+                    text = selectedCount.toString(),
+                    fontSize = 20.sp,
+                    color = colorResource(id = R.color.main_text)
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = onCloseSelection) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_close),
                         contentDescription = "Close",
-                        tint = Color.Black
+                        tint = colorResource(id = R.color.main_text)
                     )
                 }
             },
@@ -52,18 +59,18 @@ fun ChatToolbarComponent(
                     Icon(
                         painter = painterResource(id = R.drawable.ic_trash),
                         contentDescription = "Delete",
-                        tint = Color.Black
+                        tint = colorResource(id = R.color.main_text)
                     )
                 }
                 IconButton(onClick = onMoreClick) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_more_chat),
                         contentDescription = "More",
-                        tint = Color.Black
+                        tint = colorResource(id = R.color.main_text)
                     )
                 }
             },
-            backgroundColor = Color.White,
+            backgroundColor = colorResource(id = R.color.main_background),
             elevation = 0.dp
         )
     } else {
@@ -76,7 +83,11 @@ fun ChatToolbarComponent(
                         modifier = Modifier.size(36.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = stringResource(R.string.nau_chat), fontSize = 20.sp, color = Color.Black)
+                    Text(
+                        text = stringResource(R.string.nau_chat),
+                        fontSize = 20.sp,
+                        color = colorResource(id = R.color.main_text)
+                    )
                 }
             },
             actions = {
@@ -86,19 +97,19 @@ fun ChatToolbarComponent(
                     Icon(
                         painter = painterResource(id = R.drawable.ic_create_chat),
                         contentDescription = "Edit Icon",
-                        tint = Color.Black
+                        tint = colorResource(id = R.color.main_text)
                     )
                 }
                 IconButton(onClick = { }) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_more_chat),
                         contentDescription = "Edit Icon",
-                        tint = Color.Black
+                        tint = colorResource(id = R.color.main_text)
                     )
                 }
             },
             navigationIcon = null,
-            backgroundColor = Color.White,
+            backgroundColor = colorResource(id = R.color.main_background),
             elevation = 0.dp
         )
     }

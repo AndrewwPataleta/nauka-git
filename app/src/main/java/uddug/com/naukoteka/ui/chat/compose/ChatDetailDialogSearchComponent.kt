@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -82,7 +83,9 @@ fun ChatDetailDialogSearchComponent(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = colorResource(id = R.color.main_background)
+                )
             )
         }
     ) { paddingValues ->
@@ -96,7 +99,7 @@ fun ChatDetailDialogSearchComponent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color.White)
+                .background(colorResource(id = R.color.main_background))
         ) {
             TabRow(
                 selectedTabIndex = selectedTabIndex,
@@ -114,15 +117,19 @@ fun ChatDetailDialogSearchComponent(
                         onClick = { selectedTabIndex = index },
                         text = {
                             Text(
-                                text = title,
-                                maxLines = 1,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (selectedTabIndex == index) Color.Black else Color(0xFF8083A0)
-                                )
+                            text = title,
+                            maxLines = 1,
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (selectedTabIndex == index) {
+                                    colorResource(id = R.color.main_text)
+                                } else {
+                                    colorResource(id = R.color.secondary_text)
+                                }
                             )
-                        }
+                        )
+                    }
                     )
                 }
             }

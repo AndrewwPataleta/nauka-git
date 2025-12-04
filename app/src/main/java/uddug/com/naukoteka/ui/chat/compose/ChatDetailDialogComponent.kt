@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -80,6 +79,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -172,7 +172,7 @@ fun ChatDetailDialogComponent(
                     Text(
                         text = stringResource(R.string.chat_group_info_title),
                         fontSize = 20.sp,
-                        color = Color.Black
+                        color = colorResource(id = R.color.main_text)
                     )
                 },
                 actions = {
@@ -196,7 +196,7 @@ fun ChatDetailDialogComponent(
                         )
                     }
                 },
-                backgroundColor = Color.White,
+                backgroundColor = colorResource(id = R.color.main_background),
                 elevation = 0.dp
             )
         }
@@ -278,7 +278,7 @@ fun ChatDetailDialogComponent(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.White)
+                        .background(colorResource(id = R.color.main_background))
                         .padding(paddingValues)
                 ) {
 
@@ -330,12 +330,13 @@ fun ChatDetailDialogComponent(
                         Text(
                             text = state.profile.fullName.orEmpty(),
                             fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = colorResource(id = R.color.main_text)
                         )
                         Text(
                             text = state.profile.nickname.orEmpty(),
                             fontSize = 14.sp,
-                            color = Color.Gray
+                            color = colorResource(id = R.color.secondary_text)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Row {
@@ -438,7 +439,7 @@ fun ChatDetailDialogComponent(
                     TabRow(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color.White),
+                            .background(colorResource(id = R.color.main_background)),
                         selectedTabIndex = selectedTabIndex,
                         indicator = { tabPositions ->
                             TabRowDefaults.Indicator(
@@ -460,9 +461,11 @@ fun ChatDetailDialogComponent(
                                             style = TextStyle(
                                                 fontSize = 14.sp,
                                                 fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Bold,
-                                                color = if (selectedTabIndex == index) Color.Black else Color(
-                                                    0xFF8083A0
-                                                )
+                                                color = if (selectedTabIndex == index) {
+                                                    colorResource(id = R.color.main_text)
+                                                } else {
+                                                    colorResource(id = R.color.secondary_text)
+                                                }
                                             )
                                         )
                                     }
@@ -637,7 +640,7 @@ private fun FileItem(
                 onLongClick = { onShowOptions(item) }
             ),
         elevation = 0.dp,
-        backgroundColor = Color.White,
+        backgroundColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(width = 1.dp, color = Color(0xFFE7E9EC))
     ) {
@@ -781,7 +784,7 @@ private fun CallOptionItem(
         Text(
             text = text,
             fontSize = 16.sp,
-            color = Color.Black,
+            color = colorResource(id = R.color.main_text),
             fontWeight = FontWeight.Light,
         )
     }
