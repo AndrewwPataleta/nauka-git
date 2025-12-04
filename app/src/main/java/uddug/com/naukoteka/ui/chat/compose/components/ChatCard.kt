@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -28,6 +29,7 @@ import coil.compose.AsyncImage
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.core.deeplink.formatMessageTime
+import uddug.com.domain.entities.chat.MessageType
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 
 enum class ChatAttachmentType {
@@ -60,6 +62,7 @@ fun ChatCard(
     isMuted: Boolean = false,
     selectionMode: Boolean = false,
     isSelected: Boolean = false,
+    messageType: MessageType = MessageType.TEXT,
     onSelectChange: (Boolean) -> Unit = {},
     onChatClick: (Long) -> Unit,
     onChatLongClick: (Long) -> Unit
@@ -86,8 +89,8 @@ fun ChatCard(
                         onChatLongClick(dialogId)
                     }
                 }
-            ),  
-        colors = CardDefaults.cardColors(containerColor = Color.White)  
+            ),
+        colors = CardDefaults.cardColors(containerColor = colorResource(id = R.color.main_background))
     ) {
         Column {
             Row(
@@ -130,7 +133,7 @@ fun ChatCard(
                                 stringResource(R.string.group_chat)
                             } else {
                                 name
-                            }, style = TextStyle(fontSize = 16.sp, color = Color.Black)
+                            }, style = TextStyle(fontSize = 16.sp, color = colorResource(id = R.color.main_text))
                         )
                         if (isMuted) {
                             Icon(
@@ -148,6 +151,14 @@ fun ChatCard(
                     
                     val messageText = when {
                         isRepost -> stringResource(R.string.chat_last_message_repost, message)
+                        messageType == MessageType.POLL -> {
+                            val question = message.ifBlank { "" }
+                            if (question.isNotBlank()) {
+                                stringResource(R.string.chat_last_message_poll, question)
+                            } else {
+                                stringResource(R.string.chat_poll_label)
+                            }
+                        }
                         attachmentPreview != null -> when (attachmentPreview.type) {
                             ChatAttachmentType.IMAGE -> stringResource(R.string.chat_last_message_image)
                             ChatAttachmentType.VIDEO -> stringResource(R.string.chat_last_message_video)
@@ -195,7 +206,11 @@ fun ChatCard(
                             text = messageText,
                             style = TextStyle(
                                 fontSize = 14.sp,
-                                color = if (!isGroupChat && isFromMe) Color(0xFF2E83D9) else Color(0xFF4E5068),
+                                color = if (!isGroupChat && isFromMe) {
+                                    Color(0xFF2E83D9)
+                                } else {
+                                    colorResource(id = R.color.secondary_text)
+                                },
                                 fontWeight = if (isRepost) FontWeight.Bold else FontWeight.Normal
                             ),
                             maxLines = 1,
@@ -220,7 +235,10 @@ fun ChatCard(
                         }
                         Text(
                             text = formattedTime,
-                            style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+                            style = TextStyle(
+                                fontSize = 12.sp,
+                                color = colorResource(id = R.color.secondary_text)
+                            ),
                         )
                     }
 
@@ -252,7 +270,7 @@ fun ChatCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color(0xFFEAEAF2))
+                    .background(colorResource(id = R.color.main_background_input_stroke))
             )
         }
     }
@@ -268,7 +286,7 @@ private fun AttachmentPreview(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .background(Color(0xFFF2F5FA)),
+            .background(colorResource(id = R.color.main_background_input)),
         contentAlignment = Alignment.Center
     ) {
         when (preview.type) {

@@ -40,12 +40,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import uddug.com.domain.entities.chat.MessageType
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatListUiState
@@ -173,20 +175,20 @@ fun ChatTabBar(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White),
+                .background(colorResource(id = R.color.main_background)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White),
+                    .background(colorResource(id = R.color.main_background)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (folders.isNotEmpty()) {
                     TabRow(
                         modifier = Modifier
                             .weight(1f)
-                            .background(Color.White),
+                            .background(colorResource(id = R.color.main_background)),
                         selectedTabIndex = selectedTabIndex,
                         indicator = { tabPositions ->
                             if (tabPositions.isNotEmpty()) {
@@ -230,9 +232,11 @@ fun ChatTabBar(
                                                 style = TextStyle(
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = if (selectedTabIndex == index) Color.Black else Color(
-                                                        0xFF8083A0
-                                                    )
+                                                    color = if (selectedTabIndex == index) {
+                                                        colorResource(id = R.color.main_text)
+                                                    } else {
+                                                        colorResource(id = R.color.secondary_text)
+                                                    }
                                                 )
                                             )
                                             if (folder.unreadCount > 0) {
@@ -273,7 +277,7 @@ fun ChatTabBar(
                     Icon(
                         imageVector = Icons.Filled.MoreVert,
                         contentDescription = stringResource(R.string.chat_folder_menu_configure),
-                        tint = Color(0xFF8083A0)
+                        tint = colorResource(id = R.color.secondary_text)
                     )
                 }
             }
@@ -289,7 +293,10 @@ fun ChatTabBar(
 
                 is ChatListUiState.Success -> {
                     val chats = state.chats
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 80.dp)
+                    ) {
                         items(chats) { chat ->
                             val displayName = when {
                                 chat.dialogType != 1 && chat.dialogName.isNotBlank() -> chat.dialogName
@@ -319,6 +326,7 @@ fun ChatTabBar(
                             }
                             val isGroupChat = chat.dialogType != 1
                             val isFromMe = viewModel.isMessageFromMe(chat.lastMessage.ownerId)
+                            val messageType = MessageType.fromInt(chat.lastMessage.type ?: 0)
                             val authorName = if (isGroupChat && !isFromMe) {
                                 val ownerId = chat.lastMessage.ownerId
                                 val author = chat.users.firstOrNull { it.userId == ownerId }
@@ -346,6 +354,7 @@ fun ChatTabBar(
                                 isMuted = chat.notificationsDisable,
                                 selectionMode = isSelectionMode,
                                 isSelected = selectedChats.contains(chat.dialogId),
+                                messageType = messageType,
                                 onSelectChange = { onChatSelect(chat.dialogId) },
                                 onChatClick = {
                                     viewModel.onChatClick(it)
