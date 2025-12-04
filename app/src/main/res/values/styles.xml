@@ -7,10 +7,12 @@
         <item name="android:windowBackground">@color/dark_main_background</item>
     </style>
 
-    <style name="NauWidget.BottomNavigationView" parent="Widget.Design.BottomNavigationView">
-        <item name="fontFamily">@font/golos_text_medium</item>
+    <style name="NauWidget.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
+        <item name="itemHorizontalTranslationEnabled">false</item>
+        <item name="android:fontFamily">@font/golos_text_medium</item>
         <item name="android:textSize">10sp</item>
     </style>
+
 
     <style name="NauTextAppearance.AppCompat.Title" parent="ContainerAppTheme">
         <item name="fontFamily">@font/golos_text_medium</item>

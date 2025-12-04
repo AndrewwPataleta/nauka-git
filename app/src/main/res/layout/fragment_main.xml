@@ -23,12 +23,11 @@
             android:id="@+id/bottomNav"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="22dp"
-            android:showAsAction="always|withText"
-            app:elevation="4dp"
-            app:itemIconGravity="top"
+            android:background="@color/main_background"
+            android:theme="@style/NauWidget.BottomNavigationView"
+            app:labelVisibilityMode="labeled"
+            app:itemIconTint="@color/bnv_tab_item_foreground"
+            app:itemTextColor="@color/bnv_tab_item_foreground"
             app:layout_constraintBottom_toBottomOf="parent"
             app:menu="@menu/menu_bottom" />
 

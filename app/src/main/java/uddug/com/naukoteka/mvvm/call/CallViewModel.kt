@@ -1,6 +1,7 @@
 package uddug.com.naukoteka.mvvm.call
 
 import android.os.Parcelable
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -118,6 +119,7 @@ class CallViewModel @Inject constructor(
     }
 
     fun endCall() {
+        lastCallParams = null
         flashphonerSessionManager.disconnectRoom()
         _uiState.value = _uiState.value.copy(status = CallStatus.FINISHED)
         stopCallTimer()
@@ -147,6 +149,7 @@ class CallViewModel @Inject constructor(
     ): RoomManagerEvent {
         return object : RoomManagerEvent {
             override fun onConnected(connection: Connection) {
+                Log.d("CallVM", "RoomManager.onConnected status=${connection.status}")
                 flashphonerSessionManager.joinRoom(
                     roomName = dialogId.toString(),
                     roomEvent = { room -> room.on(createRoomEvent(streamName)) },
@@ -155,6 +158,7 @@ class CallViewModel @Inject constructor(
             }
 
             override fun onDisconnection(connection: Connection) {
+                Log.d("CallVM", "RoomManager.onDisconnection status=${connection.status}")
                 attemptReconnectOrFail()
             }
         }
@@ -163,6 +167,7 @@ class CallViewModel @Inject constructor(
     private fun createRoomEvent(streamName: String): RoomEvent {
         return object : RoomEvent {
             override fun onState(room: Room) {
+                Log.d("CallVM", "RoomEvent.onState participants=${room.participants.size}")
                 subscribeToParticipants(room.participants)
             }
 
@@ -179,6 +184,7 @@ class CallViewModel @Inject constructor(
             }
 
             override fun onFailed(room: Room, error: String) {
+                Log.e("CallVM", "RoomEvent.onFailed error=$error")
                 handleCallFailure(error)
             }
 
@@ -191,15 +197,18 @@ class CallViewModel @Inject constructor(
     private fun publishLocalStream(streamName: String) {
         runCatching {
             flashphonerSessionManager.publishToCurrentRoom(streamName) {
-                constraints = Constraints(true,  false)
+                constraints = Constraints(true, false)
             }
         }.onSuccess {
+            Log.d("CallVM", "publishLocalStream success")
             _uiState.value = _uiState.value.copy(status = CallStatus.IN_CALL)
             startCallTimer()
         }.onFailure {
+            Log.e("CallVM", "publishLocalStream failed", it)
             handleCallFailure()
         }
     }
+
 
     private fun attemptReconnectOrFail() {
         val params = lastCallParams
@@ -260,6 +269,7 @@ class CallViewModel @Inject constructor(
     }
 
     private fun handleCallFailure(@Suppress("UNUSED_PARAMETER") message: String? = null) {
+        lastCallParams = null
         flashphonerSessionManager.disconnectRoom()
         _uiState.value = _uiState.value.copy(status = CallStatus.FINISHED)
         stopCallTimer()
