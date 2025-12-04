@@ -27,7 +27,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="0.5dp"
                 android:layout_marginTop="16dp"
-                android:background="#EAEAF2" />
+                android:background="@color/background_more_info" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -75,7 +75,7 @@
                             android:background="@drawable/background_interest_tag"
                             android:maxLines="6"
                             android:padding="10dp"
-                            android:text="IT-специалист" />
+                            android:text="@string/profile_interest_it_specialist" />
 
                         <TextView
                             style="@style/NauTextAppearance.AppCompat.SubTitleDark"
@@ -85,7 +85,7 @@
                             android:background="@drawable/background_interest_tag"
                             android:maxLines="6"
                             android:padding="10dp"
-                            android:text="Разработчик" />
+                            android:text="@string/profile_interest_developer" />
 
 
                     </com.google.android.flexbox.FlexboxLayout>
@@ -98,7 +98,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="0.5dp"
                 android:layout_marginTop="16dp"
-                android:background="#EAEAF2" />
+                android:background="@color/background_more_info" />
 
             <LinearLayout
                 android:id="@+id/profileLink"
@@ -126,7 +126,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="0.5dp"
-                android:background="#EAEAF2" />
+                android:background="@color/background_more_info" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -157,7 +157,7 @@
                             style="@style/NauTextAppearance.AppCompat.Title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="999"
+                            android:text="@string/profile_followers_placeholder"
                             android:textColor="@color/text_link"
                             android:textSize="18sp" />
 
@@ -183,7 +183,7 @@
                             style="@style/NauTextAppearance.AppCompat.Title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="999"
+                            android:text="@string/profile_followers_placeholder"
                             android:textColor="@color/text_link"
                             android:textSize="18sp" />
 
@@ -203,7 +203,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
                     android:layout_marginTop="16dp"
-                    android:background="#EAEAF2" />
+                    android:background="@color/background_more_info" />
 
                 <LinearLayout
                     android:id="@+id/nauDataContainer"
@@ -237,7 +237,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
-                            android:text="1234-1234" />
+                            android:text="@string/profile_spin_code_placeholder" />
 
                     </LinearLayout>
 
@@ -260,7 +260,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
-                            android:text="0000 - 0001 - 2345 - 678X" />
+                            android:text="@string/profile_orcid_placeholder" />
 
                     </LinearLayout>
 
@@ -283,7 +283,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
-                            android:text="0000 - 0001 - 2345 - 678X" />
+                            android:text="@string/profile_researcher_placeholder" />
 
                     </LinearLayout>
 
@@ -292,7 +292,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
-                    android:background="#EAEAF2" />
+                    android:background="@color/background_more_info" />
 
                 <LinearLayout
                     android:id="@+id/careerContainer"
@@ -323,7 +323,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
-                    android:background="#EAEAF2" />
+                    android:background="@color/background_more_info" />
 
                 <LinearLayout
                     android:id="@+id/educationContainer"
@@ -355,7 +355,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
-                    android:background="#EAEAF2" />
+                    android:background="@color/background_more_info" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -381,7 +381,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="15dp"
-                            android:text="14 сентября 1984" />
+                            android:text="@string/profile_birthday_placeholder" />
 
                     </LinearLayout>
 
@@ -413,7 +413,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
-                            android:text="Мужской" />
+                            android:text="@string/profile_gender_placeholder" />
 
                     </LinearLayout>
 
@@ -445,7 +445,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
-                            android:text="г. Самара, Самарская област" />
+                            android:text="@string/profile_birthplace_placeholder" />
 
                     </LinearLayout>
 
@@ -476,7 +476,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
-                            android:text="г. Самара, Самарская област" />
+                            android:text="@string/profile_residence_placeholder" />
 
                     </LinearLayout>
 
@@ -485,7 +485,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
-                    android:background="#EAEAF2" />
+                    android:background="@color/background_more_info" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -519,7 +519,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="15dp"
-                            android:text="markovskaya.1977@yandex.ru"
+                            android:text="@string/profile_email_placeholder"
                             android:textColor="@color/text_link" />
 
                     </LinearLayout>
@@ -543,7 +543,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="15dp"
-                            android:text="+ 7 (915) 333-91-19"
+                            android:text="@string/profile_phone_placeholder"
                             android:textColor="@color/text_inactive" />
 
                     </LinearLayout>

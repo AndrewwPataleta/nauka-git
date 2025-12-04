@@ -631,4 +631,28 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_file_download_started">Downloading file…</string>
     <string name="chat_voice_message_playback_error">Не удалось воспроизвести голосовое сообщение</string>
 
+    <string name="profile_edit_nickname_placeholder">wqewqeqweqw</string>
+    <string name="profile_career_position_placeholder">Ответственный работник</string>
+    <string name="settings_system_reply_user_message_placeholder">Правила посылки</string>
+    <string name="settings_system_main_message_placeholder">Национальной театральной </string>
+    <string name="profile_interest_it_specialist">IT-специалист</string>
+    <string name="profile_interest_developer">Разработчик</string>
+    <string name="profile_followers_placeholder">999</string>
+    <string name="profile_spin_code_placeholder">1234-1234</string>
+    <string name="profile_orcid_placeholder">0000 - 0001 - 2345 - 678X</string>
+    <string name="profile_researcher_placeholder">0000 - 0001 - 2345 - 678X</string>
+    <string name="profile_birthday_placeholder">14 сентября 1984</string>
+    <string name="profile_gender_placeholder">Мужской</string>
+    <string name="profile_birthplace_placeholder">г. Самара, Самарская област</string>
+    <string name="profile_residence_placeholder">г. Самара, Самарская област</string>
+    <string name="profile_email_placeholder">markovskaya.1977@yandex.ru</string>
+    <string name="profile_phone_placeholder">+ 7 (915) 333-91-19</string>
+    <string name="profile_interest_placeholder">Бла-бла, будет очень ин</string>
+    <string name="profile_education_name_placeholder">Самарский государственный архитектурно-строительный университет</string>
+    <string name="profile_education_location_placeholder">Россия, Самара • В настоящее время</string>
+    <string name="profile_education_speciality_placeholder">Высшее образование • Бакалавр</string>
+    <string name="registration_step_three_label">3</string>
+    <string name="registration_step_two_label">2</string>
+    <string name="registration_step_one_label">1</string>
+
 </resources>
