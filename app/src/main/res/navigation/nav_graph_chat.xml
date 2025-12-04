@@ -114,8 +114,8 @@
         android:name="uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment" />
 
     <fragment
-        android:id="@+id/callFragment"
-        android:name="uddug.com.naukoteka.ui.call.CallFragment">
+        android:id="@+id/singleCallFragment"
+        android:name="uddug.com.naukoteka.ui.call.SingleCallFragment">
         <argument
             android:name="contact_name"
             app:argType="string"
@@ -126,6 +126,27 @@
             android:defaultValue="@null" />
         <argument
             android:name="call_title"
+            app:argType="string"
+            android:defaultValue="@null" />
+        <argument
+            android:name="dialog_id"
+            app:argType="long"
+            android:defaultValue="-1L" />
+        <argument
+            android:name="is_video_call"
+            app:argType="boolean"
+            android:defaultValue="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/groupCallFragment"
+        android:name="uddug.com.naukoteka.ui.call.GroupCallFragment">
+        <argument
+            android:name="contact_name"
+            app:argType="string"
+            android:defaultValue="@null" />
+        <argument
+            android:name="avatar_url"
             app:argType="string"
             android:defaultValue="@null" />
         <argument

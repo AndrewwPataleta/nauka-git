@@ -58,12 +58,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Videocam
 
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -71,6 +73,7 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.LaunchedEffect
 
 import androidx.compose.ui.draw.clip
@@ -82,6 +85,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.vector.ImageVector
 import coil.compose.AsyncImage
 import com.bumptech.glide.Glide
 import com.stfalcon.imageviewer.StfalconImageViewer
@@ -111,7 +115,7 @@ fun ChatDetailDialogComponent(
     onBackPressed: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onSearchClick: () -> Unit,
-    onCallClick: (String?, String?) -> Unit,
+    onCallClick: (String?, String?, Boolean) -> Unit,
     onChatDeleted: () -> Unit,
     onViewAvatar: (String) -> Unit,
     onEditGroup: (Long) -> Unit,
@@ -222,6 +226,54 @@ fun ChatDetailDialogComponent(
             is ChatDetailUiState.Success -> {
                 var showMoreDialog by remember { mutableStateOf(false) }
                 var showAvatarDialog by remember { mutableStateOf(false) }
+                var showCallOptions by remember { mutableStateOf(false) }
+                var pendingCallName by remember { mutableStateOf<String?>(null) }
+                var pendingCallAvatar by remember { mutableStateOf<String?>(null) }
+                val callSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+                if (showCallOptions) {
+                    ModalBottomSheet(
+                        onDismissRequest = { showCallOptions = false },
+                        sheetState = callSheetState,
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.call_create_title),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            CallOptionItem(
+                                icon = Icons.Filled.Phone,
+                                text = stringResource(R.string.call_audio),
+                                onClick = {
+                                    showCallOptions = false
+                                    onCallClick(
+                                        pendingCallName ?: state.profile.fullName,
+                                        pendingCallAvatar ?: state.avatarPath,
+                                        false,
+                                    )
+                                },
+                            )
+                            CallOptionItem(
+                                icon = Icons.Filled.Videocam,
+                                text = stringResource(R.string.call_video),
+                                onClick = {
+                                    showCallOptions = false
+                                    onCallClick(
+                                        pendingCallName ?: state.profile.fullName,
+                                        pendingCallAvatar ?: state.avatarPath,
+                                        true,
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -298,7 +350,9 @@ fun ChatDetailDialogComponent(
                                         interactionSource = remember { MutableInteractionSource() },
                                         indication = null
                                     ) {
-                                        onCallClick(state.profile.fullName, state.avatarPath)
+                                        pendingCallName = state.profile.fullName
+                                        pendingCallAvatar = state.avatarPath
+                                        showCallOptions = true
                                     }
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
@@ -700,6 +754,35 @@ private fun shareMediaFile(context: Context, file: MediaFile, chooserTitle: Stri
             context.getString(R.string.chat_file_share_error),
             Toast.LENGTH_SHORT
         ).show()
+    }
+}
+
+@Composable
+private fun CallOptionItem(
+    icon: ImageVector,
+    text: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color(0xFF2E83D9),
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            color = Color.Black,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 

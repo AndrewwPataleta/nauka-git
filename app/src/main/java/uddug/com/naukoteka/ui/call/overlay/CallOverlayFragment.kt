@@ -15,7 +15,7 @@ import androidx.navigation.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.call.CallViewModel
-import uddug.com.naukoteka.ui.call.CallFragment
+import uddug.com.naukoteka.ui.call.SingleCallFragment
 import kotlin.math.roundToInt
 
 @AndroidEntryPoint
@@ -59,14 +59,15 @@ class CallOverlayFragment : Fragment() {
     private fun openFullScreen() {
         val navController = requireActivity().findNavController(R.id.main_nav_host_fragment)
         val args = Bundle().apply {
-            putLong(CallFragment.ARG_DIALOG_ID, viewModel.uiState.value.dialogId ?: 0L)
-            putString(CallFragment.ARG_CALL_TITLE, viewModel.uiState.value.callTitle)
+            putLong(SingleCallFragment.ARG_DIALOG_ID, viewModel.uiState.value.dialogId ?: 0L)
+            putString(SingleCallFragment.ARG_CALL_TITLE, viewModel.uiState.value.callTitle)
             putParcelableArrayList(
-                CallFragment.ARG_PARTICIPANTS,
+                SingleCallFragment.ARG_PARTICIPANTS,
                 ArrayList(viewModel.uiState.value.participants),
             )
+            putBoolean(SingleCallFragment.ARG_IS_VIDEO_CALL, viewModel.uiState.value.sessionState.camOn)
         }
-        navController.navigate(R.id.callFragment, args)
+        navController.navigate(R.id.singleCallFragment, args)
     }
 
     private fun removeSelf() {

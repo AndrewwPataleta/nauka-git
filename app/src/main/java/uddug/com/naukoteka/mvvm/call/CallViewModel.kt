@@ -49,6 +49,7 @@ class CallViewModel @Inject constructor(
         avatarUrl: String?,
         participants: List<CallParticipant>? = null,
         callTitle: String? = null,
+        isVideoCall: Boolean = true,
     ) {
         if (isCallStarted) return
 
@@ -80,7 +81,7 @@ class CallViewModel @Inject constructor(
             callTitle = callTitle ?: contactName,
             participants = resolvedParticipants,
             status = CallStatus.DIALING,
-            sessionState = CallSessionState(micOn = true, camOn = true),
+            sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
         )
 
         viewModelScope.launch {

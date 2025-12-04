@@ -469,6 +469,9 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="call_status_finished">Звонок завершен</string>
     <string name="call_status_loading">Загрузка…</string>
     <string name="call_status_in_call">Звонок</string>
+    <string name="call_create_title">Создать звонок</string>
+    <string name="call_audio">Аудиозвонок</string>
+    <string name="call_video">Видеозвонок</string>
     <string name="call_primary_action">Позвонить</string>
     <string name="call_secondary_action">Сообщение</string>
     <string name="call_terminate_action">Завершить</string>
