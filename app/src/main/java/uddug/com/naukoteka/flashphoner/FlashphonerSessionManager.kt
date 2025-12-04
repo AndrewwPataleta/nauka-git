@@ -1,6 +1,8 @@
 package uddug.com.naukoteka.flashphoner
 
+import android.util.Log
 import com.flashphoner.fpwcsapi.bean.Data
+import com.flashphoner.fpwcsapi.Flashphoner
 import com.flashphoner.fpwcsapi.room.Room
 import com.flashphoner.fpwcsapi.room.RoomManager
 import com.flashphoner.fpwcsapi.room.RoomManagerOptions
@@ -64,7 +66,10 @@ class FlashphonerSessionManager @Inject constructor(
         onManagerReady: RoomManager.() -> Unit = {},
     ): RoomManager {
         reset()
-        val manager = environment.createRoomManager(serverUrl, username, configureOptions)
+        environment.ensureInitialised()
+
+        val options = RoomManagerOptions(serverUrl, username).apply(configureOptions)
+        val manager = Flashphoner.createRoomManager(options)
 
         onManagerReady(manager)
         roomManagerRef.set(manager)
@@ -129,6 +134,7 @@ class FlashphonerSessionManager @Inject constructor(
     }
 
     fun disconnectSession() {
+        logLifecycleCall("disconnectSession")
         val session = sessionRef.getAndSet(null) ?: return
         session.disconnect()
     }
@@ -138,6 +144,7 @@ class FlashphonerSessionManager @Inject constructor(
      * the backend receives the appropriate callbacks before the session closes.
      */
     fun disconnectRoom() {
+        logLifecycleCall("disconnectRoom")
         unpublishCurrentStream()
         leaveRoom()
         roomManagerRef.getAndSet(null)?.disconnect()
@@ -150,15 +157,24 @@ class FlashphonerSessionManager @Inject constructor(
      * before creating new Flashphoner objects.
      */
     fun reset() {
+        logLifecycleCall("reset")
         stopStream()
         leaveRoom()
         roomManagerRef.getAndSet(null)?.disconnect()
         sessionRef.getAndSet(null)?.disconnect()
     }
 
+    private fun logLifecycleCall(methodName: String) {
+        Log.d(LOG_TAG, "$methodName() called", Throwable())
+    }
+
     private val defaultHandler = object : RestAppCommunicator.Handler {
         override fun onAccepted(data: Data) = Unit
 
         override fun onRejected(data: Data) = Unit
+    }
+
+    private companion object {
+        const val LOG_TAG = "FlashphonerSM"
     }
 }
