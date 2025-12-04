@@ -6,5 +6,6 @@
 
     <include app:graph="@navigation/nav_graph_profile" />
     <include app:graph="@navigation/nav_graph_sphere" />
+    <include app:graph="@navigation/nav_graph_chat" />
 
 </navigation>
