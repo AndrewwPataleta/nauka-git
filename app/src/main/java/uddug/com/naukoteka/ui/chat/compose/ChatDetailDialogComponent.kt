@@ -240,13 +240,13 @@ fun ChatDetailDialogComponent(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                .padding(horizontal = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(
                                 text = stringResource(R.string.call_create_title),
                                 fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.Normal,
                             )
                             CallOptionItem(
                                 icon = Icons.Filled.Phone,
@@ -769,20 +769,20 @@ private fun CallOptionItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp, horizontal = 8.dp),
+            .padding(vertical = 4.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = Color(0xFF2E83D9),
+            tint = Color(0xFF8083A0),
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
             fontSize = 16.sp,
             color = Color.Black,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Light,
         )
     }
 }
