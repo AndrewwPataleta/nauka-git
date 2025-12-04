@@ -6,10 +6,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -44,7 +44,7 @@ fun CreateChatMemberCard(
                 }
                 onMemberClick()
             },
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colors.surface)
     ) {
         Column {
             Row(
@@ -61,7 +61,11 @@ fun CreateChatMemberCard(
                             onMemberClick()
                         },
                         modifier = Modifier.size(24.dp),
-                        colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2E83D9))
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colors.primary,
+                            uncheckedColor = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
+                            checkmarkColor = MaterialTheme.colors.onPrimary,
+                        )
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                 }
@@ -77,7 +81,7 @@ fun CreateChatMemberCard(
                                 stringResource(R.string.group_chat)
                             } else {
                                 name
-                            }, style = TextStyle(fontSize = 16.sp, color = Color.Black)
+                            }, style = TextStyle(fontSize = 16.sp, color = MaterialTheme.colors.onSurface)
                         )
                     }
 
@@ -91,7 +95,11 @@ fun CreateChatMemberCard(
                             onMemberClick()
                         },
                         modifier = Modifier.size(24.dp),
-                        colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2E83D9))
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colors.primary,
+                            uncheckedColor = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
+                            checkmarkColor = MaterialTheme.colors.onPrimary,
+                        )
                     )
                 }
             }

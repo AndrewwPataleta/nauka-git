@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,7 +37,7 @@ fun ChatCreateMultiScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = Color.White)
+            .background(color = MaterialTheme.colors.background)
     ) {
         ChatToolbarCreateSingleComponent(
             onBackPressed = onBackPressed,
@@ -67,7 +67,7 @@ fun ChatCreateMultiScreen(
                             Text(
                                 text = stringResource(R.string.search_country),
                                 fontSize = 18.sp,
-                                color = Color.Black,
+                                color = MaterialTheme.colors.onBackground,
                             )
                         }
                         items(state.searchResults) { user ->
@@ -88,7 +88,7 @@ fun ChatCreateMultiScreen(
                         Text(
                             text = stringResource(R.string.subs),
                             fontSize = 18.sp,
-                            color = Color.Black,
+                            color = MaterialTheme.colors.onBackground,
                             modifier = Modifier.padding(vertical = 10.dp)
                         )
                     }

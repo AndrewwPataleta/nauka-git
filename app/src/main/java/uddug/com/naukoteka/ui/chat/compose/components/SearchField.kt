@@ -12,16 +12,17 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.LocalTextStyle
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.ui.theme.NauTheme
 
 @Composable
 fun SearchField(
@@ -39,7 +40,7 @@ fun SearchField(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .background(
                 shape = RoundedCornerShape(16.dp),
-                color = Color(0xFFEAEAF2)
+                color = NauTheme.extendedColors.inputBackground
             )
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -47,14 +48,14 @@ fun SearchField(
         Icon(
             painter = painterResource(id = R.drawable.ic_search),
             contentDescription = "Search",
-            tint = Color.Gray,
+            tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
             modifier = Modifier.size(18.dp)
         )
 
         BasicTextField(
             value = query,
             onValueChange = { onSearchChanged(it) },
-            textStyle = LocalTextStyle.current.copy(color = Color.Black),
+            textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colors.onBackground),
             modifier = Modifier
                 .weight(1f)
                 .onFocusChanged { onFocusChanged(it.isFocused) }
@@ -67,7 +68,7 @@ fun SearchField(
                     if (query.isEmpty()) {
                         Text(
                             text = title,
-                            color = Color(0xFF8083A0),
+                            color = NauTheme.extendedColors.inactive,
                             textAlign = if (placeholderCentered) TextAlign.Center else TextAlign.Start,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -90,7 +91,7 @@ fun SearchField(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_close),
                     contentDescription = "Clear search",
-                    tint = Color.Gray,
+                    tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
                     modifier = Modifier.size(18.dp)
                 )
             }

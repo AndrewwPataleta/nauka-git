@@ -9,20 +9,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -35,6 +33,7 @@ import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
+import uddug.com.naukoteka.ui.theme.NauTheme
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -55,7 +54,7 @@ fun ChatFolderSettingsComponent(
                 title = {
                     Text(
                         text = stringResource(R.string.chat_folder_settings_title),
-                        color = Color.Black
+                        color = MaterialTheme.colors.onBackground
                     )
                 },
                 navigationIcon = {
@@ -63,7 +62,7 @@ fun ChatFolderSettingsComponent(
                         Icon(
                             Icons.Filled.ArrowBack,
                             contentDescription = null,
-                            tint = Color(0xFF2E83D9)
+                            tint = MaterialTheme.colors.primary
                         )
                     }
                 },
@@ -75,11 +74,11 @@ fun ChatFolderSettingsComponent(
                         Icon(
                             imageVector = Icons.Filled.Done,
                             contentDescription = null,
-                            tint = if (isFolderOrderChanged) Color(0xFF2E83D9) else Color(0xFFBFC4D5)
+                            tint = if (isFolderOrderChanged) MaterialTheme.colors.primary else MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
                         )
                     }
                 },
-                backgroundColor = Color.White,
+                backgroundColor = MaterialTheme.colors.background,
                 elevation = 0.dp
             )
         }
@@ -87,28 +86,28 @@ fun ChatFolderSettingsComponent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(MaterialTheme.colors.background)
                 .padding(padding)
         ) {
             Text(
                 text = stringResource(R.string.chat_folder_settings_description),
                 modifier = Modifier.padding(16.dp),
                 fontSize = 14.sp,
-                color = Color(0xFF8083A0)
+                color = NauTheme.extendedColors.inactive
             )
             Text(
                 text = stringResource(R.string.chat_folder_settings_selected_chats),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.Black
+                color = MaterialTheme.colors.onBackground
             )
             androidx.compose.material.TextButton(
                 onClick = onCreateFolderClick,
             ) {
                 Text(
                     text = stringResource(R.string.chat_folder_settings_add_folder),
-                    color = Color(0xFF2E83D9),
+                    color = MaterialTheme.colors.primary,
                     style = TextStyle.Default
                 )
             }
@@ -118,7 +117,7 @@ fun ChatFolderSettingsComponent(
                     .fillMaxWidth()
                     .padding(start = 20.dp, end = 20.dp)
                     .wrapContentHeight()
-                    .background(Color(0xFFf6f5f9), shape = RoundedCornerShape(16.dp))
+                    .background(NauTheme.extendedColors.backgroundMoreInfo, shape = RoundedCornerShape(16.dp))
             ) {
 
                 LazyColumn(
@@ -147,7 +146,7 @@ fun ChatFolderSettingsComponent(
                                         .weight(1f)
                                         .padding(horizontal = 16.dp),
                                     fontSize = 16.sp,
-                                    color = Color.Black
+                                    color = MaterialTheme.colors.onBackground
                                 )
                                 Image(
                                     painter = painterResource(id = R.drawable.ic_move_folders),
