@@ -35,6 +35,7 @@ class FlashphonerSessionManager @Inject constructor(
         configureOptions: SessionOptions.() -> Unit = {},
         onSessionReady: Session.() -> Unit = {}
     ): Session {
+        reset()
         val session = environment.createSession(serverUrl) {
 
             configureOptions()
@@ -62,6 +63,7 @@ class FlashphonerSessionManager @Inject constructor(
         configureOptions: SessionOptions.() -> Unit = {},
         onManagerReady: RoomManager.() -> Unit = {},
     ): RoomManager {
+        reset()
         environment.ensureInitialised()
         val options = RoomManagerOptions(serverUrl, username).apply {
             configureOptions()
@@ -126,6 +128,18 @@ class FlashphonerSessionManager @Inject constructor(
         leaveRoom()
         roomManagerRef.getAndSet(null)?.disconnect()
         disconnectSession()
+    }
+
+    /**
+     * Fully clears any existing session, stream or room manager state to ensure a fresh
+     * connection can be established. This is intentionally idempotent and safe to call
+     * before creating new Flashphoner objects.
+     */
+    fun reset() {
+        stopStream()
+        leaveRoom()
+        roomManagerRef.getAndSet(null)?.disconnect()
+        sessionRef.getAndSet(null)?.disconnect()
     }
 
     private val defaultHandler = object : RestAppCommunicator.Handler {
