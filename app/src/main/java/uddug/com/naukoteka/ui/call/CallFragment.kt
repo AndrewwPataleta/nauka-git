@@ -15,6 +15,7 @@ import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallViewModel
 import uddug.com.naukoteka.ui.call.compose.CallScreen
 import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
+import uddug.com.naukoteka.ui.activities.main.ContainerActivity
 
 @AndroidEntryPoint
 class CallFragment : Fragment() {
@@ -55,8 +56,10 @@ class CallFragment : Fragment() {
                         onToggleMicrophone = viewModel::toggleMicrophone,
                         onToggleCamera = viewModel::toggleCamera,
                         onMinimize = {
-                            showFloatingCall()
-                            findNavController().popBackStack()
+                            if (!((requireActivity() as? ContainerActivity)?.enterCallPictureInPictureMode() ?: false)) {
+                                showFloatingCall()
+                                findNavController().popBackStack()
+                            }
                         },
                     )
                 }
