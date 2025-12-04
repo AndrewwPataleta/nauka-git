@@ -5,6 +5,8 @@ import java.lang.ref.WeakReference
 import com.flashphoner.fpwcsapi.Flashphoner
 import com.flashphoner.fpwcsapi.session.Session
 import com.flashphoner.fpwcsapi.session.SessionOptions
+import com.flashphoner.fpwcsapi.room.RoomManager
+import com.flashphoner.fpwcsapi.room.RoomManagerOptions
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -48,5 +50,19 @@ class FlashphonerEnvironment @Inject constructor() {
         ensureInitialised()
         val options = SessionOptions(serverUrl).apply(configure)
         return Flashphoner.createSession(options)
+    }
+
+    /**
+     * Creates a new [RoomManager] instance with provided [serverUrl] and [username].
+     * Ensures the SDK is initialised before delegating to [Flashphoner].
+     */
+    fun createRoomManager(
+        serverUrl: String,
+        username: String,
+        configure: RoomManagerOptions.() -> Unit = {},
+    ): RoomManager {
+        ensureInitialised()
+        val options = RoomManagerOptions(serverUrl, username).apply(configure)
+        return Flashphoner.createRoomManager(options)
     }
 }
