@@ -1,6 +1,5 @@
 package uddug.com.naukoteka.flashphoner
 
-import com.flashphoner.fpwcsapi.Flashphoner
 import com.flashphoner.fpwcsapi.bean.Data
 import com.flashphoner.fpwcsapi.room.Room
 import com.flashphoner.fpwcsapi.room.RoomManager
@@ -65,12 +64,7 @@ class FlashphonerSessionManager @Inject constructor(
         onManagerReady: RoomManager.() -> Unit = {},
     ): RoomManager {
         reset()
-        environment.ensureInitialised()
-
-        val options = RoomManagerOptions(serverUrl, username).apply(configureOptions)
-
-
-        val manager = Flashphoner.createRoomManager(options)
+        val manager = environment.createRoomManager(serverUrl, username, configureOptions)
 
         onManagerReady(manager)
         roomManagerRef.set(manager)
