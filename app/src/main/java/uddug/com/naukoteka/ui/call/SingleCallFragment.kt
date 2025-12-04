@@ -10,17 +10,23 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.naukoteka.mvvm.call.CallParticipant
+import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallViewModel
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity
 import uddug.com.naukoteka.ui.call.compose.CallScreen
 import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class SingleCallFragment : Fragment() {
 
     private val viewModel: CallViewModel by activityViewModels()
+    private var hasHandledCallFinish: Boolean = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -52,8 +58,6 @@ class SingleCallFragment : Fragment() {
                         onBackPressed = { findNavController().popBackStack() },
                         onEndCall = {
                             viewModel.endCall()
-                            findNavController().popBackStack()
-                            removeFloatingCall()
                         },
                         onToggleMicrophone = viewModel::toggleMicrophone,
                         onToggleCamera = viewModel::toggleCamera,
@@ -69,6 +73,11 @@ class SingleCallFragment : Fragment() {
         }
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        observeCallState()
+    }
+
     private fun showFloatingCall() {
         val fragmentManager = requireActivity().supportFragmentManager
         if (fragmentManager.findFragmentByTag(CallOverlayFragment.TAG) == null) {
@@ -77,6 +86,29 @@ class SingleCallFragment : Fragment() {
                 .add(android.R.id.content, CallOverlayFragment(), CallOverlayFragment.TAG)
                 .commitNowAllowingStateLoss()
         }
+    }
+
+    private fun observeCallState() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    if (state.status == CallStatus.FINISHED) {
+                        handleCallFinished()
+                    } else {
+                        hasHandledCallFinish = false
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleCallFinished() {
+        if (hasHandledCallFinish) return
+
+        hasHandledCallFinish = true
+        viewModel.endCall()
+        removeFloatingCall()
+        findNavController().popBackStack()
     }
 
     private fun removeFloatingCall() {
