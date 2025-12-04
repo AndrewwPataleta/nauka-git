@@ -9,6 +9,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.bumptech.glide.request.RequestOptions
 import kotlinx.coroutines.Job
 import moxy.presenter.InjectPresenter
 import moxy.presenter.ProvidePresenter
@@ -18,25 +19,19 @@ import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.databinding.FragmentNaushpereBinding
 import uddug.com.naukoteka.global.base.BaseFragment
-import uddug.com.naukoteka.utils.viewBinding
-import uddug.com.naukoteka.databinding.FragmentProfileBinding
 import uddug.com.naukoteka.presentation.profile.ProfileAvatarActionPresenter
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
-import uddug.com.naukoteka.presentation.profile.ProfilePresenter
-import uddug.com.naukoteka.presentation.profile.ProfileView
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.FEED_ARGS
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.PROFILE_ARGS
-import uddug.com.naukoteka.ui.custom.WorkExperienceView
 import uddug.com.naukoteka.ui.fragments.profile.ProfileFullInfoBottomSheetFragment
 import uddug.com.naukoteka.ui.fragments.profile.adapter.FeedContainerAdapter
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment.Companion.DELETE_AVATAR_RESULT
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment.Companion.UPLOAD_AVATAR_RESULT
 import uddug.com.naukoteka.ui.fragments.wall.bottom.WallDetailActionBottomSheetFragment
-import uddug.com.naukoteka.utils.doIfIsNotNullOrEmptyString
-import uddug.com.naukoteka.utils.getHashCodeToString
 import uddug.com.naukoteka.utils.text.isNotNullOrEmpty
 import uddug.com.naukoteka.utils.ui.load
+import uddug.com.naukoteka.utils.viewBinding
 
 class NauSphereFragment : BaseFragment(R.layout.fragment_naushpere), NauSphereView {
 
@@ -102,8 +97,18 @@ class NauSphereFragment : BaseFragment(R.layout.fragment_naushpere), NauSphereVi
     }
 
     override fun setMainInformation(profileInfo: UserProfileFullInfo) {
-
-
+        val avatarPath = profileInfo.image?.path
+        if (avatarPath.isNotNullOrEmpty()) {
+            contentView.back.load(
+                model = BuildConfig.IMAGE_SERVER_URL.plus(avatarPath),
+                withAnimation = false,
+                requestOptions = RequestOptions.circleCropTransform(),
+                placeholder = R.drawable.mock_avatar,
+                error = R.drawable.mock_avatar
+            )
+        } else {
+            contentView.back.setImageResource(R.drawable.mock_avatar)
+        }
     }
 
     override fun showProgress(progress: Boolean) {
