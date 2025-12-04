@@ -115,14 +115,32 @@ class FlashphonerSessionManager @Inject constructor(
         streamRef.getAndSet(null)?.stop()
     }
 
+    /**
+     * Acceptable way to leave a call: stop publishing media for the current room.
+     * If the room is still attached, request unpublish so the backend cleans up
+     * the media session; otherwise, fall back to stopping the stream directly.
+     */
+    fun unpublishCurrentStream() {
+        val stream = streamRef.getAndSet(null) ?: return
+        val room = roomRef.get()
+        if (room != null) {
+            room.unpublish(stream, defaultHandler)
+        } else {
+            stream.stop()
+        }
+    }
+
     fun disconnectSession() {
-        stopStream()
         val session = sessionRef.getAndSet(null) ?: return
         session.disconnect()
     }
 
+    /**
+     * Proper way to leave a call: unpublish active media and leave the room so
+     * the backend receives the appropriate callbacks before the session closes.
+     */
     fun disconnectRoom() {
-        stopStream()
+        unpublishCurrentStream()
         leaveRoom()
         roomManagerRef.getAndSet(null)?.disconnect()
         disconnectSession()
