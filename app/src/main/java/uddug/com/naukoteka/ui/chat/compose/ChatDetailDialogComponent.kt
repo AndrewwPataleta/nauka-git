@@ -79,7 +79,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -103,6 +102,7 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailShimmer
 import uddug.com.naukoteka.ui.chat.compose.components.FileFunctionAction
 import uddug.com.naukoteka.ui.chat.compose.components.FileFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.util.uriToFile
+import uddug.com.naukoteka.ui.theme.NauTheme
 import uddug.com.naukoteka.utils.copyToClipboard
 import java.time.Instant
 import java.time.ZoneId
@@ -172,7 +172,7 @@ fun ChatDetailDialogComponent(
                     Text(
                         text = stringResource(R.string.chat_group_info_title),
                         fontSize = 20.sp,
-                        color = colorResource(id = R.color.main_text)
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 actions = {
@@ -181,7 +181,7 @@ fun ChatDetailDialogComponent(
                         androidx.compose.material.Icon(
                             painter = painterResource(id = R.drawable.ic_search_chat),
                             contentDescription = "Edit Icon",
-                            tint = Color(0xFF2E83D9)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -192,11 +192,11 @@ fun ChatDetailDialogComponent(
                         androidx.compose.material.Icon(
                             painter = painterResource(id = R.drawable.ic_back),
                             contentDescription = "Edit Icon",
-                            tint = Color(0xFF2E83D9)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
-                backgroundColor = colorResource(id = R.color.main_background),
+                backgroundColor = MaterialTheme.colorScheme.background,
                 elevation = 0.dp
             )
         }
@@ -236,7 +236,7 @@ fun ChatDetailDialogComponent(
                     ModalBottomSheet(
                         onDismissRequest = { showCallOptions = false },
                         sheetState = callSheetState,
-                        containerColor = colorResource(id = R.color.main_background),
+                        containerColor = MaterialTheme.colorScheme.background,
                     ) {
                         Column(
                             modifier = Modifier
@@ -279,7 +279,7 @@ fun ChatDetailDialogComponent(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(colorResource(id = R.color.main_background))
+                        .background(MaterialTheme.colorScheme.background)
                         .padding(paddingValues)
                 ) {
 
@@ -332,12 +332,12 @@ fun ChatDetailDialogComponent(
                             text = state.profile.fullName.orEmpty(),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = colorResource(id = R.color.main_text)
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
                             text = state.profile.nickname.orEmpty(),
                             fontSize = 14.sp,
-                            color = colorResource(id = R.color.secondary_text)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Row {
@@ -347,7 +347,7 @@ fun ChatDetailDialogComponent(
                                     .padding(end = 4.dp)
                                     .background(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = colorResource(id = R.color.background_more_info)
+                                        color = NauTheme.extendedColors.backgroundMoreInfo
                                     )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
@@ -366,12 +366,12 @@ fun ChatDetailDialogComponent(
                                         .size(24.dp),
                                     painter = painterResource(id = R.drawable.ic_profile_call),
                                     contentDescription = "Media",
-                                    tint = Color(0xFF2E83D9)
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
                                     text = stringResource(R.string.call_user),
                                     fontSize = 12.sp,
-                                    color = colorResource(id = R.color.secondary_text)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Column(
@@ -380,7 +380,7 @@ fun ChatDetailDialogComponent(
                                     .padding(start = 4.dp, end = 4.dp)
                                     .background(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = colorResource(id = R.color.background_more_info)
+                                        color = NauTheme.extendedColors.backgroundMoreInfo
                                     )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
@@ -397,12 +397,12 @@ fun ChatDetailDialogComponent(
                                         .size(24.dp),
                                     painter = painterResource(id = R.drawable.ic_profile_send),
                                     contentDescription = "Media",
-                                    tint = Color(0xFF2E83D9)
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
                                     text = stringResource(R.string.profile_shasre),
                                     fontSize = 12.sp,
-                                    color = colorResource(id = R.color.secondary_text)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Column(
@@ -411,7 +411,7 @@ fun ChatDetailDialogComponent(
                                     .padding(start = 4.dp)
                                     .background(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = colorResource(id = R.color.background_more_info)
+                                        color = NauTheme.extendedColors.backgroundMoreInfo
                                     )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
@@ -426,12 +426,12 @@ fun ChatDetailDialogComponent(
                                         .size(24.dp),
                                     painter = painterResource(id = R.drawable.ic_profile_more),
                                     contentDescription = "Media",
-                                    tint = Color(0xFF2E83D9)
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
                                     text = stringResource(R.string.profile_more),
                                     fontSize = 12.sp,
-                                    color = colorResource(id = R.color.secondary_text)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -440,12 +440,12 @@ fun ChatDetailDialogComponent(
                     TabRow(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(colorResource(id = R.color.main_background)),
+                            .background(MaterialTheme.colorScheme.background),
                         selectedTabIndex = selectedTabIndex,
                         indicator = { tabPositions ->
                             TabRowDefaults.Indicator(
                                 Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                                color = Color(0xFF2E83D9)
+                                color = MaterialTheme.colorScheme.primary
                             )
                         },
                         divider = {}
@@ -463,9 +463,9 @@ fun ChatDetailDialogComponent(
                                                 fontSize = 14.sp,
                                                 fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Bold,
                                                 color = if (selectedTabIndex == index) {
-                                                    colorResource(id = R.color.main_text)
+                                                    MaterialTheme.colorScheme.onBackground
                                                 } else {
-                                                    colorResource(id = R.color.secondary_text)
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
                                                 }
                                             )
                                         )
@@ -474,7 +474,7 @@ fun ChatDetailDialogComponent(
                             )
                         }
                     }
-                    Divider(color = colorResource(id = R.color.main_background_input_stroke))
+                    Divider(color = NauTheme.extendedColors.inputStroke)
 
 
                     when (selectedTabIndex) {
@@ -643,7 +643,7 @@ private fun FileItem(
         elevation = 0.dp,
         backgroundColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(width = 1.dp, color = Color(0xFFE7E9EC))
+        border = BorderStroke(width = 1.dp, color = NauTheme.extendedColors.inputStroke)
     ) {
         Row(
             modifier = Modifier
@@ -674,14 +674,14 @@ private fun FileItem(
                         Icon(
                             painter = painterResource(R.drawable.ic_file_download),
                             contentDescription = null,
-                            tint = Color(0xFF7F838D),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = metaText,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF7F838D)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -690,7 +690,7 @@ private fun FileItem(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_more_vertical),
                     contentDescription = null,
-                    tint = Color(0xFF7F838D)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -779,13 +779,13 @@ private fun CallOptionItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = Color(0xFF8083A0),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
             fontSize = 16.sp,
-            color = colorResource(id = R.color.main_text),
+            color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Light,
         )
     }
