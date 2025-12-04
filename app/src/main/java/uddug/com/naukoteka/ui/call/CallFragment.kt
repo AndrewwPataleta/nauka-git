@@ -52,6 +52,8 @@ class CallFragment : Fragment() {
                             findNavController().popBackStack()
                             removeFloatingCall()
                         },
+                        onToggleMicrophone = viewModel::toggleMicrophone,
+                        onToggleCamera = viewModel::toggleCamera,
                         onMinimize = {
                             showFloatingCall()
                             findNavController().popBackStack()

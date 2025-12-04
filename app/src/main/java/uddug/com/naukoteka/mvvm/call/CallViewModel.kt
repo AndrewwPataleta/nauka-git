@@ -21,6 +21,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.parcelize.Parcelize
 import uddug.com.data.cache.user_id.UserIdCache
 import uddug.com.data.cache.user_uuid.UserUUIDCache
+import uddug.com.domain.entities.call.CallSessionState
+import uddug.com.domain.repositories.call.CallRepository
 import uddug.com.naukoteka.flashphoner.FlashphonerConfig
 import uddug.com.naukoteka.flashphoner.FlashphonerConfigProvider
 import uddug.com.naukoteka.flashphoner.FlashphonerSessionManager
@@ -31,6 +33,7 @@ class CallViewModel @Inject constructor(
     private val flashphonerSessionManager: FlashphonerSessionManager,
     private val userIdCache: UserIdCache,
     private val userUUIDCache: UserUUIDCache,
+    private val callRepository: CallRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CallUiState())
@@ -38,6 +41,7 @@ class CallViewModel @Inject constructor(
 
     private var isCallStarted = false
     private var callDurationJob: Job? = null
+    private var mediaSessionId: String? = null
 
     fun startCall(
         dialogId: Long,
@@ -76,6 +80,7 @@ class CallViewModel @Inject constructor(
             callTitle = callTitle ?: contactName,
             participants = resolvedParticipants,
             status = CallStatus.DIALING,
+            sessionState = CallSessionState(micOn = true, camOn = true),
         )
 
         viewModelScope.launch {
@@ -83,6 +88,7 @@ class CallViewModel @Inject constructor(
                 val config = flashphonerConfigProvider.defaultConfig
                 val username = resolveUsername()
                 val streamName = buildStreamName(config, dialogId, username)
+                mediaSessionId = streamName
 
                 flashphonerSessionManager.prepareRoomManager(
                     serverUrl = config.serverUrl,
@@ -184,6 +190,37 @@ class CallViewModel @Inject constructor(
         }
     }
 
+    fun toggleMicrophone() {
+        val currentState = _uiState.value.sessionState
+        val updatedState = currentState.copy(micOn = !currentState.micOn)
+        updateCallState(updatedState)
+    }
+
+    fun toggleCamera() {
+        val currentState = _uiState.value.sessionState
+        val updatedState = currentState.copy(camOn = !currentState.camOn)
+        updateCallState(updatedState)
+    }
+
+    private fun updateCallState(newState: CallSessionState) {
+        val dialogId = _uiState.value.dialogId ?: return
+        val sessionId = mediaSessionId ?: return
+        val userId = userIdCache.entity ?: resolveUsername()
+
+        viewModelScope.launch {
+            runCatching {
+                callRepository.updateState(
+                    dialogId = dialogId,
+                    userId = userId,
+                    mediaSessionId = sessionId,
+                    state = newState,
+                )
+            }.onSuccess {
+                _uiState.value = _uiState.value.copy(sessionState = newState)
+            }
+        }
+    }
+
     private fun subscribeToParticipants(participants: Collection<Participant>) {
         participants.forEach { participant ->
             runCatching { participant.play(null) }
@@ -220,6 +257,7 @@ data class CallUiState(
     val participants: List<CallParticipant> = emptyList(),
     val status: CallStatus = CallStatus.DIALING,
     val callDurationSeconds: Int = 0,
+    val sessionState: CallSessionState = CallSessionState(),
 )
 
 @Parcelize

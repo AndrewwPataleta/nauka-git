@@ -473,6 +473,7 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="call_secondary_action">Сообщение</string>
     <string name="call_terminate_action">Завершить</string>
     <string name="call_microphone">Микрофон</string>
+    <string name="call_camera">Камера</string>
     <string name="call_chat">Чат</string>
     <string name="call_record">Запись</string>
     <string name="call_minimize">Свернуть</string>
