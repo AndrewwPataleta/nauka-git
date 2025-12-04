@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -23,6 +22,7 @@ import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationVi
 import uddug.com.naukoteka.ui.chat.compose.ChatGroupDetailComponent
 import uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment.Companion.ARG_AVATAR_PATH
 import uddug.com.naukoteka.ui.call.GroupCallFragment
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 @AndroidEntryPoint
 class ChatGroupDetailFragment : Fragment() {
@@ -74,7 +74,7 @@ class ChatGroupDetailFragment : Fragment() {
 
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     ChatGroupDetailComponent(
                         viewModel = viewModel,
                         onBackPressed = { requireActivity().onBackPressed() },

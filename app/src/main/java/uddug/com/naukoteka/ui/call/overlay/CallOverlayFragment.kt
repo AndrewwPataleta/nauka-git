@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
@@ -16,6 +15,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.call.CallViewModel
 import uddug.com.naukoteka.ui.call.SingleCallFragment
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 import kotlin.math.roundToInt
 
 @AndroidEntryPoint
@@ -37,7 +37,7 @@ class CallOverlayFragment : Fragment() {
             setContent {
                 val state = viewModel.uiState.collectAsState().value
 
-                MaterialTheme {
+                NaukotekaTheme {
                     CallOverlay(
                         state = state,
                         onExpand = {

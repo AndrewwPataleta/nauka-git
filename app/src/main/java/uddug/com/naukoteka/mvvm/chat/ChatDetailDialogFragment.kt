@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -27,6 +26,7 @@ import uddug.com.naukoteka.ui.chat.ChatDialogFragment.Companion
 import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_MESSAGE_ID
 import uddug.com.naukoteka.ui.chat.compose.ChatDialogComponent
 import uddug.com.naukoteka.ui.chat.compose.ChatListComponent
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 @AndroidEntryPoint
 class ChatDetailDialogFragment : Fragment() {
@@ -89,7 +89,7 @@ class ChatDetailDialogFragment : Fragment() {
 
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     ChatDialogComponent(
                         viewModel = viewModel,
                         onBackPressed = {

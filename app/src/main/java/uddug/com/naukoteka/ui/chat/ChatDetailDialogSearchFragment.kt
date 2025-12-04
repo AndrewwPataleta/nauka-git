@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -15,6 +14,7 @@ import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.ChatDialogDetailViewModel
 import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_MESSAGE_ID
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogSearchComponent
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 @AndroidEntryPoint
 class ChatDetailDialogSearchFragment : Fragment() {
@@ -32,7 +32,7 @@ class ChatDetailDialogSearchFragment : Fragment() {
 
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     ChatDetailDialogSearchComponent(
                         viewModel = viewModel,
                         onBackPressed = { requireActivity().onBackPressed() },

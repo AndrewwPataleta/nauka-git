@@ -20,6 +20,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatCreateFolderEvent
 import uddug.com.naukoteka.mvvm.chat.ChatCreateFolderViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatFolderSelectionItem
 import uddug.com.naukoteka.ui.chat.compose.ChatCreateFolderScreen
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 @AndroidEntryPoint
 class ChatCreateFolderFragment : Fragment() {
@@ -33,7 +34,7 @@ class ChatCreateFolderFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     ChatCreateFolderScreen(
                         viewModel = viewModel,
                         onBackPressed = { findNavController().popBackStack() },

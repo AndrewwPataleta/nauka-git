@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -16,6 +15,7 @@ import kotlinx.coroutines.launch
 import uddug.com.naukoteka.mvvm.chat.ChatFolderAddChatsEvent
 import uddug.com.naukoteka.mvvm.chat.ChatFolderAddChatsViewModel
 import uddug.com.naukoteka.ui.chat.compose.ChatFolderAddChatsScreen
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 import java.util.ArrayList
 
 @AndroidEntryPoint
@@ -30,7 +30,7 @@ class ChatFolderAddChatsFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     ChatFolderAddChatsScreen(
                         viewModel = viewModel,
                         onBackPressed = { viewModel.onBackPressed() }

@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
@@ -16,6 +15,7 @@ import uddug.com.naukoteka.mvvm.call.CallViewModel
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity
 import uddug.com.naukoteka.ui.call.compose.CallScreen
 import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 @AndroidEntryPoint
 class SingleCallFragment : Fragment() {
@@ -46,7 +46,7 @@ class SingleCallFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setContent {
                 val state = viewModel.uiState.collectAsState().value
-                MaterialTheme {
+                NaukotekaTheme {
                     CallScreen(
                         state = state,
                         onBackPressed = { findNavController().popBackStack() },

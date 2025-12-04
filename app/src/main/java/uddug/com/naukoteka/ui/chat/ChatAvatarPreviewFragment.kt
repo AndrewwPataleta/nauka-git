@@ -32,6 +32,8 @@ import androidx.fragment.app.Fragment
 import coil.compose.AsyncImage
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.ui.theme.NauTheme
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 class ChatAvatarPreviewFragment : Fragment() {
 
@@ -43,7 +45,7 @@ class ChatAvatarPreviewFragment : Fragment() {
         val avatarPath = arguments?.getString(ARG_AVATAR_PATH)
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     ChatAvatarPreviewScreen(
                         avatarPath = avatarPath,
                         onBackPressed = { requireActivity().onBackPressed() }
@@ -69,14 +71,18 @@ private fun ChatAvatarPreviewScreen(
                 title = { Text(text = stringResource(R.string.chat_avatar_preview_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null, tint = Color(0xFF2E83D9))
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = null,
+                            tint = MaterialTheme.colors.primary,
+                        )
                     }
                 },
-                backgroundColor = Color.White,
+                backgroundColor = MaterialTheme.colors.surface,
                 elevation = 0.dp
             )
         },
-        backgroundColor = Color(0xFFF5F5F9)
+        backgroundColor = MaterialTheme.colors.background
     ) { padding ->
         Box(
             modifier = Modifier
@@ -90,7 +96,7 @@ private fun ChatAvatarPreviewScreen(
                         .padding(horizontal = 24.dp, vertical = 32.dp)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(24.dp))
-                        .background(Color.White),
+                        .background(MaterialTheme.colors.surface),
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
@@ -107,7 +113,7 @@ private fun ChatAvatarPreviewScreen(
                 Text(
                     text = stringResource(R.string.chat_avatar_preview_empty),
                     modifier = Modifier.padding(32.dp),
-                    color = Color(0xFF8083A0)
+                    color = NauTheme.extendedColors.inactive,
                 )
             }
         }
