@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -102,13 +103,17 @@ private fun SearchMessageResultCard(
                     HighlightedText(
                         text = result.fullName,
                         query = query,
-                        style = TextStyle(fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.SemiBold),
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            color = colorResource(id = R.color.main_text),
+                            fontWeight = FontWeight.SemiBold
+                        ),
                         highlightColor = highlightColor,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
                         text = formatMessageTime(createdAtIso),
-                        color = Color(0xFF8083A0),
+                        color = colorResource(id = R.color.secondary_text),
                         fontSize = 12.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -118,7 +123,7 @@ private fun SearchMessageResultCard(
                 if (messageText.isNotBlank()) {
                     Text(
                         text = buildHighlightedString(messageText, query, highlightColor),
-                        color = Color(0xFF4E5068),
+                        color = colorResource(id = R.color.secondary_text),
                         fontSize = 14.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
@@ -131,7 +136,7 @@ private fun SearchMessageResultCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 68.dp),
-            color = Color(0xFFEAEAF2),
+            color = colorResource(id = R.color.main_background_input_stroke),
             thickness = 1.dp,
         )
     }

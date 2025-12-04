@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import uddug.com.naukoteka.R
@@ -58,7 +59,7 @@ fun ChatListComponent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(color = Color.White)
+            .background(color = colorResource(id = R.color.main_background))
     ) {
         val focusManager = LocalFocusManager.current
         ChatToolbarComponent(
@@ -176,14 +177,14 @@ private fun SearchResultsContent(
     onResultClick: (Long) -> Unit,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.White)
+            modifier = modifier
+                .fillMaxSize()
+                .background(colorResource(id = R.color.main_background))
     ) {
         TabRow(
             modifier = Modifier.fillMaxWidth(),
             selectedTabIndex = selectedTab.ordinal,
-            containerColor = Color.White,
+            containerColor = colorResource(id = R.color.main_background),
             indicator = { tabPositions ->
                 TabRowDefaults.Indicator(
                     modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab.ordinal]),
@@ -199,7 +200,11 @@ private fun SearchResultsContent(
                     text = {
                         Text(
                             text = stringResource(id = tab.titleRes),
-                            color = if (tab == selectedTab) Color.Black else Color(0xFF8083A0)
+                            color = if (tab == selectedTab) {
+                                colorResource(id = R.color.main_text)
+                            } else {
+                                colorResource(id = R.color.secondary_text)
+                            }
                         )
                     }
                 )
@@ -208,13 +213,13 @@ private fun SearchResultsContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(colorResource(id = R.color.main_background))
         ) {
             when {
                 query.isEmpty() -> {
                     Text(
                         text = stringResource(R.string.search_enter_query),
-                        color = Color(0xFF8083A0),
+                        color = colorResource(id = R.color.secondary_text),
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(horizontal = 32.dp)
@@ -224,7 +229,7 @@ private fun SearchResultsContent(
                 query.length < SEARCH_MIN_QUERY_LENGTH -> {
                     Text(
                         text = stringResource(R.string.search_enter_query_min_length),
-                        color = Color(0xFF8083A0),
+                        color = colorResource(id = R.color.secondary_text),
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(horizontal = 32.dp)
@@ -241,7 +246,7 @@ private fun SearchResultsContent(
                     if (currentResults.isEmpty()) {
                         Text(
                             text = stringResource(R.string.search_empty_result),
-                            color = Color(0xFF8083A0),
+                            color = colorResource(id = R.color.secondary_text),
                             modifier = Modifier
                                 .align(Alignment.Center)
                                 .padding(horizontal = 32.dp)
