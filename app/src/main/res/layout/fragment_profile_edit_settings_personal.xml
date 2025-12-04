@@ -252,7 +252,7 @@
                         android:layout_height="1dp"
                         android:layout_marginTop="32dp"
                         android:layout_marginBottom="32dp"
-                        android:background="#2A2C41" />
+                        android:background="@color/profile_settings_divider" />
 
                     <TextView
                         style="@style/NauTextAppearance.AppCompat.Title"
@@ -335,7 +335,7 @@
                         android:layout_height="1dp"
                         android:layout_marginTop="32dp"
                         android:layout_marginBottom="32dp"
-                        android:background="#2A2C41" />
+                        android:background="@color/profile_settings_divider" />
 
                 </LinearLayout>
 
@@ -420,7 +420,7 @@
                     android:layout_height="1dp"
                     android:layout_marginTop="32dp"
                     android:layout_marginBottom="32dp"
-                    android:background="#2A2C41" />
+                    android:background="@color/profile_settings_divider" />
 
                 <TextView
                     style="@style/NauTextAppearance.AppCompat.Title"

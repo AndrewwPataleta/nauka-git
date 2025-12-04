@@ -11,7 +11,7 @@
         style="@style/NauTextAppearance.AppCompat.Title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Ответственный работник"
+        android:text="@string/profile_career_position_placeholder"
         android:visibility="gone"
         android:textSize="16sp" />
 
@@ -29,7 +29,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:textColor="#8083A0"
+        android:textColor="@color/secondary_text"
         android:textSize="16sp" />
 
     <TextView
@@ -38,7 +38,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:textColor="#8083A0"
+        android:textColor="@color/secondary_text"
         android:textSize="16sp" />
 
 </LinearLayout>

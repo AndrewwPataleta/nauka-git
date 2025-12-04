@@ -45,6 +45,7 @@
     <color name="delete_education_gray">#8083A0</color>
     <color name="red_color_exit">#EB5757</color>
     <color name="password_button_disabled_color">#8083A0</color>
+    <color name="profile_settings_divider">#2A2C41</color>
 
 
 </resources>

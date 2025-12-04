@@ -181,7 +181,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="match_parent"
                                 android:gravity="center_vertical"
-                                android:text="wqewqeqweqw"
+                                android:text="@string/profile_edit_nickname_placeholder"
                                 android:textColor="@color/text_link" />
 
                             <ImageView

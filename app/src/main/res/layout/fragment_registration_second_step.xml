@@ -24,7 +24,7 @@
         android:layout_marginTop="41dp"
         android:layout_marginEnd="32dp"
         android:fontFamily="@font/golos_text_regular"
-        android:text="3"
+        android:text="@string/registration_step_three_label"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -41,7 +41,7 @@
         android:paddingTop="2dp"
         android:paddingEnd="7dp"
         android:paddingBottom="2dp"
-        android:text="2"
+        android:text="@string/registration_step_two_label"
         android:textColor="@color/white"
         app:layout_constraintEnd_toStartOf="@id/tv_third_step"
         app:layout_constraintTop_toTopOf="parent" />
@@ -54,7 +54,7 @@
         android:layout_marginTop="41dp"
         android:layout_marginEnd="8dp"
         android:fontFamily="@font/golos_text_regular"
-        android:text="1"
+        android:text="@string/registration_step_one_label"
         app:layout_constraintEnd_toStartOf="@id/tv_second_step"
         app:layout_constraintTop_toTopOf="parent" />
 
