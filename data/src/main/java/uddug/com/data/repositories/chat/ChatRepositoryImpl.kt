@@ -348,8 +348,8 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int) {
-        val request = ReadMessagesRequestDto(dialogId, messages, status)
+    override suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, readStatus: Int) {
+        val request = ReadMessagesRequestDto(dialogId, messages, readStatus)
         apiService.markMessagesRead(request)
     }
 

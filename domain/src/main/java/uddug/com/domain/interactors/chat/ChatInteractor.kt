@@ -125,8 +125,8 @@ class ChatInteractor @Inject constructor(
     suspend fun searchUsers(query: String, limit: Int = 10, page: Int = 1): List<UserProfileFullInfo> =
         chatRepository.searchUsers(query, limit, page)
 
-    suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int) =
-        chatRepository.markMessagesRead(dialogId, messages, status)
+    suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, readStatus: Int) =
+        chatRepository.markMessagesRead(dialogId, messages, readStatus)
 
     suspend fun pinDialog(dialogId: Long) = chatRepository.pinDialog(dialogId)
 

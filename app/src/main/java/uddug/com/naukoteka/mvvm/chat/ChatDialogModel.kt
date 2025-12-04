@@ -1032,7 +1032,7 @@ private fun ChatPollOption.toDomain(): PollOption = PollOption(
     answeredUsers = emptyList()
 )
 
-private const val READ_STATUS = 2
+private const val READ_STATUS = 3
 
 private fun computeIsCurrentUserAdmin(info: DialogInfo, currentUserId: String?): Boolean {
     if (currentUserId.isNullOrEmpty()) return false

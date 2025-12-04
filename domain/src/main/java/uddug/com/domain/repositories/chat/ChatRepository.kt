@@ -117,7 +117,7 @@ interface ChatRepository {
 
     suspend fun searchUsers(searchField: String, limit: Int = 10, page: Int = 1): List<UserProfileFullInfo>
 
-    suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, status: Int)
+    suspend fun markMessagesRead(dialogId: Long, messages: List<Long>, readStatus: Int)
 
     suspend fun pinDialog(dialogId: Long)
 
