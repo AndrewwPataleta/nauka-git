@@ -58,6 +58,7 @@ import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallUiState
+import uddug.com.domain.entities.call.CallSessionState
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,6 +67,8 @@ fun CallScreen(
     state: CallUiState,
     onBackPressed: () -> Unit,
     onEndCall: () -> Unit,
+    onToggleMicrophone: () -> Unit,
+    onToggleCamera: () -> Unit,
     onMinimize: () -> Unit,
 ) {
     val backgroundColor = Color(0xFF0B1020)
@@ -143,7 +146,12 @@ fun CallScreen(
                 )
             }
 
-            CallControls(onEndCall = onEndCall)
+            CallControls(
+                sessionState = state.sessionState,
+                onToggleMicrophone = onToggleMicrophone,
+                onToggleCamera = onToggleCamera,
+                onEndCall = onEndCall,
+            )
         }
     }
 
@@ -369,6 +377,9 @@ private fun ParticipantCard(
 
 @Composable
 private fun CallControls(
+    sessionState: CallSessionState,
+    onToggleMicrophone: () -> Unit,
+    onToggleCamera: () -> Unit,
     onEndCall: () -> Unit,
 ) {
     Surface(
@@ -384,17 +395,23 @@ private fun CallControls(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CallActionButton(
-                iconRes = R.drawable.ic_rec_mic_inactive,
+                iconRes = if (sessionState.micOn) {
+                    R.drawable.ic_rec_mic_active
+                } else {
+                    R.drawable.ic_rec_mic_inactive
+                },
                 label = stringResource(R.string.call_microphone),
                 containerColor = Color.Transparent,
-                contentColor = Color.White,
-            ) {}
+                contentColor = if (sessionState.micOn) Color.White else Color(0xFF8083A0),
+                onClick = onToggleMicrophone,
+            )
             CallActionButton(
-                iconRes = R.drawable.ic_mute_sound_folder,
-                label = stringResource(R.string.call_speaker),
+                iconRes = R.drawable.ic_camera,
+                label = stringResource(R.string.call_camera),
                 containerColor = Color.Transparent,
-                contentColor = Color.White,
-            ) {}
+                contentColor = if (sessionState.camOn) Color.White else Color(0xFF8083A0),
+                onClick = onToggleCamera,
+            )
             CallActionButton(
                 iconRes = R.drawable.ic_close,
                 label = stringResource(R.string.call_terminate_action),
