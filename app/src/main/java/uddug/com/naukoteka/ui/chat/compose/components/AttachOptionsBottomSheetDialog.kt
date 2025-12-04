@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -51,7 +52,8 @@ fun AttachOptionsBottomSheetDialog(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = sheetState
+        sheetState = sheetState,
+        containerColor = colorResource(id = R.color.main_background)
     ) {
         Row(
             modifier = Modifier
@@ -107,9 +109,9 @@ private fun BottomSheetItem(
                 .size(56.dp)
                 .background(
                     color = if (isSelected) {
-                        Color(0xFF2E83D9)
+                        colorResource(id = R.color.object_main)
                     } else {
-                        Color(0xFFEAEAF2)
+                        colorResource(id = R.color.background_more_info)
                     },
                     shape = CircleShape
                 ),
@@ -118,11 +120,7 @@ private fun BottomSheetItem(
             Image(
                 painter = icon,
                 contentDescription = text,
-//                tint = if (isSelected) {
-//                    MaterialTheme.colorScheme.onPrimary
-//                } else {
-//                    Color(0xFF8083A0)
-//                },
+                colorFilter = null,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -130,7 +128,7 @@ private fun BottomSheetItem(
         Text(
             text = text,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.Black,
+            color = colorResource(id = R.color.main_text),
             textAlign = TextAlign.Center,
             maxLines = 2
         )
