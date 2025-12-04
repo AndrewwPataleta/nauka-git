@@ -27,8 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -79,12 +77,12 @@ fun ChatDetailDialogSearchComponent(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_back),
                             contentDescription = "Back",
-                            tint = Color(0xFF2E83D9)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(id = R.color.main_background)
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         }
@@ -99,14 +97,14 @@ fun ChatDetailDialogSearchComponent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(colorResource(id = R.color.main_background))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 indicator = { tabPositions ->
                     TabRowDefaults.Indicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                        color = Color(0xFF2E83D9)
+                        color = MaterialTheme.colorScheme.primary
                     )
                 },
                 divider = {},
@@ -123,9 +121,9 @@ fun ChatDetailDialogSearchComponent(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (selectedTabIndex == index) {
-                                    colorResource(id = R.color.main_text)
+                                    MaterialTheme.colorScheme.onBackground
                                 } else {
-                                    colorResource(id = R.color.secondary_text)
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                                 }
                             )
                         )
