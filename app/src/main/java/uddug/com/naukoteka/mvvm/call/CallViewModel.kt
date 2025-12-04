@@ -42,6 +42,8 @@ class CallViewModel @Inject constructor(
     private var isCallStarted = false
     private var callDurationJob: Job? = null
     private var mediaSessionId: String? = null
+    private var lastCallParams: CallParams? = null
+    private var reconnectAttempts = 0
 
     fun startCall(
         dialogId: Long,
@@ -50,8 +52,21 @@ class CallViewModel @Inject constructor(
         participants: List<CallParticipant>? = null,
         callTitle: String? = null,
         isVideoCall: Boolean = true,
+        resetReconnectAttempts: Boolean = true,
     ) {
         if (isCallStarted) return
+
+        if (resetReconnectAttempts) {
+            reconnectAttempts = 0
+        }
+        lastCallParams = CallParams(
+            dialogId = dialogId,
+            contactName = contactName,
+            avatarUrl = avatarUrl,
+            participants = participants,
+            callTitle = callTitle,
+            isVideoCall = isVideoCall,
+        )
 
         if (dialogId <= 0) {
             _uiState.value = _uiState.value.copy(status = CallStatus.FINISHED)
@@ -140,7 +155,7 @@ class CallViewModel @Inject constructor(
             }
 
             override fun onDisconnection(connection: Connection) {
-                handleCallFailure()
+                attemptReconnectOrFail()
             }
         }
     }
@@ -184,6 +199,27 @@ class CallViewModel @Inject constructor(
         }.onFailure {
             handleCallFailure()
         }
+    }
+
+    private fun attemptReconnectOrFail() {
+        val params = lastCallParams
+        if (params == null || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+            handleCallFailure()
+            return
+        }
+
+        reconnectAttempts++
+        isCallStarted = false
+        flashphonerSessionManager.reset()
+        startCall(
+            dialogId = params.dialogId,
+            contactName = params.contactName,
+            avatarUrl = params.avatarUrl,
+            participants = params.participants,
+            callTitle = params.callTitle,
+            isVideoCall = params.isVideoCall,
+            resetReconnectAttempts = false,
+        )
     }
 
     fun toggleMicrophone() {
@@ -235,6 +271,19 @@ class CallViewModel @Inject constructor(
             userUUIDCache.entity?.takeIf { it.isNotBlank() },
             userIdCache.entity?.takeIf { it.isNotBlank() },
         ).firstOrNull() ?: "anonymous"
+    }
+
+    private data class CallParams(
+        val dialogId: Long,
+        val contactName: String?,
+        val avatarUrl: String?,
+        val participants: List<CallParticipant>?,
+        val callTitle: String?,
+        val isVideoCall: Boolean,
+    )
+
+    private companion object {
+        const val MAX_RECONNECT_ATTEMPTS = 1
     }
 
     private fun buildStreamName(
