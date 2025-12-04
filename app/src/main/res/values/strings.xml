@@ -494,6 +494,10 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="call_participant_action_copy">Скопировать контакт</string>
     <string name="call_participant_action_profile">Посмотреть профиль</string>
     <string name="call_sheet_close">Закрыть</string>
+    <string name="call_permission_microphone_title">Нет доступа к микрофону</string>
+    <string name="call_permission_microphone_message">Без доступа к микрофону не получится совершить звонок.</string>
+    <string name="call_permission_camera_title">Нет доступа к камере</string>
+    <string name="call_permission_camera_message">Для видеозвонка нужен доступ к камере.</string>
     <string name="profile_shasre">Поделиться</string>
     <string name="profile_more">Еще</string>
     <string name="find_chat_message">Поиск чатов и сообщений</string>
