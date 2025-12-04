@@ -22,7 +22,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailUiState
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatGroupDetailComponent
 import uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment.Companion.ARG_AVATAR_PATH
-import uddug.com.naukoteka.ui.call.CallFragment
+import uddug.com.naukoteka.ui.call.GroupCallFragment
 
 @AndroidEntryPoint
 class ChatGroupDetailFragment : Fragment() {
@@ -92,11 +92,11 @@ class ChatGroupDetailFragment : Fragment() {
                             val dialogId = (viewModel.uiState.value as? ChatGroupDetailUiState.Success)?.dialogId
                                 ?: return@ChatGroupDetailComponent
                             findNavController().navigate(
-                                R.id.callFragment,
+                                R.id.groupCallFragment,
                                 Bundle().apply {
-                                    putString(CallFragment.ARG_CONTACT_NAME, name)
-                                    putString(CallFragment.ARG_AVATAR_URL, avatar)
-                                    putLong(CallFragment.ARG_DIALOG_ID, dialogId)
+                                    putString(GroupCallFragment.ARG_CONTACT_NAME, name)
+                                    putString(GroupCallFragment.ARG_AVATAR_URL, avatar)
+                                    putLong(GroupCallFragment.ARG_DIALOG_ID, dialogId)
                                 }
                             )
                         },

@@ -31,7 +31,7 @@ import uddug.com.naukoteka.ui.chat.compose.ChatDialogComponent
 import uddug.com.naukoteka.ui.chat.compose.ChatListComponent
 import uddug.com.naukoteka.ui.chat.ChatEditGroupFragment
 import uddug.com.naukoteka.ui.chat.ChatPollResultsFragment
-import uddug.com.naukoteka.ui.call.CallFragment
+import uddug.com.naukoteka.ui.call.SingleCallFragment
 
 @AndroidEntryPoint
 class ChatDialogFragment : Fragment() {
@@ -97,16 +97,16 @@ class ChatDialogFragment : Fragment() {
                         )
                     }
                     is ChatDialogEvents.IncomingCall -> {
-                        findNavController().navigate(
-                            R.id.callFragment,
-                            Bundle().apply {
-                                putString(CallFragment.ARG_CONTACT_NAME, state.contactName)
-                                putString(CallFragment.ARG_AVATAR_URL, state.avatarUrl)
-                                putLong(CallFragment.ARG_DIALOG_ID, state.dialogId)
-                                putString(CallFragment.ARG_CALL_TITLE, state.callTitle)
-                            }
-                        )
-                    }
+                            findNavController().navigate(
+                                R.id.singleCallFragment,
+                                Bundle().apply {
+                                    putString(SingleCallFragment.ARG_CONTACT_NAME, state.contactName)
+                                    putString(SingleCallFragment.ARG_AVATAR_URL, state.avatarUrl)
+                                    putLong(SingleCallFragment.ARG_DIALOG_ID, state.dialogId)
+                                    putString(SingleCallFragment.ARG_CALL_TITLE, state.callTitle)
+                                }
+                            )
+                        }
                 }
             }
         }

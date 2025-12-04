@@ -13,12 +13,12 @@ import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallViewModel
+import uddug.com.naukoteka.ui.activities.main.ContainerActivity
 import uddug.com.naukoteka.ui.call.compose.CallScreen
 import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
-import uddug.com.naukoteka.ui.activities.main.ContainerActivity
 
 @AndroidEntryPoint
-class CallFragment : Fragment() {
+class SingleCallFragment : Fragment() {
 
     private val viewModel: CallViewModel by activityViewModels()
 
@@ -32,6 +32,7 @@ class CallFragment : Fragment() {
         val callTitle = arguments?.getString(ARG_CALL_TITLE)
         val participants = arguments?.getParcelableArrayList<CallParticipant>(ARG_PARTICIPANTS)
         val dialogId = arguments?.getLong(ARG_DIALOG_ID)
+        val isVideoCall = arguments?.getBoolean(ARG_IS_VIDEO_CALL) ?: true
 
         viewModel.startCall(
             dialogId = dialogId ?: viewModel.uiState.value.dialogId ?: 0L,
@@ -39,6 +40,7 @@ class CallFragment : Fragment() {
             avatarUrl = avatarUrl,
             participants = participants,
             callTitle = callTitle,
+            isVideoCall = isVideoCall,
         )
 
         return ComposeView(requireContext()).apply {
@@ -91,5 +93,6 @@ class CallFragment : Fragment() {
         const val ARG_CALL_TITLE = "call_title"
         const val ARG_PARTICIPANTS = "participants"
         const val ARG_DIALOG_ID = "dialog_id"
+        const val ARG_IS_VIDEO_CALL = "is_video_call"
     }
 }

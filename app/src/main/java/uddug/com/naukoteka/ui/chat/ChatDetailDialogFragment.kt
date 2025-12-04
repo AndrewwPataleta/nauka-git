@@ -25,7 +25,7 @@ import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationVi
 import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
 import uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment.Companion.ARG_AVATAR_PATH
 import uddug.com.naukoteka.ui.chat.ChatEditGroupFragment
-import uddug.com.naukoteka.ui.call.CallFragment
+import uddug.com.naukoteka.ui.call.SingleCallFragment
 @AndroidEntryPoint
 class ChatDetailDialogFragment : Fragment() {
 
@@ -119,16 +119,17 @@ class ChatDetailDialogFragment : Fragment() {
                                 Bundle().apply { putLong(DIALOG_ID, dialogId) }
                             )
                         },
-                        onCallClick = { name, avatar ->
+                        onCallClick = { name, avatar, isVideoCall ->
                             val dialogId = (viewModel.uiState.value as? ChatDetailUiState.Success)?.dialogId
                                 ?: arguments?.getLong(DIALOG_ID)
                                 ?: return@ChatDetailDialogComponent
                             findNavController().navigate(
-                                R.id.callFragment,
+                                R.id.singleCallFragment,
                                 Bundle().apply {
-                                    putString(CallFragment.ARG_CONTACT_NAME, name)
-                                    putString(CallFragment.ARG_AVATAR_URL, avatar)
-                                    putLong(CallFragment.ARG_DIALOG_ID, dialogId)
+                                    putString(SingleCallFragment.ARG_CONTACT_NAME, name)
+                                    putString(SingleCallFragment.ARG_AVATAR_URL, avatar)
+                                    putLong(SingleCallFragment.ARG_DIALOG_ID, dialogId)
+                                    putBoolean(SingleCallFragment.ARG_IS_VIDEO_CALL, isVideoCall)
                                 }
                             )
                         },
