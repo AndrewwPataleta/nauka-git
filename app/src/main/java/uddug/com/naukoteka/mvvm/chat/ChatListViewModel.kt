@@ -17,13 +17,16 @@ import uddug.com.data.cache.user_uuid.UserUUIDCache
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.SearchDialog
 import uddug.com.domain.entities.chat.SearchMessage
+import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.chat.ChatRepository
+import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.ui.chat.di.SocketService
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatListViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
+    private val userProfileRepository: UserProfileRepository,
     userIdCache: UserIdCache,
     userUUIDCache: UserUUIDCache,
     private val socketService: SocketService,
@@ -66,11 +69,25 @@ class ChatListViewModel @Inject constructor(
     private val _isSearchActive = MutableStateFlow(false)
     val isSearchActive: StateFlow<Boolean> = _isSearchActive
 
+    private val _currentUser = MutableStateFlow<UserProfileFullInfo?>(null)
+    val currentUser: StateFlow<UserProfileFullInfo?> = _currentUser
+
     private var loadChatsJob: kotlinx.coroutines.Job? = null
     private var searchJob: Job? = null
 
     init {
         socketService.connect()
+        loadCurrentUser()
+    }
+
+    private fun loadCurrentUser() {
+        viewModelScope.launch {
+            try {
+                val profile = userProfileRepository.getProfileInfo().await()
+                _currentUser.value = profile
+            } catch (_: Exception) {
+            }
+        }
     }
 
     fun isMessageFromMe(ownerId: String?): Boolean {
