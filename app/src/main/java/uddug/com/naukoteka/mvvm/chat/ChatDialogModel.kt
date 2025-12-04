@@ -584,7 +584,8 @@ class ChatDialogViewModel @Inject constructor(
             val currentState = _uiState.value
             val successState = currentState as? ChatDialogUiState.Success
             val replyId = successState?.replyMessage?.id
-            val sanitizedText = if (text.isBlank()) "" else text
+            val sanitizedText = text.trim()
+            val outgoingText = sanitizedText.takeIf { it.isNotEmpty() }
 
             selectedUser?.let { user ->
                 val payload = buildUserContactPayload(user) ?: return@launch
@@ -670,10 +671,18 @@ class ChatDialogViewModel @Inject constructor(
                 try {
                     chatInteractor.uploadFiles(attachedFiles, uploadRequiresRaw)
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e("ChatViewModel", "Failed to upload attachments", e)
                     emptyList()
                 }
             } else emptyList()
+
+            if (attachedFiles.isNotEmpty() && uploaded.size != attachedFiles.size) {
+                Log.e(
+                    "ChatViewModel",
+                    "Attachment upload failed: expected ${attachedFiles.size} files, got ${uploaded.size}"
+                )
+                return@launch
+            }
 
             val fileDescriptors = uploaded.mapIndexed { index, uploadedFile ->
                 val type = attachedFiles.getOrNull(index)?.let { determineFileType(it) } ?: DOCUMENT_FILE_TYPE
@@ -689,7 +698,7 @@ class ChatDialogViewModel @Inject constructor(
                 ChatSocketMessage(
                     dialog = dialog.id,
                     cType = cType,
-                    text = sanitizedText,
+                    text = outgoingText,
                     owner = currentUser?.id.orEmpty(),
                     files = fileDescriptors.ifEmpty { null },
                     answered = replyId
@@ -699,7 +708,7 @@ class ChatDialogViewModel @Inject constructor(
                 ChatSocketMessage(
                     interlocutor = peer,
                     cType = cType,
-                    text = sanitizedText,
+                    text = outgoingText,
                     owner = currentUser?.id.orEmpty(),
                     files = fileDescriptors.ifEmpty { null },
                     answered = replyId
