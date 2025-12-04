@@ -126,7 +126,7 @@ class FlashphonerSessionManager @Inject constructor(
         val stream = streamRef.getAndSet(null) ?: return
         val room = roomRef.get()
         if (room != null) {
-            room.unpublish(stream, defaultHandler)
+            room.unpublish()
         } else {
             stream.stop()
         }
