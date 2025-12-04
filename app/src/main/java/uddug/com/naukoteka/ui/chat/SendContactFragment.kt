@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -13,6 +12,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.mvvm.chat.SendContactViewModel
 import uddug.com.naukoteka.ui.chat.compose.SendContactComponent
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 @AndroidEntryPoint
 class SendContactFragment : Fragment() {
@@ -26,7 +26,7 @@ class SendContactFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     SendContactComponent(
                         viewModel = viewModel,
                         onBack = { requireActivity().onBackPressed() },

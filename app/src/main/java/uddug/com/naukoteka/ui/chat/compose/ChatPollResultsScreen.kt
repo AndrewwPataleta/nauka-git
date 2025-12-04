@@ -18,6 +18,7 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.LinearProgressIndicator
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
@@ -30,7 +31,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,13 +43,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatPollResultsUiState
 import uddug.com.naukoteka.mvvm.chat.ChatPollResultsViewModel
 import uddug.com.naukoteka.mvvm.chat.PollResultOptionUi
 import uddug.com.naukoteka.mvvm.chat.PollResultsUiModel
-
-private val PrimaryTextColor = Color(0xFF111827)
-private val SecondaryTextColor = Color(0xFF6F7A90)
-private val AccentColor = Color(0xFF2E83D9)
-private val SurfaceColor = Color.White
-private val QuestionBackgroundColor = Color(0xFFF6F8FC)
-private val QuestionBorderColor = Color(0xFFE4E8F1)
+import uddug.com.naukoteka.ui.theme.NauTheme
 
 @Composable
 fun ChatPollResultsScreen(
@@ -76,7 +70,7 @@ fun ChatPollResultsScreen(
                 title = {
                     Text(
                         text = stringResource(id = R.string.chat_poll_results_title),
-                        color = PrimaryTextColor,
+                        color = primaryTextColor(),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -86,27 +80,27 @@ fun ChatPollResultsScreen(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = null,
-                            tint = PrimaryTextColor
+                            tint = primaryTextColor()
                         )
                     }
                 },
-                backgroundColor = SurfaceColor,
+                backgroundColor = surfaceColor(),
                 elevation = 0.dp
             )
         },
-        backgroundColor = SurfaceColor
+        backgroundColor = MaterialTheme.colors.background
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(SurfaceColor)
+                .background(MaterialTheme.colors.background)
                 .padding(paddingValues)
         ) {
             when {
                 state.isLoading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
-                        color = AccentColor
+                        color = accentColor()
                     )
                 }
                 state.poll != null -> {
@@ -130,7 +124,7 @@ private fun PollResultsContent(model: PollResultsUiModel) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .background(SurfaceColor)
+            .background(surfaceColor())
             .padding(vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
@@ -138,7 +132,7 @@ private fun PollResultsContent(model: PollResultsUiModel) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = stringResource(id = R.string.chat_poll_results_question_label),
-                    color = SecondaryTextColor,
+                    color = secondaryTextColor(),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     lineHeight = 16.sp
@@ -147,19 +141,19 @@ private fun PollResultsContent(model: PollResultsUiModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            color = QuestionBackgroundColor,
+                            color = questionBackgroundColor(),
                             shape = RoundedCornerShape(16.dp)
                         )
                         .border(
                             width = 1.dp,
-                            color = QuestionBorderColor,
+                            color = questionBorderColor(),
                             shape = RoundedCornerShape(16.dp)
                         )
                         .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
                     Text(
                         text = model.question,
-                        color = PrimaryTextColor,
+                        color = primaryTextColor(),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 22.sp,
@@ -184,28 +178,28 @@ private fun PollResultsContent(model: PollResultsUiModel) {
                     pollTypeText,
                     votesText
                 ),
-                color = SecondaryTextColor,
+                color = secondaryTextColor(),
                 fontSize = 14.sp,
                 lineHeight = 20.sp
             )
             if (model.allowsMultipleAnswers) {
                 Text(
                     text = stringResource(id = R.string.chat_poll_results_multiple_allowed),
-                    color = SecondaryTextColor,
+                    color = secondaryTextColor(),
                     fontSize = 12.sp
                 )
             }
             if (model.isQuiz) {
                 Text(
                     text = stringResource(id = R.string.chat_poll_results_quiz_mode),
-                    color = SecondaryTextColor,
+                    color = secondaryTextColor(),
                     fontSize = 12.sp
                 )
             }
             if (model.isStopped) {
                 Text(
                     text = stringResource(id = R.string.chat_poll_results_stopped),
-                    color = SecondaryTextColor,
+                    color = secondaryTextColor(),
                     fontSize = 12.sp
                 )
             }
@@ -213,7 +207,7 @@ private fun PollResultsContent(model: PollResultsUiModel) {
 
         Text(
             text = stringResource(id = R.string.chat_poll_results_options_section),
-            color = PrimaryTextColor,
+            color = primaryTextColor(),
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold
         )
@@ -229,9 +223,9 @@ private fun PollResultsContent(model: PollResultsUiModel) {
 @Composable
 private fun PollResultOptionItem(option: PollResultOptionUi) {
     val background = when {
-        option.isRightAnswer -> AccentColor.copy(alpha = 0.08f)
-        option.isSelected -> AccentColor.copy(alpha = 0.05f)
-        else -> Color(0xFFF5F5F9)
+        option.isRightAnswer -> accentColor().copy(alpha = 0.08f)
+        option.isSelected -> accentColor().copy(alpha = 0.05f)
+        else -> surfaceColor()
     }
     Column(
         modifier = Modifier
@@ -245,14 +239,14 @@ private fun PollResultOptionItem(option: PollResultOptionUi) {
         ) {
             Text(
                 text = "${option.percent}%",
-                color = Color.Black,
+                color = primaryTextColor(),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp
             )
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = option.text,
-                    color = PrimaryTextColor,
+                    color = primaryTextColor(),
                     fontSize = 15.sp,
                     fontWeight = if (option.isSelected || option.isRightAnswer) FontWeight.SemiBold else FontWeight.Normal,
                     lineHeight = 20.sp
@@ -260,7 +254,7 @@ private fun PollResultOptionItem(option: PollResultOptionUi) {
                 option.description?.takeIf { it.isNotBlank() }?.let { description ->
                     Text(
                         text = description,
-                        color = SecondaryTextColor,
+                        color = secondaryTextColor(),
                         fontSize = 13.sp,
                         lineHeight = 18.sp
                     )
@@ -268,14 +262,14 @@ private fun PollResultOptionItem(option: PollResultOptionUi) {
                 if (option.isRightAnswer) {
                     Text(
                         text = stringResource(id = R.string.chat_poll_results_correct_answer),
-                        color = AccentColor,
+                        color = accentColor(),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 } else if (option.isSelected) {
                     Text(
                         text = stringResource(id = R.string.chat_poll_results_your_choice),
-                        color = AccentColor,
+                        color = accentColor(),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -288,8 +282,8 @@ private fun PollResultOptionItem(option: PollResultOptionUi) {
                 .fillMaxWidth()
                 .height(2.dp)
                 .clip(RoundedCornerShape(3.dp)),
-            backgroundColor = Color(0xFFE4E8F1),
-            color = AccentColor
+            backgroundColor = questionBorderColor(),
+            color = accentColor()
         )
     }
 }
@@ -307,21 +301,21 @@ private fun PollResultsError(
     ) {
         Text(
             text = stringResource(id = R.string.chat_poll_results_error),
-            color = SecondaryTextColor,
+            color = secondaryTextColor(),
             fontSize = 16.sp,
             textAlign = TextAlign.Center
         )
         message?.takeIf { it.isNotBlank() }?.let { details ->
             Text(
                 text = details,
-                color = SecondaryTextColor,
+                color = secondaryTextColor(),
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center
             )
         }
         TextButton(
             onClick = onRetry,
-            colors = ButtonDefaults.textButtonColors(contentColor = AccentColor)
+            colors = ButtonDefaults.textButtonColors(contentColor = accentColor())
         ) {
             Text(
                 text = stringResource(id = R.string.chat_poll_results_retry),
@@ -331,3 +325,21 @@ private fun PollResultsError(
         }
     }
 }
+
+@Composable
+private fun primaryTextColor() = MaterialTheme.colors.onSurface
+
+@Composable
+private fun secondaryTextColor() = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+
+@Composable
+private fun accentColor() = MaterialTheme.colors.primary
+
+@Composable
+private fun surfaceColor() = MaterialTheme.colors.surface
+
+@Composable
+private fun questionBackgroundColor() = NauTheme.extendedColors.backgroundMoreInfo
+
+@Composable
+private fun questionBorderColor() = NauTheme.extendedColors.inputStroke

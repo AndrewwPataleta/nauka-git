@@ -4,13 +4,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.naukoteka.mvvm.chat.ChatPollResultsViewModel
 import uddug.com.naukoteka.ui.chat.compose.ChatPollResultsScreen
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 @AndroidEntryPoint
 class ChatPollResultsFragment : Fragment() {
@@ -24,7 +24,7 @@ class ChatPollResultsFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     ChatPollResultsScreen(
                         viewModel = viewModel,
                         onBack = { requireActivity().onBackPressed() }

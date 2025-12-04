@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -20,6 +19,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatEditFolderEvent
 import uddug.com.naukoteka.mvvm.chat.ChatEditFolderViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatFolderSelectionItem
 import uddug.com.naukoteka.ui.chat.compose.ChatEditFolderScreen
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 @AndroidEntryPoint
 class ChatEditFolderFragment : Fragment() {
@@ -33,7 +33,7 @@ class ChatEditFolderFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     ChatEditFolderScreen(
                         viewModel = viewModel,
                         onBackPressed = { findNavController().popBackStack() },

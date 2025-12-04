@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -20,6 +19,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatCreateGroupEvent
 import uddug.com.naukoteka.mvvm.chat.ChatCreateGroupViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.compose.ChatCreateGroupScreen
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 @AndroidEntryPoint
 class ChatCreateGroupFragment : Fragment() {
@@ -85,7 +85,7 @@ class ChatCreateGroupFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     ChatCreateGroupScreen(
                         viewModel = viewModel,
                         onBackPressed = { findNavController().popBackStack() },

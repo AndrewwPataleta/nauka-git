@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -23,6 +22,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatCreateSingleViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.ChatDialogFragment.Companion.INTERLOCUTOR_ID
 import uddug.com.naukoteka.ui.chat.compose.ChatCreateSingleScreen
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 @AndroidEntryPoint
 class ChatCreateSingleFragment : Fragment() {
@@ -79,7 +79,7 @@ class ChatCreateSingleFragment : Fragment() {
 
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     ChatCreateSingleScreen(
                         viewModel = viewModel,
                         onGroupCreateClick = {

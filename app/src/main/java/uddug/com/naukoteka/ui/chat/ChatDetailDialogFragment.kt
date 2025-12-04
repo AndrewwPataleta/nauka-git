@@ -31,6 +31,7 @@ import uddug.com.naukoteka.ui.chat.compose.ChatDetailDialogComponent
 import uddug.com.naukoteka.ui.chat.ChatAvatarPreviewFragment.Companion.ARG_AVATAR_PATH
 import uddug.com.naukoteka.ui.chat.ChatEditGroupFragment
 import uddug.com.naukoteka.ui.call.SingleCallFragment
+import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 @AndroidEntryPoint
 class ChatDetailDialogFragment : Fragment() {
 
@@ -131,7 +132,7 @@ class ChatDetailDialogFragment : Fragment() {
 
         return ComposeView(requireContext()).apply {
             setContent {
-                MaterialTheme {
+                NaukotekaTheme {
                     ChatDetailDialogComponent(
                         viewModel = viewModel,
                         onBackPressed = {
