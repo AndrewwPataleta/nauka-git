@@ -249,6 +249,11 @@ class CallViewModel @Inject constructor(
         return listOf(config.streamName, dialogId, username)
             .joinToString(separator = "-")
     }
+
+    override fun onCleared() {
+        flashphonerSessionManager.reset()
+        super.onCleared()
+    }
 }
 
 data class CallUiState(
