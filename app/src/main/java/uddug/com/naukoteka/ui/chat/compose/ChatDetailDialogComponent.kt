@@ -236,6 +236,7 @@ fun ChatDetailDialogComponent(
                     ModalBottomSheet(
                         onDismissRequest = { showCallOptions = false },
                         sheetState = callSheetState,
+                        containerColor = colorResource(id = R.color.main_background),
                     ) {
                         Column(
                             modifier = Modifier
@@ -346,7 +347,7 @@ fun ChatDetailDialogComponent(
                                     .padding(end = 4.dp)
                                     .background(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFF5F5F9)
+                                        color = colorResource(id = R.color.background_more_info)
                                     )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
@@ -370,7 +371,7 @@ fun ChatDetailDialogComponent(
                                 Text(
                                     text = stringResource(R.string.call_user),
                                     fontSize = 12.sp,
-                                    color = Color(0xFF8083A0)
+                                    color = colorResource(id = R.color.secondary_text)
                                 )
                             }
                             Column(
@@ -379,7 +380,7 @@ fun ChatDetailDialogComponent(
                                     .padding(start = 4.dp, end = 4.dp)
                                     .background(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFF5F5F9)
+                                        color = colorResource(id = R.color.background_more_info)
                                     )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
@@ -401,7 +402,7 @@ fun ChatDetailDialogComponent(
                                 Text(
                                     text = stringResource(R.string.profile_shasre),
                                     fontSize = 12.sp,
-                                    color = Color(0xFF8083A0)
+                                    color = colorResource(id = R.color.secondary_text)
                                 )
                             }
                             Column(
@@ -410,7 +411,7 @@ fun ChatDetailDialogComponent(
                                     .padding(start = 4.dp)
                                     .background(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFF5F5F9)
+                                        color = colorResource(id = R.color.background_more_info)
                                     )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
@@ -430,7 +431,7 @@ fun ChatDetailDialogComponent(
                                 Text(
                                     text = stringResource(R.string.profile_more),
                                     fontSize = 12.sp,
-                                    color = Color(0xFF8083A0)
+                                    color = colorResource(id = R.color.secondary_text)
                                 )
                             }
                         }
@@ -473,7 +474,7 @@ fun ChatDetailDialogComponent(
                             )
                         }
                     }
-                    Divider()
+                    Divider(color = colorResource(id = R.color.main_background_input_stroke))
 
 
                     when (selectedTabIndex) {

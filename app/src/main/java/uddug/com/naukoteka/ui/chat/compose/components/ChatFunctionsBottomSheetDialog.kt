@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -56,7 +57,8 @@ fun ChatFunctionsBottomSheetDialog(
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = sheetState
+        sheetState = sheetState,
+        containerColor = colorResource(id = R.color.main_background)
     ) {
         Column(
             modifier = Modifier
@@ -66,7 +68,8 @@ fun ChatFunctionsBottomSheetDialog(
             Text(
                 text = stringResource(R.string.chat_functions_title),
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = MaterialTheme.typography.titleMedium.fontSize * 1.3f
+                    fontSize = MaterialTheme.typography.titleMedium.fontSize * 1.3f,
+                    color = colorResource(id = R.color.main_text)
                 )
             )
             Spacer(modifier = Modifier.height(10.dp))
@@ -125,7 +128,9 @@ fun ChatFunctionsBottomSheetDialog(
                 ) {
                     Text(
                         text = stringResource(id = textRes),
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = colorResource(id = R.color.main_text)
+                        ),
                     )
                 }
             }
