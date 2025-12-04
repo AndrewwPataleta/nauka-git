@@ -28,6 +28,7 @@
             android:layout_marginBottom="22dp"
             android:showAsAction="always|withText"
             app:elevation="4dp"
+            app:itemIconGravity="top"
             app:layout_constraintBottom_toBottomOf="parent"
             app:menu="@menu/menu_bottom" />
 
