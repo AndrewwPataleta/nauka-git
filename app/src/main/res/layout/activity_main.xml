@@ -30,6 +30,7 @@
             app:elevation="4dp"
             android:theme="@style/NauWidget.BottomNavigationView"
             app:itemIconTint="@color/bnv_tab_item_foreground"
+            app:itemIconGravity="top"
             app:itemTextColor="@color/bnv_tab_item_foreground"
             app:labelVisibilityMode="labeled"
             app:layout_constraintBottom_toBottomOf="parent"
