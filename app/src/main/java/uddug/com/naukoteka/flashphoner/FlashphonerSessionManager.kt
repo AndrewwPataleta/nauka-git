@@ -93,9 +93,9 @@ class FlashphonerSessionManager @Inject constructor(
             ?: error("Flashphoner room manager must be prepared before joining rooms")
         val options = RoomOptions().apply { name = roomName }
         val room = manager.join(options)
+        roomRef.set(room)
         roomEvent?.invoke(room)
         onRoomReady(room)
-        roomRef.set(room)
         return room
     }
 
