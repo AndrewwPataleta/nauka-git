@@ -56,9 +56,10 @@ import androidx.compose.material.Card
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Videocam
+
 
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -260,7 +261,7 @@ fun ChatDetailDialogComponent(
                                 },
                             )
                             CallOptionItem(
-                                icon = Icons.Filled.Videocam,
+                                icon = Icons.Filled.Call,
                                 text = stringResource(R.string.call_video),
                                 onClick = {
                                     showCallOptions = false

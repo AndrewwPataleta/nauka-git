@@ -108,7 +108,7 @@ private fun BottomSheetItem(
                 .size(56.dp)
                 .background(
                     color = if (isSelected) {
-                        MaterialTheme.colorScheme.primary
+                        Color(0xFF2E83D9)
                     } else {
                         Color(0xFFEAEAF2)
                     },
@@ -131,7 +131,7 @@ private fun BottomSheetItem(
         Text(
             text = text,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = Color.Black,
             textAlign = TextAlign.Center,
             maxLines = 2
         )

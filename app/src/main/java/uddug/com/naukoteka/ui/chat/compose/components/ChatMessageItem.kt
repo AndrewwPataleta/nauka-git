@@ -334,20 +334,15 @@ private fun PollMessageContent(
             }
         }
 
-        Button(
-            onClick = { onVote(selectedOptions.toList()) },
-            enabled = selectedOptions.isNotEmpty() && !isStopped,
-
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.chat_poll_vote),
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                color = buttonContentColor,
-            )
-        }
+        Text(
+            modifier = Modifier.fillMaxWidth().clickable {
+                onVote(selectedOptions.toList())
+            },
+            text = stringResource(R.string.chat_poll_vote),
+            fontWeight = FontWeight.Medium,
+            fontSize = 16.sp,
+            color = buttonContentColor,
+        )
 
         val textButtonColors = ButtonDefaults.textButtonColors(
             contentColor = if (isMine) Color.White else accentColor,
