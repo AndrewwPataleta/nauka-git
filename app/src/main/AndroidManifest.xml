@@ -95,6 +95,7 @@
             android:configChanges="keyboardHidden|screenSize|orientation|layoutDirection"
             android:exported="true"
             android:launchMode="singleInstance"
+            android:supportsPictureInPicture="true"
             android:screenOrientation="portrait"
             android:theme="@style/ContainerAppTheme"
             android:windowSoftInputMode="adjustPan" />

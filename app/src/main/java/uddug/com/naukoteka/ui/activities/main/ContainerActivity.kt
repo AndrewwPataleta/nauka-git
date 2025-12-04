@@ -1,7 +1,11 @@
 package uddug.com.naukoteka.ui.activities.main
 
+import android.app.PictureInPictureParams
 import android.content.Intent
+import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
+import android.util.Rational
 import android.view.animation.Animation
 import androidx.core.view.isVisible
 import androidx.navigation.findNavController
@@ -12,8 +16,8 @@ import moxy.presenter.ProvidePresenter
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.databinding.ActivityMainBinding
-import uddug.com.naukoteka.global.base.BaseActivity
 import uddug.com.naukoteka.flashphoner.FlashphonerEnvironment
+import uddug.com.naukoteka.global.base.BaseActivity
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerPresenter
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerView
@@ -33,6 +37,15 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
     lateinit var flashphonerEnvironment: FlashphonerEnvironment
 
     private var pulseAnimation: Animation? = null
+
+    private val pictureInPictureParams: PictureInPictureParams?
+        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PictureInPictureParams.Builder()
+                .setAspectRatio(Rational(9, 16))
+                .build()
+        } else {
+            null
+        }
 
     companion object {
         const val PROFILE_ARGS = "profileFullInfo"
@@ -81,6 +94,20 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
                 else -> true
             }
         }
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration?) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        contentView.bottomNav.isVisible = !isInPictureInPictureMode
+    }
+
+    fun enterCallPictureInPictureMode(): Boolean {
+        val params = pictureInPictureParams ?: return false
+        val entered = enterPictureInPictureMode(params)
+        if (entered) {
+            contentView.bottomNav.isVisible = false
+        }
+        return entered
     }
 
     override fun selectShowEditFragment(profileInfo: UserProfileFullInfo) {
