@@ -48,6 +48,11 @@ class CallViewModel @Inject constructor(
     ) {
         if (isCallStarted) return
 
+        // Ensure any previous Flashphoner session artifacts are fully released before
+        // attempting to start a new call. Residual state may keep the WebSocket client in
+        // a disconnecting state and cause subsequent calls to close immediately.
+        flashphonerSessionManager.disconnectRoom()
+
         if (dialogId <= 0) {
             _uiState.value = _uiState.value.copy(status = CallStatus.FINISHED)
             return
