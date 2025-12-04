@@ -450,13 +450,6 @@ private fun CallActionButton(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = contentColor,
-            textAlign = TextAlign.Center,
-        )
     }
 }
 

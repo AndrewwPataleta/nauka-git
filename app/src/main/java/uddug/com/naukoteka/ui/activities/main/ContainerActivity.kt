@@ -96,7 +96,7 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         }
     }
 
-    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration?) {
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         contentView.bottomNav.isVisible = !isInPictureInPictureMode
     }
