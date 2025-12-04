@@ -189,7 +189,8 @@ fun ChatMessageItem(
                     if (isPollMessage) {
                         PollMessageContent(
                             poll = message.poll!!,
-                            question = message.poll?.subject ?: message.text,
+                            question = message.poll?.subject.takeIf { !it.isNullOrBlank() }
+                                ?: message.text,
                             isMine = isMine,
                             onVote = { selected -> onPollVote(message.poll!!.id, selected) },
                             onShowResults = { onPollResults(message.poll!!.id) },
