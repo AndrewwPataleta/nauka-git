@@ -11,6 +11,8 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -74,12 +76,13 @@ fun ChatToolbarComponent(
             elevation = 0.dp
         )
     } else {
+        val currentUser by viewModel.currentUser.collectAsState()
         TopAppBar(
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.mock_avatar),
-                        contentDescription = "User Icon",
+                    Avatar(
+                        url = currentUser?.image?.path,
+                        name = currentUser?.fullName ?: currentUser?.nickname,
                         modifier = Modifier.size(36.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
