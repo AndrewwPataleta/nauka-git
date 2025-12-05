@@ -87,7 +87,7 @@ class SingleCallFragment : Fragment() {
                         onToggleCamera = viewModel::toggleCamera,
                         onMinimize = {
                             showFloatingCall()
-                            findNavController().popBackStack()
+                            navigateBackToChatList()
                         },
                     )
                 }
@@ -131,6 +131,14 @@ class SingleCallFragment : Fragment() {
         viewModel.endCall()
         removeFloatingCall()
         findNavController().popBackStack()
+    }
+
+    private fun navigateBackToChatList() {
+        val navController = requireActivity().findNavController(R.id.main_nav_host_fragment)
+        val popped = navController.popBackStack(R.id.chatListFragment, false)
+        if (!popped) {
+            navController.navigate(R.id.chatListFragment)
+        }
     }
 
     private fun removeFloatingCall() {

@@ -59,7 +59,7 @@ class GroupCallFragment : Fragment() {
                         onMinimize = {
                             if (!((requireActivity() as? ContainerActivity)?.enterCallPictureInPictureMode() ?: false)) {
                                 showFloatingCall()
-                                findNavController().popBackStack()
+                                navigateBackToChatList()
                             }
                         },
                     )
@@ -111,6 +111,14 @@ class GroupCallFragment : Fragment() {
             requireActivity().supportFragmentManager.beginTransaction()
                 .remove(it)
                 .commitAllowingStateLoss()
+        }
+    }
+
+    private fun navigateBackToChatList() {
+        val navController = requireActivity().findNavController(R.id.main_nav_host_fragment)
+        val popped = navController.popBackStack(R.id.chatListFragment, false)
+        if (!popped) {
+            navController.navigate(R.id.chatListFragment)
         }
     }
 
