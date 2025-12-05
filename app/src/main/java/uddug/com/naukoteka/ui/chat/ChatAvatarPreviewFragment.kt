@@ -70,19 +70,19 @@ private fun ChatAvatarPreviewScreen(
             TopAppBar(
                 title = { Text(text = stringResource(R.string.chat_avatar_preview_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBackPressed) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = null,
-                            tint = MaterialTheme.colors.primary,
-                        )
-                    }
-                },
-                backgroundColor = MaterialTheme.colors.surface,
-                elevation = 0.dp
-            )
-        },
-        backgroundColor = MaterialTheme.colors.background
+                IconButton(onClick = onBackPressed) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = null,
+                        tint = MaterialTheme.colors.primary,
+                    )
+                }
+            },
+            backgroundColor = Color.White,
+            elevation = 0.dp
+        )
+    },
+        backgroundColor = Color.White
     ) { padding ->
         Box(
             modifier = Modifier

@@ -11,6 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -32,7 +33,7 @@ fun ChatToolbarCreateSingleComponent(
                 Text(
                     text = stringResource(R.string.chat_create_single_title),
                     fontSize = 20.sp,
-                    color = MaterialTheme.colors.onBackground
+                    color = Color(0xFF10101C)
                 )
             }
         },
@@ -56,7 +57,7 @@ fun ChatToolbarCreateSingleComponent(
                 )
             }
         },
-        backgroundColor = MaterialTheme.colors.background,
+        backgroundColor = Color.White,
         elevation = 0.dp
     )
 }

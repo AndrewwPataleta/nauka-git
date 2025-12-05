@@ -172,7 +172,7 @@ fun ChatDetailDialogComponent(
                     Text(
                         text = stringResource(R.string.chat_group_info_title),
                         fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = Color(0xFF10101C)
                     )
                 },
                 actions = {
@@ -196,7 +196,7 @@ fun ChatDetailDialogComponent(
                         )
                     }
                 },
-                backgroundColor = MaterialTheme.colorScheme.background,
+                backgroundColor = Color.White,
                 elevation = 0.dp
             )
         }
@@ -236,7 +236,7 @@ fun ChatDetailDialogComponent(
                     ModalBottomSheet(
                         onDismissRequest = { showCallOptions = false },
                         sheetState = callSheetState,
-                        containerColor = MaterialTheme.colorScheme.background,
+                        containerColor = Color.White,
                     ) {
                         Column(
                             modifier = Modifier
