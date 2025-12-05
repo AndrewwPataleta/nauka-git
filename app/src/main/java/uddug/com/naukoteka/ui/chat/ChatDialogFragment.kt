@@ -101,7 +101,7 @@ class ChatDialogFragment : Fragment() {
                                 R.id.singleCallFragment,
                                 Bundle().apply {
                                     putString(SingleCallFragment.ARG_CONTACT_NAME, state.contactName)
-                                    putString(SingleCallFragment.ARG_AVATAR_URL, state.avatarUrl)
+                                    putString(SingleCallFragment.ARG_AVATAR_URL, state.avatarUrl.orEmpty())
                                     putLong(SingleCallFragment.ARG_DIALOG_ID, state.dialogId)
                                     putString(SingleCallFragment.ARG_CALL_TITLE, state.callTitle)
                                     putBoolean(SingleCallFragment.ARG_IS_INCOMING_CALL, true)

@@ -338,6 +338,7 @@ private fun PollMessageContent(
             modifier = Modifier.fillMaxWidth().clickable {
                 onVote(selectedOptions.toList())
             },
+            textAlign = TextAlign.Center,
             text = stringResource(R.string.chat_poll_vote),
             fontWeight = FontWeight.Medium,
             fontSize = 16.sp,

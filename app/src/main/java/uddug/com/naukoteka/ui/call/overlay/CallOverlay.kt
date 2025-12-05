@@ -152,7 +152,7 @@ fun CallOverlay(
                     modifier = Modifier.align(Alignment.Center),
                     url = state.participants.firstOrNull()?.avatarUrl,
                     name = state.participants.firstOrNull()?.name,
-                    size = 96.dp,
+                    size = 74.dp,
                 )
 
                 Column(
@@ -195,6 +195,7 @@ fun CallOverlay(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_rec_mic_inactive),
+                            tint = Color.White,
                             contentDescription = null,
                         )
                     }

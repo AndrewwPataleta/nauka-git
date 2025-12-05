@@ -44,7 +44,7 @@ fun Avatar(
             .joinToString("")
         val gradient = getGradientForName(overrideInitials ?: name.orEmpty())
         Box(
-            modifier = Modifier
+            modifier = modifier
                 .size(size)
                 .clip(CircleShape)
                 .background(gradient),

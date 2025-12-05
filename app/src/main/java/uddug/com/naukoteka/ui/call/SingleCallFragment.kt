@@ -12,6 +12,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallStatus
@@ -20,6 +21,7 @@ import uddug.com.naukoteka.ui.call.compose.CallScreen
 import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
 import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 import kotlinx.coroutines.launch
+import uddug.com.naukoteka.R
 
 @AndroidEntryPoint
 class SingleCallFragment : Fragment() {

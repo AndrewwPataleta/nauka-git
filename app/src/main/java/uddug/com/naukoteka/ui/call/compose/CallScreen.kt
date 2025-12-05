@@ -589,7 +589,7 @@ private fun CallControls(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFF0B1020)
+        color = Color(0xFF0B1020),
         shape = RoundedCornerShape(16.dp),
     ) {
         Row(

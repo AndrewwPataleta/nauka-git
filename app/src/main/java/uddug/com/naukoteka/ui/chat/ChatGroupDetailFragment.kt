@@ -95,7 +95,7 @@ class ChatGroupDetailFragment : Fragment() {
                                 R.id.groupCallFragment,
                                 Bundle().apply {
                                     putString(GroupCallFragment.ARG_CONTACT_NAME, name)
-                                    putString(GroupCallFragment.ARG_AVATAR_URL, avatar)
+                                    putString(GroupCallFragment.ARG_AVATAR_URL, avatar.orEmpty())
                                     putLong(GroupCallFragment.ARG_DIALOG_ID, dialogId)
                                 }
                             )
