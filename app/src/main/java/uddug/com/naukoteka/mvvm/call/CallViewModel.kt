@@ -46,6 +46,54 @@ class CallViewModel @Inject constructor(
     private var lastCallParams: CallParams? = null
     private var reconnectAttempts = 0
 
+    fun showIncomingCall(
+        dialogId: Long,
+        contactName: String?,
+        avatarUrl: String?,
+        participants: List<CallParticipant>? = null,
+        callTitle: String? = null,
+        isVideoCall: Boolean = false,
+    ) {
+        if (isCallStarted || _uiState.value.status == CallStatus.IN_CALL) return
+
+        if (dialogId <= 0) {
+            _uiState.value = _uiState.value.copy(status = CallStatus.FINISHED)
+            return
+        }
+
+        val resolvedParticipants = participants?.takeIf { it.isNotEmpty() }
+            ?: contactName?.let { name ->
+                listOf(
+                    CallParticipant(
+                        id = name,
+                        name = name,
+                        avatarUrl = avatarUrl,
+                    )
+                )
+            }
+            ?: emptyList()
+
+        lastCallParams = CallParams(
+            dialogId = dialogId,
+            contactName = contactName,
+            avatarUrl = avatarUrl,
+            participants = participants,
+            callTitle = callTitle,
+            isVideoCall = isVideoCall,
+        )
+
+        reconnectAttempts = 0
+        isCallStarted = false
+
+        _uiState.value = CallUiState(
+            dialogId = dialogId,
+            callTitle = callTitle ?: contactName,
+            participants = resolvedParticipants,
+            status = CallStatus.INCOMING,
+            sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
+        )
+    }
+
     fun startCall(
         dialogId: Long,
         contactName: String?,
@@ -54,6 +102,7 @@ class CallViewModel @Inject constructor(
         callTitle: String? = null,
         isVideoCall: Boolean = true,
         resetReconnectAttempts: Boolean = true,
+        isAcceptingIncomingCall: Boolean = false,
     ) {
         if (isCallStarted) return
 
@@ -87,11 +136,17 @@ class CallViewModel @Inject constructor(
             }
             ?: emptyList()
 
+        val initialStatus = if (isAcceptingIncomingCall) {
+            CallStatus.CONNECTING
+        } else {
+            CallStatus.DIALING
+        }
+
         _uiState.value = CallUiState(
             dialogId = dialogId,
             callTitle = callTitle ?: contactName,
             participants = resolvedParticipants,
-            status = CallStatus.DIALING,
+            status = initialStatus,
             sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
         )
 
@@ -329,6 +384,7 @@ data class CallParticipant(
 ) : Parcelable
 
 enum class CallStatus {
+    INCOMING,
     DIALING,
     CONNECTING,
     IN_CALL,

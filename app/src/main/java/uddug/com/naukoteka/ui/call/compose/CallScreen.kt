@@ -28,7 +28,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -48,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -67,6 +70,8 @@ fun CallScreen(
     state: CallUiState,
     onBackPressed: () -> Unit,
     onEndCall: () -> Unit,
+    onAcceptCall: () -> Unit,
+    onDeclineCall: () -> Unit,
     onToggleMicrophone: () -> Unit,
     onToggleCamera: () -> Unit,
     onMinimize: () -> Unit,
@@ -76,6 +81,7 @@ fun CallScreen(
     val primaryParticipant = state.participants.firstOrNull()
     val callTitle = state.callTitle ?: primaryParticipant?.name
     val statusText = when (state.status) {
+        CallStatus.INCOMING -> stringResource(R.string.call_status_incoming)
         CallStatus.DIALING -> stringResource(R.string.call_status_dialing)
         CallStatus.CONNECTING -> stringResource(R.string.call_status_connecting)
         CallStatus.IN_CALL -> stringResource(R.string.call_status_in_call)
@@ -84,6 +90,17 @@ fun CallScreen(
     val resolvedCallTitle = callTitle ?: stringResource(R.string.call_status_in_call)
     var isParticipantsSheetVisible by rememberSaveable { mutableStateOf(false) }
     var participantForActions by remember { mutableStateOf<CallParticipant?>(null) }
+
+    if (state.status == CallStatus.INCOMING) {
+        IncomingCallContent(
+            backgroundColor = backgroundColor,
+            callTitle = resolvedCallTitle,
+            participant = primaryParticipant,
+            onAcceptCall = onAcceptCall,
+            onDeclineCall = onDeclineCall,
+        )
+        return
+    }
 
     Scaffold(
         containerColor = backgroundColor,
@@ -167,6 +184,166 @@ fun CallScreen(
         ParticipantActionsSheet(
             participant = participant,
             onDismiss = { participantForActions = null },
+        )
+    }
+}
+
+@Composable
+private fun IncomingCallContent(
+    backgroundColor: Color,
+    callTitle: String,
+    participant: CallParticipant?,
+    onAcceptCall: () -> Unit,
+    onDeclineCall: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor)
+            .padding(horizontal = 32.dp, vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Avatar(
+                url = participant?.avatarUrl,
+                name = participant?.name ?: callTitle,
+                size = 120.dp,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = callTitle,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = stringResource(R.string.call_incoming_audio),
+                color = Color(0xFFB0B3C5),
+                fontSize = 16.sp,
+            )
+        }
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                IncomingCallSecondaryAction(
+                    icon = Icons.Filled.Alarm,
+                    label = stringResource(R.string.call_incoming_remind),
+                )
+                IncomingCallSecondaryAction(
+                    icon = Icons.Filled.Message,
+                    label = stringResource(R.string.call_incoming_message),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IncomingCallControlButton(
+                    iconRes = R.drawable.ic_close,
+                    label = stringResource(R.string.call_incoming_decline),
+                    containerColor = Color(0xFFE64C4C),
+                    onClick = onDeclineCall,
+                )
+
+                IncomingCallControlButton(
+                    iconRes = R.drawable.ic_phone,
+                    label = stringResource(R.string.call_incoming_accept),
+                    containerColor = Color(0xFF2ED06D),
+                    onClick = onAcceptCall,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun IncomingCallSecondaryAction(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit = {},
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.clickable { onClick() },
+    ) {
+        Surface(
+            color = Color(0xFF1D2239),
+            contentColor = Color.White,
+            shape = CircleShape,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .padding(10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(imageVector = icon, contentDescription = label)
+            }
+        }
+
+        Text(
+            text = label,
+            color = Color(0xFFB0B3C5),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+        )
+    }
+}
+
+@Composable
+private fun IncomingCallControlButton(
+    iconRes: Int,
+    label: String,
+    containerColor: Color,
+    onClick: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Surface(
+            modifier = Modifier
+                .size(76.dp)
+                .clip(CircleShape),
+            color = containerColor,
+            contentColor = Color.White,
+            onClick = onClick,
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = label,
+                    tint = Color.White,
+                )
+            }
+        }
+
+        Text(
+            text = label,
+            color = Color.White,
+            fontWeight = FontWeight.Medium,
+            fontSize = 16.sp,
         )
     }
 }
