@@ -39,15 +39,28 @@ class SingleCallFragment : Fragment() {
         val participants = arguments?.getParcelableArrayList<CallParticipant>(ARG_PARTICIPANTS)
         val dialogId = arguments?.getLong(ARG_DIALOG_ID)
         val isVideoCall = arguments?.getBoolean(ARG_IS_VIDEO_CALL) ?: true
+        val isIncomingCall = arguments?.getBoolean(ARG_IS_INCOMING_CALL) ?: false
+        val resolvedDialogId = dialogId ?: viewModel.uiState.value.dialogId ?: 0L
 
-        viewModel.startCall(
-            dialogId = dialogId ?: viewModel.uiState.value.dialogId ?: 0L,
-            contactName = contactName,
-            avatarUrl = avatarUrl,
-            participants = participants,
-            callTitle = callTitle,
-            isVideoCall = isVideoCall,
-        )
+        if (isIncomingCall) {
+            viewModel.showIncomingCall(
+                dialogId = resolvedDialogId,
+                contactName = contactName,
+                avatarUrl = avatarUrl,
+                participants = participants,
+                callTitle = callTitle,
+                isVideoCall = isVideoCall,
+            )
+        } else {
+            viewModel.startCall(
+                dialogId = resolvedDialogId,
+                contactName = contactName,
+                avatarUrl = avatarUrl,
+                participants = participants,
+                callTitle = callTitle,
+                isVideoCall = isVideoCall,
+            )
+        }
 
         return ComposeView(requireContext()).apply {
             setContent {
@@ -59,6 +72,18 @@ class SingleCallFragment : Fragment() {
                         onEndCall = {
                             viewModel.endCall()
                         },
+                        onAcceptCall = {
+                            viewModel.startCall(
+                                dialogId = resolvedDialogId,
+                                contactName = contactName,
+                                avatarUrl = avatarUrl,
+                                participants = participants,
+                                callTitle = callTitle,
+                                isVideoCall = isVideoCall,
+                                isAcceptingIncomingCall = isIncomingCall,
+                            )
+                        },
+                        onDeclineCall = viewModel::endCall,
                         onToggleMicrophone = viewModel::toggleMicrophone,
                         onToggleCamera = viewModel::toggleCamera,
                         onMinimize = {
@@ -126,5 +151,6 @@ class SingleCallFragment : Fragment() {
         const val ARG_PARTICIPANTS = "participants"
         const val ARG_DIALOG_ID = "dialog_id"
         const val ARG_IS_VIDEO_CALL = "is_video_call"
+        const val ARG_IS_INCOMING_CALL = "is_incoming_call"
     }
 }
