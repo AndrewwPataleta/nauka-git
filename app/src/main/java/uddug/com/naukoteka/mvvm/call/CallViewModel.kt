@@ -249,7 +249,6 @@ class CallViewModel @Inject constructor(
             }
 
             override fun onMessage(message: Message) {
-                // No-op. Signalling is handled by the backend, clients only need to join the room.
             }
         }
     }

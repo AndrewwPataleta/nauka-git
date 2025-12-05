@@ -17,11 +17,6 @@ import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Helper responsible for holding references to the current Flashphoner [Session] and
- * [Stream]. The class centralises session lifecycle handling so that future features can
- * focus on business logic instead of repetitive boilerplate.
- */
 @Singleton
 class FlashphonerSessionManager @Inject constructor(
     private val environment: FlashphonerEnvironment
@@ -118,11 +113,6 @@ class FlashphonerSessionManager @Inject constructor(
         streamRef.getAndSet(null)?.stop()
     }
 
-    /**
-     * Acceptable way to leave a call: stop publishing media for the current room.
-     * If the room is still attached, request unpublish so the backend cleans up
-     * the media session; otherwise, fall back to stopping the stream directly.
-     */
     fun unpublishCurrentStream() {
         val stream = streamRef.getAndSet(null) ?: return
         val room = roomRef.get()
@@ -139,10 +129,6 @@ class FlashphonerSessionManager @Inject constructor(
         session.disconnect()
     }
 
-    /**
-     * Proper way to leave a call: unpublish active media and leave the room so
-     * the backend receives the appropriate callbacks before the session closes.
-     */
     fun disconnectRoom() {
         logLifecycleCall("disconnectRoom")
         unpublishCurrentStream()
@@ -151,11 +137,6 @@ class FlashphonerSessionManager @Inject constructor(
         disconnectSession()
     }
 
-    /**
-     * Fully clears any existing session, stream or room manager state to ensure a fresh
-     * connection can be established. This is intentionally idempotent and safe to call
-     * before creating new Flashphoner objects.
-     */
     fun reset() {
         logLifecycleCall("reset")
         stopStream()
