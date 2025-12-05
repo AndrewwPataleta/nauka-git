@@ -56,6 +56,7 @@ class GroupCallFragment : Fragment() {
                         onDeclineCall = viewModel::endCall,
                         onToggleMicrophone = viewModel::toggleMicrophone,
                         onToggleCamera = viewModel::toggleCamera,
+                        onToggleRecording = viewModel::toggleRecording,
                         onMinimize = {
                             if (!((requireActivity() as? ContainerActivity)?.enterCallPictureInPictureMode() ?: false)) {
                                 showFloatingCall()

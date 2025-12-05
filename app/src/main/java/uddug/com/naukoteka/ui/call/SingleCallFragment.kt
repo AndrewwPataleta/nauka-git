@@ -85,6 +85,7 @@ class SingleCallFragment : Fragment() {
                         onDeclineCall = viewModel::endCall,
                         onToggleMicrophone = viewModel::toggleMicrophone,
                         onToggleCamera = viewModel::toggleCamera,
+                        onToggleRecording = viewModel::toggleRecording,
                         onMinimize = {
                             showFloatingCall()
                             navigateBackToChatList()

@@ -91,6 +91,7 @@ class CallViewModel @Inject constructor(
             participants = resolvedParticipants,
             status = CallStatus.INCOMING,
             sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
+            isRecording = false,
         )
     }
 
@@ -148,6 +149,7 @@ class CallViewModel @Inject constructor(
             participants = resolvedParticipants,
             status = initialStatus,
             sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
+            isRecording = false,
         )
 
         viewModelScope.launch {
@@ -176,7 +178,10 @@ class CallViewModel @Inject constructor(
     fun endCall() {
         lastCallParams = null
         flashphonerSessionManager.disconnectRoom()
-        _uiState.value = _uiState.value.copy(status = CallStatus.FINISHED)
+        _uiState.value = _uiState.value.copy(
+            status = CallStatus.FINISHED,
+            isRecording = false,
+        )
         stopCallTimer()
         isCallStarted = false
     }
@@ -298,6 +303,25 @@ class CallViewModel @Inject constructor(
         updateCallState(updatedState)
     }
 
+    fun toggleRecording() {
+        val dialogId = _uiState.value.dialogId ?: return
+        if (_uiState.value.status != CallStatus.IN_CALL) return
+
+        viewModelScope.launch {
+            if (_uiState.value.isRecording) {
+                runCatching { callRepository.stopRecording(dialogId) }
+                    .onSuccess {
+                        _uiState.value = _uiState.value.copy(isRecording = false)
+                    }
+            } else {
+                runCatching { callRepository.startRecording(dialogId) }
+                    .onSuccess {
+                        _uiState.value = _uiState.value.copy(isRecording = true)
+                    }
+            }
+        }
+    }
+
     private fun updateCallState(newState: CallSessionState) {
         val dialogId = _uiState.value.dialogId ?: return
         val sessionId = mediaSessionId ?: return
@@ -326,7 +350,10 @@ class CallViewModel @Inject constructor(
     private fun handleCallFailure(@Suppress("UNUSED_PARAMETER") message: String? = null) {
         lastCallParams = null
         flashphonerSessionManager.disconnectRoom()
-        _uiState.value = _uiState.value.copy(status = CallStatus.FINISHED)
+        _uiState.value = _uiState.value.copy(
+            status = CallStatus.FINISHED,
+            isRecording = false,
+        )
         stopCallTimer()
         isCallStarted = false
     }
@@ -373,6 +400,7 @@ data class CallUiState(
     val status: CallStatus = CallStatus.DIALING,
     val callDurationSeconds: Int = 0,
     val sessionState: CallSessionState = CallSessionState(),
+    val isRecording: Boolean = false,
 )
 
 @Parcelize
