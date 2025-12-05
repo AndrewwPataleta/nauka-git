@@ -441,8 +441,9 @@ fun ChatDetailDialogComponent(
                     TabRow(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.background),
+                            .background(Color.White),
                         selectedTabIndex = selectedTabIndex,
+                        containerColor = Color.White,
                         indicator = { tabPositions ->
                             TabRowDefaults.Indicator(
                                 Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
