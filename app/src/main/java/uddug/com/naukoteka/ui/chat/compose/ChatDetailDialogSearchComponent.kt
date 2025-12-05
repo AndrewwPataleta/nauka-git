@@ -103,6 +103,7 @@ fun ChatDetailDialogSearchComponent(
         ) {
             TabRow(
                 selectedTabIndex = selectedTabIndex,
+                containerColor = Color.White,
                 indicator = { tabPositions ->
                     TabRowDefaults.Indicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
