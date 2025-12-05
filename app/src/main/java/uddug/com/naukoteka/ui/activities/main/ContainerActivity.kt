@@ -73,20 +73,28 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         flashphonerEnvironment.ensureInitialised(this)
 
         contentView.bottomNav.setOnNavigationItemSelectedListener {
+            val navController = findNavController(R.id.main_nav_host_fragment)
+
             when (it.itemId) {
                 R.id.sphere -> {
-                    findNavController(R.id.main_nav_host_fragment).setGraph(R.navigation.nav_graph_sphere)
+                    if (navController.graph.id != R.id.nav_graph_sphere) {
+                        navController.setGraph(R.navigation.nav_graph_sphere)
+                    }
                     contentView.bottomNav.menu.getItem(1).setChecked(true);
                     true
                 }
 
                 R.id.nauProfile -> {
-                    findNavController(R.id.main_nav_host_fragment).setGraph(R.navigation.nav_graph_profile)
+                    if (navController.graph.id != R.id.nav_graph_profile) {
+                        navController.setGraph(R.navigation.nav_graph_profile)
+                    }
                     contentView.bottomNav.menu.getItem(4).setChecked(true);
                     true
                 }
                 R.id.nauChat -> {
-                    findNavController(R.id.main_nav_host_fragment).setGraph(R.navigation.nav_graph_chat)
+                    if (navController.graph.id != R.id.nav_graph_chat) {
+                        navController.setGraph(R.navigation.nav_graph_chat)
+                    }
                     contentView.bottomNav.menu.getItem(3).setChecked(true);
                     true
                 }
