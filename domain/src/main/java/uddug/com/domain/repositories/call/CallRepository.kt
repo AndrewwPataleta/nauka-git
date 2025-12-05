@@ -25,4 +25,8 @@ interface CallRepository {
     )
 
     suspend fun stopCall(callId: Long)
+
+    suspend fun startRecording(dialogId: Long)
+
+    suspend fun stopRecording(dialogId: Long)
 }

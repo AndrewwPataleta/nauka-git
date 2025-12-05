@@ -1,5 +1,11 @@
 package uddug.com.naukoteka.ui.call.compose
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -47,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -72,6 +79,7 @@ fun CallScreen(
     onDeclineCall: () -> Unit,
     onToggleMicrophone: () -> Unit,
     onToggleCamera: () -> Unit,
+    onToggleRecording: () -> Unit,
     onMinimize: () -> Unit,
 ) {
     val backgroundColor = Color(0xFF0B1020)
@@ -108,7 +116,8 @@ fun CallScreen(
                 callDurationSeconds = state.callDurationSeconds,
                 onOpenChat = {},
                 onShowParticipants = { isParticipantsSheetVisible = true },
-                onStartRecording = {},
+                isRecording = state.isRecording,
+                onToggleRecording = onToggleRecording,
                 onMinimize = onMinimize,
             )
         }
@@ -354,9 +363,25 @@ private fun CallTopBar(
     callDurationSeconds: Int,
     onOpenChat: () -> Unit,
     onShowParticipants: () -> Unit,
-    onStartRecording: () -> Unit,
+    isRecording: Boolean,
+    onToggleRecording: () -> Unit,
     onMinimize: () -> Unit,
 ) {
+    val recordingScale = if (isRecording) {
+        val infiniteTransition = rememberInfiniteTransition(label = "record_scale_transition")
+        infiniteTransition.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.15f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "record_scale",
+        ).value
+    } else {
+        1f
+    }
+
     Surface(color = containerColor) {
         Row(
             modifier = Modifier
@@ -400,7 +425,10 @@ private fun CallTopBar(
                     )
                 }
 
-                IconButton(onClick = onStartRecording) {
+                IconButton(
+                    onClick = onToggleRecording,
+                    modifier = Modifier.scale(recordingScale),
+                ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_call_record),
                         contentDescription = stringResource(R.string.call_record),

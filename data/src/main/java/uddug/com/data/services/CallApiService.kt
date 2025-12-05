@@ -4,6 +4,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import uddug.com.data.services.models.request.call.UpdateCallPermitsRequestDto
 import uddug.com.data.services.models.request.call.UpdateCallStateRequestDto
@@ -38,5 +39,15 @@ interface CallApiService {
     @POST("calls/{callId}/stop")
     suspend fun stopCall(
         @Path("callId") callId: Long,
+    )
+
+    @PUT("calls/record/start/dialog/{dialogId}")
+    suspend fun startRecording(
+        @Path("dialogId") dialogId: Long,
+    )
+
+    @PUT("calls/record/stop/dialog/{dialogId}")
+    suspend fun stopRecording(
+        @Path("dialogId") dialogId: Long,
     )
 }
