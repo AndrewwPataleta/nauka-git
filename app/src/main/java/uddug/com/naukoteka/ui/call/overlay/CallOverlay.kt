@@ -3,7 +3,9 @@ package uddug.com.naukoteka.ui.call.overlay
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -14,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -29,8 +32,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallUiState
@@ -72,6 +79,15 @@ fun CallOverlay(
         if (state.status == CallStatus.FINISHED) {
             onFinished()
         }
+    }
+
+    val callTitle = state.callTitle ?: state.participants.firstOrNull()?.name
+    val statusText = when (state.status) {
+        CallStatus.IN_CALL -> formatCallDuration(state.callDurationSeconds)
+        CallStatus.INCOMING -> stringResource(R.string.call_status_incoming)
+        CallStatus.DIALING -> stringResource(R.string.call_status_dialing)
+        CallStatus.CONNECTING -> stringResource(R.string.call_status_connecting)
+        CallStatus.FINISHED -> stringResource(R.string.call_status_finished)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -139,6 +155,34 @@ fun CallOverlay(
                     size = 96.dp,
                 )
 
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    callTitle?.let { title ->
+                        Text(
+                            text = title,
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+
+                    Text(
+                        text = statusText,
+                        color = Color(0xFFB0B3C5),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                    )
+                }
+
                 Surface(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -158,4 +202,11 @@ fun CallOverlay(
             }
         }
     }
+}
+
+private fun formatCallDuration(callDurationSeconds: Int): String {
+    val safeSeconds = callDurationSeconds.coerceAtLeast(0)
+    val minutes = safeSeconds / 60
+    val seconds = safeSeconds % 60
+    return "%02d:%02d".format(minutes, seconds)
 }

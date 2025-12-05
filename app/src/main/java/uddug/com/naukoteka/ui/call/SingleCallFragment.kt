@@ -16,7 +16,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallViewModel
-import uddug.com.naukoteka.ui.activities.main.ContainerActivity
 import uddug.com.naukoteka.ui.call.compose.CallScreen
 import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
 import uddug.com.naukoteka.ui.theme.NaukotekaTheme
@@ -87,10 +86,8 @@ class SingleCallFragment : Fragment() {
                         onToggleMicrophone = viewModel::toggleMicrophone,
                         onToggleCamera = viewModel::toggleCamera,
                         onMinimize = {
-                            if (!((requireActivity() as? ContainerActivity)?.enterCallPictureInPictureMode() ?: false)) {
-                                showFloatingCall()
-                                findNavController().popBackStack()
-                            }
+                            showFloatingCall()
+                            findNavController().popBackStack()
                         },
                     )
                 }
