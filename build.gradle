@@ -1,9 +1,9 @@
 buildscript {
     ext {
-        COMPILE_SDK_VERSION = 34
+        COMPILE_SDK_VERSION = 35
         BUILD_TOOLS_VERSION = "30.0.2"
         MIN_SDK_VERSION = 26
-        TARGET_SDK_VERSION = 34
+        TARGET_SDK_VERSION = 35
 
         application_id = "com.nauchat"
 
@@ -22,7 +22,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.0'
+        classpath 'com.android.tools.build:gradle:8.13.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.google.gms:google-services:4.4.2'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.2'

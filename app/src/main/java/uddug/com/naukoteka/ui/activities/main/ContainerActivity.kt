@@ -77,7 +77,7 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
             when (it.itemId) {
                 R.id.sphere -> {
-                    if (navController.graph.id != R.id.nav_graph_sphere) {
+                    if (navController.graph.id != R.navigation.nav_graph_sphere) {
                         navController.setGraph(R.navigation.nav_graph_sphere)
                     }
                     contentView.bottomNav.menu.getItem(1).setChecked(true);

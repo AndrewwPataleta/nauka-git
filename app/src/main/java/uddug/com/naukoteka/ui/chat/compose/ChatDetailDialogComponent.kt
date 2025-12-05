@@ -241,13 +241,14 @@ fun ChatDetailDialogComponent(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(
+                                modifier = Modifier.padding(bottom = 4.dp),
                                 text = stringResource(R.string.call_create_title),
                                 fontSize = 18.sp,
-                                fontWeight = FontWeight.Normal,
+                                fontWeight = FontWeight.Medium,
                             )
                             CallOptionItem(
                                 icon = Icons.Filled.Phone,

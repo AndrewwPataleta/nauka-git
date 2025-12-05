@@ -130,6 +130,8 @@ dependencies {
 
     implementation ui.glide
     implementation ui.glideAnnotation
+    implementation libs.androidx.navigation.fragment.ktx
+    implementation libs.androidx.navigation.ui.ktx
     kapt ui.glideProcessor
     implementation 'androidx.navigation:navigation-fragment-ktx:2.8.6'
     implementation 'androidx.navigation:navigation-ui-ktx:2.8.6'

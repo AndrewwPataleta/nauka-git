@@ -28,9 +28,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -241,14 +239,14 @@ private fun IncomingCallContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                IncomingCallSecondaryAction(
-                    icon = Icons.Filled.Alarm,
-                    label = stringResource(R.string.call_incoming_remind),
-                )
-                IncomingCallSecondaryAction(
-                    icon = Icons.Filled.Message,
-                    label = stringResource(R.string.call_incoming_message),
-                )
+//                IncomingCallSecondaryAction(
+//                    icon = Icons.Filled.,
+//                    label = stringResource(R.string.call_incoming_remind),
+//                )
+//                IncomingCallSecondaryAction(
+//                    icon = Icons.Filled.Message,
+//                    label = stringResource(R.string.call_incoming_message),
+//                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -264,6 +262,7 @@ private fun IncomingCallContent(
                     containerColor = Color(0xFFE64C4C),
                     onClick = onDeclineCall,
                 )
+                Spacer(modifier = Modifier.weight(1f))
 
                 IncomingCallControlButton(
                     iconRes = R.drawable.ic_phone,
@@ -324,7 +323,7 @@ private fun IncomingCallControlButton(
     ) {
         Surface(
             modifier = Modifier
-                .size(76.dp)
+                .size(74.dp)
                 .clip(CircleShape),
             color = containerColor,
             contentColor = Color.White,
@@ -332,6 +331,7 @@ private fun IncomingCallControlButton(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
+                    modifier = Modifier.size(35.dp),
                     painter = painterResource(id = iconRes),
                     contentDescription = label,
                     tint = Color.White,
@@ -342,8 +342,8 @@ private fun IncomingCallControlButton(
         Text(
             text = label,
             color = Color.White,
-            fontWeight = FontWeight.Medium,
-            fontSize = 16.sp,
+            fontWeight = FontWeight.Normal,
+            fontSize = 14.sp,
         )
     }
 }
@@ -386,7 +386,7 @@ private fun CallTopBar(
             ) {
                 IconButton(onClick = onOpenChat) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_chat),
+                        painter = painterResource(id = R.drawable.ic_call_dialog),
                         contentDescription = stringResource(R.string.call_chat),
                         tint = Color.White,
                     )
@@ -411,7 +411,7 @@ private fun CallTopBar(
 
             IconButton(onClick = onMinimize) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow_down),
+                    painter = painterResource(id = R.drawable.ic_show_preview),
                     contentDescription = stringResource(R.string.call_minimize),
                     tint = Color.White,
                 )
@@ -561,7 +561,7 @@ private fun CallControls(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFF121732),
+        color = Color(0xFF0B1020)
         shape = RoundedCornerShape(16.dp),
     ) {
         Row(
@@ -572,20 +572,16 @@ private fun CallControls(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CallActionButton(
-                iconRes = if (sessionState.micOn) {
-                    R.drawable.ic_rec_mic_active
-                } else {
-                    R.drawable.ic_rec_mic_inactive
-                },
+                iconRes = R.drawable.ic_mic_off,
                 label = stringResource(R.string.call_microphone),
-                containerColor = Color.Transparent,
+                containerColor = Color(0xFF50515c),
                 contentColor = if (sessionState.micOn) Color.White else Color(0xFF8083A0),
                 onClick = onToggleMicrophone,
             )
             CallActionButton(
-                iconRes = R.drawable.ic_camera,
+                iconRes = R.drawable.ic_camera_off,
                 label = stringResource(R.string.call_camera),
-                containerColor = Color.Transparent,
+                containerColor = Color(0xFF50515c),
                 contentColor = if (sessionState.camOn) Color.White else Color(0xFF8083A0),
                 onClick = onToggleCamera,
             )
