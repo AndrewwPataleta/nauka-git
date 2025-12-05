@@ -121,7 +121,7 @@ fun ChatGroupDetailComponent(
                     Text(
                         text = stringResource(R.string.chat_group_info_title),
                         fontSize = 20.sp,
-                        color = colorResource(id = R.color.main_text)
+                        color = Color(0xFF10101C)
                     )
                 },
                 actions = {
@@ -142,7 +142,7 @@ fun ChatGroupDetailComponent(
                         )
                     }
                 },
-                backgroundColor = colorResource(id = R.color.main_background),
+                backgroundColor = Color.White,
                 elevation = 0.dp
             )
         }
@@ -687,7 +687,8 @@ private fun ParticipantActionsBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = sheetState
+        sheetState = sheetState,
+        containerColor = Color.White
     ) {
         Column(
             modifier = Modifier

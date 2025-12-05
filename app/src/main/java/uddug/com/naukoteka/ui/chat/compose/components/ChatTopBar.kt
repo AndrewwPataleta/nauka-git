@@ -44,7 +44,7 @@ fun ChatTopBar(
     onBackPressed: () -> Unit,
     onMoreClick: () -> Unit,
 ) {
-    Surface(elevation = 4.dp) {
+    Surface(elevation = 4.dp, color = Color.White) {
         Column {
             Row(
                 modifier = Modifier

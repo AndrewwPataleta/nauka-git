@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -88,12 +89,12 @@ fun ChatPollResultsScreen(
                 elevation = 0.dp
             )
         },
-        backgroundColor = MaterialTheme.colors.background
+        backgroundColor = Color.White
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colors.background)
+                .background(Color.White)
                 .padding(paddingValues)
         ) {
             when {
@@ -327,16 +328,16 @@ private fun PollResultsError(
 }
 
 @Composable
-private fun primaryTextColor() = MaterialTheme.colors.onSurface
+private fun primaryTextColor() = Color(0xFF1F1F1F)
 
 @Composable
-private fun secondaryTextColor() = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+private fun secondaryTextColor() = Color(0xFF8083A0)
 
 @Composable
-private fun accentColor() = MaterialTheme.colors.primary
+private fun accentColor() = Color(0xFF2E83D9)
 
 @Composable
-private fun surfaceColor() = MaterialTheme.colors.surface
+private fun surfaceColor() = Color.White
 
 @Composable
 private fun questionBackgroundColor() = NauTheme.extendedColors.backgroundMoreInfo

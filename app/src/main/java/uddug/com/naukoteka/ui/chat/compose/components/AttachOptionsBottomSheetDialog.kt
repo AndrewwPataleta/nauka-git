@@ -53,7 +53,7 @@ fun AttachOptionsBottomSheetDialog(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        containerColor = colorResource(id = R.color.main_background)
+        containerColor = Color.White
     ) {
         Row(
             modifier = Modifier

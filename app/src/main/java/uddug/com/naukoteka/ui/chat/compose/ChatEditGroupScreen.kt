@@ -424,7 +424,8 @@ private fun GroupMemberActionsBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = sheetState
+        sheetState = sheetState,
+        containerColor = Color.White
     ) {
         Column(
             modifier = Modifier

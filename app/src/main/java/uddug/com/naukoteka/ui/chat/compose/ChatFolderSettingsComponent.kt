@@ -21,6 +21,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -54,7 +55,7 @@ fun ChatFolderSettingsComponent(
                 title = {
                     Text(
                         text = stringResource(R.string.chat_folder_settings_title),
-                        color = MaterialTheme.colors.onBackground
+                        color = Color(0xFF10101C)
                     )
                 },
                 navigationIcon = {
@@ -78,7 +79,7 @@ fun ChatFolderSettingsComponent(
                         )
                     }
                 },
-                backgroundColor = MaterialTheme.colors.background,
+                backgroundColor = Color.White,
                 elevation = 0.dp
             )
         }
