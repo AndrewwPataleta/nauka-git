@@ -165,7 +165,7 @@ class CallViewModel @Inject constructor(
                 )
 
                 flashphonerSessionManager.connectRoomManager(
-                    createRoomManagerEvent(dialogId, streamName)
+                    createRoomManagerEvent(dialogId, streamName, isVideoCall)
                 )
             }.onSuccess {
                 _uiState.value = _uiState.value.copy(status = CallStatus.CONNECTING)
@@ -206,6 +206,7 @@ class CallViewModel @Inject constructor(
     private fun createRoomManagerEvent(
         dialogId: Long,
         streamName: String,
+        isVideoCall: Boolean,
     ): RoomManagerEvent {
         return object : RoomManagerEvent {
             override fun onConnected(connection: Connection) {
@@ -213,7 +214,7 @@ class CallViewModel @Inject constructor(
                 flashphonerSessionManager.joinRoom(
                     roomName = dialogId.toString(),
                     roomEvent = { room -> room.on(createRoomEvent(streamName)) },
-                    onRoomReady = { publishLocalStream(streamName) },
+                    onRoomReady = { publishLocalStream(streamName, isVideoCall) },
                 )
             }
 
@@ -253,10 +254,10 @@ class CallViewModel @Inject constructor(
         }
     }
 
-    private fun publishLocalStream(streamName: String) {
+    private fun publishLocalStream(streamName: String, isVideoCall: Boolean) {
         runCatching {
             flashphonerSessionManager.publishToCurrentRoom(streamName) {
-                constraints = Constraints(true, false)
+                constraints = Constraints(true, isVideoCall)
             }
         }.onSuccess {
             Log.d("CallVM", "publishLocalStream success")
@@ -264,6 +265,21 @@ class CallViewModel @Inject constructor(
             startCallTimer()
         }.onFailure {
             Log.e("CallVM", "publishLocalStream failed", it)
+            handleCallFailure()
+        }
+    }
+
+    private fun restartLocalStream(videoEnabled: Boolean) {
+        val streamName = mediaSessionId ?: return
+
+        flashphonerSessionManager.unpublishCurrentStream()
+
+        runCatching {
+            flashphonerSessionManager.publishToCurrentRoom(streamName) {
+                constraints = Constraints(true, videoEnabled)
+            }
+        }.onFailure {
+            Log.e("CallVM", "restartLocalStream failed", it)
             handleCallFailure()
         }
     }
@@ -300,6 +316,10 @@ class CallViewModel @Inject constructor(
         val currentState = _uiState.value.sessionState
         val updatedState = currentState.copy(camOn = !currentState.camOn)
         updateCallState(updatedState)
+
+        if (_uiState.value.status == CallStatus.IN_CALL) {
+            restartLocalStream(updatedState.camOn)
+        }
     }
 
     fun toggleRecording() {
