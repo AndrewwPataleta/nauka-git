@@ -9,13 +9,20 @@ apply plugin: 'kotlin-parcelize'
 apply plugin: 'com.google.firebase.firebase-perf'
 apply plugin: 'dagger.hilt.android.plugin'
 
-// Flashphoner SDK already bundles Gson classes, so exclude the Maven artifact from
-// runtime classpaths to avoid duplicate definitions while keeping it on the
-// compile classpath for modules that need it.
-configurations.configureEach {
-    if (name.contains("RuntimeClasspath")) {
-        exclude group: 'com.google.code.gson', module: 'gson'
+// Keep Gson on the runtime classpath so libraries like Chucker see the up-to-date
+// Maven artifact instead of the older copy bundled inside the Flashphoner AAR.
+
+def stripWcsGsonFromAar = tasks.register("stripWcsGsonFromAar", Zip) {
+    from(zipTree("libs/wcs-android-sdk-1.1.0.64.aar")) {
+        exclude("libs/gson-2.7.jar")
     }
+
+    destinationDirectory = layout.buildDirectory.dir("processed-libs")
+    archiveFileName.set("wcs-android-sdk-1.1.0.64-no-gson.aar")
+}
+
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn(stripWcsGsonFromAar)
 }
 
 android {
@@ -166,7 +173,7 @@ dependencies {
     implementation presentation.toothpickLifeCycle
     kapt presentation.toothpickCompiler
 
-    compileOnly data.gson
+    implementation data.gson
     implementation data.retrofit
     implementation data.retrofitLogging
     implementation(data.gsonConverter) {
@@ -191,8 +198,10 @@ dependencies {
     implementation 'androidx.datastore:datastore-preferences-core:1.1.1'
     implementation 'io.github.vicmikhailau:MaskedEditText:5.0.3'
 
-    // Flashphoner SDK из локального .aar в app/libs
-    implementation files('libs/wcs-android-sdk-1.1.0.64.aar')
+    // Flashphoner SDK из локального .aar в app/libs без встроенного gson-2.7
+    def strippedFlashphoner = tasks.named("stripWcsGsonFromAar")
+    def strippedFlashphonerFiles = files(strippedFlashphoner.map { it.archiveFile })
+    implementation(strippedFlashphonerFiles)
 
     implementation 'androidx.paging:paging-runtime-ktx:3.1.1'
     implementation 'androidx.paging:paging-rxjava2-ktx:3.1.1'
