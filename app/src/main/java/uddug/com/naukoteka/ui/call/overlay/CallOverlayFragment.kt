@@ -65,7 +65,7 @@ class CallOverlayFragment : Fragment() {
                 SingleCallFragment.ARG_PARTICIPANTS,
                 ArrayList(viewModel.uiState.value.participants),
             )
-            putBoolean(SingleCallFragment.ARG_IS_VIDEO_CALL, viewModel.uiState.value.sessionState.camOn)
+            putBoolean(SingleCallFragment.ARG_IS_VIDEO_CALL, viewModel.uiState.value.isVideoCall)
         }
         navController.navigate(R.id.singleCallFragment, args)
     }

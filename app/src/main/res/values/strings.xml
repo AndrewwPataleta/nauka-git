@@ -471,6 +471,7 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="call_status_loading">Загрузка…</string>
     <string name="call_status_in_call">Звонок</string>
     <string name="call_incoming_audio">Аудио …</string>
+    <string name="call_incoming_video">Видео …</string>
     <string name="call_incoming_accept">Принять</string>
     <string name="call_incoming_decline">Отклонить</string>
     <string name="call_incoming_remind">Напомнить</string>

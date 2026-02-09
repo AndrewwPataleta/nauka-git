@@ -12,6 +12,7 @@ import com.flashphoner.fpwcsapi.room.Participant
 import com.flashphoner.fpwcsapi.room.Room
 import com.flashphoner.fpwcsapi.room.RoomEvent
 import com.flashphoner.fpwcsapi.room.RoomManagerEvent
+import com.flashphoner.fpwcsapi.session.Stream
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 import kotlinx.parcelize.Parcelize
+import org.webrtc.SurfaceViewRenderer
 import uddug.com.data.cache.user_id.UserIdCache
 import uddug.com.data.cache.user_uuid.UserUUIDCache
 import uddug.com.domain.entities.call.CallSessionState
@@ -27,6 +29,7 @@ import uddug.com.domain.repositories.call.CallRepository
 import uddug.com.naukoteka.flashphoner.FlashphonerConfig
 import uddug.com.naukoteka.flashphoner.FlashphonerConfigProvider
 import uddug.com.naukoteka.flashphoner.FlashphonerSessionManager
+
 
 @HiltViewModel
 class CallViewModel @Inject constructor(
@@ -45,6 +48,13 @@ class CallViewModel @Inject constructor(
     private var mediaSessionId: String? = null
     private var lastCallParams: CallParams? = null
     private var reconnectAttempts = 0
+    private var remoteRenderer: SurfaceViewRenderer? = null
+    private val participantStreams = mutableMapOf<String, Stream>()
+    private var primaryStreamKey: String? = null
+    private var localRenderer: SurfaceViewRenderer? = null
+    private var localStream: Stream? = null
+    private var remoteStream: Stream? = null
+    private var pendingRemoteParticipant: Participant? = null
 
     fun showIncomingCall(
         dialogId: Long,
@@ -90,6 +100,7 @@ class CallViewModel @Inject constructor(
             callTitle = callTitle ?: contactName,
             participants = resolvedParticipants,
             status = CallStatus.INCOMING,
+            isVideoCall = isVideoCall,
             sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
             isRecording = false,
         )
@@ -148,6 +159,7 @@ class CallViewModel @Inject constructor(
             callTitle = callTitle ?: contactName,
             participants = resolvedParticipants,
             status = initialStatus,
+            isVideoCall = isVideoCall,
             sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
             isRecording = false,
         )
@@ -177,6 +189,7 @@ class CallViewModel @Inject constructor(
 
     fun endCall() {
         lastCallParams = null
+        clearVideoStreams()
         flashphonerSessionManager.disconnectRoom()
         _uiState.value = _uiState.value.copy(
             status = CallStatus.FINISHED,
@@ -184,6 +197,7 @@ class CallViewModel @Inject constructor(
         )
         stopCallTimer()
         isCallStarted = false
+        clearVideoState()
     }
 
     private fun startCallTimer() {
@@ -237,7 +251,12 @@ class CallViewModel @Inject constructor(
             }
 
             override fun onLeft(participant: Participant) {
+                removeParticipantStream(participant)
                 participant.stop()
+                if (participant == pendingRemoteParticipant || participant.stream == remoteStream) {
+                    pendingRemoteParticipant = null
+                    remoteStream = null
+                }
             }
 
             override fun onPublished(participant: Participant) {
@@ -256,7 +275,7 @@ class CallViewModel @Inject constructor(
 
     private fun publishLocalStream(streamName: String, isVideoCall: Boolean) {
         runCatching {
-            flashphonerSessionManager.publishToCurrentRoom(streamName) {
+            localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
                 constraints = Constraints(true, isVideoCall)
             }
         }.onSuccess {
@@ -275,7 +294,7 @@ class CallViewModel @Inject constructor(
         flashphonerSessionManager.unpublishCurrentStream()
 
         runCatching {
-            flashphonerSessionManager.publishToCurrentRoom(streamName) {
+            localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
                 constraints = Constraints(true, videoEnabled)
             }
         }.onFailure {
@@ -362,12 +381,42 @@ class CallViewModel @Inject constructor(
 
     private fun subscribeToParticipants(participants: Collection<Participant>) {
         participants.forEach { participant ->
-            runCatching { participant.play(null) }
+            val key = participant.streamName ?: participant.name ?: return@forEach
+            if (participantStreams.containsKey(key)) return@forEach
+
+            val renderer = if (primaryStreamKey == null) remoteRenderer else null
+            val stream = runCatching { participant.play(renderer) }.getOrNull() ?: return@forEach
+            participantStreams[key] = stream
+            if (primaryStreamKey == null) {
+                primaryStreamKey = key
+            }
         }
+    }
+
+
+    private fun removeParticipantStream(participant: Participant) {
+        val key = participant.streamName ?: participant.name ?: return
+        val removed = participantStreams.remove(key) ?: return
+        if (primaryStreamKey == key) {
+            primaryStreamKey = participantStreams.keys.firstOrNull()
+            val nextStream = primaryStreamKey?.let { participantStreams[it] }
+            if (remoteRenderer != null && nextStream != null) {
+                nextStream.switchRenderer(remoteRenderer)
+            }
+        }
+        removed.stop()
+    }
+
+    private fun clearVideoStreams() {
+        participantStreams.values.forEach { it.stop() }
+        participantStreams.clear()
+        primaryStreamKey = null
+        remoteRenderer = null
     }
 
     private fun handleCallFailure(@Suppress("UNUSED_PARAMETER") message: String? = null) {
         lastCallParams = null
+        clearVideoStreams()
         flashphonerSessionManager.disconnectRoom()
         _uiState.value = _uiState.value.copy(
             status = CallStatus.FINISHED,
@@ -375,6 +424,7 @@ class CallViewModel @Inject constructor(
         )
         stopCallTimer()
         isCallStarted = false
+        clearVideoState()
     }
 
     private fun resolveUsername(): String {
@@ -407,8 +457,50 @@ class CallViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        clearVideoStreams()
         flashphonerSessionManager.reset()
         super.onCleared()
+    }
+
+    fun bindLocalRenderer(renderer: SurfaceViewRenderer) {
+        localRenderer = renderer
+        localStream?.switchRenderer(renderer)
+    }
+
+    fun bindRemoteRenderer(renderer: SurfaceViewRenderer) {
+        remoteRenderer = renderer
+        remoteStream?.switchRenderer(renderer)
+        if (remoteStream == null) {
+            pendingRemoteParticipant?.let { participant ->
+                remoteStream = runCatching { participant.play(renderer) }.getOrNull()
+            }
+            pendingRemoteParticipant = null
+        }
+    }
+
+    fun clearRenderers() {
+        localRenderer = null
+        remoteRenderer = null
+    }
+
+    fun clearLocalRenderer() {
+        localRenderer = null
+    }
+
+    fun clearRemoteRenderer() {
+        remoteRenderer = null
+    }
+
+    private fun clearVideoState() {
+        localStream = null
+        remoteStream = null
+        pendingRemoteParticipant = null
+        clearRenderers()
+    }
+
+    private fun isSelfParticipant(participant: Participant): Boolean {
+        val username = resolveUsername()
+        return participant.name == username || participant.streamName?.contains(username) == true
     }
 }
 
@@ -420,6 +512,7 @@ data class CallUiState(
     val callDurationSeconds: Int = 0,
     val sessionState: CallSessionState = CallSessionState(),
     val isRecording: Boolean = false,
+    val isVideoCall: Boolean = false,
 )
 
 @Parcelize

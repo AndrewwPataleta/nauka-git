@@ -65,6 +65,12 @@ class GroupCallFragment : Fragment() {
                                 navigateBackToChatList()
                             }
                         },
+                        onRemoteRendererReady = viewModel::bindRemoteRenderer,
+                        onRemoteRendererReleased = { viewModel.bindRemoteRenderer(null) },
+                        onBindLocalRenderer = viewModel::bindLocalRenderer,
+                        onBindRemoteRenderer = viewModel::bindRemoteRenderer,
+                        onReleaseLocalRenderer = viewModel::clearLocalRenderer,
+                        onReleaseRemoteRenderer = viewModel::clearRemoteRenderer,
                     )
                 }
             }

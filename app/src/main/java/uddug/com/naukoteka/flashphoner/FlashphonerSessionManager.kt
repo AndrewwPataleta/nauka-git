@@ -13,6 +13,7 @@ import com.flashphoner.fpwcsapi.session.Session
 import com.flashphoner.fpwcsapi.session.Stream
 import com.flashphoner.fpwcsapi.session.StreamOptions
 import com.flashphoner.fpwcsapi.session.SessionOptions
+import org.webrtc.SurfaceViewRenderer
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -96,11 +97,12 @@ class FlashphonerSessionManager @Inject constructor(
 
     fun publishToCurrentRoom(
         streamName: String,
+        renderer: SurfaceViewRenderer? = null,
         configure: StreamOptions.() -> Unit = {},
     ): Stream {
         val room = roomRef.get() ?: error("Room must be joined before publishing a stream")
         val options = StreamOptions(streamName).apply(configure)
-        val stream = room.publish(null, options)
+        val stream = room.publish(renderer, options)
         streamRef.set(stream)
         return stream
     }

@@ -46,8 +46,12 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,18 +60,30 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import com.flashphoner.fpwcsapi.FPSurfaceViewRenderer
+import org.webrtc.EglBase
+import org.webrtc.SurfaceViewRenderer
+import androidx.compose.ui.viewinterop.AndroidView
+import org.webrtc.RendererCommon
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallUiState
 import uddug.com.domain.entities.call.CallSessionState
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
+import com.flashphoner.fpwcsapi.Flashphoner
+import com.flashphoner.fpwcsapi.session.Session
+import com.flashphoner.fpwcsapi.session.SessionOptions
+import com.flashphoner.fpwcsapi.room.RoomManager
+import com.flashphoner.fpwcsapi.room.RoomManagerOptions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,6 +97,12 @@ fun CallScreen(
     onToggleCamera: () -> Unit,
     onToggleRecording: () -> Unit,
     onMinimize: () -> Unit,
+    onRemoteRendererReady: (SurfaceViewRenderer) -> Unit,
+    onRemoteRendererReleased: () -> Unit,
+    onBindLocalRenderer: (FPSurfaceViewRenderer) -> Unit,
+    onBindRemoteRenderer: (FPSurfaceViewRenderer) -> Unit,
+    onReleaseLocalRenderer: () -> Unit,
+    onReleaseRemoteRenderer: () -> Unit,
 ) {
     val backgroundColor = Color(0xFF0B1020)
     val isGroupCall = state.participants.size > 1
@@ -102,6 +124,7 @@ fun CallScreen(
             backgroundColor = backgroundColor,
             callTitle = resolvedCallTitle,
             participant = primaryParticipant,
+            isVideoCall = state.isVideoCall,
             onAcceptCall = onAcceptCall,
             onDeclineCall = onDeclineCall,
         )
@@ -161,13 +184,30 @@ fun CallScreen(
                         .weight(1f, fill = true),
                 )
             } else {
-                SingleParticipantPreview(
-                    participant = primaryParticipant,
-                    status = state.status,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = true),
-                )
+                if (state.isVideoCall) {
+                    SingleParticipantVideo(
+                        participant = primaryParticipant,
+                        status = state.status,
+                        isLocalVideoEnabled = state.sessionState.camOn,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = true),
+                        onBindLocalRenderer = onBindLocalRenderer,
+                        onBindRemoteRenderer = onBindRemoteRenderer,
+                        onReleaseLocalRenderer = onReleaseLocalRenderer,
+                        onReleaseRemoteRenderer = onReleaseRemoteRenderer,
+                    )
+                } else {
+                    SingleParticipantPreview(
+                        participant = primaryParticipant,
+                        status = state.status,
+                        isVideoCall = state.isVideoCall,
+                    onRemoteRendererReady = onRemoteRendererReady,
+                    onRemoteRendererReleased = onRemoteRendererReleased,modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = true),
+                    )
+                }
             }
 
             CallControls(
@@ -200,6 +240,7 @@ private fun IncomingCallContent(
     backgroundColor: Color,
     callTitle: String,
     participant: CallParticipant?,
+    isVideoCall: Boolean,
     onAcceptCall: () -> Unit,
     onDeclineCall: () -> Unit,
 ) {
@@ -234,7 +275,13 @@ private fun IncomingCallContent(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = stringResource(R.string.call_incoming_audio),
+                text = stringResource(
+                    if (isVideoCall) {
+                        R.string.call_incoming_video
+                    } else {
+                        R.string.call_incoming_audio
+                    }
+                ),
                 color = Color(0xFFB0B3C5),
                 fontSize = 16.sp,
             )
@@ -452,30 +499,173 @@ private fun CallTopBar(
 private fun SingleParticipantPreview(
     participant: CallParticipant?,
     status: CallStatus,
+    isVideoCall: Boolean,
+    onRemoteRendererReady: (SurfaceViewRenderer) -> Unit,
+    onRemoteRendererReleased: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    if (isVideoCall) {
+        Box(
+            modifier = modifier
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color(0xFF121732)),
+            contentAlignment = Alignment.Center,
+        ) {
+            CallVideoSurface(
+                modifier = Modifier.fillMaxSize(),
+                onRemoteRendererReady = onRemoteRendererReady,
+                onRemoteRendererReleased = onRemoteRendererReleased,
+            )
+            if (status == CallStatus.DIALING || status == CallStatus.CONNECTING) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        }
+    } else {
+        Column(
+            modifier = modifier,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Avatar(
+                url = participant?.avatarUrl,
+                name = participant?.name,
+                size = 120.dp,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = participant?.name.orEmpty(),
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            if (status == CallStatus.DIALING || status == CallStatus.CONNECTING) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CallVideoSurface(
+    modifier: Modifier = Modifier,
+    onRemoteRendererReady: (SurfaceViewRenderer) -> Unit,
+    onRemoteRendererReleased: () -> Unit,
+) {
+    val eglBase = remember { EglBase.create() }
+    var renderer by remember { mutableStateOf<FPSurfaceViewRenderer?>(null) }
+
+    AndroidView(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        factory = { context ->
+            FPSurfaceViewRenderer(context).apply {
+                init(eglBase.eglBaseContext, null)
+                setEnableHardwareScaler(true)
+                renderer = this
+                onRemoteRendererReady(this)
+            }
+        },
+    )
+
+    DisposableEffect(renderer) {
+        onDispose {
+            onRemoteRendererReleased()
+            renderer?.release()
+            eglBase.release()
+        }
+    }
+}
+
+@Composable
+private fun SingleParticipantVideo(
+    participant: CallParticipant?,
+    status: CallStatus,
+    isLocalVideoEnabled: Boolean,
+    modifier: Modifier = Modifier,
+    onBindLocalRenderer: (FPSurfaceViewRenderer) -> Unit,
+    onBindRemoteRenderer: (FPSurfaceViewRenderer) -> Unit,
+    onReleaseLocalRenderer: () -> Unit,
+    onReleaseRemoteRenderer: () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color(0xFF121732)),
+        contentAlignment = Alignment.Center,
     ) {
-        Avatar(
-            url = participant?.avatarUrl,
-            name = participant?.name,
-            size = 120.dp,
+        FlashphonerVideoView(
+            modifier = Modifier.fillMaxSize(),
+            isMirror = false,
+            isOverlay = false,
+            onRendererReady = onBindRemoteRenderer,
+            onRendererReleased = onReleaseRemoteRenderer,
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = participant?.name.orEmpty(),
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 24.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(24.dp))
+        if (isLocalVideoEnabled) {
+            FlashphonerVideoView(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(12.dp)
+                    .size(width = 120.dp, height = 160.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+                isMirror = true,
+                isOverlay = true,
+                onRendererReady = onBindLocalRenderer,
+                onRendererReleased = onReleaseLocalRenderer,
+            )
+        }
         if (status == CallStatus.DIALING || status == CallStatus.CONNECTING) {
-            CircularProgressIndicator(color = Color.White)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Avatar(
+                    url = participant?.avatarUrl,
+                    name = participant?.name,
+                    size = 100.dp,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                CircularProgressIndicator(color = Color.White)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FlashphonerVideoView(
+    modifier: Modifier,
+    isMirror: Boolean,
+    isOverlay: Boolean,
+    onRendererReady: (FPSurfaceViewRenderer) -> Unit,
+    onRendererReleased: () -> Unit,
+) {
+    val context = LocalContext.current
+    val readyCallback by rememberUpdatedState(onRendererReady)
+    val releaseCallback by rememberUpdatedState(onRendererReleased)
+    val renderer = remember(context, isMirror, isOverlay) {
+        FPSurfaceViewRenderer(context).apply {
+            init(Flashphoner.context, null)
+            setEnableHardwareScaler(true)
+            setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
+            setMirror(isMirror)
+            if (isOverlay) {
+                setZOrderMediaOverlay(true)
+            }
+        }
+    }
+
+    LaunchedEffect(renderer) {
+        readyCallback(renderer)
+    }
+
+    AndroidView(
+        factory = { renderer },
+        modifier = modifier,
+        update = {},
+    )
+
+    DisposableEffect(renderer) {
+        onDispose {
+            releaseCallback()
+            renderer.release()
         }
     }
 }
