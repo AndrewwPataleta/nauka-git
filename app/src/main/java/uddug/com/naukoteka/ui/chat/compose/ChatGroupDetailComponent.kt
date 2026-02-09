@@ -31,7 +31,9 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -52,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -78,7 +81,7 @@ fun ChatGroupDetailComponent(
     onBackPressed: () -> Unit,
     onSearchClick: () -> Unit,
     onAddParticipantsClick: (Long) -> Unit,
-    onCallClick: (String?, String?) -> Unit,
+    onCallClick: (String?, String?, Boolean) -> Unit,
     onViewAvatar: (String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -178,6 +181,10 @@ fun ChatGroupDetailComponent(
                     stringResource(R.string.chat_group_tab_files)
                 )
 
+                var showCallOptions by remember { mutableStateOf(false) }
+                var pendingCallName by remember { mutableStateOf<String?>(null) }
+                var pendingCallAvatar by remember { mutableStateOf<String?>(null) }
+                val callSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
                 var selectedParticipant by remember { mutableStateOf<Participant?>(null) }
                 var showAvatarDialog by remember { mutableStateOf(false) }
                 val filteredParticipants = remember(searchQuery, state.participants) {
@@ -214,7 +221,11 @@ fun ChatGroupDetailComponent(
                                 showAvatarDialog = true
                             }
                         },
-                        onCallClick = { onCallClick(state.name, state.image) }
+                        onCallClick = {
+                            pendingCallName = state.name
+                            pendingCallAvatar = state.image
+                            showCallOptions = true
+                        }
                     )
                 } else {
                     OtherTabsContent(
@@ -228,7 +239,11 @@ fun ChatGroupDetailComponent(
                                 showAvatarDialog = true
                             }
                         },
-                        onCallClick = { onCallClick(state.name, state.image) }
+                        onCallClick = {
+                            pendingCallName = state.name
+                            pendingCallAvatar = state.image
+                            showCallOptions = true
+                        }
                     ) {
                         when (selectedTabIndex) {
                             1 -> MediaContent(state.media)
@@ -253,6 +268,52 @@ fun ChatGroupDetailComponent(
                             participantForActions.user.userId?.let { viewModel.removeParticipant(it) }
                         }
                     )
+                }
+
+                if (showCallOptions) {
+                    ModalBottomSheet(
+                        onDismissRequest = { showCallOptions = false },
+                        sheetState = callSheetState,
+                        containerColor = Color.White,
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(bottom = 4.dp),
+                                text = stringResource(R.string.call_create_title),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            CallOptionItem(
+                                icon = Icons.Filled.Phone,
+                                text = stringResource(R.string.call_audio),
+                                onClick = {
+                                    showCallOptions = false
+                                    onCallClick(
+                                        pendingCallName ?: state.name,
+                                        pendingCallAvatar ?: state.image,
+                                        false,
+                                    )
+                                },
+                            )
+                            CallOptionItem(
+                                icon = Icons.Filled.Call,
+                                text = stringResource(R.string.call_video),
+                                onClick = {
+                                    showCallOptions = false
+                                    onCallClick(
+                                        pendingCallName ?: state.name,
+                                        pendingCallAvatar ?: state.image,
+                                        true,
+                                    )
+                                },
+                            )
+                        }
+                    }
                 }
                 if (showAvatarDialog) {
                     ChatAvatarActionDialog(
@@ -486,6 +547,35 @@ private fun RowScope.GroupHeaderAction(
             text = label,
             fontSize = 12.sp,
             color = Color(0xFF8083A0)
+        )
+    }
+}
+
+@Composable
+private fun CallOptionItem(
+    icon: ImageVector,
+    text: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color(0xFF8083A0),
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            color = Color(0xFF10101C),
+            fontWeight = FontWeight.Light,
         )
     }
 }

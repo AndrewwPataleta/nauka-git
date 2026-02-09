@@ -37,6 +37,7 @@ class GroupCallFragment : Fragment() {
         val contactName = arguments?.getString(ARG_CONTACT_NAME)
         val avatarUrl = arguments?.getString(ARG_AVATAR_URL)
         val dialogId = arguments?.getLong(ARG_DIALOG_ID)
+        val isVideoCall = arguments?.getBoolean(ARG_IS_VIDEO_CALL) ?: true
         val resolvedDialogId = dialogId ?: viewModel.uiState.value.dialogId ?: 0L
 
         viewModel.startCall(
@@ -44,6 +45,7 @@ class GroupCallFragment : Fragment() {
             contactName = contactName,
             avatarUrl = avatarUrl,
             callTitle = contactName,
+            isVideoCall = isVideoCall,
         )
 
         return ComposeView(requireContext()).apply {
@@ -72,6 +74,8 @@ class GroupCallFragment : Fragment() {
                         onReleaseLocalRenderer = viewModel::clearLocalRenderer,
                         onReleaseRemoteRenderer = viewModel::clearRemoteRenderer,
                         clearRemoteRenderer = viewModel::clearRemoteRenderer,
+                        onMicPermissionDenied = viewModel::onMicPermissionDenied,
+                        onAudioFocusFailed = viewModel::onAudioFocusFailed,
                     )
                 }
             }
@@ -136,5 +140,6 @@ class GroupCallFragment : Fragment() {
         const val ARG_CONTACT_NAME = "contact_name"
         const val ARG_AVATAR_URL = "avatar_url"
         const val ARG_DIALOG_ID = "dialog_id"
+        const val ARG_IS_VIDEO_CALL = "is_video_call"
     }
 }

@@ -15,7 +15,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -53,10 +52,7 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Share
 
 
@@ -65,7 +61,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -73,7 +68,6 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.LaunchedEffect
 
 import androidx.compose.ui.draw.clip
@@ -227,56 +221,6 @@ fun ChatDetailDialogComponent(
             is ChatDetailUiState.Success -> {
                 var showMoreDialog by remember { mutableStateOf(false) }
                 var showAvatarDialog by remember { mutableStateOf(false) }
-                var showCallOptions by remember { mutableStateOf(false) }
-                var pendingCallName by remember { mutableStateOf<String?>(null) }
-                var pendingCallAvatar by remember { mutableStateOf<String?>(null) }
-                val callSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-                if (showCallOptions) {
-                    ModalBottomSheet(
-                        onDismissRequest = { showCallOptions = false },
-                        sheetState = callSheetState,
-                        containerColor = Color.White,
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                modifier = Modifier.padding(bottom = 4.dp),
-                                text = stringResource(R.string.call_create_title),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium,
-                            )
-                            CallOptionItem(
-                                icon = Icons.Filled.Phone,
-                                text = stringResource(R.string.call_audio),
-                                onClick = {
-                                    showCallOptions = false
-                                    onCallClick(
-                                        pendingCallName ?: state.profile.fullName,
-                                        pendingCallAvatar ?: state.avatarPath,
-                                        false,
-                                    )
-                                },
-                            )
-                            CallOptionItem(
-                                icon = Icons.Filled.Call,
-                                text = stringResource(R.string.call_video),
-                                onClick = {
-                                    showCallOptions = false
-                                    onCallClick(
-                                        pendingCallName ?: state.profile.fullName,
-                                        pendingCallAvatar ?: state.avatarPath,
-                                        true,
-                                    )
-                                },
-                            )
-                        }
-                    }
-                }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -354,9 +298,11 @@ fun ChatDetailDialogComponent(
                                         interactionSource = remember { MutableInteractionSource() },
                                         indication = null
                                     ) {
-                                        pendingCallName = state.profile.fullName
-                                        pendingCallAvatar = state.avatarPath
-                                        showCallOptions = true
+                                        onCallClick(
+                                            state.profile.fullName,
+                                            state.avatarPath,
+                                            true,
+                                        )
                                     }
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally

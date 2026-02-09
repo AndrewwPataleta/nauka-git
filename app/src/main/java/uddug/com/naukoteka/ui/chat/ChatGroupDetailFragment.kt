@@ -1,12 +1,17 @@
 package uddug.com.naukoteka.ui.chat
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.compose.ui.platform.ComposeView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -30,6 +35,31 @@ class ChatGroupDetailFragment : Fragment() {
     private var navigationView: ContainerNavigationView? = null
 
     private val viewModel: ChatGroupDetailViewModel by viewModels()
+
+    private var pendingCallRequest: PendingCallRequest? = null
+
+    private val callPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            val request = pendingCallRequest ?: return@registerForActivityResult
+            pendingCallRequest = null
+
+            val hasMicrophonePermission = permissions[Manifest.permission.RECORD_AUDIO] == true ||
+                isPermissionGranted(Manifest.permission.RECORD_AUDIO)
+            val hasCameraPermission = !request.isVideoCall || permissions[Manifest.permission.CAMERA] == true ||
+                isPermissionGranted(Manifest.permission.CAMERA)
+
+            if (!hasMicrophonePermission) {
+                showMicrophonePermissionAlert()
+                return@registerForActivityResult
+            }
+
+            if (!hasCameraPermission) {
+                showCameraPermissionAlert()
+                return@registerForActivityResult
+            }
+
+            startCall(request)
+        }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -88,16 +118,16 @@ class ChatGroupDetailFragment : Fragment() {
                         onAddParticipantsClick = {
                             findNavController().navigate(R.id.chatCreateMultiFragment)
                         },
-                        onCallClick = { name, avatar ->
+                        onCallClick = { name, avatar, isVideoCall ->
                             val dialogId = (viewModel.uiState.value as? ChatGroupDetailUiState.Success)?.dialogId
                                 ?: return@ChatGroupDetailComponent
-                            findNavController().navigate(
-                                R.id.groupCallFragment,
-                                Bundle().apply {
-                                    putString(GroupCallFragment.ARG_CONTACT_NAME, name)
-                                    putString(GroupCallFragment.ARG_AVATAR_URL, avatar.orEmpty())
-                                    putLong(GroupCallFragment.ARG_DIALOG_ID, dialogId)
-                                }
+                            ensureCallPermissions(
+                                PendingCallRequest(
+                                    name = name,
+                                    avatar = avatar,
+                                    dialogId = dialogId,
+                                    isVideoCall = isVideoCall,
+                                )
                             )
                         },
                         onViewAvatar = { avatarPath ->
@@ -116,4 +146,63 @@ class ChatGroupDetailFragment : Fragment() {
         super.onDestroyView()
         requireActivity().window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_UNSPECIFIED)
     }
+
+    private fun ensureCallPermissions(request: PendingCallRequest) {
+        val requiredPermissions = buildList {
+            add(Manifest.permission.RECORD_AUDIO)
+            if (request.isVideoCall) {
+                add(Manifest.permission.CAMERA)
+            }
+        }
+
+        val missingPermissions = requiredPermissions.filterNot(::isPermissionGranted)
+
+        if (missingPermissions.isEmpty()) {
+            startCall(request)
+            return
+        }
+
+        pendingCallRequest = request
+        callPermissionLauncher.launch(missingPermissions.toTypedArray())
+    }
+
+    private fun startCall(request: PendingCallRequest) {
+        findNavController().navigate(
+            R.id.groupCallFragment,
+            Bundle().apply {
+                putString(GroupCallFragment.ARG_CONTACT_NAME, request.name)
+                putString(GroupCallFragment.ARG_AVATAR_URL, request.avatar.orEmpty())
+                putLong(GroupCallFragment.ARG_DIALOG_ID, request.dialogId)
+                putBoolean(GroupCallFragment.ARG_IS_VIDEO_CALL, request.isVideoCall)
+            }
+        )
+    }
+
+    private fun showMicrophonePermissionAlert() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.call_permission_microphone_title)
+            .setMessage(R.string.call_permission_microphone_message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    private fun showCameraPermissionAlert() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.call_permission_camera_title)
+            .setMessage(R.string.call_permission_camera_message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    private fun isPermissionGranted(permission: String): Boolean {
+        return ContextCompat.checkSelfPermission(requireContext(), permission) ==
+            PackageManager.PERMISSION_GRANTED
+    }
+
+    private data class PendingCallRequest(
+        val name: String?,
+        val avatar: String?,
+        val dialogId: Long,
+        val isVideoCall: Boolean,
+    )
 }

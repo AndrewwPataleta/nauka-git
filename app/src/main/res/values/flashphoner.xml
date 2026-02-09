@@ -2,4 +2,5 @@
 <resources>
     <string name="flashphoner_default_server">wss://stage.naukotheka.ru:8443</string>
     <string name="flashphoner_default_stream">defaultStream</string>
+    <bool name="flashphoner_filter_component2_candidates">true</bool>
 </resources>

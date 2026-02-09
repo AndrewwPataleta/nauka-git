@@ -45,12 +45,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -67,12 +66,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import com.flashphoner.fpwcsapi.FPSurfaceViewRenderer
 import org.webrtc.EglBase
 import org.webrtc.SurfaceViewRenderer
 import androidx.compose.ui.viewinterop.AndroidView
 import org.webrtc.RendererCommon
+import android.Manifest
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.os.Build
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallStatus
@@ -104,8 +108,14 @@ fun CallScreen(
     onBindRemoteRenderer: (FPSurfaceViewRenderer) -> Unit,
     onReleaseLocalRenderer: () -> Unit,
     onReleaseRemoteRenderer: () -> Unit,
+    onMicPermissionDenied: () -> Unit,
+    onAudioFocusFailed: (String) -> Unit,
 ) {
     val backgroundColor = Color(0xFF0B1020)
+    val context = LocalContext.current
+    val audioManager = remember(context) {
+        context.getSystemService(AudioManager::class.java)
+    }
     val isGroupCall = state.participants.size > 1
     val primaryParticipant = state.participants.firstOrNull()
     val callTitle = state.callTitle ?: primaryParticipant?.name
@@ -119,6 +129,60 @@ fun CallScreen(
     val resolvedCallTitle = callTitle ?: stringResource(R.string.call_status_in_call)
     var isParticipantsSheetVisible by rememberSaveable { mutableStateOf(false) }
     var participantForActions by remember { mutableStateOf<CallParticipant?>(null) }
+    val shouldHoldAudioFocus = state.status == CallStatus.CONNECTING || state.status == CallStatus.IN_CALL
+
+    DisposableEffect(shouldHoldAudioFocus) {
+        if (!shouldHoldAudioFocus) {
+            return@DisposableEffect onDispose { }
+        }
+        if (audioManager == null) {
+            onAudioFocusFailed("Audio manager unavailable.")
+            return@DisposableEffect onDispose { }
+        }
+        val permissionGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!permissionGranted) {
+            onMicPermissionDenied()
+            return@DisposableEffect onDispose { }
+        }
+
+        val previousMode = audioManager.mode
+        audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+        var focusRequest: AudioFocusRequest? = null
+        val focusResult = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
+                )
+                .setOnAudioFocusChangeListener { }
+                .build()
+            audioManager.requestAudioFocus(focusRequest)
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.requestAudioFocus(
+                null,
+                AudioManager.STREAM_VOICE_CALL,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+            )
+        }
+        if (focusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            onAudioFocusFailed("Unable to obtain audio focus for call.")
+        }
+        onDispose {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager.abandonAudioFocus(null)
+            }
+            audioManager.mode = previousMode
+        }
+    }
 
     if (state.status == CallStatus.INCOMING) {
         IncomingCallContent(
@@ -173,6 +237,16 @@ fun CallScreen(
                     color = Color(0xFFB0B3C5),
                     fontSize = 16.sp,
                 )
+                state.errorMessage?.let { message ->
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = message,
+                        color = Color(0xFFE64C4C),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

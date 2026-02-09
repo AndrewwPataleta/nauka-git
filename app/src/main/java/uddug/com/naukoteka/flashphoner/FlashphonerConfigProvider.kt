@@ -13,6 +13,9 @@ class FlashphonerConfigProvider @Inject constructor(
     val defaultConfig: FlashphonerConfig
         get() = FlashphonerConfig(
             serverUrl = appContext.getString(R.string.flashphoner_default_server),
-            streamName = appContext.getString(R.string.flashphoner_default_stream)
+            streamName = appContext.getString(R.string.flashphoner_default_stream),
+            enableRtcpComponent2Filter = appContext.resources.getBoolean(
+                R.bool.flashphoner_filter_component2_candidates
+            ),
         )
 }

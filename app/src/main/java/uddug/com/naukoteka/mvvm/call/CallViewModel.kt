@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 import kotlinx.parcelize.Parcelize
 import org.webrtc.SurfaceViewRenderer
+import java.util.UUID
 import uddug.com.data.cache.user_id.UserIdCache
 import uddug.com.data.cache.user_uuid.UserUUIDCache
 import uddug.com.domain.entities.call.CallSessionState
@@ -55,6 +56,12 @@ class CallViewModel @Inject constructor(
     private var localStream: Stream? = null
     private var remoteStream: Stream? = null
     private var pendingRemoteParticipant: Participant? = null
+    private var callOperationId: String? = null
+    private var lastParticipantsCount: Int = 0
+    private var participantWatchdogJob: Job? = null
+    private var currentConfig: FlashphonerConfig? = null
+    private var currentRoomName: String? = null
+    private var currentStreamName: String? = null
 
     fun showIncomingCall(
         dialogId: Long,
@@ -103,6 +110,7 @@ class CallViewModel @Inject constructor(
             isVideoCall = isVideoCall,
             sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
             isRecording = false,
+            errorMessage = null,
         )
     }
 
@@ -135,6 +143,7 @@ class CallViewModel @Inject constructor(
             return
         }
         isCallStarted = true
+        lastParticipantsCount = 0
 
         val resolvedParticipants = participants?.takeIf { it.isNotEmpty() }
             ?: contactName?.let { name ->
@@ -162,6 +171,7 @@ class CallViewModel @Inject constructor(
             isVideoCall = isVideoCall,
             sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
             isRecording = false,
+            errorMessage = null,
         )
 
         viewModelScope.launch {
@@ -169,8 +179,27 @@ class CallViewModel @Inject constructor(
                 val config = flashphonerConfigProvider.defaultConfig
                 val username = resolveUsername()
                 val streamName = buildStreamName(config, dialogId, username)
+                val operationId = UUID.randomUUID().toString()
+                callOperationId = operationId
+                currentConfig = config
+                currentRoomName = dialogId.toString()
+                currentStreamName = streamName
                 mediaSessionId = streamName
 
+                if (config.streamName.isBlank()) {
+                    logCallStep("sanity_stream_name_blank", "streamName is blank")
+                }
+                if (currentRoomName.isNullOrBlank()) {
+                    logCallStep("sanity_room_name_blank", "roomName is blank")
+                }
+                if (username.isBlank()) {
+                    logCallStep("sanity_username_blank", "username is blank")
+                }
+
+                logCallStep(
+                    "connect_ws_start",
+                    "serverUrl=${config.serverUrl} username=$username streamName=$streamName"
+                )
                 flashphonerSessionManager.prepareRoomManager(
                     serverUrl = config.serverUrl,
                     username = username,
@@ -181,8 +210,9 @@ class CallViewModel @Inject constructor(
                 )
             }.onSuccess {
                 _uiState.value = _uiState.value.copy(status = CallStatus.CONNECTING)
+                startParticipantWatchdog()
             }.onFailure {
-                handleCallFailure()
+                handleCallFailure("Failed to connect to call service.")
             }
         }
     }
@@ -194,9 +224,15 @@ class CallViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             status = CallStatus.FINISHED,
             isRecording = false,
+            errorMessage = null,
         )
         stopCallTimer()
         isCallStarted = false
+        stopParticipantWatchdog()
+        callOperationId = null
+        currentConfig = null
+        currentRoomName = null
+        currentStreamName = null
         clearVideoState()
     }
 
@@ -224,7 +260,10 @@ class CallViewModel @Inject constructor(
     ): RoomManagerEvent {
         return object : RoomManagerEvent {
             override fun onConnected(connection: Connection) {
-                Log.d("CallVM", "RoomManager.onConnected status=${connection.status}")
+                logCallStep(
+                    "room_manager_connected",
+                    "status=${connection.status} reconnectAttempts=$reconnectAttempts"
+                )
                 flashphonerSessionManager.joinRoom(
                     roomName = dialogId.toString(),
                     roomEvent = { room -> room.on(createRoomEvent(streamName)) },
@@ -233,7 +272,10 @@ class CallViewModel @Inject constructor(
             }
 
             override fun onDisconnection(connection: Connection) {
-                Log.d("CallVM", "RoomManager.onDisconnection status=${connection.status}")
+                logCallStep(
+                    "room_manager_disconnected",
+                    "status=${connection.status} reconnectAttempts=$reconnectAttempts"
+                )
                 attemptReconnectOrFail()
             }
         }
@@ -242,15 +284,27 @@ class CallViewModel @Inject constructor(
     private fun createRoomEvent(streamName: String): RoomEvent {
         return object : RoomEvent {
             override fun onState(room: Room) {
-                Log.d("CallVM", "RoomEvent.onState participants=${room.participants.size}")
-                subscribeToParticipants(room.participants)
+                val remoteParticipants = room.participants.filterNot(::isSelfParticipant)
+                lastParticipantsCount = remoteParticipants.size
+                logCallStep(
+                    "room_state",
+                    "participants=${room.participants.size} remoteParticipants=${remoteParticipants.size} room=${room.name}"
+                )
+                subscribeToParticipants(remoteParticipants)
+                checkParticipantWatchdog()
             }
 
             override fun onJoined(participant: Participant) {
-                subscribeToParticipants(listOf(participant))
+                logCallStep("participant_joined", "participant=${participant.name}")
+                if (!isSelfParticipant(participant)) {
+                    lastParticipantsCount = maxOf(lastParticipantsCount, 1)
+                    subscribeToParticipants(listOf(participant))
+                    checkParticipantWatchdog()
+                }
             }
 
             override fun onLeft(participant: Participant) {
+                logCallStep("participant_left", "participant=${participant.name}")
                 removeParticipantStream(participant)
                 participant.stop()
                 if (participant == pendingRemoteParticipant || participant.stream == remoteStream) {
@@ -260,12 +314,17 @@ class CallViewModel @Inject constructor(
             }
 
             override fun onPublished(participant: Participant) {
-                subscribeToParticipants(listOf(participant))
+                logCallStep("participant_published", "participant=${participant.name}")
+                if (!isSelfParticipant(participant)) {
+                    lastParticipantsCount = maxOf(lastParticipantsCount, 1)
+                    subscribeToParticipants(listOf(participant))
+                    checkParticipantWatchdog()
+                }
             }
 
             override fun onFailed(room: Room, error: String) {
                 Log.e("CallVM", "RoomEvent.onFailed error=$error")
-                handleCallFailure(error)
+                handleCallFailure("Room join failed: $error")
             }
 
             override fun onMessage(message: Message) {
@@ -279,12 +338,12 @@ class CallViewModel @Inject constructor(
                 constraints = Constraints(true, isVideoCall)
             }
         }.onSuccess {
-            Log.d("CallVM", "publishLocalStream success")
-            _uiState.value = _uiState.value.copy(status = CallStatus.IN_CALL)
-            startCallTimer()
+            logCallStep("publish_local_stream_success", "streamName=$streamName")
+            attachStreamDiagnostics(localStream, "local_publish")
+            _uiState.value = _uiState.value.copy(status = CallStatus.CONNECTING)
         }.onFailure {
             Log.e("CallVM", "publishLocalStream failed", it)
-            handleCallFailure()
+            handleCallFailure("Failed to publish local media.")
         }
     }
 
@@ -299,7 +358,7 @@ class CallViewModel @Inject constructor(
             }
         }.onFailure {
             Log.e("CallVM", "restartLocalStream failed", it)
-            handleCallFailure()
+            handleCallFailure("Failed to restart local media.")
         }
     }
 
@@ -307,11 +366,16 @@ class CallViewModel @Inject constructor(
     private fun attemptReconnectOrFail() {
         val params = lastCallParams
         if (params == null || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            handleCallFailure()
+            logCallStep(
+                "reconnect_aborted",
+                "paramsAvailable=${params != null} attempts=$reconnectAttempts"
+            )
+            handleCallFailure("Call disconnected.")
             return
         }
 
         reconnectAttempts++
+        logCallStep("reconnect_attempt", "attempt=$reconnectAttempts")
         isCallStarted = false
         flashphonerSessionManager.reset()
         startCall(
@@ -323,6 +387,16 @@ class CallViewModel @Inject constructor(
             isVideoCall = params.isVideoCall,
             resetReconnectAttempts = false,
         )
+    }
+
+    fun onAudioFocusFailed(message: String) {
+        logCallStep("audio_focus_failed", message)
+        handleCallFailure(message)
+    }
+
+    fun onMicPermissionDenied() {
+        logCallStep("mic_permission_denied", "RECORD_AUDIO not granted")
+        handleCallFailure("Microphone permission is required to start the call.")
     }
 
     fun toggleMicrophone() {
@@ -381,6 +455,10 @@ class CallViewModel @Inject constructor(
 
     private fun subscribeToParticipants(participants: Collection<Participant>) {
         participants.forEach { participant ->
+            if (isSelfParticipant(participant)) {
+                logCallStep("participant_self_ignored", "participant=${participant.name}")
+                return@forEach
+            }
             val key = participant.streamName ?: participant.name ?: return@forEach
             if (participantStreams.containsKey(key)) return@forEach
 
@@ -389,7 +467,10 @@ class CallViewModel @Inject constructor(
             participantStreams[key] = stream
             if (primaryStreamKey == null) {
                 primaryStreamKey = key
+                remoteStream = stream
             }
+            attachStreamDiagnostics(stream, "remote_play:$key")
+            markRemoteParticipantConnected()
         }
     }
 
@@ -397,6 +478,9 @@ class CallViewModel @Inject constructor(
     private fun removeParticipantStream(participant: Participant) {
         val key = participant.streamName ?: participant.name ?: return
         val removed = participantStreams.remove(key) ?: return
+        if (remoteStream == removed) {
+            remoteStream = null
+        }
         if (primaryStreamKey == key) {
             primaryStreamKey = participantStreams.keys.firstOrNull()
             val nextStream = primaryStreamKey?.let { participantStreams[it] }
@@ -415,15 +499,22 @@ class CallViewModel @Inject constructor(
     }
 
     private fun handleCallFailure(@Suppress("UNUSED_PARAMETER") message: String? = null) {
+        logCallStep("call_failed", message ?: "unknown")
         lastCallParams = null
         clearVideoStreams()
         flashphonerSessionManager.disconnectRoom()
         _uiState.value = _uiState.value.copy(
             status = CallStatus.FINISHED,
             isRecording = false,
+            errorMessage = message,
         )
         stopCallTimer()
         isCallStarted = false
+        stopParticipantWatchdog()
+        callOperationId = null
+        currentConfig = null
+        currentRoomName = null
+        currentStreamName = null
         clearVideoState()
     }
 
@@ -445,6 +536,8 @@ class CallViewModel @Inject constructor(
 
     private companion object {
         const val MAX_RECONNECT_ATTEMPTS = 1
+        const val PARTICIPANT_WAIT_TIMEOUT_MS = 10_000L
+        const val LOG_TAG = "CallFlow"
     }
 
     private fun buildStreamName(
@@ -502,6 +595,106 @@ class CallViewModel @Inject constructor(
         val username = resolveUsername()
         return participant.name == username || participant.streamName?.contains(username) == true
     }
+
+    private fun startParticipantWatchdog() {
+        participantWatchdogJob?.cancel()
+        participantWatchdogJob = viewModelScope.launch {
+            delay(PARTICIPANT_WAIT_TIMEOUT_MS)
+            if (lastParticipantsCount == 0 && isCallStarted) {
+                logDiagnostics("participant_watchdog_timeout")
+                handleCallFailure("Callee did not join within 10 seconds.")
+            }
+        }
+    }
+
+    private fun stopParticipantWatchdog() {
+        participantWatchdogJob?.cancel()
+        participantWatchdogJob = null
+    }
+
+    private fun checkParticipantWatchdog() {
+        if (lastParticipantsCount > 0) {
+            stopParticipantWatchdog()
+        }
+    }
+
+    private fun markRemoteParticipantConnected() {
+        if (_uiState.value.status != CallStatus.IN_CALL) {
+            _uiState.value = _uiState.value.copy(status = CallStatus.IN_CALL)
+            startCallTimer()
+        }
+    }
+
+    private fun attachStreamDiagnostics(stream: Stream?, label: String) {
+        if (stream == null) return
+        stream.on { _, status ->
+            logCallStep("stream_status", "label=$label status=$status")
+            maybeSanitizeRemoteSdp(stream, label)
+        }
+    }
+
+    private fun maybeSanitizeRemoteSdp(stream: Stream, label: String) {
+        val config = currentConfig ?: return
+        val streamObject = runCatching {
+            val field = Stream::class.java.getDeclaredField("streamObject").apply { isAccessible = true }
+            field.get(stream)
+        }.getOrNull() ?: return
+        val sdpField = runCatching {
+            streamObject::class.java.getDeclaredField("sdp").apply { isAccessible = true }
+        }.getOrNull() ?: return
+        val sdp = sdpField.get(streamObject) as? String ?: return
+        val hasRtcpMux = sdp.contains("a=rtcp-mux")
+        val candidateLines = sdp.lineSequence().filter { it.startsWith("a=candidate") }.toList()
+        val component2Candidates = candidateLines.filter { line ->
+            val tokens = line.removePrefix("a=candidate:").trim().split("\\s+".toRegex())
+            tokens.getOrNull(1) == "2"
+        }
+        logCallStep(
+            "remote_sdp_summary",
+            "label=$label sdpBytes=${sdp.length} candidates=${candidateLines.size} component2=${component2Candidates.size} rtcpMux=$hasRtcpMux"
+        )
+        if (!config.enableRtcpComponent2Filter || !hasRtcpMux || component2Candidates.isEmpty()) return
+
+        val filteredSdp = sdp.lineSequence()
+            .filterNot { line ->
+                line.startsWith("a=candidate") && line.removePrefix("a=candidate:")
+                    .trim()
+                    .split("\\s+".toRegex())
+                    .getOrNull(1) == "2"
+            }
+            .joinToString(separator = "\r\n")
+        if (filteredSdp != sdp) {
+            runCatching {
+                sdpField.set(streamObject, filteredSdp)
+                logCallStep("remote_sdp_filtered", "label=$label removed=${component2Candidates.size}")
+            }.onFailure {
+                logCallStep("remote_sdp_filter_failed", "label=$label error=${it.message}")
+            }
+        }
+    }
+
+    private fun logDiagnostics(trigger: String) {
+        val config = currentConfig
+        val status = _uiState.value.status
+        val localStatus = localStream?.status
+        val remoteStatus = remoteStream?.status
+        Log.w(
+            LOG_TAG,
+            "Diagnostics trigger=$trigger opId=${callOperationId ?: "n/a"} " +
+                "room=${currentRoomName ?: "n/a"} stream=${currentStreamName ?: "n/a"} " +
+                "serverUrl=${config?.serverUrl ?: "n/a"} participants=$lastParticipantsCount " +
+                "status=$status localStreamStatus=$localStatus remoteStreamStatus=$remoteStatus"
+        )
+    }
+
+    private fun logCallStep(step: String, details: String) {
+        val opId = callOperationId ?: "n/a"
+        Log.d(
+            LOG_TAG,
+            "opId=$opId step=$step room=${currentRoomName ?: "n/a"} " +
+                "sessionId=${currentStreamName ?: "n/a"} participants=$lastParticipantsCount details=$details"
+        )
+    }
 }
 
 data class CallUiState(
@@ -513,6 +706,7 @@ data class CallUiState(
     val sessionState: CallSessionState = CallSessionState(),
     val isRecording: Boolean = false,
     val isVideoCall: Boolean = false,
+    val errorMessage: String? = null,
 )
 
 @Parcelize

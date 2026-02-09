@@ -97,8 +97,10 @@ class SingleCallFragment : Fragment() {
                         onBindLocalRenderer = viewModel::bindLocalRenderer,
                         onBindRemoteRenderer = viewModel::bindRemoteRenderer,
                         onReleaseLocalRenderer = viewModel::clearLocalRenderer,
-                        onReleaseRemoteRenderer =  { viewModel.clearRemoteRenderer() },
-                        clearRemoteRenderer =  { viewModel.clearRemoteRenderer() }
+                        onReleaseRemoteRenderer = { viewModel.clearRemoteRenderer() },
+                        clearRemoteRenderer = { viewModel.clearRemoteRenderer() },
+                        onMicPermissionDenied = viewModel::onMicPermissionDenied,
+                        onAudioFocusFailed = viewModel::onAudioFocusFailed,
                     )
                 }
             }
