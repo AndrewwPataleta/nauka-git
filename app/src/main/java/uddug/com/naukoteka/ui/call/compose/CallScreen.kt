@@ -98,7 +98,8 @@ fun CallScreen(
     onToggleRecording: () -> Unit,
     onMinimize: () -> Unit,
     onRemoteRendererReady: (SurfaceViewRenderer) -> Unit,
-    onRemoteRendererReleased: () -> Unit,
+    clearRemoteRenderer: () -> Unit,
+    onRemoteRendererReleased: (SurfaceViewRenderer) -> Unit,
     onBindLocalRenderer: (FPSurfaceViewRenderer) -> Unit,
     onBindRemoteRenderer: (FPSurfaceViewRenderer) -> Unit,
     onReleaseLocalRenderer: () -> Unit,
@@ -203,7 +204,7 @@ fun CallScreen(
                         status = state.status,
                         isVideoCall = state.isVideoCall,
                     onRemoteRendererReady = onRemoteRendererReady,
-                    onRemoteRendererReleased = onRemoteRendererReleased,modifier = Modifier
+                    onRemoteRendererReleased = clearRemoteRenderer,modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f, fill = true),
                     )

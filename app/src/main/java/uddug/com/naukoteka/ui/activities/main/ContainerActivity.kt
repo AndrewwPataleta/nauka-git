@@ -7,7 +7,11 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Rational
 import android.view.animation.Animation
+import androidx.activity.viewModels
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.findNavController
 import com.yalantis.ucrop.UCrop
 import dagger.hilt.android.AndroidEntryPoint
@@ -18,11 +22,15 @@ import uddug.com.naukoteka.R
 import uddug.com.naukoteka.databinding.ActivityMainBinding
 import uddug.com.naukoteka.flashphoner.FlashphonerEnvironment
 import uddug.com.naukoteka.global.base.BaseActivity
+import uddug.com.naukoteka.mvvm.call.IncomingCallEvent
+import uddug.com.naukoteka.mvvm.call.IncomingCallViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerPresenter
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerView
+import uddug.com.naukoteka.ui.call.SingleCallFragment
 import uddug.com.naukoteka.utils.viewBinding
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView {
@@ -35,6 +43,8 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
     @Inject
     lateinit var flashphonerEnvironment: FlashphonerEnvironment
+
+    private val incomingCallViewModel: IncomingCallViewModel by viewModels()
 
     private var pulseAnimation: Animation? = null
 
@@ -71,6 +81,14 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
         flashphonerEnvironment.attachContainerActivity(this)
         flashphonerEnvironment.ensureInitialised(this)
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                incomingCallViewModel.events.collect { event ->
+                    handleIncomingCall(event)
+                }
+            }
+        }
 
         contentView.bottomNav.setOnNavigationItemSelectedListener {
             val navController = findNavController(R.id.main_nav_host_fragment)
@@ -188,5 +206,22 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         }
     }
 
+    private fun handleIncomingCall(event: IncomingCallEvent) {
+        val navController = findNavController(R.id.main_nav_host_fragment)
+        if (navController.graph.id != R.id.nav_graph_chat) {
+            navController.setGraph(R.navigation.nav_graph_chat)
+            contentView.bottomNav.menu.getItem(3).setChecked(true)
+        }
+        navController.navigate(
+            R.id.singleCallFragment,
+            Bundle().apply {
+                putString(SingleCallFragment.ARG_CONTACT_NAME, event.contactName)
+                putString(SingleCallFragment.ARG_AVATAR_URL, event.avatarUrl.orEmpty())
+                putLong(SingleCallFragment.ARG_DIALOG_ID, event.dialogId)
+                putString(SingleCallFragment.ARG_CALL_TITLE, event.callTitle)
+                putBoolean(SingleCallFragment.ARG_IS_INCOMING_CALL, true)
+            }
+        )
+    }
 
 }

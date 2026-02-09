@@ -66,11 +66,12 @@ class GroupCallFragment : Fragment() {
                             }
                         },
                         onRemoteRendererReady = viewModel::bindRemoteRenderer,
-                        onRemoteRendererReleased = { viewModel.bindRemoteRenderer(null) },
+                        onRemoteRendererReleased = { viewModel.clearRemoteRenderer() },
                         onBindLocalRenderer = viewModel::bindLocalRenderer,
                         onBindRemoteRenderer = viewModel::bindRemoteRenderer,
                         onReleaseLocalRenderer = viewModel::clearLocalRenderer,
                         onReleaseRemoteRenderer = viewModel::clearRemoteRenderer,
+                        clearRemoteRenderer = viewModel::clearRemoteRenderer,
                     )
                 }
             }
