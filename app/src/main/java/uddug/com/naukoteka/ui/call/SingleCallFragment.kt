@@ -1,10 +1,16 @@
 package uddug.com.naukoteka.ui.call
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.compose.runtime.collectAsState
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -17,6 +23,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallViewModel
+import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.call.compose.CallScreen
 import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
 import uddug.com.naukoteka.ui.theme.NaukotekaTheme
@@ -27,7 +34,43 @@ import uddug.com.naukoteka.R
 class SingleCallFragment : Fragment() {
 
     private val viewModel: CallViewModel by activityViewModels()
+    private var navigationView: ContainerNavigationView? = null
     private var hasHandledCallFinish: Boolean = false
+    private var pendingStartCallRequest: PendingStartCallRequest? = null
+
+    private val callPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            val request = pendingStartCallRequest ?: return@registerForActivityResult
+            pendingStartCallRequest = null
+
+            val hasMicrophonePermission = permissions[Manifest.permission.RECORD_AUDIO] == true ||
+                isPermissionGranted(Manifest.permission.RECORD_AUDIO)
+            val hasCameraPermission = !request.isVideoCall ||
+                permissions[Manifest.permission.CAMERA] == true ||
+                isPermissionGranted(Manifest.permission.CAMERA)
+
+            if (!hasMicrophonePermission) {
+                showMicrophonePermissionAlert()
+                return@registerForActivityResult
+            }
+
+            if (!hasCameraPermission) {
+                showCameraPermissionAlert()
+                return@registerForActivityResult
+            }
+
+            startCall(request)
+        }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        navigationView = requireActivity() as? ContainerNavigationView
+    }
+
+    override fun onResume() {
+        super.onResume()
+        navigationView?.showNavigationBottomBar(false)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,13 +96,14 @@ class SingleCallFragment : Fragment() {
                 isVideoCall = isVideoCall,
             )
         } else {
-            viewModel.startCall(
+            ensureCallPermissions(
                 dialogId = resolvedDialogId,
                 contactName = contactName,
                 avatarUrl = avatarUrl,
                 participants = participants,
                 callTitle = callTitle,
                 isVideoCall = isVideoCall,
+                isAcceptingIncomingCall = false,
             )
         }
 
@@ -74,7 +118,7 @@ class SingleCallFragment : Fragment() {
                             viewModel.endCall()
                         },
                         onAcceptCall = {
-                            viewModel.startCall(
+                            ensureCallPermissions(
                                 dialogId = resolvedDialogId,
                                 contactName = contactName,
                                 avatarUrl = avatarUrl,
@@ -161,6 +205,76 @@ class SingleCallFragment : Fragment() {
         }
     }
 
+    private fun ensureCallPermissions(
+        dialogId: Long,
+        contactName: String?,
+        avatarUrl: String?,
+        participants: ArrayList<CallParticipant>?,
+        callTitle: String?,
+        isVideoCall: Boolean,
+        isAcceptingIncomingCall: Boolean,
+    ) {
+        val missingPermissions = buildList {
+            if (!isPermissionGranted(Manifest.permission.RECORD_AUDIO)) {
+                add(Manifest.permission.RECORD_AUDIO)
+            }
+            if (isVideoCall && !isPermissionGranted(Manifest.permission.CAMERA)) {
+                add(Manifest.permission.CAMERA)
+            }
+        }
+
+        val request = PendingStartCallRequest(
+            dialogId = dialogId,
+            contactName = contactName,
+            avatarUrl = avatarUrl,
+            participants = participants,
+            callTitle = callTitle,
+            isVideoCall = isVideoCall,
+            isAcceptingIncomingCall = isAcceptingIncomingCall,
+        )
+
+        if (missingPermissions.isEmpty()) {
+            startCall(request)
+            return
+        }
+
+        pendingStartCallRequest = request
+        callPermissionLauncher.launch(missingPermissions.toTypedArray())
+    }
+
+    private fun startCall(request: PendingStartCallRequest) {
+        viewModel.startCall(
+            dialogId = request.dialogId,
+            contactName = request.contactName,
+            avatarUrl = request.avatarUrl,
+            participants = request.participants,
+            callTitle = request.callTitle,
+            isVideoCall = request.isVideoCall,
+            isAcceptingIncomingCall = request.isAcceptingIncomingCall,
+        )
+    }
+
+    private fun showMicrophonePermissionAlert() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.call_permission_microphone_title)
+            .setMessage(R.string.call_permission_microphone_message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    private fun showCameraPermissionAlert() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.call_permission_camera_title)
+            .setMessage(R.string.call_permission_camera_message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    private fun isPermissionGranted(permission: String): Boolean {
+        return ContextCompat.checkSelfPermission(requireContext(), permission) ==
+            PackageManager.PERMISSION_GRANTED
+    }
+
     companion object {
         const val ARG_CONTACT_NAME = "contact_name"
         const val ARG_AVATAR_URL = "avatar_url"
@@ -170,4 +284,14 @@ class SingleCallFragment : Fragment() {
         const val ARG_IS_VIDEO_CALL = "is_video_call"
         const val ARG_IS_INCOMING_CALL = "is_incoming_call"
     }
+
+    private data class PendingStartCallRequest(
+        val dialogId: Long,
+        val contactName: String?,
+        val avatarUrl: String?,
+        val participants: ArrayList<CallParticipant>?,
+        val callTitle: String?,
+        val isVideoCall: Boolean,
+        val isAcceptingIncomingCall: Boolean,
+    )
 }

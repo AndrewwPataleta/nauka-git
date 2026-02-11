@@ -117,11 +117,8 @@ class NauSphereFragment : BaseFragment(R.layout.fragment_naushpere), NauSphereVi
                 model = BuildConfig.IMAGE_SERVER_URL.plus(avatarPath),
                 withAnimation = false,
                 requestOptions = RequestOptions.circleCropTransform(),
-                placeholder = R.drawable.mock_avatar,
-                error = R.drawable.mock_avatar
+
             )
-        } else {
-            contentView.back.setImageResource(R.drawable.mock_avatar)
         }
     }
 
