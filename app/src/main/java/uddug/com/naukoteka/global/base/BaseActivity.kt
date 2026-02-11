@@ -3,6 +3,7 @@ package uddug.com.naukoteka.global.base
 import android.app.ActionBar
 import android.os.Bundle
 import android.view.View
+import androidx.core.view.WindowCompat
 import androidx.viewbinding.ViewBinding
 import uddug.com.naukoteka.NaukotekaApplication
 import uddug.com.naukoteka.di.DI
@@ -21,6 +22,7 @@ abstract class BaseActivity : MvpAppCompatActivity() {
                 .installModules(ActivityModule(this))
                 .inject(this)
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         setContentView(contentView.root)
     }
 

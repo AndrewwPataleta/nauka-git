@@ -2,6 +2,7 @@ package uddug.com.naukoteka.ui.chat.compose.components
 
 import ChatCard
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,17 +43,19 @@ import java.util.Locale
 fun SearchResultItem(
     result: SearchResult,
     query: String,
+    modifier: Modifier = Modifier,
     onClick: (Long) -> Unit,
 ) {
     when (result) {
-        is SearchResult.Dialog -> SearchDialogResultCard(dialog = result.data, onClick = onClick)
-        is SearchResult.Message -> SearchMessageResultCard(result = result.data, query = query, onClick = onClick)
+        is SearchResult.Dialog -> SearchDialogResultCard(dialog = result.data, modifier = modifier, onClick = onClick)
+        is SearchResult.Message -> SearchMessageResultCard(result = result.data, query = query, modifier = modifier, onClick = onClick)
     }
 }
 
 @Composable
 private fun SearchDialogResultCard(
     dialog: SearchDialog,
+    modifier: Modifier = Modifier,
     onClick: (Long) -> Unit,
 ) {
     val context = LocalContext.current
@@ -61,7 +64,8 @@ private fun SearchDialogResultCard(
     }
     val createdAtIso = remember(dialog.createdAt) { dialog.createdAt.toString() }
 
-    ChatCard(
+    Box(modifier = modifier) {
+        ChatCard(
         dialogId = dialog.dialogId,
         avatarUrl = dialog.image,
         name = dialog.fullName,
@@ -70,12 +74,14 @@ private fun SearchDialogResultCard(
         onChatClick = onClick,
         onChatLongClick = {},
     )
+    }
 }
 
 @Composable
 private fun SearchMessageResultCard(
     result: SearchMessage,
     query: String,
+    modifier: Modifier = Modifier,
     onClick: (Long) -> Unit,
 ) {
     val highlightColor = Color(0xFF2E83D9)
@@ -83,7 +89,7 @@ private fun SearchMessageResultCard(
     val messageText = result.text.orEmpty()
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { onClick(result.dialogId) }
     ) {

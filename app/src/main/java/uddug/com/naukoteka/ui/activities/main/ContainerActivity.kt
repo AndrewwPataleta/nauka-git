@@ -8,7 +8,10 @@ import android.os.Bundle
 import android.util.Rational
 import android.view.animation.Animation
 import androidx.activity.viewModels
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -78,6 +81,18 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(contentView.root)
+
+
+        ViewCompat.setOnApplyWindowInsetsListener(contentView.root) { _, insets ->
+            val statusBarTopInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            val navigationBarBottomInset = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+
+            contentView.mainNavHostFragment.updatePadding(top = statusBarTopInset)
+            contentView.bottomNav.updatePadding(bottom = navigationBarBottomInset)
+
+            insets
+        }
+        ViewCompat.requestApplyInsets(contentView.root)
 
         flashphonerEnvironment.attachContainerActivity(this)
         flashphonerEnvironment.ensureInitialised(this)

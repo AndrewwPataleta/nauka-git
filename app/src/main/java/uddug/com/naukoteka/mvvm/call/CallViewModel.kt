@@ -520,8 +520,8 @@ class CallViewModel @Inject constructor(
 
     private fun resolveUsername(): String {
         return listOfNotNull(
-            userUUIDCache.entity?.takeIf { it.isNotBlank() },
             userIdCache.entity?.takeIf { it.isNotBlank() },
+            userUUIDCache.entity?.takeIf { it.isNotBlank() },
         ).firstOrNull() ?: "anonymous"
     }
 

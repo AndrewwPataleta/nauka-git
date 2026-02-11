@@ -26,8 +26,6 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -38,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -93,6 +90,7 @@ fun ChatTabBar(
             val folder = target.folder
             AlertDialog(
                 onDismissRequest = { folderActionsTarget = null },
+                containerColor = Color.White,
                 text = {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         FolderActionItem(
@@ -382,20 +380,20 @@ private fun FolderActionItem(
     text: String,
     onClick: () -> Unit,
 ) {
-    ListItem(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        leadingContent = {
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier.size(24.dp),
+            contentAlignment = Alignment.Center,
+        ) {
             Image(painter = icon, contentDescription = null)
-        },
-        headlineContent = {
-            Text(text = text)
-        },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp,
-    )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(text = text)
+    }
 }
-
