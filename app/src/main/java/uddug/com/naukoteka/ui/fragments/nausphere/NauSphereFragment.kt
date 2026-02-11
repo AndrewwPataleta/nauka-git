@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.lifecycleScope
@@ -93,6 +95,18 @@ class NauSphereFragment : BaseFragment(R.layout.fragment_naushpere), NauSphereVi
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val initialToolbarTopPadding = contentView.toolbarContainer.paddingTop
+        ViewCompat.setOnApplyWindowInsetsListener(contentView.toolbarContainer) { toolbarContainer, insets ->
+            val topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            toolbarContainer.setPadding(
+                toolbarContainer.paddingLeft,
+                initialToolbarTopPadding + topInset,
+                toolbarContainer.paddingRight,
+                toolbarContainer.paddingBottom
+            )
+            insets
+        }
+        ViewCompat.requestApplyInsets(contentView.toolbarContainer)
         contentView.feedContainer.adapter = feedItemAdapter
     }
 

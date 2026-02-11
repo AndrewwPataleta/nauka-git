@@ -79,12 +79,15 @@ fun ChatToolbarComponent(
         TopAppBar(
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Avatar(
-                        url = currentUser?.image?.path,
-                        name = currentUser?.fullName ?: currentUser?.nickname,
-                        modifier = Modifier.size(36.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    currentUser?.image?.path?.let {
+                        Avatar(
+                            url = currentUser?.image?.path,
+                            name = currentUser?.fullName ?: currentUser?.nickname,
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+
                     Text(
                         text = stringResource(R.string.nau_chat),
                         fontSize = 20.sp,

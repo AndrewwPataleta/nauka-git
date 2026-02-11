@@ -44,7 +44,8 @@ fun CreateChatMemberCard(
                 }
                 onMemberClick()
             },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colors.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colors.background),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column {
             Row(
@@ -108,4 +109,3 @@ fun CreateChatMemberCard(
         }
     }
 }
-

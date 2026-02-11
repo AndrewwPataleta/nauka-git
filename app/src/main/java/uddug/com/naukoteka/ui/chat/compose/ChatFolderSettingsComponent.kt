@@ -52,6 +52,9 @@ fun ChatFolderSettingsComponent(
     Scaffold(
         topBar = {
             TopAppBar(
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .padding(top = 8.dp),
                 title = {
                     Text(
                         text = stringResource(R.string.chat_folder_settings_title),

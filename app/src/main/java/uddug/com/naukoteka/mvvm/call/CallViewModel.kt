@@ -577,10 +577,12 @@ class CallViewModel @Inject constructor(
     }
 
     fun clearLocalRenderer() {
+        localStream?.switchRenderer(null)
         localRenderer = null
     }
 
     fun clearRemoteRenderer() {
+        remoteStream?.switchRenderer(null)
         remoteRenderer = null
     }
 
@@ -599,10 +601,12 @@ class CallViewModel @Inject constructor(
     private fun startParticipantWatchdog() {
         participantWatchdogJob?.cancel()
         participantWatchdogJob = viewModelScope.launch {
-            delay(PARTICIPANT_WAIT_TIMEOUT_MS)
-            if (lastParticipantsCount == 0 && isCallStarted) {
-                logDiagnostics("participant_watchdog_timeout")
-                handleCallFailure("Callee did not join within 10 seconds.")
+            while (isActive && lastParticipantsCount == 0 && isCallStarted) {
+                delay(PARTICIPANT_WAIT_TIMEOUT_MS)
+                if (lastParticipantsCount == 0 && isCallStarted) {
+                    logDiagnostics("participant_watchdog_timeout")
+                    logCallStep("participant_wait_retry", "timeoutMs=$PARTICIPANT_WAIT_TIMEOUT_MS")
+                }
             }
         }
     }
