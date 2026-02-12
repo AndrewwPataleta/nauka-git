@@ -18,8 +18,12 @@ class StatusCodeParsingInterceptor constructor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val response = chain.run { proceed(request()) }
         try {
-            val statusCode = response.getApiError(context)?.code?:0
+            val statusCode = response.getApiError(context).code
             logger.info("Parsed status code: $statusCode")
+
+            if (statusCode <= 0 || response.code < 400) {
+                return response
+            }
 
             response.javaClass.getDeclaredField("code").run {
                 isAccessible = true

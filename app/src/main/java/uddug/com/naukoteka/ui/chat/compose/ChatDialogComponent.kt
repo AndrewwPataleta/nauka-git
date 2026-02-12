@@ -260,6 +260,12 @@ fun ChatDialogComponent(
         resetVoicePlayback()
     }
 
+    suspend fun scrollToLastMessageIfAny(messages: List<MessageChat>) {
+        if (messages.isNotEmpty()) {
+            scrollState.animateScrollToItem(messages.lastIndex)
+        }
+    }
+
     LaunchedEffect(voicePlayingMessageId, isVoicePlaying, isVoicePreparing) {
         if (voicePlayingMessageId == null) {
             voiceRemainingTime = 0L
@@ -540,7 +546,7 @@ fun ChatDialogComponent(
                         onSendClick = {
                             scope.launch {
                                 viewModel.sendMessage(state.currentMessage)
-                                scrollState.animateScrollToItem(messages.size - 1)
+                                scrollToLastMessageIfAny(messages)
                                 
                             }
                         },
@@ -589,7 +595,7 @@ fun ChatDialogComponent(
                             recordedAudio?.let { file ->
                                 scope.launch {
                                     viewModel.sendVoiceMessage(file)
-                                    scrollState.animateScrollToItem(messages.size - 1)
+                                    scrollToLastMessageIfAny(messages)
                                 }
                             }
                             recordedAudio = null

@@ -1,10 +1,8 @@
 package uddug.com.naukoteka.mvvm.chat
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,16 +14,11 @@ import kotlinx.coroutines.withContext
 import uddug.com.domain.entities.profile.Image
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.chat.ChatInteractor
-import uddug.com.domain.repositories.user_profile.UserProfileRepository
-import uddug.com.naukoteka.R
-import uddug.com.naukoteka.mvvm.chat.await
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatCreateSingleViewModel @Inject constructor(
     private val chatInteractor: ChatInteractor,
-    private val userProfileRepository: UserProfileRepository,
-    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState =
@@ -101,41 +94,13 @@ class ChatCreateSingleViewModel @Inject constructor(
 
     fun onUserClick(userId: String) {
         viewModelScope.launch {
-            val currentState = _uiState.value
-            val selectedUser =
-                if (currentState is ChatCreateSingleUiState.Success) {
-                    (currentState.users + currentState.searchResults).find { it.id == userId }
-                } else null
-
-
-            val me = withContext(Dispatchers.IO) {
-                userProfileRepository.getProfileInfo().await()
-            }
-
-            val hasPermit = selectedUser?.permits?.contains("82:200") ?: true
-            if (hasPermit) {
+            try {
                 _events.emit(ChatCreateSingleEvent.OpenDialogDetail(userId))
-            } else {
+            } catch (e: Exception) {
                 _uiState.value = ChatCreateSingleUiState.Error(
-                    context.getString(R.string.chat_private_dialog_permission_error)
+                    e.message ?: "Unknown error"
                 )
             }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         }
     }
 }

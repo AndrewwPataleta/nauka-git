@@ -1,3 +1,4 @@
+
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
@@ -9,9 +10,7 @@ apply plugin: 'kotlin-parcelize'
 apply plugin: 'com.google.firebase.firebase-perf'
 apply plugin: 'dagger.hilt.android.plugin'
 
-// Flashphoner SDK already bundles Gson classes, so exclude the Maven artifact from
-// runtime classpaths to avoid duplicate definitions while keeping it on the
-// compile classpath for modules that need it.
+
 configurations.configureEach {
     if (name.contains("RuntimeClasspath")) {
         exclude group: 'com.google.code.gson', module: 'gson'
@@ -47,11 +46,8 @@ android {
     }
 
     signingConfigs {
-        debug {
-        }
-
-        release {
-        }
+        debug {}
+        release {}
     }
 
     buildTypes {
@@ -79,6 +75,19 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
+        prod {
+            firebaseAppDistribution {
+                serviceCredentialsFile = "$project.rootDir/nauchat-app-distribution.json"
+                groupsFile = "$project.rootDir/tester_groups.txt"
+                releaseNotesFile = "$project.rootDir/releasenotes.txt"
+            }
+            buildConfigField "String", "SERVER_URL", "\"https://naukotheka.ru/api/\""
+            buildConfigField "String", "IMAGE_SERVER_URL", "\"https://naukotheka.ru/api/core\""
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+            matchingFallbacks = ['release']
+        }
     }
 
     compileOptions {
@@ -102,6 +111,35 @@ android {
 
     namespace 'uddug.com.naukoteka'
 }
+
+def baseVersionName = "${getVersionMajor()}.${getVersionMinor()}.${getVersionPatch()}"
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def bt = variant.buildType
+
+        // твоя логика: release/prod => prod, иначе debug
+        def buildTypeLabel = (bt == "release" || bt == "prod") ? "prod" : "debug"
+        def apkFileName = "${buildTypeLabel}-${baseVersionName}.apk"
+
+        // ✅ rename output (без OutputType)
+        variant.outputs.each { output ->
+            output.outputFileName.set(apkFileName)
+        }
+
+        // ✅ safe hook: задача может появиться позже — configureEach дождётся
+        def assembleTaskName = "assemble${variant.name.capitalize()}"
+        tasks.matching { it.name == assembleTaskName }.configureEach {
+            doFirst {
+                println("Сборка APK: ${apkFileName}")
+            }
+        }
+    }
+}
+
+// ❌ REMOVE (was causing the crash):
+// afterEvaluate { ... android.applicationVariants.all { ... output.outputFileName = ... } }
+// android.applicationVariants.configureEach { ... output.outputFileName = ... }
 
 dependencies {
 
@@ -185,6 +223,7 @@ dependencies {
     implementation 'com.github.stfalcon-studio:StfalconImageViewer:1.0.1'
     implementation "com.github.dhaval2404:imagepicker:2.1"
     debugImplementation "com.github.chuckerteam.chucker:library:4.0.0"
+    prodImplementation "com.github.chuckerteam.chucker:library:4.0.0"
     releaseImplementation "com.github.chuckerteam.chucker:library-no-op:4.0.0"
     implementation "com.vanniktech:android-image-cropper:4.6.0"
     implementation "com.github.StephenVinouze:MaterialNumberPicker:1.1.0"
