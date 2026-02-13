@@ -217,6 +217,7 @@ dependencies {
     implementation presentation.rxJavaKotlin
     implementation presentation.rxJava
     implementation presentation.rxJavaAndroid
+    implementation 'com.jakewharton.rxrelay2:rxrelay:2.1.1'
 
     implementation lib.domain
     implementation lib.data

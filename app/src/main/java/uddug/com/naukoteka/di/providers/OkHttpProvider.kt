@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import uddug.com.data.NaukotekaCookieJar
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.di.utils.http.AuthInterceptor
+import uddug.com.naukoteka.di.utils.http.EnvironmentUrlInterceptor
 import uddug.com.naukoteka.di.utils.http.ErrorTransformerInterceptor
 import uddug.com.naukoteka.di.utils.http.RefreshTokenAuthenticator
 import okhttp3.OkHttpClient
@@ -22,6 +23,7 @@ class OkHttpProvider(
     private val statusCodeInterceptor: StatusCodeParsingInterceptor,
     private val errorTransformerInterceptor: ErrorTransformerInterceptor,
     private val authenticator: RefreshTokenAuthenticator,
+    private val environmentUrlInterceptor: EnvironmentUrlInterceptor,
     private val cookieJar: NaukotekaCookieJar,
     private val context: Context,
 ) : Provider<OkHttpClient> {
@@ -37,6 +39,7 @@ class OkHttpProvider(
             })
             .addNetworkInterceptor(statusCodeInterceptor)
             .addNetworkInterceptor(errorTransformerInterceptor)
+            .addInterceptor(environmentUrlInterceptor)
             .addInterceptor(UnauthorizedInterceptor(context))
             .addInterceptor(UserAgentInterceptor())
 

@@ -34,7 +34,9 @@ enum class MessageType {
     companion object {
         fun fromInt(value: Int): MessageType = when (value) {
             1 -> TEXT
+            2 -> SYSTEM
             5 -> SYSTEM
+            6 -> SYSTEM
             9 -> POLL
             else -> UNKNOWN
         }

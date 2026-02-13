@@ -22,6 +22,7 @@ import uddug.com.domain.utils.logging.ILogger
 import uddug.com.naukoteka.di.ServerUrl
 import uddug.com.naukoteka.di.providers.*
 import uddug.com.naukoteka.di.utils.Logger
+import uddug.com.naukoteka.environment.EnvironmentSwitcherService
 import uddug.com.naukoteka.navigation.AppRouter
 import okhttp3.CookieJar
 import okhttp3.OkHttpClient
@@ -37,6 +38,7 @@ class AppModule(application: Application) : Module() {
         bind(Context::class.java).toInstance(application)
         bind(ILogger::class.java).to(Logger::class.java).singleton()
         bind(SharedPreferences::class.java).toProvider(SharedPreferencesProvider::class.java)
+        bind(EnvironmentSwitcherService::class.java).singleton()
         bind(Gson::class.java).toProvider(GsonProvider::class.java).singleton()
         bind(SchedulersProvider::class.java).toInstance(AppSchedulersProvider())
 

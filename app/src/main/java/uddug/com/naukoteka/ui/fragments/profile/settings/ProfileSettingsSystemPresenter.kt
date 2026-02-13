@@ -7,13 +7,16 @@ import uddug.com.data.cache.model.UserTheme
 import uddug.com.data.cache.system_settings.UserSystemSettingsCache
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.user_profile.UserProfileInteractor
+import uddug.com.naukoteka.environment.AppEnvironment
+import uddug.com.naukoteka.environment.EnvironmentSwitcherService
 import uddug.com.naukoteka.global.base.BasePresenterImpl
 
 @InjectConstructor
 @InjectViewState
 class ProfileSettingsSystemPresenter(
     private val userProfileInteractor: UserProfileInteractor,
-    private val userSystemSettingsCache: UserSystemSettingsCache
+    private val userSystemSettingsCache: UserSystemSettingsCache,
+    private val environmentSwitcherService: EnvironmentSwitcherService,
 ) : BasePresenterImpl<ProfileSettingsSystemView>() {
 
     var userProfileFullInfo: UserProfileFullInfo? = null
@@ -32,6 +35,7 @@ class ProfileSettingsSystemPresenter(
 
     private fun updateUserSettingsDisplay() {
         userSystemSettingsCache.entity?.let {
+            viewState.setEnvironment(environmentSwitcherService.getCurrentEnvironment().toViewMode())
             viewState.setCompressImage(it.compressImage)
             viewState.setCompressVideo(it.compressVideo)
             viewState.setAutoPlayGif(it.autoPlayGif)
@@ -83,6 +87,17 @@ class ProfileSettingsSystemPresenter(
         userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(
             autoPlayVideo = compress
         )
+    }
+
+    fun selectEnvironment(isDev: Boolean) {
+        val environment = if (isDev) AppEnvironment.DEV else AppEnvironment.PROD
+        environmentSwitcherService.updateEnvironment(environment)
+        viewState.setEnvironment(environment.toViewMode())
+    }
+
+    private fun AppEnvironment.toViewMode(): AppEnvironmentMode = when (this) {
+        AppEnvironment.DEV -> AppEnvironmentMode.DEV
+        AppEnvironment.PROD -> AppEnvironmentMode.PROD
     }
 
 }

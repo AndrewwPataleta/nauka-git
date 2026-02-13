@@ -671,4 +671,8 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="registration_step_two_label">2</string>
     <string name="registration_step_one_label">1</string>
 
+    <string name="environment_title">Окружение</string>
+    <string name="environment_dev">DEV (stage)</string>
+    <string name="environment_prod">PROD</string>
+    <string name="environment_changed_message">Окружение переключено. Перезапустите приложение.</string>
 </resources>

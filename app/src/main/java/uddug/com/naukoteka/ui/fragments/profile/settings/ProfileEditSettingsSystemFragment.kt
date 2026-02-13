@@ -90,6 +90,14 @@ class ProfileEditSettingsSystemFragment : BaseFragment(R.layout.fragment_setting
         contentView.autoPlayVideoSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
             presenter.selectAutoPlayVideoSwitch(isChecked)
         }
+        contentView.environmentSwitch.setOnCheckedChangeListener { _, isChecked ->
+            presenter.selectEnvironment(isChecked)
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.environment_changed_message),
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 
     override fun onAttach(context: Context) {
@@ -138,6 +146,26 @@ class ProfileEditSettingsSystemFragment : BaseFragment(R.layout.fragment_setting
             ThemeMode.DARK -> {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             }
+        }
+    }
+
+    override fun setEnvironment(environment: AppEnvironmentMode) {
+        val isDev = environment == AppEnvironmentMode.DEV
+        contentView.environmentValue.text = if (isDev) {
+            getString(R.string.environment_dev)
+        } else {
+            getString(R.string.environment_prod)
+        }
+
+        contentView.environmentSwitch.setOnCheckedChangeListener(null)
+        contentView.environmentSwitch.isChecked = isDev
+        contentView.environmentSwitch.setOnCheckedChangeListener { _, isChecked ->
+            presenter.selectEnvironment(isChecked)
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.environment_changed_message),
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 

@@ -344,6 +344,39 @@
 
                 </LinearLayout>
 
+
+
+                <TextView
+                    style="@style/NauTextAppearance.AppCompat.Title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/environment_title"
+                    android:textSize="20sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal"
+                    android:paddingVertical="8dp">
+
+                    <TextView
+                        android:id="@+id/environmentValue"
+                        style="@style/NauTextAppearance.AppCompat.SubTitleDark"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/environment_dev" />
+
+                    <Switch
+                        android:id="@+id/environmentSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        src:ignore="UseSwitchCompatOrMaterialXml" />
+
+                </LinearLayout>
+
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"

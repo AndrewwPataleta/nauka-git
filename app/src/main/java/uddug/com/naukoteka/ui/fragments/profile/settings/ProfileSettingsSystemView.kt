@@ -17,9 +17,16 @@ interface ProfileSettingsSystemView : MvpView, LoadingView, InformativeView {
     fun setAutoplayVideo(autoPlay: Boolean)
     fun setThemeMode(themeMode: ThemeMode)
     fun clearCache()
+    fun setEnvironment(environment: AppEnvironmentMode)
 }
 
 enum class ThemeMode {
     LIGHT,
     DARK
+}
+
+
+enum class AppEnvironmentMode {
+    DEV,
+    PROD
 }
