@@ -6,7 +6,6 @@ import android.app.Service
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.app.ActivityManager
 import android.media.RingtoneManager
 import android.os.IBinder
 import android.util.Log
@@ -24,6 +23,8 @@ import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.call.IncomingCallEvent
+import uddug.com.naukoteka.mvvm.call.IncomingCallStore
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity
 import uddug.com.naukoteka.ui.call.SingleCallFragment
 import uddug.com.naukoteka.ui.chat.di.SocketService
@@ -40,6 +41,9 @@ class IncomingCallSocketService : Service() {
 
     @Inject
     lateinit var userRepository: UserProfileRepository
+
+    @Inject
+    lateinit var incomingCallStore: IncomingCallStore
 
     private val gson = Gson()
     private var currentUserId: String? = null
@@ -84,45 +88,43 @@ class IncomingCallSocketService : Service() {
             val socketMessage = gson.fromJson(message, ChatSocketMessage::class.java)
             val dialogId = socketMessage.dialog ?: return
             if (socketMessage.owner == currentUserId) return
-            if (socketMessage.cType !in listOf(CALL_AUDIO_TYPE, CALL_VIDEO_TYPE)) return
+            val isIncomingCallMessage = socketMessage.cType in listOf(CALL_AUDIO_TYPE, CALL_VIDEO_TYPE) &&
+                (socketMessage.text?.contains("звонок", ignoreCase = true) == true ||
+                    socketMessage.text.equals(CALL_STARTED_TEXT, ignoreCase = true))
+            if (!isIncomingCallMessage) return
 
             val dialogInfo = runCatching { chatInteractor.getDialogInfo(dialogId) }.getOrNull()
             val contactName = dialogInfo?.interlocutor?.fullName ?: dialogInfo?.name
             val avatarUrl = dialogInfo?.dialogImage?.path ?: dialogInfo?.interlocutor?.image
             val callTitle = dialogInfo?.name ?: contactName
 
-            if (!isAppInForeground()) {
-                sendIncomingCallNotification(
+            val incomingCallEvent = IncomingCallEvent(
                 dialogId = dialogId,
                 contactName = contactName,
                 avatarUrl = avatarUrl,
                 callTitle = callTitle,
             )
-            }
+            incomingCallStore.save(incomingCallEvent)
+            sendIncomingCallNotification(incomingCallEvent)
         } catch (error: Exception) {
             Log.e(TAG, "Error processing incoming call", error)
         }
     }
 
-    private fun sendIncomingCallNotification(
-        dialogId: Long,
-        contactName: String?,
-        avatarUrl: String?,
-        callTitle: String?,
-    ) {
+    private fun sendIncomingCallNotification(event: IncomingCallEvent) {
         val intent = Intent(this, ContainerActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
             putExtra(NaukotekaPushService.EXTRA_OPEN_INCOMING_CALL, true)
             putExtra(SingleCallFragment.ARG_IS_INCOMING_CALL, true)
-            putExtra(SingleCallFragment.ARG_DIALOG_ID, dialogId)
-            putExtra(SingleCallFragment.ARG_CONTACT_NAME, contactName)
-            putExtra(SingleCallFragment.ARG_AVATAR_URL, avatarUrl)
-            putExtra(SingleCallFragment.ARG_CALL_TITLE, callTitle)
+            putExtra(SingleCallFragment.ARG_DIALOG_ID, event.dialogId)
+            putExtra(SingleCallFragment.ARG_CONTACT_NAME, event.contactName)
+            putExtra(SingleCallFragment.ARG_AVATAR_URL, event.avatarUrl)
+            putExtra(SingleCallFragment.ARG_CALL_TITLE, event.callTitle)
         }
 
         val pendingIntent = PendingIntent.getActivity(
             this,
-            dialogId.toInt(),
+            event.dialogId.toInt(),
             intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
@@ -147,17 +149,7 @@ class IncomingCallSocketService : Service() {
             .setContentIntent(pendingIntent)
             .build()
 
-        notificationManager.notify(dialogId.toInt(), notification)
-    }
-
-    private fun isAppInForeground(): Boolean {
-        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-            ?: return false
-        val runningProcesses = activityManager.runningAppProcesses ?: return false
-        return runningProcesses.any {
-            it.processName == packageName &&
-                it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
-        }
+        notificationManager.notify(event.dialogId.toInt(), notification)
     }
 
     companion object {
@@ -167,5 +159,6 @@ class IncomingCallSocketService : Service() {
         private const val CALL_NOTIFICATION_CHANNEL_ID = "incoming_call_notification_channel_id"
         private const val CALL_NOTIFICATION_TITLE = "Вам звонят"
         private const val CALL_NOTIFICATION_BODY = "Нажмите, чтобы открыть звонок"
+        private const val CALL_STARTED_TEXT = "Звонок начался"
     }
 }

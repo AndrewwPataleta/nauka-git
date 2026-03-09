@@ -167,6 +167,11 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        incomingCallViewModel.emitPendingIncomingCallIfAny()
+    }
+
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         contentView.bottomNav.isVisible = !isInPictureInPictureMode
@@ -274,6 +279,7 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
     }
 
     private fun handleIncomingCall(event: IncomingCallEvent) {
+        incomingCallViewModel.clearPendingIncomingCall()
         val navController = findNavController(R.id.main_nav_host_fragment)
         if (navController.graph.id != R.id.nav_graph_chat) {
             navController.setGraph(R.navigation.nav_graph_chat)

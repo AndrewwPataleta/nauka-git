@@ -22,6 +22,7 @@ class IncomingCallViewModel @Inject constructor(
     private val socketService: SocketService,
     private val chatInteractor: ChatInteractor,
     private val userRepository: UserProfileRepository,
+    private val incomingCallStore: IncomingCallStore,
 ) : ViewModel() {
 
     private val gson = Gson()
@@ -68,7 +69,8 @@ class IncomingCallViewModel @Inject constructor(
 
                 val isCallMessage = socketMessage.cType in listOf(2, 3) &&
                     socketMessage.files.isNullOrEmpty() &&
-                    socketMessage.text?.contains("звонок", ignoreCase = true) == true
+                    (socketMessage.text?.contains("звонок", ignoreCase = true) == true ||
+                        socketMessage.text.equals(CALL_STARTED_TEXT, ignoreCase = true))
 
                 if (!isCallMessage) return@launch
                 if (socketMessage.owner == currentUserId) return@launch
@@ -78,18 +80,35 @@ class IncomingCallViewModel @Inject constructor(
                 val avatarUrl = dialogInfo?.dialogImage?.path ?: dialogInfo?.interlocutor?.image
                 val callTitle = dialogInfo?.name ?: contactName
 
-                _events.emit(
-                    IncomingCallEvent(
-                        dialogId = dialogId,
-                        contactName = contactName,
-                        avatarUrl = avatarUrl,
-                        callTitle = callTitle,
-                    )
+                val event = IncomingCallEvent(
+                    dialogId = dialogId,
+                    contactName = contactName,
+                    avatarUrl = avatarUrl,
+                    callTitle = callTitle,
                 )
+                incomingCallStore.save(event)
+                _events.emit(event)
             } catch (e: Exception) {
                 Log.e("IncomingCallVM", "Error processing incoming call", e)
             }
         }
+    }
+
+    fun emitPendingIncomingCallIfAny() {
+        viewModelScope.launch {
+            incomingCallStore.get()?.let { pending ->
+                _events.emit(pending)
+                incomingCallStore.clear()
+            }
+        }
+    }
+
+    fun clearPendingIncomingCall() {
+        incomingCallStore.clear()
+    }
+
+    companion object {
+        private const val CALL_STARTED_TEXT = "Звонок начался"
     }
 }
 
