@@ -187,6 +187,10 @@ class CallViewModel @Inject constructor(
                 val streamName = buildStreamName(config, dialogId, username)
                 val operationId = UUID.randomUUID().toString()
                 callOperationId = operationId
+                logCallStep(
+                    "stream_name_constructed",
+                    "baseStream=${config.streamName} dialogId=$dialogId username=$username constructedStream=$streamName"
+                )
                 currentConfig = config
                 currentRoomName = dialogId.toString()
                 currentStreamName = streamName
@@ -376,6 +380,10 @@ class CallViewModel @Inject constructor(
         logCallStep("publish_local_stream_start", "streamName=$streamName isVideoCall=$isVideoCall")
 
         Log.d("CallVM", "PUBLISHING STREAM: $streamName")
+        logCallStep(
+            "publish_local_stream_params",
+            "roomName=${currentRoomName ?: "n/a"} mediaSessionId=${mediaSessionId ?: "n/a"} customParams=constraints(audio=true,video=$isVideoCall)"
+        )
         runCatching {
             localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
                 constraints = Constraints(true, isVideoCall)
@@ -397,6 +405,10 @@ class CallViewModel @Inject constructor(
 
         flashphonerSessionManager.unpublishCurrentStream()
 
+        logCallStep(
+            "publish_local_stream_restart_params",
+            "roomName=${currentRoomName ?: "n/a"} mediaSessionId=${mediaSessionId ?: "n/a"} streamName=$streamName customParams=constraints(audio=true,video=$videoEnabled)"
+        )
         runCatching {
             localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
                 constraints = Constraints(true, videoEnabled)

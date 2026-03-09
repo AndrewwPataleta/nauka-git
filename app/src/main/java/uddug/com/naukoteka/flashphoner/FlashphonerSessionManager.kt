@@ -102,7 +102,21 @@ class FlashphonerSessionManager @Inject constructor(
     ): Stream {
         val room = roomRef.get() ?: error("Room must be joined before publishing a stream")
         val options = StreamOptions(streamName).apply(configure)
+        Log.d(
+            LOG_TAG,
+            "publishToCurrentRoom requested room=${room.name} requestedStreamName=$streamName custom=$options"
+        )
         val stream = room.publish(renderer, options)
+        val publishedName = stream.name
+            ?: runCatching {
+                val field = Stream::class.java.getDeclaredField("name").apply { isAccessible = true }
+                field.get(stream) as? String
+            }.getOrNull()
+            ?: "n/a"
+        Log.d(
+            LOG_TAG,
+            "publishToCurrentRoom created room=${room.name} requestedStreamName=$streamName actualStreamName=$publishedName"
+        )
         streamRef.set(stream)
         return stream
     }
