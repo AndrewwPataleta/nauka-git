@@ -64,6 +64,10 @@ class FlashphonerSessionManager @Inject constructor(
         //reset()
         environment.ensureInitialised()
 
+        Log.d(
+            LOG_TAG,
+            "prepareRoomManager serverUrl=$serverUrl username=$username custom={login=$username} customLoginPresent=${username.isNotBlank()}"
+        )
         val options = RoomManagerOptions(serverUrl, username).apply(configureOptions)
         val manager = Flashphoner.createRoomManager(options)
 

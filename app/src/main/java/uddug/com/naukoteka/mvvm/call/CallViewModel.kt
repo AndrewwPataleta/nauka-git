@@ -183,7 +183,7 @@ class CallViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 val config = flashphonerConfigProvider.defaultConfig
-                val username = resolveUsername()
+                val username = resolveWcsLogin()
                 val streamName = buildStreamName(config, dialogId, username)
                 val operationId = UUID.randomUUID().toString()
                 callOperationId = operationId
@@ -208,7 +208,11 @@ class CallViewModel @Inject constructor(
 
                 logCallStep(
                     "connect_ws_start",
-                    "serverUrl=${config.serverUrl} username=$username streamName=$streamName"
+                    "serverUrl=${config.serverUrl} username=$username streamName=$streamName roomName=$dialogId custom.login=$username customLoginPresent=${username.isNotBlank()}"
+                )
+                Log.d(
+                    LOG_TAG,
+                    "wcs_identity_selected userUuid=${userUUIDCache.entity ?: "n/a"} userId=${userIdCache.entity ?: "n/a"} chosenLogin=$username"
                 )
                 flashphonerSessionManager.prepareRoomManager(
                     serverUrl = config.serverUrl,
@@ -550,12 +554,23 @@ class CallViewModel @Inject constructor(
     }
 
     private fun clearVideoStreams() {
-        participantStreams.values.forEach {
+        val streamsToStop = LinkedHashSet<Stream>().apply {
+            addAll(participantStreams.values)
+            localStream?.let(::add)
+            remoteStream?.let(::add)
+        }
+
+        streamsToStop.forEach {
             it.switchRenderer(null)
             it.stop()
         }
+
         participantStreams.clear()
         primaryStreamKey = null
+        localStream = null
+        remoteStream = null
+        pendingRemoteParticipant = null
+        localRenderer = null
         remoteRenderer = null
     }
 
@@ -580,12 +595,14 @@ class CallViewModel @Inject constructor(
         clearVideoState()
     }
 
-    private fun resolveUsername(): String {
+    private fun resolveWcsLogin(): String {
         return listOfNotNull(
-            userIdCache.entity?.takeIf { it.isNotBlank() },
             userUUIDCache.entity?.takeIf { it.isNotBlank() },
+            userIdCache.entity?.takeIf { it.isNotBlank() },
         ).firstOrNull() ?: "anonymous"
     }
+
+    private fun resolveUsername(): String = resolveWcsLogin()
 
     private data class CallParams(
         val dialogId: Long,
