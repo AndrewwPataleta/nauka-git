@@ -36,8 +36,7 @@ class LoginPresenter(
 
     override fun onFirstViewAttach() {
         super.onFirstViewAttach()
-        authInteractor.getSocialTypes()
-            .await(withProgress = false) { viewState.showSocialTypes(it) }
+        viewState.showSocialTypes(emptyList())
     }
 
     override fun attachView(view: LoginView?) {

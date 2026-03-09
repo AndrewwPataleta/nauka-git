@@ -644,7 +644,7 @@ private fun CallVideoSurface(
         },
     )
 
-    DisposableEffect(renderer) {
+    DisposableEffect(Unit) {
         onDispose {
             onRemoteRendererReleased()
             renderer?.release()

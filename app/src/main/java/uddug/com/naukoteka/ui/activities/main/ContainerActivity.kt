@@ -27,6 +27,7 @@ import uddug.com.naukoteka.flashphoner.FlashphonerEnvironment
 import uddug.com.naukoteka.global.base.BaseActivity
 import uddug.com.naukoteka.mvvm.call.IncomingCallEvent
 import uddug.com.naukoteka.mvvm.call.IncomingCallViewModel
+import uddug.com.naukoteka.services.NaukotekaPushService
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerPresenter
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerView
@@ -97,6 +98,8 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         flashphonerEnvironment.attachContainerActivity(this)
         flashphonerEnvironment.ensureInitialised(this)
 
+        handleIncomingCallIntent(intent)
+
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 incomingCallViewModel.events.collect { event ->
@@ -134,6 +137,14 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
                 else -> true
             }
+        }
+    }
+
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent != null) {
+            handleIncomingCallIntent(intent)
         }
     }
 
@@ -219,6 +230,28 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
                 }
             }
         }
+    }
+
+
+    private fun handleIncomingCallIntent(intent: Intent) {
+        val shouldOpenIncomingCall = intent.getBooleanExtra(
+            NaukotekaPushService.EXTRA_OPEN_INCOMING_CALL,
+            false,
+        )
+        if (!shouldOpenIncomingCall) return
+
+        val dialogId = intent.getLongExtra(SingleCallFragment.ARG_DIALOG_ID, -1L)
+        if (dialogId <= 0) return
+
+        handleIncomingCall(
+            IncomingCallEvent(
+                dialogId = dialogId,
+                contactName = intent.getStringExtra(SingleCallFragment.ARG_CONTACT_NAME),
+                avatarUrl = intent.getStringExtra(SingleCallFragment.ARG_AVATAR_URL),
+                callTitle = intent.getStringExtra(SingleCallFragment.ARG_CALL_TITLE),
+            )
+        )
+        intent.removeExtra(NaukotekaPushService.EXTRA_OPEN_INCOMING_CALL)
     }
 
     private fun handleIncomingCall(event: IncomingCallEvent) {

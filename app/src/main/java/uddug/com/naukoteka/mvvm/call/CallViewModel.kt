@@ -478,6 +478,7 @@ class CallViewModel @Inject constructor(
     private fun removeParticipantStream(participant: Participant) {
         val key = participant.streamName ?: participant.name ?: return
         val removed = participantStreams.remove(key) ?: return
+        removed.switchRenderer(null)
         if (remoteStream == removed) {
             remoteStream = null
         }
@@ -492,7 +493,10 @@ class CallViewModel @Inject constructor(
     }
 
     private fun clearVideoStreams() {
-        participantStreams.values.forEach { it.stop() }
+        participantStreams.values.forEach {
+            it.switchRenderer(null)
+            it.stop()
+        }
         participantStreams.clear()
         primaryStreamKey = null
         remoteRenderer = null

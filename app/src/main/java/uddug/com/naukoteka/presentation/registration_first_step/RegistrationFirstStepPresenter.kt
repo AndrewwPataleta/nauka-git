@@ -28,8 +28,7 @@ class RegistrationFirstStepPresenter(
 
     override fun onFirstViewAttach() {
         super.onFirstViewAttach()
-        authInteractor.getSocialTypes()
-            .await(withProgress = false) { viewState.showSocialTypes(it) }
+        viewState.showSocialTypes(emptyList())
     }
 
     fun isValidField(email: String) {
