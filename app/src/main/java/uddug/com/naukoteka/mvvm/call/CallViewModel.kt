@@ -333,7 +333,8 @@ class CallViewModel @Inject constructor(
             }
 
             override fun onPublished(participant: Participant) {
-                logCallStep("participant_published", "participant=${participant.name}")
+                val scope = if (isSelfParticipant(participant)) "local" else "remote"
+                logCallStep("participant_published", "scope=$scope participant=${participant.name}")
                 if (!isSelfParticipant(participant)) {
                     lastParticipantsCount = maxOf(lastParticipantsCount, 1)
                     subscribeToParticipants(listOf(participant))
@@ -357,17 +358,22 @@ class CallViewModel @Inject constructor(
             logCallStep("publish_local_stream_skipped", "source=$source reason=already_started")
             return
         }
-        localPublishStarted = true
         logCallStep("join_room_confirmed", "source=$source streamName=$streamName")
         publishLocalStream(streamName, isVideoCall)
     }
 
     private fun publishLocalStream(streamName: String, isVideoCall: Boolean) {
-        logCallStep("publish_local_stream_start", "streamName=$streamName isVideoCall=$isVideoCall")
+        logCallStep("publish_local_stream_requested", "streamName=$streamName isVideoCall=$isVideoCall")
+        if (localPublishStarted) {
+            logCallStep("publish_local_stream_skipped", "already_requested streamName=$streamName")
+            return
+        }
         if (hasPublishedLocalStream) {
             logCallStep("publish_local_stream_skipped", "already_published streamName=$streamName")
             return
         }
+        localPublishStarted = true
+        logCallStep("publish_local_stream_start", "streamName=$streamName isVideoCall=$isVideoCall")
 
         Log.d("CallVM", "PUBLISHING STREAM: $streamName")
         runCatching {
@@ -375,8 +381,7 @@ class CallViewModel @Inject constructor(
                 constraints = Constraints(true, isVideoCall)
             }
         }.onSuccess {
-            hasPublishedLocalStream = true
-            logCallStep("publish_local_stream_success", "streamName=$streamName")
+            logCallStep("publish_local_stream_callback_started", "streamName=$streamName")
             attachStreamDiagnostics(localStream, "local_publish")
             _uiState.value = _uiState.value.copy(status = CallStatus.CONNECTING)
         }.onFailure {
@@ -714,7 +719,30 @@ class CallViewModel @Inject constructor(
         if (stream == null) return
         stream.on { _, status ->
             logCallStep("stream_status", "label=$label status=$status")
+            handleLocalPublishStatus(label, status.toString())
             maybeSanitizeRemoteSdp(stream, label)
+        }
+    }
+
+    private fun handleLocalPublishStatus(label: String, status: String) {
+        if (label != "local_publish") return
+        when (status.uppercase()) {
+            "PUBLISHING" -> logCallStep("publish_local_stream_status_publishing", "status=$status")
+            "PUBLISHED" -> {
+                hasPublishedLocalStream = true
+                logCallStep("publish_local_stream_success", "status=$status")
+            }
+            "FAILED" -> {
+                localPublishStarted = false
+                hasPublishedLocalStream = false
+                logCallStep("publish_local_stream_status_failed", "status=$status")
+                handleCallFailure("Failed to publish local media (status=$status).")
+            }
+            "UNPUBLISHED", "STOPPED" -> {
+                localPublishStarted = false
+                hasPublishedLocalStream = false
+                logCallStep("publish_local_stream_status_unpublished", "status=$status")
+            }
         }
     }
 
