@@ -62,6 +62,9 @@ class CallViewModel @Inject constructor(
     private var currentConfig: FlashphonerConfig? = null
     private var currentRoomName: String? = null
     private var currentStreamName: String? = null
+    private var localPublishStarted = false
+    private var hasPublishedLocalStream = false
+    private var hasRetriedPublish = false
 
     fun showIncomingCall(
         dialogId: Long,
@@ -144,6 +147,9 @@ class CallViewModel @Inject constructor(
         }
         isCallStarted = true
         lastParticipantsCount = 0
+        localPublishStarted = false
+        hasPublishedLocalStream = false
+        hasRetriedPublish = false
 
         val resolvedParticipants = participants?.takeIf { it.isNotEmpty() }
             ?: contactName?.let { name ->
@@ -229,10 +235,13 @@ class CallViewModel @Inject constructor(
         stopCallTimer()
         isCallStarted = false
         stopParticipantWatchdog()
+        localPublishStarted = false
         callOperationId = null
         currentConfig = null
         currentRoomName = null
         currentStreamName = null
+        hasPublishedLocalStream = false
+        hasRetriedPublish = false
         clearVideoState()
     }
 
@@ -264,10 +273,10 @@ class CallViewModel @Inject constructor(
                     "room_manager_connected",
                     "status=${connection.status} reconnectAttempts=$reconnectAttempts"
                 )
+                logCallStep("join_room_requested", "roomName=$dialogId")
                 flashphonerSessionManager.joinRoom(
                     roomName = dialogId.toString(),
-                    roomEvent = { room -> room.on(createRoomEvent(streamName)) },
-                    onRoomReady = { publishLocalStream(streamName, isVideoCall) },
+                    roomEvent = { room -> room.on(createRoomEvent(dialogId = dialogId,streamName, isVideoCall)) },
                 )
             }
 
@@ -281,7 +290,11 @@ class CallViewModel @Inject constructor(
         }
     }
 
-    private fun createRoomEvent(streamName: String): RoomEvent {
+    private fun createRoomEvent(
+        dialogId: Long,
+        streamName: String,
+        isVideoCall: Boolean,
+    ): RoomEvent {
         return object : RoomEvent {
             override fun onState(room: Room) {
                 val remoteParticipants = room.participants.filterNot(::isSelfParticipant)
@@ -290,12 +303,18 @@ class CallViewModel @Inject constructor(
                     "room_state",
                     "participants=${room.participants.size} remoteParticipants=${remoteParticipants.size} room=${room.name}"
                 )
+                ensureLocalPublishStarted(streamName, isVideoCall, "room_state")
                 subscribeToParticipants(remoteParticipants)
                 checkParticipantWatchdog()
             }
 
             override fun onJoined(participant: Participant) {
                 logCallStep("participant_joined", "participant=${participant.name}")
+                if (isSelfParticipant(participant)) {
+                    Log.d("CallVM", "JOINED ROOM: $dialogId")
+                    publishLocalStream(streamName, isVideoCall)
+                    return
+                }
                 if (!isSelfParticipant(participant)) {
                     lastParticipantsCount = maxOf(lastParticipantsCount, 1)
                     subscribeToParticipants(listOf(participant))
@@ -324,6 +343,7 @@ class CallViewModel @Inject constructor(
 
             override fun onFailed(room: Room, error: String) {
                 Log.e("CallVM", "RoomEvent.onFailed error=$error")
+                logCallStep("join_room_failed", "room=${room.name} error=$error")
                 handleCallFailure("Room join failed: $error")
             }
 
@@ -332,17 +352,37 @@ class CallViewModel @Inject constructor(
         }
     }
 
+    private fun ensureLocalPublishStarted(streamName: String, isVideoCall: Boolean, source: String) {
+        if (localPublishStarted) {
+            logCallStep("publish_local_stream_skipped", "source=$source reason=already_started")
+            return
+        }
+        localPublishStarted = true
+        logCallStep("join_room_confirmed", "source=$source streamName=$streamName")
+        publishLocalStream(streamName, isVideoCall)
+    }
+
     private fun publishLocalStream(streamName: String, isVideoCall: Boolean) {
+        logCallStep("publish_local_stream_start", "streamName=$streamName isVideoCall=$isVideoCall")
+        if (hasPublishedLocalStream) {
+            logCallStep("publish_local_stream_skipped", "already_published streamName=$streamName")
+            return
+        }
+
+        Log.d("CallVM", "PUBLISHING STREAM: $streamName")
         runCatching {
             localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
                 constraints = Constraints(true, isVideoCall)
             }
         }.onSuccess {
+            hasPublishedLocalStream = true
             logCallStep("publish_local_stream_success", "streamName=$streamName")
             attachStreamDiagnostics(localStream, "local_publish")
             _uiState.value = _uiState.value.copy(status = CallStatus.CONNECTING)
         }.onFailure {
+            localPublishStarted = false
             Log.e("CallVM", "publishLocalStream failed", it)
+            logCallStep("publish_local_stream_failure", "streamName=$streamName error=${it.message}")
             handleCallFailure("Failed to publish local media.")
         }
     }
@@ -515,6 +555,7 @@ class CallViewModel @Inject constructor(
         stopCallTimer()
         isCallStarted = false
         stopParticipantWatchdog()
+        localPublishStarted = false
         callOperationId = null
         currentConfig = null
         currentRoomName = null
