@@ -6,7 +6,7 @@ import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
+import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import uddug.com.data.cache.user_id.UserIdCache
 import uddug.com.data.cache.user_uuid.UserUUIDCache
@@ -16,7 +16,7 @@ import uddug.com.data.services.UserProfileApiService
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 
 @Module
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 object UserModule {
 
     @Provides

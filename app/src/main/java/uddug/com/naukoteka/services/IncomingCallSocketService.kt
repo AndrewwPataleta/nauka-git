@@ -14,6 +14,11 @@ import androidx.core.app.NotificationCompat
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.interactors.chat.ChatInteractor
@@ -38,6 +43,7 @@ class IncomingCallSocketService : Service() {
 
     private val gson = Gson()
     private var currentUserId: String? = null
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
@@ -53,8 +59,15 @@ class IncomingCallSocketService : Service() {
             .onFailure { error -> Log.e(TAG, "Failed to connect socket", error) }
 
         socketService.setOnEvent("message") { message ->
-            handleIncomingMessage(message)
+            serviceScope.launch {
+                handleIncomingMessage(message)
+            }
         }
+    }
+
+    override fun onDestroy() {
+        serviceScope.cancel()
+        super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -63,7 +76,7 @@ class IncomingCallSocketService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun handleIncomingMessage(message: String) {
+    private suspend fun handleIncomingMessage(message: String) {
         try {
             val jsonObject = JSONObject(message)
             if (jsonObject.has("action")) return
