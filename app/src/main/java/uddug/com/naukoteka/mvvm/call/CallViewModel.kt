@@ -630,6 +630,42 @@ class CallViewModel @Inject constructor(
         if (_uiState.value.status != CallStatus.IN_CALL) {
             _uiState.value = _uiState.value.copy(status = CallStatus.IN_CALL)
             startCallTimer()
+            refreshParticipants()
+        }
+    }
+
+    private fun refreshParticipants() {
+        val dialogId = _uiState.value.dialogId ?: return
+
+        viewModelScope.launch {
+            runCatching { callRepository.getParticipants(dialogId) }
+                .onSuccess { participants ->
+                    if (participants.isEmpty()) return@onSuccess
+
+                    val cachedParticipants = _uiState.value.participants.associateBy { it.id }
+                    val updatedParticipants = participants.map { participant ->
+                        val participantId = participant.userId
+                        val cached = cachedParticipants[participantId]
+                        CallParticipant(
+                            id = participantId,
+                            name = cached?.name ?: participantId,
+                            avatarUrl = cached?.avatarUrl,
+                            isMuted = cached?.isMuted ?: false,
+                        )
+                    }
+
+                    _uiState.value = _uiState.value.copy(participants = updatedParticipants)
+                    logCallStep(
+                        "participants_refreshed",
+                        "dialogId=$dialogId participants=${updatedParticipants.size}"
+                    )
+                }
+                .onFailure {
+                    logCallStep(
+                        "participants_refresh_failed",
+                        "dialogId=$dialogId error=${it.message}"
+                    )
+                }
         }
     }
 
