@@ -27,11 +27,15 @@ import uddug.com.naukoteka.flashphoner.FlashphonerEnvironment
 import uddug.com.naukoteka.global.base.BaseActivity
 import uddug.com.naukoteka.mvvm.call.IncomingCallEvent
 import uddug.com.naukoteka.mvvm.call.IncomingCallViewModel
+import uddug.com.naukoteka.mvvm.call.CallStatus
+import uddug.com.naukoteka.mvvm.call.CallViewModel
 import uddug.com.naukoteka.services.NaukotekaPushService
+import uddug.com.naukoteka.services.IncomingCallSocketService
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerPresenter
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerView
 import uddug.com.naukoteka.ui.call.SingleCallFragment
+import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
 import uddug.com.naukoteka.utils.viewBinding
 import javax.inject.Inject
 import kotlinx.coroutines.launch
@@ -49,6 +53,7 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
     lateinit var flashphonerEnvironment: FlashphonerEnvironment
 
     private val incomingCallViewModel: IncomingCallViewModel by viewModels()
+    private val callViewModel: CallViewModel by viewModels()
 
     private var pulseAnimation: Animation? = null
 
@@ -97,6 +102,7 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
         flashphonerEnvironment.attachContainerActivity(this)
         flashphonerEnvironment.ensureInitialised(this)
+        startService(Intent(this, IncomingCallSocketService::class.java))
 
         handleIncomingCallIntent(intent)
 
@@ -104,6 +110,14 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 incomingCallViewModel.events.collect { event ->
                     handleIncomingCall(event)
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                incomingCallViewModel.callEndedEvents.collect { event ->
+                    handleCallEnded(event.dialogId)
                 }
             }
         }
@@ -270,6 +284,26 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
                 putBoolean(SingleCallFragment.ARG_IS_INCOMING_CALL, true)
             }
         )
+    }
+
+    private fun handleCallEnded(dialogId: Long) {
+        val state = callViewModel.uiState.value
+        if (state.dialogId != dialogId || state.status == CallStatus.FINISHED) return
+
+        callViewModel.endCall()
+
+        supportFragmentManager.findFragmentByTag(CallOverlayFragment.TAG)?.let {
+            supportFragmentManager.beginTransaction()
+                .remove(it)
+                .commitAllowingStateLoss()
+        }
+
+        val navController = findNavController(R.id.main_nav_host_fragment)
+        val destinationId = navController.currentDestination?.id
+        if (destinationId == R.id.singleCallFragment || destinationId == R.id.groupCallFragment) {
+            val popped = navController.popBackStack(R.id.chatListFragment, false)
+            if (!popped) navController.navigate(R.id.chatListFragment)
+        }
     }
 
 }

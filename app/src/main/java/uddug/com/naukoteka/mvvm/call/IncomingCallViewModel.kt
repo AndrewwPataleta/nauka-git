@@ -27,6 +27,8 @@ class IncomingCallViewModel @Inject constructor(
     private val gson = Gson()
     private val _events = MutableSharedFlow<IncomingCallEvent>()
     val events: SharedFlow<IncomingCallEvent> = _events.asSharedFlow()
+    private val _callEndedEvents = MutableSharedFlow<CallEndedEvent>()
+    val callEndedEvents: SharedFlow<CallEndedEvent> = _callEndedEvents.asSharedFlow()
 
     private var currentUserId: String? = null
 
@@ -58,6 +60,12 @@ class IncomingCallViewModel @Inject constructor(
 
                 val socketMessage = gson.fromJson(jsonString, ChatSocketMessage::class.java)
                 val dialogId = socketMessage.dialog ?: return@launch
+
+                if (socketMessage.cType == 6) {
+                    _callEndedEvents.emit(CallEndedEvent(dialogId = dialogId))
+                    return@launch
+                }
+
                 val isCallMessage = socketMessage.cType in listOf(2, 3) &&
                     socketMessage.files.isNullOrEmpty() &&
                     socketMessage.text?.contains("звонок", ignoreCase = true) == true
@@ -90,4 +98,8 @@ data class IncomingCallEvent(
     val contactName: String?,
     val avatarUrl: String?,
     val callTitle: String?,
+)
+
+data class CallEndedEvent(
+    val dialogId: Long,
 )

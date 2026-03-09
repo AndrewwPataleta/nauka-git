@@ -119,6 +119,10 @@
         </provider>
 
         <service
+            android:name=".services.IncomingCallSocketService"
+            android:exported="false" />
+
+        <service
             android:name=".services.NaukotekaPushService"
             android:exported="false">
             <intent-filter>
