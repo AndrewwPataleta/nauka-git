@@ -1,12 +1,15 @@
 package uddug.com.naukoteka.services
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.RingtoneManager
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import uddug.com.naukoteka.R
@@ -65,15 +68,24 @@ class NaukotekaPushService : FirebaseMessagingService() {
             )
             .setContentIntent(pendingIntent)
 
+        if (!canPostNotifications()) return
+
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        
         val channel = NotificationChannel(channelId, title, NotificationManager.IMPORTANCE_HIGH)
         notificationManager.createNotificationChannel(channel)
 
         val notificationId = 0
         notificationManager.notify(notificationId, notificationBuilder.build())
+    }
+
+    private fun canPostNotifications(): Boolean {
+        return android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun createNotificationIntent(remoteMessageData: Map<String, String>): Intent {

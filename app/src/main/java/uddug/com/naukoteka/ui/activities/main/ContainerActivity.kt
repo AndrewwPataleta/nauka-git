@@ -36,6 +36,7 @@ import uddug.com.naukoteka.presentation.profile.navigation.ContainerPresenter
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerView
 import uddug.com.naukoteka.ui.call.SingleCallFragment
 import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
+import uddug.com.naukoteka.utils.NotificationPermissionRequester
 import uddug.com.naukoteka.utils.viewBinding
 import javax.inject.Inject
 import kotlinx.coroutines.launch
@@ -56,6 +57,8 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
     private val callViewModel: CallViewModel by viewModels()
 
     private var pulseAnimation: Animation? = null
+
+    private lateinit var notificationPermissionRequester: NotificationPermissionRequester
 
     private val pictureInPictureParams: PictureInPictureParams?
         get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -88,6 +91,8 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         super.onCreate(savedInstanceState)
         setContentView(contentView.root)
 
+        notificationPermissionRequester = NotificationPermissionRequester(this)
+        notificationPermissionRequester.requestIfNeeded()
 
         ViewCompat.setOnApplyWindowInsetsListener(contentView.root) { _, insets ->
             val statusBarTopInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top

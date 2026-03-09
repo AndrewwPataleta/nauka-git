@@ -30,6 +30,7 @@ import uddug.com.naukoteka.ui.custom.square_toast.ToastInfo
 import uddug.com.naukoteka.ui.fragments.password_recovery.PasswordRecoveryFragment
 import uddug.com.naukoteka.ui.fragments.registration_third_step.RegistrationThirdStepFragment
 import uddug.com.naukoteka.utils.ActivityResultListener
+import uddug.com.naukoteka.utils.NotificationPermissionRequester
 import uddug.com.naukoteka.utils.BackButtonListener
 import uddug.com.naukoteka.utils.RouterProvider
 import uddug.com.naukoteka.utils.ui.findFragment
@@ -59,6 +60,8 @@ class AuthActivity : BaseActivity(), RouterProvider, MainView {
 
     protected lateinit var progressBar: ProgressBar
 
+    private lateinit var notificationPermissionRequester: NotificationPermissionRequester
+
     override fun onResumeFragments() {
         super.onResumeFragments()
         navigatorHolder.setNavigator(navigator)
@@ -74,6 +77,9 @@ class AuthActivity : BaseActivity(), RouterProvider, MainView {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(contentView.root)
+
+        notificationPermissionRequester = NotificationPermissionRequester(this)
+        notificationPermissionRequester.requestIfNeeded()
         val isLaunchedAfterSystemKilled = savedInstanceState != null
         if (!isLaunchedAfterSystemKilled) {
             router.navigateTo(Splash())
