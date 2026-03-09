@@ -3,7 +3,7 @@ package uddug.com.naukoteka.ui.chat.di
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
+import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import uddug.com.data.services.chat.ChatApiService
 import uddug.com.data.repositories.chat.ChatRepositoryImpl
@@ -11,7 +11,7 @@ import uddug.com.domain.repositories.chat.ChatRepository
 import uddug.com.domain.interactors.chat.ChatInteractor
 
 @Module
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 object ChatModule {
 
     @Provides
