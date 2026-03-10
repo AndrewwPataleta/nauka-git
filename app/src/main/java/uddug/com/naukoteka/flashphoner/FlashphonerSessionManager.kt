@@ -106,20 +106,34 @@ class FlashphonerSessionManager @Inject constructor(
     ): Stream {
         val room = roomRef.get() ?: error("Room must be joined before publishing a stream")
         val options = StreamOptions(streamName).apply(configure)
+        options.renderer = renderer
+        options.setCustom("name", room.name)
+        val actualStreamNameBeforePublish = options.name
         Log.d(
             LOG_TAG,
-            "publishToCurrentRoom requested room=${room.name} requestedStreamName=$streamName custom=$options"
+            "publishToCurrentRoom requestedStreamName=$streamName actualStreamNameBeforePublish=$actualStreamNameBeforePublish room=${room.name}"
         )
-        val stream = room.publish(renderer, options)
-        val publishedName = stream.name
-            ?: runCatching {
-                val field = Stream::class.java.getDeclaredField("name").apply { isAccessible = true }
-                field.get(stream) as? String
-            }.getOrNull()
-            ?: "n/a"
+        val roomManager = runCatching {
+            val roomManagerField = Room::class.java.getDeclaredField("roomManager").apply { isAccessible = true }
+            roomManagerField.get(room) as RoomManager
+        }.getOrElse {
+            error("Unable to resolve RoomManager from room for explicit stream publish: ${it.message}")
+        }
+        val session = runCatching {
+            val getSessionMethod = RoomManager::class.java.getDeclaredMethod("getSession").apply {
+                isAccessible = true
+            }
+            getSessionMethod.invoke(roomManager) as Session
+        }.getOrElse {
+            error("Unable to resolve Session from RoomManager for explicit stream publish: ${it.message}")
+        }
+        val stream = session.createStream(options)
+        stream.publish()
+        val publishedName = stream.name ?: "n/a"
+        val mediaSessionId = stream.id ?: "n/a"
         Log.d(
             LOG_TAG,
-            "publishToCurrentRoom created room=${room.name} requestedStreamName=$streamName actualStreamName=$publishedName"
+            "publishToCurrentRoom created room=${room.name} requestedStreamName=$streamName actualStreamName=$publishedName actualMediaSessionId=$mediaSessionId"
         )
         streamRef.set(stream)
         return stream
@@ -136,11 +150,8 @@ class FlashphonerSessionManager @Inject constructor(
     fun unpublishCurrentStream() {
         val stream = streamRef.getAndSet(null) ?: return
         val room = roomRef.get()
-        if (room != null) {
-            room.unpublish()
-        } else {
-            stream.stop()
-        }
+        if (room != null) room.unpublish()
+        stream.stop()
     }
 
     fun disconnectSession() {

@@ -393,6 +393,14 @@ class CallViewModel @Inject constructor(
                 constraints = Constraints(true, isVideoCall)
             }
         }.onSuccess {
+            val actualMediaSessionId = localStream?.id
+            if (!actualMediaSessionId.isNullOrBlank()) {
+                mediaSessionId = actualMediaSessionId
+            }
+            logCallStep(
+                "publish_local_stream_identifiers",
+                "requestedStreamName=$streamName actualStreamName=${localStream?.name ?: "n/a"} actualMediaSessionId=${localStream?.id ?: "n/a"}"
+            )
             logCallStep("publish_local_stream_callback_started", "streamName=$streamName")
             attachStreamDiagnostics(localStream, "local_publish")
             _uiState.value = _uiState.value.copy(status = CallStatus.CONNECTING)
@@ -417,6 +425,15 @@ class CallViewModel @Inject constructor(
             localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
                 constraints = Constraints(true, videoEnabled)
             }
+        }.onSuccess {
+            val actualMediaSessionId = localStream?.id
+            if (!actualMediaSessionId.isNullOrBlank()) {
+                mediaSessionId = actualMediaSessionId
+            }
+            logCallStep(
+                "publish_local_stream_restart_identifiers",
+                "requestedStreamName=$streamName actualStreamName=${localStream?.name ?: "n/a"} actualMediaSessionId=${localStream?.id ?: "n/a"}"
+            )
         }.onFailure {
             Log.e("CallVM", "restartLocalStream failed", it)
             handleCallFailure("Failed to restart local media.")
