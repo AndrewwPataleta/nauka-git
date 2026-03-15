@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.flashphoner
 
+import android.os.Build
 import android.util.Log
 import com.flashphoner.fpwcsapi.bean.Data
 import com.flashphoner.fpwcsapi.Flashphoner
@@ -14,6 +15,7 @@ import com.flashphoner.fpwcsapi.session.Stream
 import com.flashphoner.fpwcsapi.session.StreamOptions
 import com.flashphoner.fpwcsapi.session.SessionOptions
 import org.webrtc.SurfaceViewRenderer
+import uddug.com.naukoteka.BuildConfig
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -68,7 +70,9 @@ class FlashphonerSessionManager @Inject constructor(
             LOG_TAG,
             "prepareRoomManager serverUrl=$serverUrl username=$username custom={login=$username} customLoginPresent=${username.isNotBlank()}"
         )
+        logRoomManagerSdkCapabilities()
         val options = RoomManagerOptions(serverUrl, username).apply(configureOptions)
+        applyConnectionMetadata(options, username)
         val manager = Flashphoner.createRoomManager(options)
 
         onManagerReady(manager)
@@ -111,24 +115,10 @@ class FlashphonerSessionManager @Inject constructor(
         val actualStreamNameBeforePublish = options.name
         Log.d(
             LOG_TAG,
-            "publishToCurrentRoom requestedStreamName=$streamName actualStreamNameBeforePublish=$actualStreamNameBeforePublish room=${room.name}"
+            "publishToCurrentRoom requestedStreamName=$streamName actualStreamNameBeforePublish=$actualStreamNameBeforePublish room=${room.name} publishMode=room.publish"
         )
-        val roomManager = runCatching {
-            val roomManagerField = Room::class.java.getDeclaredField("roomManager").apply { isAccessible = true }
-            roomManagerField.get(room) as RoomManager
-        }.getOrElse {
-            error("Unable to resolve RoomManager from room for explicit stream publish: ${it.message}")
-        }
-        val session = runCatching {
-            val getSessionMethod = RoomManager::class.java.getDeclaredMethod("getSession").apply {
-                isAccessible = true
-            }
-            getSessionMethod.invoke(roomManager) as Session
-        }.getOrElse {
-            error("Unable to resolve Session from RoomManager for explicit stream publish: ${it.message}")
-        }
-        val stream = session.createStream(options)
-        stream.publish()
+
+        val stream = room.publish(renderer, options)
         val publishedName = stream.name ?: "n/a"
         val mediaSessionId = stream.id ?: "n/a"
         Log.d(
@@ -176,8 +166,73 @@ class FlashphonerSessionManager @Inject constructor(
         sessionRef.getAndSet(null)?.disconnect()
     }
 
+    private fun applyConnectionMetadata(options: RoomManagerOptions, username: String) {
+        val clientInfo = mapOf(
+            "mobile" to true,
+            "platform" to "Android ${Build.VERSION.RELEASE}",
+            "brands" to listOf(
+                mapOf("brand" to "NauchatAndroid", "version" to BuildConfig.VERSION_NAME)
+            ),
+            "fullVersionList" to listOf(
+                mapOf("brand" to "NauchatAndroid", "version" to BuildConfig.VERSION_NAME)
+            )
+        )
+        val customPayload = mapOf(
+            "login" to username,
+            "clientInfo" to clientInfo,
+        )
+
+        val methods = RoomManagerOptions::class.java.methods.associateBy { it.name }
+        val customApplied = runCatching {
+            when {
+                methods.containsKey("setCustom") -> {
+                    val method = methods.getValue("setCustom")
+                    val params = method.parameterTypes
+                    when {
+                        params.size == 1 -> method.invoke(options, customPayload)
+                        params.size == 2 && params[0] == String::class.java -> {
+                            method.invoke(options, "login", username)
+                            method.invoke(options, "clientInfo", clientInfo)
+                        }
+                    }
+                    true
+                }
+                else -> false
+            }
+        }.getOrDefault(false)
+
+        val clientVersionApplied = runCatching {
+            methods["setClientVersion"]?.invoke(options, BuildConfig.VERSION_NAME)
+            methods["setClientOSVersion"]?.invoke(options, "Android ${Build.VERSION.RELEASE}")
+            methods["setClientBrowserVersion"]?.invoke(options, "AndroidSdk/1.1")
+            true
+        }.getOrDefault(false)
+
+        Log.d(
+            LOG_TAG,
+            "room_manager_metadata_apply customApplied=$customApplied clientVersionApplied=$clientVersionApplied requestedCustomKeys=${customPayload.keys}"
+        )
+    }
+
     private fun logLifecycleCall(methodName: String) {
         Log.d(LOG_TAG, "$methodName() called", Throwable())
+    }
+
+    private fun logRoomManagerSdkCapabilities() {
+        val optionMethods = RoomManagerOptions::class.java.methods
+            .map { it.name }
+            .distinct()
+            .sorted()
+
+        val supportsOrigin = optionMethods.any { it.equals("setOrigin", ignoreCase = true) }
+        val supportsClientVersion = optionMethods.any { it.equals("setClientVersion", ignoreCase = true) }
+        val supportsClientInfo = optionMethods.any { it.contains("ClientInfo", ignoreCase = true) }
+        val supportsMediaProviders = optionMethods.any { it.contains("MediaProvider", ignoreCase = true) }
+
+        Log.d(
+            LOG_TAG,
+            "room_manager_sdk_capabilities sdkAar=1.1.0.64 supportsOrigin=$supportsOrigin supportsClientVersion=$supportsClientVersion supportsClientInfo=$supportsClientInfo supportsMediaProviders=$supportsMediaProviders availableMethods=$optionMethods"
+        )
     }
 
     private val defaultHandler = object : RestAppCommunicator.Handler {

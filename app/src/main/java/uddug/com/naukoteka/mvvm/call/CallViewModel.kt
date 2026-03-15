@@ -26,10 +26,12 @@ import java.util.UUID
 import uddug.com.data.cache.user_id.UserIdCache
 import uddug.com.data.cache.user_uuid.UserUUIDCache
 import uddug.com.domain.entities.call.CallSessionState
+import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.repositories.call.CallRepository
 import uddug.com.naukoteka.flashphoner.FlashphonerConfig
 import uddug.com.naukoteka.flashphoner.FlashphonerConfigProvider
 import uddug.com.naukoteka.flashphoner.FlashphonerSessionManager
+import uddug.com.naukoteka.ui.chat.di.SocketService
 
 
 @HiltViewModel
@@ -39,6 +41,7 @@ class CallViewModel @Inject constructor(
     private val userIdCache: UserIdCache,
     private val userUUIDCache: UserUUIDCache,
     private val callRepository: CallRepository,
+    private val socketService: SocketService,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CallUiState())
@@ -65,6 +68,7 @@ class CallViewModel @Inject constructor(
     private var localPublishStarted = false
     private var hasPublishedLocalStream = false
     private var hasRetriedPublish = false
+    private var generatedWcsLogin: String? = null
 
     fun showIncomingCall(
         dialogId: Long,
@@ -180,6 +184,10 @@ class CallViewModel @Inject constructor(
             errorMessage = null,
         )
 
+        if (!isAcceptingIncomingCall && resetReconnectAttempts) {
+            notifyCallStarted(dialogId = dialogId, isVideoCall = isVideoCall)
+        }
+
         viewModelScope.launch {
             runCatching {
                 val config = flashphonerConfigProvider.defaultConfig
@@ -210,9 +218,11 @@ class CallViewModel @Inject constructor(
                     "connect_ws_start",
                     "serverUrl=${config.serverUrl} username=$username streamName=$streamName roomName=$dialogId custom.login=$username customLoginPresent=${username.isNotBlank()}"
                 )
-                Log.d(
-                    LOG_TAG,
-                    "wcs_identity_selected userUuid=${userUUIDCache.entity ?: "n/a"} userId=${userIdCache.entity ?: "n/a"} chosenLogin=$username"
+                logWcsDiagnostics(
+                    selectedLogin = username,
+                    serverUrl = config.serverUrl,
+                    streamName = streamName,
+                    dialogId = dialogId,
                 )
                 flashphonerSessionManager.prepareRoomManager(
                     serverUrl = config.serverUrl,
@@ -486,9 +496,18 @@ class CallViewModel @Inject constructor(
     fun toggleCamera() {
         val currentState = _uiState.value.sessionState
         val updatedState = currentState.copy(camOn = !currentState.camOn)
+        _uiState.value = _uiState.value.copy(
+            sessionState = updatedState,
+            isVideoCall = updatedState.camOn,
+        )
         updateCallState(updatedState)
 
-        if (_uiState.value.status == CallStatus.IN_CALL) {
+        val callStatus = _uiState.value.status
+        val shouldRestartLocalStream =
+            (callStatus == CallStatus.CONNECTING || callStatus == CallStatus.IN_CALL) &&
+                localStream != null
+
+        if (shouldRestartLocalStream) {
             restartLocalStream(updatedState.camOn)
         }
     }
@@ -591,6 +610,31 @@ class CallViewModel @Inject constructor(
         remoteRenderer = null
     }
 
+    private fun notifyCallStarted(dialogId: Long, isVideoCall: Boolean) {
+        val ownerId = normalizeWcsLogin(userIdCache.entity) ?: resolveUsername()
+        val payload = ChatSocketMessage(
+            dialog = dialogId,
+            cType = if (isVideoCall) CALL_VIDEO_TYPE else CALL_AUDIO_TYPE,
+            text = CALL_STARTED_TEXT,
+            owner = ownerId,
+        )
+
+        runCatching {
+            socketService.connect()
+            socketService.sendMessage("message", payload)
+        }.onSuccess {
+            logCallStep(
+                "call_started_message_sent",
+                "dialogId=$dialogId cType=${payload.cType} owner=$ownerId"
+            )
+        }.onFailure {
+            logCallStep(
+                "call_started_message_failed",
+                "dialogId=$dialogId cType=${payload.cType} error=${it.message}"
+            )
+        }
+    }
+
     private fun handleCallFailure(@Suppress("UNUSED_PARAMETER") message: String? = null) {
         logCallStep("call_failed", message ?: "unknown")
         lastCallParams = null
@@ -612,11 +656,69 @@ class CallViewModel @Inject constructor(
         clearVideoState()
     }
 
+    private fun logWcsDiagnostics(
+        selectedLogin: String,
+        serverUrl: String,
+        streamName: String,
+        dialogId: Long,
+    ) {
+        val rawUuid = userUUIDCache.entity
+        val rawUserId = userIdCache.entity
+        val normalizedUuid = normalizeWcsLogin(rawUuid)
+        val normalizedUserId = normalizeWcsLogin(rawUserId)
+        val selectedSource = when {
+            normalizedUuid == selectedLogin -> "userUUIDCache"
+            normalizedUserId == selectedLogin -> "userIdCache"
+            generatedWcsLogin == selectedLogin -> "generatedFallback"
+            else -> "unknown"
+        }
+
+        Log.d(
+            LOG_TAG,
+            "wcs_diagnostics selectedLogin=$selectedLogin selectedSource=$selectedSource rawUuid=$rawUuid normalizedUuid=$normalizedUuid rawUserId=$rawUserId normalizedUserId=$normalizedUserId"
+        )
+        Log.d(
+            LOG_TAG,
+            "wcs_diagnostics connection serverUrl=$serverUrl dialogId=$dialogId streamName=$streamName sdkIdentityFields=custom.login+clientInfo(if-supported-by-sdk)"
+        )
+
+        if (selectedLogin.equals("anonymous", ignoreCase = true)) {
+            Log.w(
+                LOG_TAG,
+                "wcs_diagnostics selected login is anonymous after normalization; check who writes user_uuid/user_id caches"
+            )
+        }
+    }
+
     private fun resolveWcsLogin(): String {
-        return listOfNotNull(
-            userUUIDCache.entity?.takeIf { it.isNotBlank() },
-            userIdCache.entity?.takeIf { it.isNotBlank() },
-        ).firstOrNull() ?: "anonymous"
+        val login = listOfNotNull(
+            userUUIDCache.entity,
+            userIdCache.entity,
+        ).firstNotNullOfOrNull(::normalizeWcsLogin)
+
+        if (login != null) return login
+
+        return generatedWcsLogin ?: UUID.randomUUID().toString().also {
+            generatedWcsLogin = it
+            Log.w(LOG_TAG, "wcs_identity_missing_in_cache generatedFallbackLogin=$it")
+        }
+    }
+
+    private fun normalizeWcsLogin(raw: String?): String? {
+        val normalized = raw?.trim().orEmpty()
+        if (normalized.isBlank()) {
+            Log.d(LOG_TAG, "wcs_identity_reject reason=blank raw=$raw")
+            return null
+        }
+        if (normalized.equals("anonymous", ignoreCase = true)) {
+            Log.d(LOG_TAG, "wcs_identity_reject reason=anonymous raw=$raw")
+            return null
+        }
+        if (normalized.equals("null", ignoreCase = true)) {
+            Log.d(LOG_TAG, "wcs_identity_reject reason=literal_null raw=$raw")
+            return null
+        }
+        return normalized
     }
 
     private fun resolveUsername(): String = resolveWcsLogin()
@@ -634,6 +736,9 @@ class CallViewModel @Inject constructor(
         const val MAX_RECONNECT_ATTEMPTS = 1
         const val PARTICIPANT_WAIT_TIMEOUT_MS = 10_000L
         const val LOG_TAG = "CallFlow"
+        const val CALL_AUDIO_TYPE = 2
+        const val CALL_VIDEO_TYPE = 3
+        const val CALL_STARTED_TEXT = "Звонок начался"
     }
 
     private fun buildStreamName(
