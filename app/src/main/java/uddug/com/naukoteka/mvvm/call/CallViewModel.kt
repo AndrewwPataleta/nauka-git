@@ -381,7 +381,11 @@ class CallViewModel @Inject constructor(
     }
 
     private fun publishLocalStream(streamName: String, isVideoCall: Boolean) {
-        logCallStep("publish_local_stream_requested", "streamName=$streamName isVideoCall=$isVideoCall")
+        val audioEnabled = _uiState.value.sessionState.micOn
+        logCallStep(
+            "publish_local_stream_requested",
+            "streamName=$streamName isVideoCall=$isVideoCall audioEnabled=$audioEnabled"
+        )
         if (localPublishStarted) {
             logCallStep("publish_local_stream_skipped", "already_requested streamName=$streamName")
             return
@@ -396,11 +400,11 @@ class CallViewModel @Inject constructor(
         Log.d("CallVM", "PUBLISHING STREAM: $streamName")
         logCallStep(
             "publish_local_stream_params",
-            "roomName=${currentRoomName ?: "n/a"} mediaSessionId=${mediaSessionId ?: "n/a"} customParams=constraints(audio=true,video=$isVideoCall)"
+            "roomName=${currentRoomName ?: "n/a"} mediaSessionId=${mediaSessionId ?: "n/a"} customParams=constraints(audio=$audioEnabled,video=$isVideoCall)"
         )
         runCatching {
             localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
-                constraints = Constraints(true, isVideoCall)
+                constraints = Constraints(audioEnabled, isVideoCall)
             }
         }.onSuccess {
             val actualMediaSessionId = localStream?.id
@@ -422,18 +426,18 @@ class CallViewModel @Inject constructor(
         }
     }
 
-    private fun restartLocalStream(videoEnabled: Boolean) {
+    private fun restartLocalStream(audioEnabled: Boolean, videoEnabled: Boolean) {
         val streamName = mediaSessionId ?: return
 
         flashphonerSessionManager.unpublishCurrentStream()
 
         logCallStep(
             "publish_local_stream_restart_params",
-            "roomName=${currentRoomName ?: "n/a"} mediaSessionId=${mediaSessionId ?: "n/a"} streamName=$streamName customParams=constraints(audio=true,video=$videoEnabled)"
+            "roomName=${currentRoomName ?: "n/a"} mediaSessionId=${mediaSessionId ?: "n/a"} streamName=$streamName customParams=constraints(audio=$audioEnabled,video=$videoEnabled)"
         )
         runCatching {
             localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
-                constraints = Constraints(true, videoEnabled)
+                constraints = Constraints(audioEnabled, videoEnabled)
             }
         }.onSuccess {
             val actualMediaSessionId = localStream?.id
@@ -490,7 +494,17 @@ class CallViewModel @Inject constructor(
     fun toggleMicrophone() {
         val currentState = _uiState.value.sessionState
         val updatedState = currentState.copy(micOn = !currentState.micOn)
+        _uiState.value = _uiState.value.copy(sessionState = updatedState)
         updateCallState(updatedState)
+
+        val callStatus = _uiState.value.status
+        val shouldRestartLocalStream =
+            (callStatus == CallStatus.CONNECTING || callStatus == CallStatus.IN_CALL) &&
+                localStream != null
+
+        if (shouldRestartLocalStream) {
+            restartLocalStream(audioEnabled = updatedState.micOn, videoEnabled = updatedState.camOn)
+        }
     }
 
     fun toggleCamera() {
@@ -508,7 +522,7 @@ class CallViewModel @Inject constructor(
                 localStream != null
 
         if (shouldRestartLocalStream) {
-            restartLocalStream(updatedState.camOn)
+            restartLocalStream(audioEnabled = updatedState.micOn, videoEnabled = updatedState.camOn)
         }
     }
 
