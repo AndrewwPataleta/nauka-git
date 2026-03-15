@@ -44,7 +44,7 @@ class FlashphonerSessionManager @Inject constructor(
         require(username.isNotBlank()) { "username is blank" }
 
         currentServerUrl = serverUrl
-        currentLogin = username
+        currentLogin = "266a5452-9bcc-43d6-a726-81f8b7684fbf"
 
         val options = RoomManagerOptions(serverUrl, username).apply(configureOptions)
 
