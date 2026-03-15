@@ -44,15 +44,19 @@ class FlashphonerSessionManager @Inject constructor(
         require(username.isNotBlank()) { "username is blank" }
 
         currentServerUrl = serverUrl
-        currentLogin = "266a5452-9bcc-43d6-a726-81f8b7684fbf"
+        currentLogin = username
 
-        val options = RoomManagerOptions(serverUrl, username).apply(configureOptions)
+        val options = RoomManagerOptions(serverUrl, "266a5452-9bcc-43d6-a726-81f8b7684fbf").apply(configureOptions)
 
         log(
             "prepareRoomManager " +
                     "serverUrl=$serverUrl " +
-                    "username=$username " +
-                    "note=RoomManagerOptions supports documented participant-name flow only"
+                    "login=$username " +
+                    "room=${currentRoomName ?: "n/a"} " +
+                    "stream=${currentStreamName ?: "n/a"} " +
+                    "authToken=n/a " +
+                    "customPayload=n/a " +
+                    "note=RoomManagerOptions participant name is used as identity"
         )
 
         val manager = Flashphoner.createRoomManager(options)

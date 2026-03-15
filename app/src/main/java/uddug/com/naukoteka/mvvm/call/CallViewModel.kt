@@ -189,7 +189,7 @@ class CallViewModel @Inject constructor(
             runCatching {
                 val config = flashphonerConfigProvider.defaultConfig
                 val username = resolveWcsLogin()
-                val streamName = buildStreamName(config, dialogId, username)
+                val streamName = buildStreamName(dialogId, username)
                 val operationId = UUID.randomUUID().toString()
 
                 callOperationId = operationId
@@ -201,7 +201,7 @@ class CallViewModel @Inject constructor(
 
                 logCallStep(
                     "stream_name_constructed",
-                    "baseStream=${config.streamName} dialogId=$dialogId username=$username constructedStream=$streamName"
+                    "dialogId=$dialogId username=$username constructedStream=$streamName"
                 )
 
                 if (config.streamName.isBlank()) {
@@ -216,7 +216,7 @@ class CallViewModel @Inject constructor(
 
                 logCallStep(
                     "connect_ws_start",
-                    "serverUrl=${config.serverUrl} username=$username streamName=$streamName roomName=$dialogId custom.login=$username customLoginPresent=${username.isNotBlank()}"
+                    "serverUrl=${config.serverUrl} username=$username streamName=$streamName roomName=$dialogId"
                 )
                 logWcsDiagnostics(
                     selectedLogin = username,
@@ -559,7 +559,7 @@ class CallViewModel @Inject constructor(
     private fun updateCallState(newState: CallSessionState) {
         val dialogId = _uiState.value.dialogId ?: return
         val sessionId = mediaSessionId ?: return
-        val userId = userIdCache.entity ?: resolveUsername()
+        val userId = resolveUsername()
 
         viewModelScope.launch {
             runCatching {
@@ -671,8 +671,8 @@ class CallViewModel @Inject constructor(
         val normalizedUserId = normalizeWcsLogin(rawUserId)
         val selectedSource = when {
             normalizedProfileUserId == selectedLogin -> "profileInfo"
-            normalizedUuid == selectedLogin -> "userUUIDCache"
             normalizedUserId == selectedLogin -> "userIdCache"
+            normalizedUuid == selectedLogin -> "userUUIDCache"
             generatedWcsLogin == selectedLogin -> "generatedFallback"
             else -> "unknown"
         }
@@ -683,7 +683,7 @@ class CallViewModel @Inject constructor(
         )
         Log.d(
             LOG_TAG,
-            "wcs_diagnostics connection serverUrl=$serverUrl dialogId=$dialogId streamName=$streamName sdkIdentityFields=custom.login+clientInfo(if-supported-by-sdk)"
+            "wcs_diagnostics connection serverUrl=$serverUrl dialogId=$dialogId streamName=$streamName sdkIdentityFields=participantName(clientInfo-if-supported)"
         )
 
         if (selectedLogin.equals("anonymous", ignoreCase = true)) {
@@ -699,20 +699,17 @@ class CallViewModel @Inject constructor(
             userProfileRepository.getProfileInfo().await().id
         }.onSuccess { loadedId ->
             profileUserId = loadedId
-        }.getOrNull()?.let(::normalizeWcsLogin)
+        }.getOrNull()
 
-        if (profileLogin != null) return profileLogin
+        normalizeWcsLogin(profileLogin)?.let { return it }
 
-        val login = listOfNotNull(
-            userIdCache.entity,
-            userUUIDCache.entity,
-        ).firstNotNullOfOrNull(::normalizeWcsLogin)
+        normalizeWcsLogin(userIdCache.entity)?.let { return it }
 
-        if (login != null) return login
+        normalizeWcsLogin(userUUIDCache.entity)?.let { return it }
 
         return generatedWcsLogin ?: UUID.randomUUID().toString().also {
             generatedWcsLogin = it
-            Log.w(LOG_TAG, "wcs_identity_missing_in_cache generatedFallbackLogin=$it")
+            Log.w(LOG_TAG, "wcs_identity_missing generatedFallbackLogin=$it")
         }
     }
 
@@ -734,11 +731,11 @@ class CallViewModel @Inject constructor(
     }
 
     private fun resolveUsername(): String {
-        return currentLogin
-            ?: profileUserId
-            ?: userIdCache.entity
-            ?: userUUIDCache.entity
-            ?: generatedWcsLogin
+        return normalizeWcsLogin(currentLogin)
+            ?: normalizeWcsLogin(profileUserId)
+            ?: normalizeWcsLogin(userIdCache.entity)
+            ?: normalizeWcsLogin(userUUIDCache.entity)
+            ?: normalizeWcsLogin(generatedWcsLogin)
             ?: "unknown"
     }
 
@@ -757,13 +754,8 @@ class CallViewModel @Inject constructor(
         const val LOG_TAG = "CallFlow"
     }
 
-    private fun buildStreamName(
-        config: FlashphonerConfig,
-        dialogId: Long,
-        username: String,
-    ): String {
-        return listOf(config.streamName, dialogId, username)
-            .joinToString(separator = "-")
+    private fun buildStreamName(dialogId: Long, username: String): String {
+        return "$username#$dialogId"
     }
 
     override fun onCleared() {
@@ -812,7 +804,14 @@ class CallViewModel @Inject constructor(
 
     private fun isSelfParticipant(participant: Participant): Boolean {
         val username = currentLogin ?: return false
-        return participant.name == username || participant.streamName?.contains(username) == true
+        if (participant.name == username) return true
+
+        val expectedStreamName = currentStreamName
+        if (!expectedStreamName.isNullOrBlank() && participant.streamName == expectedStreamName) {
+            return true
+        }
+
+        return participant.streamName?.contains(username) == true
     }
 
     private fun startParticipantWatchdog() {
