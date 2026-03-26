@@ -17,7 +17,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -58,7 +57,7 @@ fun ChatDetailMoreSheetDialog(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -160,25 +159,25 @@ fun ChatDetailMoreSheetDialog(
                 }
             }
 
-//            items.forEach { (textRes, action) ->
-//                Row(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .clickable(
-//                            interactionSource = remember { MutableInteractionSource() },
-//                            indication = null
-//                        ) {
-//                            action()
-//                        }
-//                        .padding(vertical = 12.dp),
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    Text(
-//                        text = stringResource(id = textRes),
-//                        style = MaterialTheme.typography.bodyLarge
-//                    )
-//                }
-//            }
+            items.forEach { (textRes, action) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            action()
+                        }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(id = textRes),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
         }
     }
 }

@@ -3,7 +3,6 @@ package uddug.com.naukoteka.mvvm.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +20,7 @@ import uddug.com.domain.entities.chat.User
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.domain.interactors.chat.ChatInteractor
+import uddug.com.naukoteka.mvvm.chat.await
 import uddug.com.naukoteka.ui.chat.di.SocketService
 import android.net.Uri
 import com.google.firebase.dynamiclinks.ktx.androidParameters
@@ -102,33 +102,27 @@ class ChatDialogDetailViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            userRepository.getProfileInfo().subscribeOn(Schedulers.io())
-                .subscribe({
-                    currentUser = it
-                    viewModelScope.launch {
-                        val currentUserId = it.id
-                        val isAdmin = currentUserId?.let { id ->
-                            dialogInfo.users?.any { user -> user.userId == id && user.isAdmin }
-                        } ?: false
-                        val avatarPath = dialogInfo.dialogImage?.path
-                            ?: dialogInfo.interlocutor?.image
-                        _uiState.value = ChatDetailUiState.Success(
-                            profile = profile,
-                            media = emptyList(),
-                            files = emptyList(),
-                            voices = emptyList(),
-                            notes = emptyList(),
-                            dialogId = dialogInfo.id,
-                            isCurrentUserAdmin = isAdmin,
-                            avatarPath = avatarPath,
-                            avatarId = dialogInfo.dialogImage?.id,
-                            isAvatarUpdating = false,
-                        )
-                        loadTabData(0)
-                    }
-
-                }, {})
-
+            val user = runCatching {
+                withContext(Dispatchers.IO) { userRepository.getProfileInfo().await() }
+            }.getOrNull()
+            currentUser = user
+            val isAdmin = user?.id?.let { id ->
+                dialogInfo.users?.any { u -> u.userId == id && u.isAdmin }
+            } ?: false
+            val avatarPath = dialogInfo.dialogImage?.path ?: dialogInfo.interlocutor?.image
+            _uiState.value = ChatDetailUiState.Success(
+                profile = profile,
+                media = emptyList(),
+                files = emptyList(),
+                voices = emptyList(),
+                notes = emptyList(),
+                dialogId = dialogInfo.id,
+                isCurrentUserAdmin = isAdmin,
+                avatarPath = avatarPath,
+                avatarId = dialogInfo.dialogImage?.id,
+                isAvatarUpdating = false,
+            )
+            loadTabData(0)
         }
     }
 

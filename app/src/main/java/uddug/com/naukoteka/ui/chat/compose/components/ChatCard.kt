@@ -133,7 +133,9 @@ fun ChatCard(
                                 stringResource(R.string.group_chat)
                             } else {
                                 name
-                            }, style = TextStyle(fontSize = 16.sp, color = colorResource(id = R.color.main_text))
+                            }, style = MaterialTheme.typography.titleMedium.copy(
+                                color = colorResource(id = R.color.main_text)
+                            )
                         )
                         if (isMuted) {
                             Icon(
@@ -178,8 +180,7 @@ fun ChatCard(
                         if (authorLabel.isNotBlank()) {
                             Text(
                                 text = authorLabel,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
+                                style = MaterialTheme.typography.bodyMedium.copy(
                                     color = Color(0xFF2E83D9),
                                     fontWeight = FontWeight.Medium
                                 ),
@@ -204,8 +205,7 @@ fun ChatCard(
                             }
                         Text(
                             text = messageText,
-                            style = TextStyle(
-                                fontSize = 14.sp,
+                            style = MaterialTheme.typography.bodyMedium.copy(
                                 color = if (!isGroupChat && isFromMe) {
                                     Color(0xFF2E83D9)
                                 } else {
@@ -235,8 +235,7 @@ fun ChatCard(
                         }
                         Text(
                             text = formattedTime,
-                            style = TextStyle(
-                                fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall.copy(
                                 color = colorResource(id = R.color.secondary_text)
                             ),
                         )
@@ -255,9 +254,10 @@ fun ChatCard(
                             ) {
                                 Text(
                                     text = it.toString(),
-                                    color = Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 )
                             }
                         }

@@ -5,4 +5,5 @@ interface SocketService {
     fun disconnect()
     fun sendMessage(event: String, data: Any)
     fun setOnEvent(event: String, callback: (data: String) -> Unit)
+    fun removeEvent(event: String)
 }

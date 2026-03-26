@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -26,21 +27,24 @@ class IncomingCallViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val gson = Gson()
-    private val _events = MutableSharedFlow<IncomingCallEvent>()
+    private val _events = MutableSharedFlow<IncomingCallEvent>(replay = 1)
     val events: SharedFlow<IncomingCallEvent> = _events.asSharedFlow()
     private val _callEndedEvents = MutableSharedFlow<CallEndedEvent>()
     val callEndedEvents: SharedFlow<CallEndedEvent> = _callEndedEvents.asSharedFlow()
 
     private var currentUserId: String? = null
+    private val disposables = CompositeDisposable()
 
     init {
-        userRepository.getProfileInfo()
-            .subscribeOn(Schedulers.io())
-            .subscribe({ user ->
-                currentUserId = user.id
-            }, { error ->
-                Log.e("IncomingCallVM", "Failed to load user profile", error)
-            })
+        disposables.add(
+            userRepository.getProfileInfo()
+                .subscribeOn(Schedulers.io())
+                .subscribe({ user ->
+                    currentUserId = user.id
+                }, { error ->
+                    Log.e("IncomingCallVM", "Failed to load user profile", error)
+                })
+        )
 
         socketService.connect()
         socketService.setOnEvent("message") { message ->
@@ -105,6 +109,12 @@ class IncomingCallViewModel @Inject constructor(
 
     fun clearPendingIncomingCall() {
         incomingCallStore.clear()
+    }
+
+    override fun onCleared() {
+        disposables.clear()
+        socketService.removeEvent("message")
+        super.onCleared()
     }
 
     companion object {

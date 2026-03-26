@@ -12,6 +12,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,16 +49,19 @@ class IncomingCallSocketService : Service() {
     private val gson = Gson()
     private var currentUserId: String? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val disposables = CompositeDisposable()
 
     override fun onCreate() {
         super.onCreate()
-        userRepository.getProfileInfo()
-            .subscribeOn(Schedulers.io())
-            .subscribe({ user ->
-                currentUserId = user.id
-            }, { error ->
-                Log.e(TAG, "Failed to load user profile", error)
-            })
+        disposables.add(
+            userRepository.getProfileInfo()
+                .subscribeOn(Schedulers.io())
+                .subscribe({ user ->
+                    currentUserId = user.id
+                }, { error ->
+                    Log.e(TAG, "Failed to load user profile", error)
+                })
+        )
 
         runCatching { socketService.connect() }
             .onFailure { error -> Log.e(TAG, "Failed to connect socket", error) }
@@ -70,6 +74,8 @@ class IncomingCallSocketService : Service() {
     }
 
     override fun onDestroy() {
+        disposables.clear()
+        socketService.removeEvent("message")
         serviceScope.cancel()
         super.onDestroy()
     }
@@ -146,7 +152,9 @@ class IncomingCallSocketService : Service() {
             .setAutoCancel(true)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
             .setContentIntent(pendingIntent)
+            .setFullScreenIntent(pendingIntent, true)
             .build()
 
         notificationManager.notify(event.dialogId.toInt(), notification)

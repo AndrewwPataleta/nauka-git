@@ -67,6 +67,11 @@ class NaukotekaPushService : FirebaseMessagingService() {
                 else NotificationCompat.PRIORITY_DEFAULT,
             )
             .setContentIntent(pendingIntent)
+        if (isIncomingCallPush) {
+            notificationBuilder
+                .setFullScreenIntent(pendingIntent, true)
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+        }
 
         if (!canPostNotifications()) return
 

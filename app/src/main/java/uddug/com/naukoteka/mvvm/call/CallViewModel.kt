@@ -13,6 +13,7 @@ import com.flashphoner.fpwcsapi.room.RoomEvent
 import com.flashphoner.fpwcsapi.room.RoomManagerEvent
 import com.flashphoner.fpwcsapi.session.Stream
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import org.webrtc.SurfaceViewRenderer
 import java.util.UUID
@@ -669,7 +671,7 @@ class CallViewModel @Inject constructor(
     }
 
     private suspend fun resolveWcsLogin(): String {
-        val id = userProfileRepository.getProfileInfo().await().id
+        val id = withContext(Dispatchers.IO) { userProfileRepository.getProfileInfo().await() }.id
         profileUserId = id
         return normalizeWcsLogin(id)
             ?: error("User ID from profile API is null or invalid: '$id'")

@@ -28,7 +28,7 @@ fun ChatMessagesList(messages: List<MessageChat>) {
             .padding(8.dp),
         contentPadding = PaddingValues(bottom = 16.dp)
     ) {
-        itemsIndexed(messages) { index, message ->
+        itemsIndexed(messages, key = { _, message -> message.id }) { index, message ->
             val previousMessage = messages.getOrNull(index - 1)
             if (shouldShowDateBadge(previousMessage, message, zoneId)) {
                 ChatMessageDateBadge(

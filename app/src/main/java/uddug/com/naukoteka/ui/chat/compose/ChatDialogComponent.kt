@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.Icon
@@ -355,7 +356,7 @@ fun ChatDialogComponent(
 
     Box(
         modifier = Modifier
-            .background(Color.White)
+            .background(MaterialTheme.colors.background)
             .fillMaxSize()
             .systemBarsPadding()
             .imePadding()
@@ -426,14 +427,17 @@ fun ChatDialogComponent(
                                 TopAppBar(
                                     modifier = Modifier.height(68.dp),
                                     title = {
-                                        Text(text = selectedMessages.size.toString(), fontSize = 20.sp, color = Color.Black)
+                                        Text(
+                                            text = selectedMessages.size.toString(),
+                                            style = MaterialTheme.typography.h6.copy(color = MaterialTheme.colors.onBackground)
+                                        )
                                     },
                                     navigationIcon = {
                                         IconButton(onClick = { viewModel.clearSelection() }) {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.ic_close),
                                                 contentDescription = "Close",
-                                                tint = Color.Black
+                                                tint = MaterialTheme.colors.onBackground
                                             )
                                         }
                                     },
@@ -442,18 +446,18 @@ fun ChatDialogComponent(
                                             Icon(
                                                 painter = painterResource(id = R.drawable.ic_trash),
                                                 contentDescription = "Delete",
-                                                tint = Color.Black
+                                                tint = MaterialTheme.colors.onBackground
                                             )
                                         }
                                     },
-                                    backgroundColor = Color.White,
+                                    backgroundColor = MaterialTheme.colors.background,
                                     elevation = 0.dp
                                 )
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(1.dp)
-                                        .background(Color(0xFFEAEAF2))
+                                        .background(MaterialTheme.colors.onSurface.copy(alpha = 0.08f))
                                 )
                             }
                         }

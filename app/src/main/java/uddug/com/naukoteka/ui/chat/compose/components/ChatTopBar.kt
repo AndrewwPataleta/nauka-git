@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -29,7 +30,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
 
 @Composable
@@ -44,7 +44,7 @@ fun ChatTopBar(
     onBackPressed: () -> Unit,
     onMoreClick: () -> Unit,
 ) {
-    Surface(elevation = 4.dp, color = Color.White) {
+    Surface(elevation = 0.dp, color = MaterialTheme.colors.background) {
         Column {
             Row(
                 modifier = Modifier
@@ -53,7 +53,7 @@ fun ChatTopBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { onBackPressed() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF2E83D9))
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colors.primary)
                 }
                 Box(
                     modifier = Modifier
@@ -85,15 +85,17 @@ fun ChatTopBar(
                 ) {
                     Text(
                         text = name,
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        style = MaterialTheme.typography.subtitle1.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colors.onBackground
+                        )
                     )
                     status?.let {
                         Text(
                             text = it,
-                            color = Color(0xFF8083A0),
-                            fontSize = 16.sp
+                            style = MaterialTheme.typography.caption.copy(
+                                color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                            )
                         )
                     }
                 }
@@ -104,19 +106,19 @@ fun ChatTopBar(
                     Icon(
                         painter = painterResource(id = R.drawable.ic_search_chat),
                         contentDescription = "Search",
-                        tint = Color(0xFF2E83D9)
+                        tint = MaterialTheme.colors.primary
                     )
                 }
 
                 IconButton(onClick = onMoreClick) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color(0xFF2E83D9))
+                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colors.primary)
                 }
             }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color(0xFFEAEAF2))
+                    .background(MaterialTheme.colors.onSurface.copy(alpha = 0.08f))
             )
         }
     }

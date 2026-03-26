@@ -40,7 +40,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -227,9 +226,8 @@ fun ChatTabBar(
                                             Text(
                                                 text = folder.name,
                                                 maxLines = 1,
-                                                style = TextStyle(
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.Bold,
+                                                style = androidx.compose.material3.MaterialTheme.typography.titleSmall.copy(
+                                                    fontWeight = if (selectedTabIndex == index) FontWeight.SemiBold else FontWeight.Normal,
                                                     color = if (selectedTabIndex == index) {
                                                         colorResource(id = R.color.main_text)
                                                     } else {

@@ -42,6 +42,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -59,11 +60,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.chat.AvatarUpdateEvent
 import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailUiState
@@ -123,8 +122,9 @@ fun ChatGroupDetailComponent(
                 title = {
                     Text(
                         text = stringResource(R.string.chat_group_info_title),
-                        fontSize = 20.sp,
-                        color = Color(0xFF10101C)
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            color = colorResource(id = R.color.main_text)
+                        )
                     )
                 },
                 actions = {
@@ -132,7 +132,7 @@ fun ChatGroupDetailComponent(
                         androidx.compose.material.Icon(
                             painter = painterResource(id = R.drawable.ic_search_chat),
                             contentDescription = "Search Icon",
-                            tint = Color(0xFF2E83D9)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -141,11 +141,11 @@ fun ChatGroupDetailComponent(
                         androidx.compose.material.Icon(
                             painter = painterResource(id = R.drawable.ic_back),
                             contentDescription = "Back Icon",
-                            tint = Color(0xFF2E83D9)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
-                backgroundColor = Color.White,
+                backgroundColor = MaterialTheme.colorScheme.background,
                 elevation = 0.dp
             )
         }
@@ -274,7 +274,7 @@ fun ChatGroupDetailComponent(
                     ModalBottomSheet(
                         onDismissRequest = { showCallOptions = false },
                         sheetState = callSheetState,
-                        containerColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surface,
                     ) {
                         Column(
                             modifier = Modifier
@@ -285,8 +285,10 @@ fun ChatGroupDetailComponent(
                             Text(
                                 modifier = Modifier.padding(bottom = 4.dp),
                                 text = stringResource(R.string.call_create_title),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    color = colorResource(id = R.color.main_text)
+                                ),
                             )
                             CallOptionItem(
                                 icon = Icons.Filled.Phone,
@@ -481,14 +483,16 @@ private fun GroupHeaderSection(
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = state.name,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = colorResource(id = R.color.main_text)
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.Bold,
+                color = colorResource(id = R.color.main_text)
+            )
         )
         Text(
             text = state.participants.joinToString(", ") { it.user.fullName.orEmpty() },
-            fontSize = 14.sp,
-            color = colorResource(id = R.color.secondary_text),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                color = colorResource(id = R.color.secondary_text)
+            ),
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
@@ -526,7 +530,7 @@ private fun RowScope.GroupHeaderAction(
             .weight(1f)
             .background(
                 shape = RoundedCornerShape(8.dp),
-                color = Color(0xFFF5F5F9)
+                color = MaterialTheme.colorScheme.surfaceVariant
             )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -541,12 +545,13 @@ private fun RowScope.GroupHeaderAction(
                 .size(24.dp),
             painter = painterResource(id = icon),
             contentDescription = null,
-            tint = Color(0xFF2E83D9)
+            tint = MaterialTheme.colorScheme.primary
         )
         Text(
             text = label,
-            fontSize = 12.sp,
-            color = Color(0xFF8083A0)
+            style = MaterialTheme.typography.bodySmall.copy(
+                color = colorResource(id = R.color.secondary_text)
+            )
         )
     }
 }
@@ -568,14 +573,15 @@ private fun CallOptionItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = Color(0xFF8083A0),
+            tint = colorResource(id = R.color.secondary_text),
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
-            fontSize = 16.sp,
-            color = Color(0xFF10101C),
-            fontWeight = FontWeight.Light,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = FontWeight.Light,
+                color = colorResource(id = R.color.main_text)
+            ),
         )
     }
 }
@@ -596,7 +602,7 @@ private fun GroupTabRow(
                 val safeIndex = selectedTabIndex.coerceIn(tabTitles.indices)
                 TabRowDefaults.Indicator(
                     Modifier.tabIndicatorOffset(tabPositions[safeIndex]),
-                    color = Color(0xFF2E83D9)
+                    color = MaterialTheme.colorScheme.primary
                 )
             },
             divider = {},
@@ -609,9 +615,8 @@ private fun GroupTabRow(
                         Text(
                             text = title,
                             maxLines = 1,
-                            style = TextStyle(
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = if (selectedTabIndex == index) FontWeight.SemiBold else FontWeight.Normal,
                                 color = if (selectedTabIndex == index) {
                                     colorResource(id = R.color.main_text)
                                 } else {
@@ -623,7 +628,7 @@ private fun GroupTabRow(
                 )
             }
         }
-        Divider(color = Color(0xFFEAEAF2))
+        Divider(color = MaterialTheme.colorScheme.surfaceVariant)
     }
 }
 
@@ -649,8 +654,10 @@ private fun LazyListScope.participantsList(
         item {
             Text(
                 text = stringResource(R.string.chat_group_add_participant),
-                color = Color(0xFF2E83D9),
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 12.dp)
@@ -690,7 +697,7 @@ private fun LazyListScope.participantsList(
                 isCurrentUserAdmin = isCurrentUserAdmin,
                 onMoreClick = onParticipantMoreClick
             )
-            Divider(color = Color(0xFFEAEAF2))
+            Divider(color = MaterialTheme.colorScheme.surfaceVariant)
         }
     }
 }
@@ -724,30 +731,34 @@ private fun ParticipantRow(
         ) {
             Text(
                 text = participant.user.fullName.orEmpty(),
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
-                color = Color.Black
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = colorResource(id = R.color.main_text)
+                )
             )
             if (participant.isOwner) {
                 Text(
                     text = stringResource(R.string.chat_group_owner_label),
-                    color = Color(0xFF2E83D9),
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
                 )
             } else if (participant.isAdmin) {
                 Text(
                     text = stringResource(R.string.chat_group_admin_label),
-                    color = Color(0xFF2E83D9),
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
                 )
             }
             participant.status?.takeIf { it.isNotBlank() }?.let { status ->
                 Text(
                     text = status,
-                    fontSize = 12.sp,
-                    color = Color(0xFF8083A0)
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = colorResource(id = R.color.secondary_text)
+                    )
                 )
             }
         }
@@ -757,7 +768,7 @@ private fun ParticipantRow(
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = null,
-                    tint = Color(0xFFB0B2C3)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -778,7 +789,7 @@ private fun ParticipantActionsBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -787,9 +798,10 @@ private fun ParticipantActionsBottomSheet(
         ) {
             Text(
                 text = stringResource(R.string.chat_group_participant_actions_title),
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp,
-                color = Color.Black
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = colorResource(id = R.color.main_text)
+                )
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -829,9 +841,10 @@ private fun ParticipantActionsBottomSheet(
 @Composable
 private fun ParticipantActionRow(
     text: String,
-    textColor: Color = Color.Black,
+    textColor: Color? = null,
     onClick: () -> Unit,
 ) {
+    val resolvedColor = textColor ?: colorResource(id = R.color.main_text)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -844,9 +857,10 @@ private fun ParticipantActionRow(
     ) {
         Text(
             text = text,
-            color = textColor,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium
+            style = MaterialTheme.typography.bodyLarge.copy(
+                color = resolvedColor,
+                fontWeight = FontWeight.Medium
+            )
         )
     }
 }

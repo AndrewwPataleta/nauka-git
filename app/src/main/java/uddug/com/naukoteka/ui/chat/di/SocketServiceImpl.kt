@@ -2,8 +2,6 @@ package uddug.com.naukoteka.ui.chat.di
 
 import android.util.Log
 import com.google.gson.Gson
-import com.google.gson.JsonObject
-import com.google.gson.JsonSyntaxException
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.engineio.client.transports.WebSocket
@@ -46,7 +44,7 @@ class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCac
             reconnectionDelay = RECONNECTION_DELAY_MS.toLong()
         }).also {
             setupEventListeners(it)
-            logConnectionParameters(authToken)
+            logConnectionParameters()
         }
     }
 
@@ -94,6 +92,7 @@ class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCac
     }
 
     override fun setOnEvent(event: String, callback: (data: String) -> Unit) {
+        socket.off(event)
         socket.on(event) { args ->
             try {
                 val data = args.getOrNull(0)?.toString() ?: run {
@@ -107,6 +106,10 @@ class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCac
                 Log.e(TAG, "Error processing event: $event", e)
             }
         }
+    }
+
+    override fun removeEvent(event: String) {
+        socket.off(event)
     }
 
     private fun setupEventListeners(socket: Socket) {
@@ -143,12 +146,11 @@ class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCac
         }
     }
 
-    private fun logConnectionParameters(authToken: String) {
+    private fun logConnectionParameters() {
         Log.d(TAG, """
             |Connection parameters:
             |🔗 URL: https://stage.naukotheka.ru
             |🛣️ Path: /api/chat/socket.io
-            |🔐 Auth token: ${authToken}
             |♻️ Reconnection attempts: $MAX_RECONNECTION_ATTEMPTS
             |⏱️ Reconnection delay: ${RECONNECTION_DELAY_MS}ms
             """.trimMargin())

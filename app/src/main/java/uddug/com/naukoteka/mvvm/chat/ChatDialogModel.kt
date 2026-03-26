@@ -1,12 +1,11 @@
 package uddug.com.naukoteka.mvvm.chat
 
-import android.annotation.SuppressLint
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.entities.chat.DialogInfo
@@ -29,6 +29,7 @@ import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
+import uddug.com.naukoteka.mvvm.chat.await
 import uddug.com.naukoteka.ui.chat.di.SocketService
 import uddug.com.naukoteka.mvvm.chat.ChatStatusFormatter
 import uddug.com.naukoteka.mvvm.chat.ChatStatusTextMode.GENERIC
@@ -115,179 +116,161 @@ class ChatDialogViewModel @Inject constructor(
     }
 
 
-    @SuppressLint("CheckResult")
     fun loadMessages(dialogId: Long) {
         _uiState.value = ChatDialogUiState.Loading()
         val startTime = System.currentTimeMillis()
         viewModelScope.launch {
             try {
-                userRepository.getProfileInfo().subscribeOn(Schedulers.io())
-                    .subscribe({
-                        currentUser = it
-                        viewModelScope.launch {
-                            val info = chatInteractor.getDialogInfo(dialogId)
-                            currentDialogInfo = info
-                            currentDialogID = dialogId
-                            _currentDialogId.value = dialogId
+                val user = withContext(Dispatchers.IO) { userRepository.getProfileInfo().await() }
+                currentUser = user
 
-                            val name: String = when {
-                                info.interlocutor != null -> info.interlocutor?.fullName.orEmpty()
-                                else -> info.name.orEmpty()
-                            }
-                            val image: String = when {
-                                info.interlocutor != null -> info.interlocutor?.image.orEmpty()
-                                else -> info.dialogImage?.path.orEmpty()
-                            }
-                            val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
-                            var status: String? = null
-                            val isGroup = (info.users?.size ?: 0) > 2
-                            val isAdmin = computeIsCurrentUserAdmin(info, it.id)
-                            _isCurrentUserAdmin.value = isAdmin
-                            if (!isGroup) {
-                                val userId = info.interlocutor?.userId
-                                if (userId != null) {
-                                    try {
-                                        val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
-                                        status = if (userStatus?.isOnline == true) {
-                                            chatStatusFormatter.online()
-                                        } else {
-                                            userStatus?.lastSeen?.let { formatLastSeen(it) }
-                                        }
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    }
-                                }
-                            }
+                val info = chatInteractor.getDialogInfo(dialogId)
+                currentDialogInfo = info
+                currentDialogID = dialogId
+                _currentDialogId.value = dialogId
 
-                            _uiState.value = ChatDialogUiState.Loading(
-                                chatName = name,
-                                chatImage = image,
-                                isGroup = isGroup,
-                                firstParticipantName = firstParticipantName,
-                                status = status
-                            )
-
-                            it.id?.let { currentUserId ->
-                                val messages = chatInteractor.getMessagesWithOwnerInfo(
-                                    currentUserId = currentUserId,
-                                    dialogId = dialogId,
-                                    limit = 50,
-                                    lastMessageId = null,
-                                ).sortedBy { it.createdAt }
-                                val elapsed = System.currentTimeMillis() - startTime
-                                if (elapsed < 500L) delay(500L - elapsed)
-                                _uiState.value = ChatDialogUiState.Success(
-                                    chats = messages,
-                                    chatName = name,
-                                    chatImage = image,
-                                    isGroup = isGroup,
-                                    firstParticipantName = firstParticipantName,
-                                    status = status
-                                )
-                                markMessagesRead(dialogId, messages)
+                val name: String = when {
+                    info.interlocutor != null -> info.interlocutor?.fullName.orEmpty()
+                    else -> info.name.orEmpty()
+                }
+                val image: String = when {
+                    info.interlocutor != null -> info.interlocutor?.image.orEmpty()
+                    else -> info.dialogImage?.path.orEmpty()
+                }
+                val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
+                var status: String? = null
+                val isGroup = (info.users?.size ?: 0) > 2
+                val isAdmin = computeIsCurrentUserAdmin(info, user.id)
+                _isCurrentUserAdmin.value = isAdmin
+                if (!isGroup) {
+                    val userId = info.interlocutor?.userId
+                    if (userId != null) {
+                        try {
+                            val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
+                            status = if (userStatus?.isOnline == true) {
+                                chatStatusFormatter.online()
+                            } else {
+                                userStatus?.lastSeen?.let { formatLastSeen(it) }
                             }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
-                    }, {
-                        it.printStackTrace()
-                        _uiState.value = ChatDialogUiState.Error("Unknown error")
-                    })
+                    }
+                }
 
+                _uiState.value = ChatDialogUiState.Loading(
+                    chatName = name,
+                    chatImage = image,
+                    isGroup = isGroup,
+                    firstParticipantName = firstParticipantName,
+                    status = status
+                )
+
+                val currentUserId = user.id ?: return@launch
+                val messages = chatInteractor.getMessagesWithOwnerInfo(
+                    currentUserId = currentUserId,
+                    dialogId = dialogId,
+                    limit = 50,
+                    lastMessageId = null,
+                ).sortedBy { it.createdAt }
+                val elapsed = System.currentTimeMillis() - startTime
+                if (elapsed < 500L) delay(500L - elapsed)
+                _uiState.value = ChatDialogUiState.Success(
+                    chats = messages,
+                    chatName = name,
+                    chatImage = image,
+                    isGroup = isGroup,
+                    firstParticipantName = firstParticipantName,
+                    status = status
+                )
+                markMessagesRead(dialogId, messages)
             } catch (e: Exception) {
                 e.printStackTrace()
                 _uiState.value = ChatDialogUiState.Error(e.message ?: "Unknown error")
             }
-
         }
     }
 
-    @SuppressLint("CheckResult")
     fun loadMessagesByPeer(interlocutorId: String) {
         _uiState.value = ChatDialogUiState.Loading()
         val startTime = System.currentTimeMillis()
         viewModelScope.launch {
             try {
-                userRepository.getProfileInfo().subscribeOn(Schedulers.io())
-                    .subscribe({ user ->
-                        currentUser = user
-                        viewModelScope.launch {
-                            val info = chatInteractor.getDialogInfoByPeer(interlocutorId)
-                            currentDialogInfo = info
-                            val dialogId = info.id
-                            _currentDialogId.value = dialogId
+                val user = withContext(Dispatchers.IO) { userRepository.getProfileInfo().await() }
+                currentUser = user
 
-                            val name = info.interlocutor?.fullName.orEmpty()
-                            val isGroup = (info.users?.size ?: 0) > 2
-                            val image = if (isGroup) {
-                                info.dialogImage?.path.orEmpty()
+                val info = chatInteractor.getDialogInfoByPeer(interlocutorId)
+                currentDialogInfo = info
+                val dialogId = info.id
+                _currentDialogId.value = dialogId
+
+                val name = info.interlocutor?.fullName.orEmpty()
+                val isGroup = (info.users?.size ?: 0) > 2
+                val image = if (isGroup) {
+                    info.dialogImage?.path.orEmpty()
+                } else {
+                    info.interlocutor?.image.orEmpty()
+                }
+                val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
+                var status: String? = null
+                val isAdmin = computeIsCurrentUserAdmin(info, user.id)
+                _isCurrentUserAdmin.value = isAdmin
+                if (!isGroup) {
+                    val userId = info.interlocutor?.userId
+                    if (userId != null) {
+                        try {
+                            val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
+                            status = if (userStatus?.isOnline == true) {
+                                chatStatusFormatter.online()
                             } else {
-                                info.interlocutor?.image.orEmpty()
+                                userStatus?.lastSeen?.let { formatLastSeen(it) }
                             }
-                            val firstParticipantName = info.users?.firstOrNull()?.fullName.orEmpty()
-                            var status: String? = null
-                            val isAdmin = computeIsCurrentUserAdmin(info, user.id)
-                            _isCurrentUserAdmin.value = isAdmin
-                            if (!isGroup) {
-                                val userId = info.interlocutor?.userId
-                                if (userId != null) {
-                                    try {
-                                        val userStatus = chatInteractor.getUsersStatus(listOf(userId)).firstOrNull()
-                                        status = if (userStatus?.isOnline == true) {
-                                            chatStatusFormatter.online()
-                                        } else {
-                                            userStatus?.lastSeen?.let { formatLastSeen(it) }
-                                        }
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    }
-                                }
-                            }
-
-                            _uiState.value = ChatDialogUiState.Loading(
-                                chatName = name,
-                                chatImage = image,
-                                isGroup = isGroup,
-                                firstParticipantName = firstParticipantName,
-                                status = status
-                            )
-
-                            if (dialogId != 0L) {
-                                currentDialogID = dialogId
-                                user.id?.let { currentUserId ->
-                                    val messages = chatInteractor.getMessagesWithOwnerInfo(
-                                        currentUserId = currentUserId,
-                                        dialogId = dialogId,
-                                        limit = 50,
-                                        lastMessageId = null,
-                                    ).sortedBy { it.createdAt }
-                                    val elapsed = System.currentTimeMillis() - startTime
-                                    if (elapsed < 500L) delay(500L - elapsed)
-                                    _uiState.value = ChatDialogUiState.Success(
-                                        chats = messages,
-                                        chatName = name,
-                                        chatImage = image,
-                                        isGroup = isGroup,
-                                        firstParticipantName = firstParticipantName,
-                                        status = status
-                                    )
-                                    markMessagesRead(dialogId, messages)
-                                }
-                            } else {
-                                val elapsed = System.currentTimeMillis() - startTime
-                                if (elapsed < 500L) delay(500L - elapsed)
-                                _uiState.value = ChatDialogUiState.Success(
-                                    chats = emptyList(),
-                                    chatName = name,
-                                    chatImage = image,
-                                    isGroup = false,
-                                    firstParticipantName = firstParticipantName,
-                                    status = status
-                                )
-                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
-                    }, {
-                        it.printStackTrace()
-                        _uiState.value = ChatDialogUiState.Error("Unknown error")
-                    })
+                    }
+                }
+
+                _uiState.value = ChatDialogUiState.Loading(
+                    chatName = name,
+                    chatImage = image,
+                    isGroup = isGroup,
+                    firstParticipantName = firstParticipantName,
+                    status = status
+                )
+
+                if (dialogId != 0L) {
+                    currentDialogID = dialogId
+                    val currentUserId = user.id ?: return@launch
+                    val messages = chatInteractor.getMessagesWithOwnerInfo(
+                        currentUserId = currentUserId,
+                        dialogId = dialogId,
+                        limit = 50,
+                        lastMessageId = null,
+                    ).sortedBy { it.createdAt }
+                    val elapsed = System.currentTimeMillis() - startTime
+                    if (elapsed < 500L) delay(500L - elapsed)
+                    _uiState.value = ChatDialogUiState.Success(
+                        chats = messages,
+                        chatName = name,
+                        chatImage = image,
+                        isGroup = isGroup,
+                        firstParticipantName = firstParticipantName,
+                        status = status
+                    )
+                    markMessagesRead(dialogId, messages)
+                } else {
+                    val elapsed = System.currentTimeMillis() - startTime
+                    if (elapsed < 500L) delay(500L - elapsed)
+                    _uiState.value = ChatDialogUiState.Success(
+                        chats = emptyList(),
+                        chatName = name,
+                        chatImage = image,
+                        isGroup = false,
+                        firstParticipantName = firstParticipantName,
+                        status = status
+                    )
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 _uiState.value = ChatDialogUiState.Error(e.message ?: "Unknown error")
@@ -982,6 +965,11 @@ class ChatDialogViewModel @Inject constructor(
     private fun parseInstantOrNow(value: String?): Instant {
         if (value.isNullOrBlank()) return Instant.now()
         return runCatching { Instant.parse(value) }.getOrElse { Instant.now() }
+    }
+
+    override fun onCleared() {
+        socketService.removeEvent("message")
+        super.onCleared()
     }
 
 }
