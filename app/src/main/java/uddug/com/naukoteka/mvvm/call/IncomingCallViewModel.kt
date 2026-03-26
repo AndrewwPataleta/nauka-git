@@ -47,7 +47,7 @@ class IncomingCallViewModel @Inject constructor(
         )
 
         socketService.connect()
-        socketService.setOnEvent("message") { message ->
+        socketService.setOnEvent("message", LISTENER_TAG) { message ->
             handleIncomingMessage(message)
         }
     }
@@ -113,12 +113,13 @@ class IncomingCallViewModel @Inject constructor(
 
     override fun onCleared() {
         disposables.clear()
-        socketService.removeEvent("message")
+        socketService.removeEvent("message", LISTENER_TAG)
         super.onCleared()
     }
 
     companion object {
         private const val CALL_STARTED_TEXT = "Звонок начался"
+        private const val LISTENER_TAG = "IncomingCallViewModel"
     }
 }
 

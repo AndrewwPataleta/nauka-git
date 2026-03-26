@@ -46,7 +46,7 @@ class FlashphonerSessionManager @Inject constructor(
         currentServerUrl = serverUrl
         currentLogin = username
 
-        val options = RoomManagerOptions(serverUrl, "266a5452-9bcc-43d6-a726-81f8b7684fbf").apply(configureOptions)
+        val options = RoomManagerOptions(serverUrl, username).apply(configureOptions)
 
         log(
             "prepareRoomManager " +

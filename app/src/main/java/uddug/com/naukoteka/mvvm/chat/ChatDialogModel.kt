@@ -110,7 +110,7 @@ class ChatDialogViewModel @Inject constructor(
 
     init {
         socketService.connect()
-        socketService.setOnEvent("message") { message ->
+        socketService.setOnEvent("message", LISTENER_TAG) { message ->
             handleIncomingMessage(message)
         }
     }
@@ -815,7 +815,9 @@ class ChatDialogViewModel @Inject constructor(
     }
 
     private fun markMessagesRead(dialogId: Long, messages: List<MessageChat>) {
-        val messageIds = messages.filter { !it.isMine && (it.readCount ?: 0) == 0 }.map { it.id }
+        val messageIds = messages
+            .filter { !it.isMine && (it.readCount ?: 0) < READ_STATUS }
+            .map { it.id }
         if (messageIds.isEmpty()) return
         viewModelScope.launch {
             try {
@@ -846,20 +848,55 @@ class ChatDialogViewModel @Inject constructor(
                 
                 if (jsonObject.has("action")) {
                     val action = jsonObject.getJSONObject("action")
-                    if (action.optString("type") == "delete") {
-                        val ids = mutableListOf<Long>()
-                        val array = action.optJSONArray("messages")
-                        if (array != null) {
-                            for (i in 0 until array.length()) {
-                                ids.add(array.getLong(i))
+                    val actionType = action.optString("type")
+                    val currentState = _uiState.value
+
+                    when (actionType) {
+                        "delete" -> {
+                            val ids = mutableListOf<Long>()
+                            val array = action.optJSONArray("messages")
+                            if (array != null) {
+                                for (i in 0 until array.length()) {
+                                    ids.add(array.getLong(i))
+                                }
+                            } else {
+                                action.optLong("messageId").takeIf { it != 0L }?.let { ids.add(it) }
                             }
-                        } else {
-                            action.optLong("messageId").takeIf { it != 0L }?.let { ids.add(it) }
+                            if (currentState is ChatDialogUiState.Success && ids.isNotEmpty()) {
+                                val updatedChats = currentState.chats.filterNot { ids.contains(it.id) }
+                                _uiState.value = currentState.copy(chats = updatedChats)
+                            }
                         }
-                        val currentState = _uiState.value
-                        if (currentState is ChatDialogUiState.Success && ids.isNotEmpty()) {
-                            val updatedChats = currentState.chats.filterNot { ids.contains(it.id) }
-                            _uiState.value = currentState.copy(chats = updatedChats)
+                        "read" -> {
+                            val messageStatus = action.optInt("messageStatus", 0)
+                            val ids = mutableListOf<Long>()
+                            val array = action.optJSONArray("messages")
+                            if (array != null) {
+                                for (i in 0 until array.length()) {
+                                    ids.add(array.getLong(i))
+                                }
+                            }
+                            if (currentState is ChatDialogUiState.Success && ids.isNotEmpty()) {
+                                val updatedChats = currentState.chats.map { msg ->
+                                    if (ids.contains(msg.id)) msg.copy(readCount = messageStatus) else msg
+                                }
+                                _uiState.value = currentState.copy(chats = updatedChats)
+                            }
+                        }
+                        "update" -> {
+                            val messageId = action.optLong("messageId", 0L)
+                            if (currentState is ChatDialogUiState.Success && messageId != 0L) {
+                                val gson = Gson()
+                                val socketMessage = gson.fromJson(jsonString, ChatSocketMessage::class.java)
+                                val updatedChats = currentState.chats.map { msg ->
+                                    if (msg.id == messageId) {
+                                        msg.copy(
+                                            text = socketMessage.text ?: msg.text
+                                        )
+                                    } else msg
+                                }
+                                _uiState.value = currentState.copy(chats = updatedChats)
+                            }
                         }
                     }
                     return@launch
@@ -911,6 +948,11 @@ class ChatDialogViewModel @Inject constructor(
                         add(newMessage)
                     }
                     _uiState.value = currentState.copy(chats = updatedChats)
+                }
+
+                if (!newMessage.isMine && newMessage.id != 0L) {
+                    val dialogId = socketMessage.dialog ?: currentDialogID ?: return@launch
+                    markMessagesRead(dialogId, listOf(newMessage))
                 }
 
             } catch (e: Exception) {
@@ -968,10 +1010,13 @@ class ChatDialogViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        socketService.removeEvent("message")
+        socketService.removeEvent("message", LISTENER_TAG)
         super.onCleared()
     }
 
+    companion object {
+        private const val LISTENER_TAG = "ChatDialogViewModel"
+    }
 }
 
 private fun ChatPoll.toDomain(messageId: Long?, questionFallback: String?): Poll {

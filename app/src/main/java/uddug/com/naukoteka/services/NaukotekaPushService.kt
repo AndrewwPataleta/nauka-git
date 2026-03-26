@@ -60,7 +60,7 @@ class NaukotekaPushService : FirebaseMessagingService() {
         }
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.mipmap.logo_farmix).setContentTitle(title)
+            .setSmallIcon(R.drawable.ic_notification).setContentTitle(title)
             .setContentText(messageBody).setAutoCancel(true).setSound(defaultSoundUri)
             .setPriority(
                 if (isIncomingCallPush) NotificationCompat.PRIORITY_HIGH

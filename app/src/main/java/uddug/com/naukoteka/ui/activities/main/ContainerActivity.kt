@@ -30,6 +30,7 @@ import uddug.com.naukoteka.mvvm.call.IncomingCallEvent
 import uddug.com.naukoteka.mvvm.call.IncomingCallViewModel
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallViewModel
+import androidx.core.content.ContextCompat
 import uddug.com.naukoteka.services.NaukotekaPushService
 import uddug.com.naukoteka.services.IncomingCallSocketService
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
@@ -108,9 +109,13 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
         flashphonerEnvironment.attachContainerActivity(this)
         flashphonerEnvironment.ensureInitialised(this)
-        startService(Intent(this, IncomingCallSocketService::class.java))
+        ContextCompat.startForegroundService(
+            this,
+            Intent(this, IncomingCallSocketService::class.java),
+        )
 
         handleIncomingCallIntent(intent)
+        handleChatDialogIntent(intent)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -165,6 +170,7 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         super.onNewIntent(intent)
         if (intent != null) {
             handleIncomingCallIntent(intent)
+            handleChatDialogIntent(intent)
         }
     }
 
@@ -288,6 +294,30 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
             )
         )
         intent.removeExtra(NaukotekaPushService.EXTRA_OPEN_INCOMING_CALL)
+    }
+
+    private fun handleChatDialogIntent(intent: Intent) {
+        val shouldOpenChat = intent.getBooleanExtra(
+            IncomingCallSocketService.EXTRA_OPEN_CHAT_DIALOG,
+            false,
+        )
+        if (!shouldOpenChat) return
+
+        val dialogId = intent.getLongExtra(IncomingCallSocketService.EXTRA_CHAT_DIALOG_ID, -1L)
+        if (dialogId <= 0) return
+
+        val navController = findNavController(R.id.main_nav_host_fragment)
+        if (navController.graph.id != R.id.nav_graph_chat) {
+            navController.setGraph(R.navigation.nav_graph_chat)
+            contentView.bottomNav.menu.getItem(3).setChecked(true)
+        }
+        navController.navigate(
+            R.id.chatDialogFragment,
+            Bundle().apply {
+                putLong("DIALOG_ID", dialogId)
+            },
+        )
+        intent.removeExtra(IncomingCallSocketService.EXTRA_OPEN_CHAT_DIALOG)
     }
 
     private fun handleIncomingCall(event: IncomingCallEvent) {

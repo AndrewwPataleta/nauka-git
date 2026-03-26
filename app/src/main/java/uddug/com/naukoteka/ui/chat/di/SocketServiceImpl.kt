@@ -15,10 +15,10 @@ class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCac
 
     companion object {
         private const val TAG = "SocketService"
+        private const val DEFAULT_TAG = "__default__"
         private const val MAX_RECONNECTION_ATTEMPTS = 5
         private const val RECONNECTION_DELAY_MS = 1000
 
-        
         private const val EVENT_RECONNECT_ATTEMPT = "reconnect_attempt"
         private const val EVENT_RECONNECT_ERROR = "reconnect_error"
         private const val EVENT_RECONNECT_FAILED = "reconnect_failed"
@@ -26,6 +26,10 @@ class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCac
 
     private val gson = Gson()
     private var isConnected = false
+
+    // event -> (tag -> callback)
+    private val eventListeners = mutableMapOf<String, MutableMap<String, (String) -> Unit>>()
+    private val registeredSocketEvents = mutableSetOf<String>()
 
     private val socket: Socket by lazy {
         val authToken = cookiesCache.getAuthCookies().takeIf { it.isNotBlank() }
@@ -92,6 +96,38 @@ class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCac
     }
 
     override fun setOnEvent(event: String, callback: (data: String) -> Unit) {
+        setOnEvent(event, DEFAULT_TAG, callback)
+    }
+
+    override fun setOnEvent(event: String, tag: String, callback: (data: String) -> Unit) {
+        val listeners = eventListeners.getOrPut(event) { mutableMapOf() }
+        listeners[tag] = callback
+        Log.d(TAG, "Registered listener for event '$event' with tag '$tag' (total: ${listeners.size})")
+        ensureSocketListener(event)
+    }
+
+    override fun removeEvent(event: String) {
+        eventListeners.remove(event)
+        registeredSocketEvents.remove(event)
+        socket.off(event)
+        Log.d(TAG, "Removed all listeners for event '$event'")
+    }
+
+    override fun removeEvent(event: String, tag: String) {
+        val listeners = eventListeners[event] ?: return
+        listeners.remove(tag)
+        Log.d(TAG, "Removed listener for event '$event' tag '$tag' (remaining: ${listeners.size})")
+        if (listeners.isEmpty()) {
+            eventListeners.remove(event)
+            registeredSocketEvents.remove(event)
+            socket.off(event)
+        }
+    }
+
+    private fun ensureSocketListener(event: String) {
+        if (event in registeredSocketEvents) return
+        registeredSocketEvents.add(event)
+
         socket.off(event)
         socket.on(event) { args ->
             try {
@@ -101,47 +137,49 @@ class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCac
                 }
 
                 Log.d(TAG, "Received event: '$event' with payload: $data")
-                callback(data)
+                val listeners = eventListeners[event]?.values?.toList() ?: return@on
+                listeners.forEach { callback ->
+                    try {
+                        callback(data)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error in listener for event: $event", e)
+                    }
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Error processing event: $event", e)
+                Log.e(TAG, "Error dispatching event: $event", e)
             }
         }
-    }
-
-    override fun removeEvent(event: String) {
-        socket.off(event)
     }
 
     private fun setupEventListeners(socket: Socket) {
         socket.apply {
             on(Socket.EVENT_CONNECT) {
                 isConnected = true
-                Log.i(TAG, "✅ Socket connected successfully")
+                Log.i(TAG, "Socket connected successfully")
                 logSocketDetails()
             }
 
             on(Socket.EVENT_DISCONNECT) {
                 isConnected = false
-                Log.w(TAG, "❌ Socket disconnected. Reason: ${it.joinToString()}")
+                Log.w(TAG, "Socket disconnected. Reason: ${it.joinToString()}")
             }
 
             on(Socket.EVENT_CONNECT_ERROR) { args ->
                 val error = args.getOrNull(0)?.toString() ?: "unknown error"
-                Log.e(TAG, "🔥 Connection error: $error")
+                Log.e(TAG, "Connection error: $error")
             }
 
-            
             on(EVENT_RECONNECT_ATTEMPT) {
-                Log.d(TAG, "🔄 Reconnection attempt #${socket.io().reconnectionAttempts()}")
+                Log.d(TAG, "Reconnection attempt #${socket.io().reconnectionAttempts()}")
             }
 
             on(EVENT_RECONNECT_ERROR) { args ->
                 val error = args.getOrNull(0)?.toString() ?: "unknown error"
-                Log.e(TAG, "🔥 Reconnection error: $error")
+                Log.e(TAG, "Reconnection error: $error")
             }
 
             on(EVENT_RECONNECT_FAILED) {
-                Log.e(TAG, "💥 All reconnection attempts failed")
+                Log.e(TAG, "All reconnection attempts failed")
             }
         }
     }
@@ -149,10 +187,10 @@ class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCac
     private fun logConnectionParameters() {
         Log.d(TAG, """
             |Connection parameters:
-            |🔗 URL: https://stage.naukotheka.ru
-            |🛣️ Path: /api/chat/socket.io
-            |♻️ Reconnection attempts: $MAX_RECONNECTION_ATTEMPTS
-            |⏱️ Reconnection delay: ${RECONNECTION_DELAY_MS}ms
+            |URL: https://stage.naukotheka.ru
+            |Path: /api/chat/socket.io
+            |Reconnection attempts: $MAX_RECONNECTION_ATTEMPTS
+            |Reconnection delay: ${RECONNECTION_DELAY_MS}ms
             """.trimMargin())
     }
 
@@ -161,7 +199,7 @@ class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCac
             val io = socket.io()
             Log.d(TAG, """
                 |Socket details:
-              
+
                 """.trimMargin())
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log socket details", e)
