@@ -149,7 +149,9 @@ fun CallScreen(
         }
 
         val previousMode = audioManager.mode
+        val previousSpeakerphoneOn = audioManager.isSpeakerphoneOn
         audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+        audioManager.isSpeakerphoneOn = true
         var focusRequest: AudioFocusRequest? = null
         val focusResult = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
@@ -180,6 +182,7 @@ fun CallScreen(
                 @Suppress("DEPRECATION")
                 audioManager.abandonAudioFocus(null)
             }
+            audioManager.isSpeakerphoneOn = previousSpeakerphoneOn
             audioManager.mode = previousMode
         }
     }

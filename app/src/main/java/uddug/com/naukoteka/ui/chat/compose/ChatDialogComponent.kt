@@ -17,10 +17,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -354,7 +357,8 @@ fun ChatDialogComponent(
         modifier = Modifier
             .background(Color.White)
             .fillMaxSize()
-            .systemBarsPadding() 
+            .systemBarsPadding()
+            .imePadding()
     ) {
         Column(
             modifier = Modifier
@@ -396,6 +400,12 @@ fun ChatDialogComponent(
 
                     LaunchedEffect(messages.size) {
                         if (initialMessageId == null && messages.isNotEmpty()) {
+                            scrollState.scrollToItem(messages.size - 1)
+                        }
+                    }
+                    val isImeVisible = WindowInsets.isImeVisible
+                    LaunchedEffect(isImeVisible) {
+                        if (isImeVisible && initialMessageId == null && messages.isNotEmpty()) {
                             scrollState.scrollToItem(messages.size - 1)
                         }
                     }

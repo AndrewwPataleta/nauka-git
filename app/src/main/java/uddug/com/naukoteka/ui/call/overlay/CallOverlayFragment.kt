@@ -48,7 +48,6 @@ class CallOverlayFragment : Fragment() {
                             viewModel.endCall()
                             removeSelf()
                         },
-                        onClose = { removeSelf() },
                         onFinished = { removeSelf() }
                     )
                 }

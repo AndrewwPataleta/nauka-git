@@ -90,7 +90,7 @@ fun ChatTabBar(
             val folder = target.folder
             AlertDialog(
                 onDismissRequest = { folderActionsTarget = null },
-                containerColor = Color.White,
+                containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
                 text = {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         FolderActionItem(

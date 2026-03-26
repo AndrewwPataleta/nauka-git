@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -50,7 +49,6 @@ fun CallOverlay(
     state: CallUiState,
     onExpand: () -> Unit,
     onEndCall: () -> Unit,
-    onClose: () -> Unit,
     onFinished: () -> Unit,
 ) {
     val backgroundColor = Color(0xFF0B1020)
@@ -132,20 +130,6 @@ fun CallOverlay(
                             contentDescription = null,
                         )
                     }
-                }
-
-                IconButton(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(32.dp)
-                        .clip(CircleShape),
-                    onClick = onClose,
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_close),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
                 }
 
                 Avatar(

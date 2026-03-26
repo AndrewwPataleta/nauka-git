@@ -23,8 +23,6 @@ import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import org.webrtc.SurfaceViewRenderer
 import java.util.UUID
-import uddug.com.data.cache.user_id.UserIdCache
-import uddug.com.data.cache.user_uuid.UserUUIDCache
 import uddug.com.domain.entities.call.CallSessionState
 import uddug.com.domain.repositories.call.CallRepository
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
@@ -37,8 +35,6 @@ import uddug.com.naukoteka.mvvm.chat.await
 class CallViewModel @Inject constructor(
     private val flashphonerConfigProvider: FlashphonerConfigProvider,
     private val flashphonerSessionManager: FlashphonerSessionManager,
-    private val userIdCache: UserIdCache,
-    private val userUUIDCache: UserUUIDCache,
     private val userProfileRepository: UserProfileRepository,
     private val callRepository: CallRepository,
 ) : ViewModel() {
@@ -68,7 +64,6 @@ class CallViewModel @Inject constructor(
     private var localPublishStarted = false
     private var hasPublishedLocalStream = false
     private var hasRetriedPublish = false
-    private var generatedWcsLogin: String? = null
     private var profileUserId: String? = null
 
     fun showIncomingCall(
@@ -663,54 +658,21 @@ class CallViewModel @Inject constructor(
         streamName: String,
         dialogId: Long,
     ) {
-        val rawProfileUserId = profileUserId
-        val rawUuid = userUUIDCache.entity
-        val rawUserId = userIdCache.entity
-        val normalizedProfileUserId = normalizeWcsLogin(rawProfileUserId)
-        val normalizedUuid = normalizeWcsLogin(rawUuid)
-        val normalizedUserId = normalizeWcsLogin(rawUserId)
-        val selectedSource = when {
-            normalizedProfileUserId == selectedLogin -> "profileInfo"
-            normalizedUserId == selectedLogin -> "userIdCache"
-            normalizedUuid == selectedLogin -> "userUUIDCache"
-            generatedWcsLogin == selectedLogin -> "generatedFallback"
-            else -> "unknown"
-        }
-
         Log.d(
             LOG_TAG,
-            "wcs_diagnostics selectedLogin=$selectedLogin selectedSource=$selectedSource rawProfileUserId=$rawProfileUserId normalizedProfileUserId=$normalizedProfileUserId rawUuid=$rawUuid normalizedUuid=$normalizedUuid rawUserId=$rawUserId normalizedUserId=$normalizedUserId"
+            "wcs_diagnostics selectedLogin=$selectedLogin source=profileApi profileUserId=$profileUserId"
         )
         Log.d(
             LOG_TAG,
-            "wcs_diagnostics connection serverUrl=$serverUrl dialogId=$dialogId streamName=$streamName sdkIdentityFields=participantName(clientInfo-if-supported)"
+            "wcs_diagnostics connection serverUrl=$serverUrl dialogId=$dialogId streamName=$streamName"
         )
-
-        if (selectedLogin.equals("anonymous", ignoreCase = true)) {
-            Log.w(
-                LOG_TAG,
-                "wcs_diagnostics selected login is anonymous after normalization; check who writes user_uuid/user_id caches"
-            )
-        }
     }
 
     private suspend fun resolveWcsLogin(): String {
-        val profileLogin = runCatching {
-            userProfileRepository.getProfileInfo().await().id
-        }.onSuccess { loadedId ->
-            profileUserId = loadedId
-        }.getOrNull()
-
-        normalizeWcsLogin(profileLogin)?.let { return it }
-
-        normalizeWcsLogin(userIdCache.entity)?.let { return it }
-
-        normalizeWcsLogin(userUUIDCache.entity)?.let { return it }
-
-        return generatedWcsLogin ?: UUID.randomUUID().toString().also {
-            generatedWcsLogin = it
-            Log.w(LOG_TAG, "wcs_identity_missing generatedFallbackLogin=$it")
-        }
+        val id = userProfileRepository.getProfileInfo().await().id
+        profileUserId = id
+        return normalizeWcsLogin(id)
+            ?: error("User ID from profile API is null or invalid: '$id'")
     }
 
     private fun normalizeWcsLogin(raw: String?): String? {
@@ -733,9 +695,6 @@ class CallViewModel @Inject constructor(
     private fun resolveUsername(): String {
         return normalizeWcsLogin(currentLogin)
             ?: normalizeWcsLogin(profileUserId)
-            ?: normalizeWcsLogin(userIdCache.entity)
-            ?: normalizeWcsLogin(userUUIDCache.entity)
-            ?: normalizeWcsLogin(generatedWcsLogin)
             ?: "unknown"
     }
 

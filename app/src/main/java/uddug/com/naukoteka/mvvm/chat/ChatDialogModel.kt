@@ -885,6 +885,13 @@ class ChatDialogViewModel @Inject constructor(
                 val gson = Gson()
                 val socketMessage = gson.fromJson(jsonString, ChatSocketMessage::class.java)
 
+                // Skip call signaling messages — they must not appear in the chat history
+                val isCallSignal = socketMessage.cType in listOf(2, 3) &&
+                    socketMessage.files.isNullOrEmpty() &&
+                    socketMessage.text?.contains("звонок", ignoreCase = true) == true
+                val isCallEnded = socketMessage.cType == 6
+                if (isCallSignal || isCallEnded) return@launch
+
                 if ((currentDialogInfo?.id ?: 0L) == 0L && (socketMessage.dialog ?: 0L) != 0L) {
                     currentDialogInfo = currentDialogInfo?.copy(id = socketMessage.dialog!!)
                     currentDialogID = socketMessage.dialog
