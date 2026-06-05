@@ -19,6 +19,7 @@ data class Chat(
     val unreadMessages: Int,
     val notificationsDisable: Boolean,
     val isBlocked: Boolean,
+    val activeCall: ActiveCall? = null,
 )
 
 @Parcelize

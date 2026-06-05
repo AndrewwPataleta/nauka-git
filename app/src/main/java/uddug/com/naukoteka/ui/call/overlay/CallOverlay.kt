@@ -135,7 +135,7 @@ fun CallOverlay(
                 Avatar(
                     modifier = Modifier.align(Alignment.Center),
                     url = state.participants.firstOrNull()?.avatarUrl,
-                    name = state.participants.firstOrNull()?.name,
+                    name = state.participants.firstOrNull()?.name ?: state.callTitle,
                     size = 74.dp,
                 )
 

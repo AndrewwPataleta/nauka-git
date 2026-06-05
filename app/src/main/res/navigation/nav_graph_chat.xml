@@ -157,6 +157,10 @@
             android:name="dialog_id"
             app:argType="long"
             android:defaultValue="-1L" />
+        <argument
+            android:name="is_video_call"
+            app:argType="boolean"
+            android:defaultValue="true" />
     </fragment>
 
 </navigation>

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,6 +48,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +59,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -64,6 +67,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -73,10 +77,15 @@ import org.webrtc.SurfaceViewRenderer
 import androidx.compose.ui.viewinterop.AndroidView
 import org.webrtc.RendererCommon
 import android.Manifest
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallStatus
@@ -100,6 +109,7 @@ fun CallScreen(
     onToggleMicrophone: () -> Unit,
     onToggleCamera: () -> Unit,
     onToggleRecording: () -> Unit,
+    onStartRecording: (String) -> Unit,
     onMinimize: () -> Unit,
     onRemoteRendererReady: (SurfaceViewRenderer) -> Unit,
     clearRemoteRenderer: () -> Unit,
@@ -108,15 +118,16 @@ fun CallScreen(
     onBindRemoteRenderer: (FPSurfaceViewRenderer) -> Unit,
     onReleaseLocalRenderer: () -> Unit,
     onReleaseRemoteRenderer: () -> Unit,
+    onBindParticipantRenderer: (String, FPSurfaceViewRenderer) -> Unit,
+    onReleaseParticipantRenderer: (String) -> Unit,
+    onMuteParticipant: (String) -> Unit,
+    onToastConsumed: () -> Unit,
     onMicPermissionDenied: () -> Unit,
     onAudioFocusFailed: (String) -> Unit,
 ) {
     val backgroundColor = Color(0xFF0B1020)
     val context = LocalContext.current
-    val audioManager = remember(context) {
-        context.getSystemService(AudioManager::class.java)
-    }
-    val isGroupCall = state.participants.size > 1
+    val isGroupCall = state.isGroupCall
     val primaryParticipant = state.participants.firstOrNull()
     val callTitle = state.callTitle ?: primaryParticipant?.name
     val statusText = when (state.status) {
@@ -129,62 +140,20 @@ fun CallScreen(
     val resolvedCallTitle = callTitle ?: stringResource(R.string.call_status_in_call)
     var isParticipantsSheetVisible by rememberSaveable { mutableStateOf(false) }
     var participantForActions by remember { mutableStateOf<CallParticipant?>(null) }
-    val shouldHoldAudioFocus = state.status == CallStatus.CONNECTING || state.status == CallStatus.IN_CALL
+    var isRecordingSetupVisible by rememberSaveable { mutableStateOf(false) }
 
-    DisposableEffect(shouldHoldAudioFocus) {
-        if (!shouldHoldAudioFocus) {
-            return@DisposableEffect onDispose { }
+    state.toastMessage?.let { message ->
+        LaunchedEffect(message) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            onToastConsumed()
         }
-        if (audioManager == null) {
-            onAudioFocusFailed("Audio manager unavailable.")
-            return@DisposableEffect onDispose { }
-        }
-        val permissionGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.RECORD_AUDIO
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        if (!permissionGranted) {
-            onMicPermissionDenied()
-            return@DisposableEffect onDispose { }
-        }
+    }
 
-        val previousMode = audioManager.mode
-        val previousSpeakerphoneOn = audioManager.isSpeakerphoneOn
-        audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
-        audioManager.isSpeakerphoneOn = true
-        var focusRequest: AudioFocusRequest? = null
-        val focusResult = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
-                .setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                        .build()
-                )
-                .setOnAudioFocusChangeListener { }
-                .build()
-            audioManager.requestAudioFocus(focusRequest)
-        } else {
-            @Suppress("DEPRECATION")
-            audioManager.requestAudioFocus(
-                null,
-                AudioManager.STREAM_VOICE_CALL,
-                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
-            )
-        }
-        if (focusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            onAudioFocusFailed("Unable to obtain audio focus for call.")
-        }
-        onDispose {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
-            } else {
-                @Suppress("DEPRECATION")
-                audioManager.abandonAudioFocus(null)
-            }
-            audioManager.isSpeakerphoneOn = previousSpeakerphoneOn
-            audioManager.mode = previousMode
-        }
+    val isCallActive = state.status == CallStatus.CONNECTING ||
+        state.status == CallStatus.IN_CALL ||
+        state.status == CallStatus.DIALING
+    BackHandler(enabled = isCallActive) {
+        onMinimize()
     }
 
     if (state.status == CallStatus.INCOMING) {
@@ -208,7 +177,19 @@ fun CallScreen(
                 onOpenChat = {},
                 onShowParticipants = { isParticipantsSheetVisible = true },
                 isRecording = state.isRecording,
-                onToggleRecording = onToggleRecording,
+                onRecordClick = {
+                    when {
+                        // Запись идёт — кнопка останавливает её сразу.
+                        state.isRecording -> onToggleRecording()
+                        // Записывать можно только из активного звонка.
+                        state.status != CallStatus.IN_CALL -> Unit
+                        // Нет permit 82:608 — toggleRecording покажет подсказку,
+                        // экран настройки открывать незачем.
+                        !state.canRecordCall -> onToggleRecording()
+                        // Иначе — открываем экран настройки записи.
+                        else -> isRecordingSetupVisible = true
+                    }
+                },
                 onMinimize = onMinimize,
             )
         }
@@ -217,50 +198,70 @@ fun CallScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = if (isGroupCall) 6.dp else 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(modifier = Modifier.height(12.dp))
+            if (!isGroupCall) {
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = resolvedCallTitle,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    textAlign = TextAlign.Center,
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = statusText,
-                    color = Color(0xFFB0B3C5),
-                    fontSize = 16.sp,
-                )
-                state.errorMessage?.let { message ->
-                    Spacer(modifier = Modifier.height(6.dp))
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     Text(
-                        text = message,
-                        color = Color(0xFFE64C4C),
-                        fontSize = 14.sp,
+                        text = resolvedCallTitle,
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 24.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = statusText,
+                        color = Color(0xFFB0B3C5),
+                        fontSize = 16.sp,
+                    )
+                    state.errorMessage?.let { message ->
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = message,
+                            color = Color(0xFFE64C4C),
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             if (isGroupCall) {
-                CallParticipantsGrid(
-                    participants = state.participants,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = true),
-                )
+                if (state.isVideoCall) {
+                    GroupVideoCallGrid(
+                        participants = state.participants,
+                        currentUserId = state.currentUserId,
+                        sessionState = state.sessionState,
+                        status = state.status,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = true),
+                        onBindLocalRenderer = onBindLocalRenderer,
+                        onReleaseLocalRenderer = onReleaseLocalRenderer,
+                        onBindParticipantRenderer = onBindParticipantRenderer,
+                        onReleaseParticipantRenderer = onReleaseParticipantRenderer,
+                    )
+                } else {
+                    CallParticipantsGrid(
+                        participants = state.participants,
+                        currentUserId = state.currentUserId,
+                        sessionState = state.sessionState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = true),
+                    )
+                }
             } else {
                 if (state.isVideoCall) {
                     SingleParticipantVideo(
@@ -290,6 +291,7 @@ fun CallScreen(
 
             CallControls(
                 sessionState = state.sessionState,
+                isVideoCall = state.isVideoCall,
                 onToggleMicrophone = onToggleMicrophone,
                 onToggleCamera = onToggleCamera,
                 onEndCall = onEndCall,
@@ -308,7 +310,26 @@ fun CallScreen(
     participantForActions?.let { participant ->
         ParticipantActionsSheet(
             participant = participant,
+            isAdmin = state.isCurrentUserAdmin,
+            onMuteToggle = {
+                onMuteParticipant(participant.id)
+                participantForActions = null
+            },
             onDismiss = { participantForActions = null },
+        )
+    }
+
+    if (isRecordingSetupVisible) {
+        val defaultFileName = remember(resolvedCallTitle) {
+            defaultRecordingFileName(resolvedCallTitle)
+        }
+        CallRecordingSetupScreen(
+            defaultFileName = defaultFileName,
+            onBack = { isRecordingSetupVisible = false },
+            onStartRecording = { fileName ->
+                isRecordingSetupVisible = false
+                onStartRecording(fileName)
+            },
         )
     }
 }
@@ -344,7 +365,7 @@ private fun IncomingCallContent(
             Text(
                 text = callTitle,
                 color = Color.White,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 fontSize = 24.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
@@ -489,7 +510,7 @@ private fun CallTopBar(
     onOpenChat: () -> Unit,
     onShowParticipants: () -> Unit,
     isRecording: Boolean,
-    onToggleRecording: () -> Unit,
+    onRecordClick: () -> Unit,
     onMinimize: () -> Unit,
 ) {
     val recordingScale = if (isRecording) {
@@ -551,7 +572,7 @@ private fun CallTopBar(
                 }
 
                 IconButton(
-                    onClick = onToggleRecording,
+                    onClick = onRecordClick,
                     modifier = Modifier.scale(recordingScale),
                 ) {
                     Icon(
@@ -613,7 +634,7 @@ private fun SingleParticipantPreview(
             Text(
                 text = participant?.name.orEmpty(),
                 color = Color.White,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 fontSize = 24.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
@@ -749,32 +770,281 @@ private fun FlashphonerVideoView(
 }
 
 @Composable
-private fun CallParticipantsGrid(
+private fun GroupVideoCallGrid(
     participants: List<CallParticipant>,
+    currentUserId: String?,
+    sessionState: CallSessionState,
+    status: CallStatus,
     modifier: Modifier = Modifier,
+    onBindLocalRenderer: (FPSurfaceViewRenderer) -> Unit,
+    onReleaseLocalRenderer: () -> Unit,
+    onBindParticipantRenderer: (String, FPSurfaceViewRenderer) -> Unit,
+    onReleaseParticipantRenderer: (String) -> Unit,
 ) {
-    val gridState = rememberLazyGridState()
+    val remoteParticipants = remember(participants, currentUserId) {
+        if (currentUserId != null) participants.filter { it.id != currentUserId }
+        else participants
+    }
+    val tileCount = remoteParticipants.size
+    val columns = if (tileCount <= 1) 1 else 2
+    val rows = maxOf((tileCount + columns - 1) / columns, 1)
 
-    Surface(
-        modifier = modifier,
-        color = Color.Transparent,
-        contentColor = Color.White,
-    ) {
-        if (participants.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier) {
+        if (tileCount == 0) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
                 CircularProgressIndicator(color = Color.White)
             }
         } else {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 140.dp),
-                state = gridState,
+            Column(
                 modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(participants, key = { it.id }) { participant ->
-                    ParticipantCard(participant = participant)
+                for (rowIndex in 0 until rows) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        for (colIndex in 0 until columns) {
+                            val tileIndex = rowIndex * columns + colIndex
+                            if (tileIndex < tileCount) {
+                                val participant = remoteParticipants[tileIndex]
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight(),
+                                ) {
+                                    key(participant.id) {
+                                        VideoParticipantTile(
+                                            label = participant.name ?: participant.id,
+                                            avatarUrl = participant.avatarUrl,
+                                            isMuted = participant.isMuted,
+                                            modifier = Modifier.fillMaxSize(),
+                                            onRendererReady = { renderer ->
+                                                onBindParticipantRenderer(participant.id, renderer)
+                                            },
+                                            onRendererReleased = {
+                                                onReleaseParticipantRenderer(participant.id)
+                                            },
+                                        )
+                                    }
+                                }
+                            } else {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Local PiP overlay — bottom-end
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(12.dp)
+                .size(width = 100.dp, height = 140.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFF121732)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (sessionState.camOn) {
+                FlashphonerVideoView(
+                    modifier = Modifier.fillMaxSize(),
+                    isMirror = true,
+                    isOverlay = true,
+                    onRendererReady = onBindLocalRenderer,
+                    onRendererReleased = onReleaseLocalRenderer,
+                )
+            } else {
+                Avatar(
+                    url = null,
+                    name = "Вы",
+                    size = 48.dp,
+                )
+            }
+            CallTileBadge(
+                label = "Вы",
+                isMuted = !sessionState.micOn,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(4.dp),
+            )
+        }
+
+        if (status == CallStatus.DIALING || status == CallStatus.CONNECTING) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        }
+    }
+}
+
+@Composable
+private fun VideoParticipantTile(
+    label: String,
+    avatarUrl: String?,
+    isMuted: Boolean,
+    modifier: Modifier = Modifier,
+    onRendererReady: (FPSurfaceViewRenderer) -> Unit,
+    onRendererReleased: () -> Unit,
+) {
+    var hasVideoFrame by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF121732)),
+    ) {
+        // Avatar fallback — always rendered, visible when no video
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(
+                        brush = Brush.linearGradient(
+                            listOf(Color(0xFF2A3A6A), Color(0xFF1A2550))
+                        )
+                    )
+                    .padding(3.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF121732))
+                    .padding(3.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Avatar(
+                    url = avatarUrl,
+                    name = label,
+                    size = 72.dp,
+                )
+            }
+        }
+
+        // Video layer on top — covers avatar when camera stream has frames
+        FlashphonerVideoView(
+            modifier = Modifier.fillMaxSize(),
+            isMirror = false,
+            isOverlay = false,
+            onRendererReady = { renderer ->
+                hasVideoFrame = true
+                onRendererReady(renderer)
+            },
+            onRendererReleased = {
+                hasVideoFrame = false
+                onRendererReleased()
+            },
+        )
+
+        // Name + mic badge (top-start)
+        CallTileBadge(
+            label = label,
+            isMuted = isMuted,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(8.dp),
+        )
+    }
+}
+
+@Composable
+private fun CallTileBadge(
+    label: String,
+    isMuted: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .background(Color(0x99000000), RoundedCornerShape(12.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = label,
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+        )
+        Icon(
+            painter = painterResource(
+                id = if (isMuted) R.drawable.ic_rec_mic_inactive
+                else R.drawable.ic_rec_mic_active
+            ),
+            contentDescription = null,
+            tint = if (isMuted) Color(0xFFFF5656) else Color(0xFF4DA6FF),
+            modifier = Modifier.size(14.dp),
+        )
+    }
+}
+
+@Composable
+private fun CallParticipantsGrid(
+    participants: List<CallParticipant>,
+    currentUserId: String?,
+    sessionState: CallSessionState,
+    modifier: Modifier = Modifier,
+) {
+    val remoteParticipants = remember(participants, currentUserId) {
+        if (currentUserId != null) participants.filter { it.id != currentUserId }
+        else participants
+    }
+    val totalTiles = remoteParticipants.size + 1
+    val columns = if (totalTiles <= 2) 1 else 2
+    val rows = (totalTiles + columns - 1) / columns
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        for (rowIndex in 0 until rows) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                for (colIndex in 0 until columns) {
+                    val tileIndex = rowIndex * columns + colIndex
+                    if (tileIndex < totalTiles) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                        ) {
+                            if (tileIndex == 0) {
+                                key("local_audio") {
+                                    ParticipantCard(
+                                        name = "Вы",
+                                        avatarUrl = null,
+                                        isMuted = !sessionState.micOn,
+                                    )
+                                }
+                            } else {
+                                val participant = remoteParticipants[tileIndex - 1]
+                                key(participant.id) {
+                                    ParticipantCard(
+                                        name = participant.name,
+                                        avatarUrl = participant.avatarUrl,
+                                        isMuted = participant.isMuted,
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -783,74 +1053,57 @@ private fun CallParticipantsGrid(
 
 @Composable
 private fun ParticipantCard(
-    participant: CallParticipant,
+    name: String?,
+    avatarUrl: String?,
+    isMuted: Boolean,
 ) {
-    Surface(
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(0.9f),
-        shape = RoundedCornerShape(16.dp),
-        color = Color(0xFF121732),
-        tonalElevation = 0.dp,
+            .fillMaxSize()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF121732)),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween,
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = true),
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(
+                        brush = Brush.linearGradient(
+                            listOf(Color(0xFF2A3A6A), Color(0xFF1A2550))
+                        )
+                    )
+                    .padding(3.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF121732))
+                    .padding(3.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Avatar(
-                    url = participant.avatarUrl,
-                    name = participant.name,
+                    url = avatarUrl,
+                    name = name,
                     size = 72.dp,
                 )
-
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .clip(CircleShape)
-                        .background(Color(0xFF1D2239))
-                        .padding(6.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(
-                            id = if (participant.isMuted) {
-                                R.drawable.ic_rec_mic_inactive
-                            } else {
-                                R.drawable.ic_rec_mic_active
-                            }
-                        ),
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = participant.name.orEmpty(),
-                color = Color.White,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                maxLines = 2,
-                textAlign = TextAlign.Center,
-            )
         }
+
+        CallTileBadge(
+            label = name.orEmpty(),
+            isMuted = isMuted,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(8.dp),
+        )
     }
 }
 
 @Composable
 private fun CallControls(
     sessionState: CallSessionState,
+    isVideoCall: Boolean,
     onToggleMicrophone: () -> Unit,
     onToggleCamera: () -> Unit,
     onEndCall: () -> Unit,
@@ -868,19 +1121,21 @@ private fun CallControls(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CallActionButton(
-                iconRes = R.drawable.ic_mic_off,
+                iconRes = if (sessionState.micOn) R.drawable.ic_mic_on else R.drawable.ic_mic_off,
                 label = stringResource(R.string.call_microphone),
                 containerColor = Color(0xFF50515c),
                 contentColor = if (sessionState.micOn) Color.White else Color(0xFF8083A0),
                 onClick = onToggleMicrophone,
             )
-            CallActionButton(
-                iconRes = R.drawable.ic_camera_off,
-                label = stringResource(R.string.call_camera),
-                containerColor = Color(0xFF50515c),
-                contentColor = if (sessionState.camOn) Color.White else Color(0xFF8083A0),
-                onClick = onToggleCamera,
-            )
+            if (isVideoCall) {
+                CallActionButton(
+                    iconRes = if (sessionState.camOn) R.drawable.ic_camera_on else R.drawable.ic_camera_off,
+                    label = stringResource(R.string.call_camera),
+                    containerColor = Color(0xFF50515c),
+                    contentColor = if (sessionState.camOn) Color.White else Color(0xFF8083A0),
+                    onClick = onToggleCamera,
+                )
+            }
             CallActionButton(
                 iconRes = R.drawable.ic_close,
                 label = stringResource(R.string.call_terminate_action),
@@ -1121,6 +1376,8 @@ private fun ParticipantListItem(
 @Composable
 private fun ParticipantActionsSheet(
     participant: CallParticipant,
+    isAdmin: Boolean,
+    onMuteToggle: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -1166,11 +1423,13 @@ private fun ParticipantActionsSheet(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    SheetActionItem(
-                        iconRes = muteIcon,
-                        label = muteActionLabel,
-                        onClick = onDismiss,
-                    )
+                    if (isAdmin) {
+                        SheetActionItem(
+                            iconRes = muteIcon,
+                            label = muteActionLabel,
+                            onClick = onMuteToggle,
+                        )
+                    }
                     SheetActionItem(
                         iconRes = R.drawable.ic_copy,
                         label = stringResource(R.string.call_participant_action_copy),
@@ -1241,4 +1500,14 @@ private fun formatCallDuration(callDurationSeconds: Int): String {
     val minutes = safeSeconds / 60
     val seconds = safeSeconds % 60
     return "%02d:%02d".format(minutes, seconds)
+}
+
+/**
+ * Имя файла записи по умолчанию — название звонка и текущая дата
+ * (например, «Групповой звонок 2024-03-05»). Подставляется как подсказка
+ * в поле названия на [CallRecordingSetupScreen].
+ */
+private fun defaultRecordingFileName(callTitle: String): String {
+    val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    return "$callTitle $date".trim()
 }

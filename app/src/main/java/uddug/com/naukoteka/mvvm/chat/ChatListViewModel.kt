@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -16,6 +19,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uddug.com.data.cache.user_id.UserIdCache
 import uddug.com.data.cache.user_uuid.UserUUIDCache
+import uddug.com.domain.entities.chat.ActiveCall
+import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.SearchDialog
 import uddug.com.domain.entities.chat.SearchMessage
@@ -172,9 +177,35 @@ class ChatListViewModel @Inject constructor(
                 val elapsed = System.currentTimeMillis() - startTime
                 if (elapsed < 500L) delay(500L - elapsed)
                 _uiState.value = ChatListUiState.Success(chats)
+                refreshActiveCalls(chats)
             } catch (e: Exception) {
                 _uiState.value = ChatListUiState.Error(e.message ?: "Unknown error")
             }
+        }
+    }
+
+    /**
+     * Для каждого открытого диалога запрашивает статус активного звонка
+     * (GET dialogs/info?details=2) и дополняет уже показанный список чатов.
+     * Запросы идут параллельно; ошибка по отдельному чату не ломает остальные.
+     */
+    private suspend fun refreshActiveCalls(chats: List<Chat>) {
+        if (chats.isEmpty()) return
+        val callsById: Map<Long, ActiveCall?> = coroutineScope {
+            chats.map { chat ->
+                async {
+                    chat.dialogId to runCatching {
+                        chatRepository.getDialogActiveCall(chat.dialogId)
+                    }.getOrNull()
+                }
+            }.awaitAll().toMap()
+        }
+        _uiState.update { state ->
+            if (state is ChatListUiState.Success) {
+                ChatListUiState.Success(
+                    state.chats.map { it.copy(activeCall = callsById[it.dialogId]) }
+                )
+            } else state
         }
     }
 

@@ -148,6 +148,12 @@ class IncomingCallSocketService : Service() {
             val dialogId = socketMessage.dialog ?: return
             if (socketMessage.owner == currentUserId) return
 
+            if (socketMessage.cType == CALL_END_TYPE) {
+                cancelCallNotification(dialogId)
+                incomingCallStore.clear()
+                return
+            }
+
             val isIncomingCall = socketMessage.cType in listOf(CALL_AUDIO_TYPE, CALL_VIDEO_TYPE) &&
                 (socketMessage.text?.contains("звонок", ignoreCase = true) == true ||
                     socketMessage.text.equals(CALL_STARTED_TEXT, ignoreCase = true))
@@ -173,9 +179,18 @@ class IncomingCallSocketService : Service() {
             contactName = contactName,
             avatarUrl = avatarUrl,
             callTitle = callTitle,
+            // DialogInfo.type == 1 is a 1-to-1 dialog; anything else is a group.
+            isGroupCall = (dialogInfo?.type ?: 1) != 1,
+            // cType 3 — видеозвонок, 2 — аудио.
+            isVideoCall = socketMessage.cType == 3,
         )
         incomingCallStore.save(incomingCallEvent)
-        sendIncomingCallNotification(incomingCallEvent)
+        // When the app is in the foreground the in-app IncomingCallViewModel
+        // already shows the call screen. Posting a heads-up on top of it makes
+        // the call ring twice and stacks a second call UI.
+        if (!isAppInForeground()) {
+            sendIncomingCallNotification(incomingCallEvent)
+        }
     }
 
     private suspend fun handleChatMessage(socketMessage: ChatSocketMessage, dialogId: Long) {
@@ -209,6 +224,12 @@ class IncomingCallSocketService : Service() {
         )
     }
 
+    private fun cancelCallNotification(dialogId: Long) {
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(dialogId.toInt())
+    }
+
     private fun sendIncomingCallNotification(event: IncomingCallEvent) {
         val intent = Intent(this, ContainerActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -218,6 +239,8 @@ class IncomingCallSocketService : Service() {
             putExtra(SingleCallFragment.ARG_CONTACT_NAME, event.contactName)
             putExtra(SingleCallFragment.ARG_AVATAR_URL, event.avatarUrl)
             putExtra(SingleCallFragment.ARG_CALL_TITLE, event.callTitle)
+            putExtra(SingleCallFragment.ARG_IS_GROUP_CALL, event.isGroupCall)
+            putExtra(SingleCallFragment.ARG_IS_VIDEO_CALL, event.isVideoCall)
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -285,10 +308,11 @@ class IncomingCallSocketService : Service() {
     companion object {
         private const val TAG = "IncomingCallSocketService"
         private const val FOREGROUND_NOTIFICATION_ID = 10001
-        private const val CHAT_NOTIFICATION_BASE_ID = 20000
+        const val CHAT_NOTIFICATION_BASE_ID = 20000
 
         private const val CALL_AUDIO_TYPE = 2
         private const val CALL_VIDEO_TYPE = 3
+        private const val CALL_END_TYPE = 6
         private const val FILE_TYPE = 4
         private const val FILE_TYPE_IMAGE = 1
         private const val FILE_TYPE_VIDEO = 2

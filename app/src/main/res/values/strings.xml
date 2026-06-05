@@ -259,6 +259,9 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_detail_tab_files">Files</string>
     <string name="chat_detail_tab_voice">Voice</string>
     <string name="chat_detail_tab_records">Notes</string>
+    <string name="chat_detail_voice_empty">No voice messages yet</string>
+    <string name="chat_detail_records_empty">No call recordings yet</string>
+    <string name="chat_record_open_error">Unable to open the recording</string>
     <string name="chat_search_no_results">No results</string>
     <string name="chat_search_min_query">Enter 3 characters to search</string>
     <string name="chat_avatar_action_view">View avatar</string>
@@ -501,6 +504,12 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="call_participant_action_copy">Скопировать контакт</string>
     <string name="call_participant_action_profile">Посмотреть профиль</string>
     <string name="call_sheet_close">Закрыть</string>
+    <string name="call_record_setup_title">Запись звонка</string>
+    <string name="call_record_setup_description">После окончания запись появится в чате и будет доступна участникам звонка и тем, с кем вы поделитесь этой записью.</string>
+    <string name="call_record_file_name_label">Название файла</string>
+    <string name="call_record_warning">Предупредите участников о записи звонка, чтобы это не нарушило</string>
+    <string name="call_record_warning_link">правила записи звонков</string>
+    <string name="call_record_start_action">Начать запись звонка</string>
     <string name="call_permission_microphone_title">Нет доступа к микрофону</string>
     <string name="call_permission_microphone_message">Без доступа к микрофону не получится совершить звонок.</string>
     <string name="call_permission_camera_title">Нет доступа к камере</string>
@@ -592,6 +601,7 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_create_poll_question_section">Вопрос для опроса</string>
     <string name="chat_create_poll_question_placeholder">Задайте вопрос</string>
     <string name="chat_create_poll_settings_section">Настройки опроса</string>
+    <string name="chat_create_poll_settings_description">В викторине есть правильный вариант ответа, а пользователям недоступна возможность переголосовать.</string>
     <string name="chat_create_poll_setting_anonymous">Анонимное голосование</string>
     <string name="chat_create_poll_setting_anonymous_description">Мы не будем показывать, кто и за какой вариант проголосовал.</string>
     <string name="chat_create_poll_setting_multiple">Выбор нескольких ответов</string>
@@ -609,6 +619,7 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_poll_description_multiple">Вы можете выбрать несколько вариантов ответа. Результаты будут доступны всем участникам чата.</string>
     <string name="chat_poll_vote">Проголосовать</string>
     <string name="chat_poll_view_results">Посмотреть результаты</string>
+    <string name="chat_poll_revote">Переголосовать</string>
     <string name="chat_poll_results_title">Результаты опроса</string>
     <string name="chat_poll_results_question_label">Вопрос</string>
     <string name="chat_poll_results_anonymous">Анонимный опрос</string>
@@ -646,6 +657,16 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="chat_file_attachment_unknown_type">FILE</string>
     <string name="chat_file_download_started">Downloading file…</string>
     <string name="chat_voice_message_playback_error">Не удалось воспроизвести голосовое сообщение</string>
+    <string name="chat_voice_message">Голосовое сообщение</string>
+    <string name="chat_ongoing_call_audio">Аудиозвонок</string>
+    <string name="chat_ongoing_call_video">Видеозвонок</string>
+    <string name="chat_ongoing_call_join">К звонку</string>
+    <plurals name="chat_ongoing_call_participants">
+        <item quantity="one">%d участник</item>
+        <item quantity="few">%d участника</item>
+        <item quantity="many">%d участников</item>
+        <item quantity="other">%d участника</item>
+    </plurals>
 
     <string name="profile_edit_nickname_placeholder">wqewqeqweqw</string>
     <string name="profile_career_position_placeholder">Ответственный работник</string>
@@ -675,4 +696,6 @@ To delete a folder or change the sorting order, tap the “Edit” button.</stri
     <string name="environment_dev">DEV (stage)</string>
     <string name="environment_prod">PROD</string>
     <string name="environment_changed_message">Окружение переключено. Перезапустите приложение.</string>
+    <string name="share_pick_chat_prompt">Выберите чат для отправки</string>
+    <string name="share_cancel">Отменить</string>
 </resources>

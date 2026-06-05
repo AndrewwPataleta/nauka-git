@@ -178,6 +178,9 @@
   <string name="chat_detail_tab_files">Файлы</string>
   <string name="chat_detail_tab_voice">Голосовые</string>
   <string name="chat_detail_tab_records">Записи</string>
+  <string name="chat_detail_voice_empty">Голосовых сообщений пока нет</string>
+  <string name="chat_detail_records_empty">Записей звонков пока нет</string>
+  <string name="chat_record_open_error">Не удалось открыть запись</string>
   <string name="chat_search_no_results">Нет результатов</string>
   <string name="chat_search_min_query">Введите 3 символа для поиска</string>
   <string name="chat_avatar_action_view">Посмотреть аватарку</string>

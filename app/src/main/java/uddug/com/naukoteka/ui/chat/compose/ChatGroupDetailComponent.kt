@@ -70,6 +70,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatGroupDetailViewModel
 import uddug.com.naukoteka.mvvm.chat.Participant
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatAvatarActionDialog
+import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailShimmer
 import uddug.com.naukoteka.ui.chat.compose.components.SearchField
 import uddug.com.naukoteka.ui.chat.compose.util.uriToFile
 
@@ -156,9 +157,9 @@ fun ChatGroupDetailComponent(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.TopStart,
                 ) {
-                    CircularProgressIndicator()
+                    ChatDetailShimmer()
                 }
             }
             is ChatGroupDetailUiState.Error -> {
@@ -274,16 +275,18 @@ fun ChatGroupDetailComponent(
                     ModalBottomSheet(
                         onDismissRequest = { showCallOptions = false },
                         sheetState = callSheetState,
-                        containerColor = MaterialTheme.colorScheme.surface,
+                        containerColor = colorResource(id = R.color.main_background),
+                        contentColor = colorResource(id = R.color.main_text),
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                .padding(horizontal = 20.dp)
+                                .padding(top = 16.dp, bottom = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Text(
-                                modifier = Modifier.padding(bottom = 4.dp),
+                                modifier = Modifier.padding(bottom = 8.dp),
                                 text = stringResource(R.string.call_create_title),
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Medium,
@@ -484,7 +487,7 @@ private fun GroupHeaderSection(
         Text(
             text = state.name,
             style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = colorResource(id = R.color.main_text)
             )
         )
@@ -594,9 +597,9 @@ private fun GroupTabRow(
 ) {
     Column(modifier = Modifier.background(colorResource(id = R.color.main_background))) {
         TabRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(colorResource(id = R.color.main_background)),
+            modifier = Modifier.fillMaxWidth(),
+            containerColor = colorResource(id = R.color.main_background),
+            contentColor = colorResource(id = R.color.main_text),
             selectedTabIndex = selectedTabIndex,
             indicator = { tabPositions ->
                 val safeIndex = selectedTabIndex.coerceIn(tabTitles.indices)
@@ -789,12 +792,14 @@ private fun ParticipantActionsBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = colorResource(id = R.color.main_background),
+        contentColor = colorResource(id = R.color.main_text),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp, bottom = 24.dp)
         ) {
             Text(
                 text = stringResource(R.string.chat_group_participant_actions_title),

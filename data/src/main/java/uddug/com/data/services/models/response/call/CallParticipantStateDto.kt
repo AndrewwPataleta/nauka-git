@@ -5,5 +5,8 @@ data class CallParticipantStateDto(
     val call: Long,
     val user: String,
     val mediaSessionId: String,
-    val state: CallSessionStateDto,
+    // Бэк отдаёт state = null, пока участник не передал медиа-состояние
+    // (см. ответ GET calls/dialog/:id/participants). Тип обязан быть nullable —
+    // иначе маппер падает с NPE и весь список участников не загружается.
+    val state: CallSessionStateDto?,
 )

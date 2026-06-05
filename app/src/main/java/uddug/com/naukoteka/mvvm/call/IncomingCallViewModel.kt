@@ -83,12 +83,20 @@ class IncomingCallViewModel @Inject constructor(
                 val contactName = dialogInfo?.interlocutor?.fullName ?: dialogInfo?.name
                 val avatarUrl = dialogInfo?.dialogImage?.path ?: dialogInfo?.interlocutor?.image
                 val callTitle = dialogInfo?.name ?: contactName
+                // DialogInfo.type == 1 is a 1-to-1 dialog; anything else is a
+                // group chat, so the call must open in the group tile layout.
+                val isGroupCall = (dialogInfo?.type ?: 1) != 1
 
                 val event = IncomingCallEvent(
                     dialogId = dialogId,
                     contactName = contactName,
                     avatarUrl = avatarUrl,
                     callTitle = callTitle,
+                    isGroupCall = isGroupCall,
+                    // cType 3 — видеозвонок, 2 — аудио. Без этого флага
+                    // принимающая сторона считала бы любой звонок видео и
+                    // включала камеру.
+                    isVideoCall = socketMessage.cType == 3,
                 )
                 incomingCallStore.save(event)
                 _events.emit(event)
@@ -109,6 +117,11 @@ class IncomingCallViewModel @Inject constructor(
 
     fun clearPendingIncomingCall() {
         incomingCallStore.clear()
+        // Drop the replayed event as well: ContainerActivity re-collects
+        // `events` inside repeatOnLifecycle(STARTED), so a retained replay value
+        // re-opens the call screen on every resume/unlock for a call that was
+        // already accepted or declined.
+        _events.resetReplayCache()
     }
 
     override fun onCleared() {
@@ -128,6 +141,8 @@ data class IncomingCallEvent(
     val contactName: String?,
     val avatarUrl: String?,
     val callTitle: String?,
+    val isGroupCall: Boolean = false,
+    val isVideoCall: Boolean = false,
 )
 
 data class CallEndedEvent(

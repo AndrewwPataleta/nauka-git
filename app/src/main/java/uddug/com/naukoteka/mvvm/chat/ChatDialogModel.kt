@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import uddug.com.domain.entities.chat.ActiveCall
 import uddug.com.domain.entities.chat.ChatSocketMessage
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.FileDescriptor
@@ -27,6 +28,7 @@ import uddug.com.domain.entities.chat.Poll
 import uddug.com.domain.entities.chat.PollOption
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.chat.ChatInteractor
+import uddug.com.domain.repositories.call.CallRepository
 import uddug.com.domain.repositories.user_profile.UserProfileRepository
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
 import uddug.com.naukoteka.mvvm.chat.await
@@ -73,6 +75,7 @@ class ChatDialogViewModel @Inject constructor(
     private val chatInteractor: ChatInteractor,
     private val socketService: SocketService,
     private val chatStatusFormatter: ChatStatusFormatter,
+    private val callRepository: CallRepository,
     ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ChatDialogUiState>(ChatDialogUiState.Loading())
@@ -105,8 +108,18 @@ class ChatDialogViewModel @Inject constructor(
     private val _isCurrentUserAdmin = MutableStateFlow(false)
     val isCurrentUserAdmin: StateFlow<Boolean> = _isCurrentUserAdmin
 
+    private val _currentUserId = MutableStateFlow<String?>(null)
+    val currentUserId: StateFlow<String?> = _currentUserId
+
     private val _notificationsDisabled = MutableStateFlow(false)
     val notificationsDisabled: StateFlow<Boolean> = _notificationsDisabled
+
+    // Pagination state. `isLoadingOlder` guards against concurrent requests
+    // triggered by scroll-top. `hasMoreOlder` prevents further calls once the
+    // server returns fewer than PAGE_SIZE items (end of history reached).
+    private val _isLoadingOlder = MutableStateFlow(false)
+    val isLoadingOlder: StateFlow<Boolean> = _isLoadingOlder
+    private var hasMoreOlder: Boolean = true
 
     init {
         socketService.connect()
@@ -117,12 +130,22 @@ class ChatDialogViewModel @Inject constructor(
 
 
     fun loadMessages(dialogId: Long) {
+        // Skip reload if we're already showing this dialog in Success state —
+        // e.g. user returned from CreatePoll / ForwardMessage / AvatarView and
+        // the ViewModel still has a fresh list. Reloading from scratch shows
+        // the shimmer and takes a noticeable delay.
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success && currentDialogID == dialogId) {
+            return
+        }
         _uiState.value = ChatDialogUiState.Loading()
+        hasMoreOlder = true
         val startTime = System.currentTimeMillis()
         viewModelScope.launch {
             try {
                 val user = withContext(Dispatchers.IO) { userRepository.getProfileInfo().await() }
                 currentUser = user
+                _currentUserId.value = user.id
 
                 val info = chatInteractor.getDialogInfo(dialogId)
                 currentDialogInfo = info
@@ -170,9 +193,10 @@ class ChatDialogViewModel @Inject constructor(
                 val messages = chatInteractor.getMessagesWithOwnerInfo(
                     currentUserId = currentUserId,
                     dialogId = dialogId,
-                    limit = 50,
+                    limit = PAGE_SIZE,
                     lastMessageId = null,
                 ).sortedBy { it.createdAt }
+                hasMoreOlder = messages.size >= PAGE_SIZE
                 val elapsed = System.currentTimeMillis() - startTime
                 if (elapsed < 500L) delay(500L - elapsed)
                 _uiState.value = ChatDialogUiState.Success(
@@ -181,9 +205,12 @@ class ChatDialogViewModel @Inject constructor(
                     chatImage = image,
                     isGroup = isGroup,
                     firstParticipantName = firstParticipantName,
-                    status = status
+                    status = status,
+                    attachedFiles = attachedFiles.toList(),
+                    pinnedMessages = info.pinnedMessages,
                 )
                 markMessagesRead(dialogId, messages)
+                refreshActiveCall(dialogId)
             } catch (e: Exception) {
                 e.printStackTrace()
                 _uiState.value = ChatDialogUiState.Error(e.message ?: "Unknown error")
@@ -191,13 +218,65 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Fetches whether the dialog currently has an active call (plus the live
+     * participant count) and reflects it in the "ongoing call" banner. cType
+     * 2/3/6 socket signals keep it fresh afterwards — see
+     * [updateActiveCallFromSignal].
+     */
+    private fun refreshActiveCall(dialogId: Long) {
+        viewModelScope.launch {
+            val activeCall = runCatching {
+                chatInteractor.getDialogActiveCall(dialogId)
+            }.getOrNull()
+            val participantsCount = if (activeCall != null) {
+                runCatching {
+                    callRepository.getParticipants(dialogId)
+                        .count { it.status == CALL_STATUS_PARTICIPATING }
+                }.getOrDefault(0)
+            } else {
+                0
+            }
+            val current = _uiState.value
+            if (current is ChatDialogUiState.Success) {
+                _uiState.value = current.copy(
+                    activeCall = activeCall,
+                    activeCallParticipantsCount = participantsCount,
+                )
+            }
+        }
+    }
+
+    private fun updateActiveCallFromSignal(started: Boolean, cType: Int?) {
+        val current = _uiState.value as? ChatDialogUiState.Success ?: return
+        if (started) {
+            // Show the banner at once with the call type from the signal;
+            // refreshActiveCall() then fills in the live participant count.
+            _uiState.value = current.copy(
+                activeCall = ActiveCall(id = 0L, format = 0, type = cType ?: 2),
+            )
+            currentDialogID?.let { refreshActiveCall(it) }
+        } else {
+            _uiState.value = current.copy(
+                activeCall = null,
+                activeCallParticipantsCount = 0,
+            )
+        }
+    }
+
     fun loadMessagesByPeer(interlocutorId: String) {
+        // See rationale in [loadMessages] — avoid reloading when returning
+        // from nested fragments if the chat is already displayed.
+        if (_uiState.value is ChatDialogUiState.Success) {
+            return
+        }
         _uiState.value = ChatDialogUiState.Loading()
         val startTime = System.currentTimeMillis()
         viewModelScope.launch {
             try {
                 val user = withContext(Dispatchers.IO) { userRepository.getProfileInfo().await() }
                 currentUser = user
+                _currentUserId.value = user.id
 
                 val info = chatInteractor.getDialogInfoByPeer(interlocutorId)
                 currentDialogInfo = info
@@ -245,7 +324,7 @@ class ChatDialogViewModel @Inject constructor(
                     val messages = chatInteractor.getMessagesWithOwnerInfo(
                         currentUserId = currentUserId,
                         dialogId = dialogId,
-                        limit = 50,
+                        limit = PAGE_SIZE,
                         lastMessageId = null,
                     ).sortedBy { it.createdAt }
                     val elapsed = System.currentTimeMillis() - startTime
@@ -256,7 +335,9 @@ class ChatDialogViewModel @Inject constructor(
                         chatImage = image,
                         isGroup = isGroup,
                         firstParticipantName = firstParticipantName,
-                        status = status
+                        status = status,
+                        attachedFiles = attachedFiles.toList(),
+                        pinnedMessages = info.pinnedMessages,
                     )
                     markMessagesRead(dialogId, messages)
                 } else {
@@ -268,12 +349,57 @@ class ChatDialogViewModel @Inject constructor(
                         chatImage = image,
                         isGroup = false,
                         firstParticipantName = firstParticipantName,
-                        status = status
+                        status = status,
+                        attachedFiles = attachedFiles.toList(),
+                        pinnedMessages = info.pinnedMessages,
                     )
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 _uiState.value = ChatDialogUiState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    /**
+     * Loads the previous page of messages (older than currently shown). Called
+     * when the user scrolls near the top of the chat. Silently no-ops if
+     * there's nothing more to load or a request is already in flight.
+     */
+    fun loadOlderMessages() {
+        if (!hasMoreOlder) return
+        if (_isLoadingOlder.value) return
+        val dialogId = currentDialogID ?: return
+        val state = _uiState.value as? ChatDialogUiState.Success ?: return
+        val currentUserId = currentUser?.id ?: return
+        val oldestMessageId = state.chats.minByOrNull { it.createdAt }?.id ?: return
+
+        _isLoadingOlder.value = true
+        viewModelScope.launch {
+            try {
+                val older = chatInteractor.getMessagesWithOwnerInfo(
+                    currentUserId = currentUserId,
+                    dialogId = dialogId,
+                    limit = PAGE_SIZE,
+                    lastMessageId = oldestMessageId,
+                ).sortedBy { it.createdAt }
+
+                if (older.size < PAGE_SIZE) {
+                    hasMoreOlder = false
+                }
+                if (older.isNotEmpty()) {
+                    val existingIds = state.chats.map { it.id }.toHashSet()
+                    val merged = (older.filter { it.id !in existingIds } + state.chats)
+                        .sortedBy { it.createdAt }
+                    val latest = _uiState.value
+                    if (latest is ChatDialogUiState.Success) {
+                        _uiState.value = latest.copy(chats = merged)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isLoadingOlder.value = false
             }
         }
     }
@@ -736,14 +862,32 @@ class ChatDialogViewModel @Inject constructor(
     fun voteInPoll(pollId: String, optionIds: List<String>) {
         viewModelScope.launch {
             try {
-                val poll = chatInteractor.answerPoll(pollId, optionIds)
+                // Vote: server returns 200 with empty body. If it returns 400,
+                // the poll is already stopped or doesn't allow multiple answers.
+                chatInteractor.answerPoll(pollId, optionIds)
+
+                // Do NOT re-fetch via GET /dialogs/poll/:id — that endpoint is
+                // author-only and returns a minimal payload without the options
+                // array, which would wipe the locally cached options. Instead
+                // update the existing poll optimistically: mark the selected
+                // options as voted and adjust vote counts.
+                val selectedSet = optionIds.toSet()
                 val currentState = _uiState.value
                 if (currentState is ChatDialogUiState.Success) {
                     val updatedChats = currentState.chats.map { message ->
-                        when {
-                            poll.messageId != null && message.id == poll.messageId -> message.copy(poll = poll)
-                            message.poll?.id == poll.id -> message.copy(poll = poll)
-                            else -> message
+                        val poll = message.poll
+                        if (poll == null || poll.id != pollId) {
+                            message
+                        } else {
+                            // Optimistically highlight the user's choice. Vote
+                            // percentages (`pv`) are computed by the server and
+                            // cannot be recalculated client-side without raw
+                            // counts — they refresh with the next poll payload
+                            // from the socket / on chat reload.
+                            val updatedOptions = poll.options.map { option ->
+                                option.copy(isVoted = option.id in selectedSet)
+                            }
+                            message.copy(poll = poll.copy(options = updatedOptions))
                         }
                     }
                     _uiState.value = currentState.copy(chats = updatedChats)
@@ -758,14 +902,17 @@ class ChatDialogViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 chatInteractor.stopPoll(pollId)
-                val poll = chatInteractor.getPoll(pollId)
+                // Mark the local poll as stopped without re-fetching — GET
+                // /dialogs/poll/:id returns a minimal payload (no options) so
+                // we preserve what we already have from the message feed.
                 val currentState = _uiState.value
                 if (currentState is ChatDialogUiState.Success) {
                     val updatedChats = currentState.chats.map { message ->
-                        when {
-                            poll.messageId != null && message.id == poll.messageId -> message.copy(poll = poll)
-                            message.poll?.id == poll.id -> message.copy(poll = poll)
-                            else -> message
+                        val poll = message.poll
+                        if (poll != null && poll.id == pollId) {
+                            message.copy(poll = poll.copy(isStopped = true))
+                        } else {
+                            message
                         }
                     }
                     _uiState.value = currentState.copy(chats = updatedChats)
@@ -792,13 +939,20 @@ class ChatDialogViewModel @Inject constructor(
                     fileType = determineFileType(file)
                 )
             }
+            // Without a successfully uploaded file there is nothing to play, so
+            // do not send a contentless cType=4 message that would render as an
+            // empty bubble — surface the failure instead.
+            if (descriptor == null) {
+                Log.e("ChatViewModel", "Voice message upload failed — message not sent")
+                return@launch
+            }
             val message = if (dialog.id != 0L) {
                 ChatSocketMessage(
                     dialog = dialog.id,
                     cType = 4,
                     text = "",
                     owner = currentUser?.id.orEmpty(),
-                    files = descriptor?.let { listOf(it) }
+                    files = listOf(descriptor)
                 )
             } else {
                 val peer = dialog.interlocutor?.userId ?: return@launch
@@ -807,7 +961,7 @@ class ChatDialogViewModel @Inject constructor(
                     cType = 4,
                     text = "",
                     owner = currentUser?.id.orEmpty(),
-                    files = descriptor?.let { listOf(it) }
+                    files = listOf(descriptor)
                 )
             }
             socketService.sendMessage("message", message)
@@ -905,12 +1059,16 @@ class ChatDialogViewModel @Inject constructor(
                 val gson = Gson()
                 val socketMessage = gson.fromJson(jsonString, ChatSocketMessage::class.java)
 
-                // Skip call signaling messages — they must not appear in the chat history
+                // Call signaling messages must not appear in the chat history,
+                // but they do drive the "ongoing call" banner in the dialog.
                 val isCallSignal = socketMessage.cType in listOf(2, 3) &&
                     socketMessage.files.isNullOrEmpty() &&
                     socketMessage.text?.contains("звонок", ignoreCase = true) == true
                 val isCallEnded = socketMessage.cType == 6
-                if (isCallSignal || isCallEnded) return@launch
+                if (isCallSignal || isCallEnded) {
+                    updateActiveCallFromSignal(started = isCallSignal, cType = socketMessage.cType)
+                    return@launch
+                }
 
                 if ((currentDialogInfo?.id ?: 0L) == 0L && (socketMessage.dialog ?: 0L) != 0L) {
                     currentDialogInfo = currentDialogInfo?.copy(id = socketMessage.dialog!!)
@@ -966,6 +1124,7 @@ class ChatDialogViewModel @Inject constructor(
         val attachments = files?.mapNotNull { it.toChatFile() } ?: emptyList()
         val isMineMessage = owner == currentUser?.id
         val type = when (cType) {
+            4 -> MessageType.VOICE
             5 -> MessageType.SYSTEM
             9 -> MessageType.POLL
             else -> MessageType.TEXT
@@ -1016,35 +1175,46 @@ class ChatDialogViewModel @Inject constructor(
 
     companion object {
         private const val LISTENER_TAG = "ChatDialogViewModel"
+        private const val PAGE_SIZE = 30
     }
 }
 
 private fun ChatPoll.toDomain(messageId: Long?, questionFallback: String?): Poll {
     val sortedOptions = options.orEmpty().sortedBy { it.order ?: Int.MAX_VALUE }
+    val answeredIds = answeredOptionIds.orEmpty().toSet()
     return Poll(
         id = id.orEmpty(),
         dialogId = null,
         messageId = messageId,
         subject = (subject ?: questionFallback).orEmpty(),
-        isAnonymous = isAnonymous ?: false,
+        // Anonymity is not part of the chat preview — it only appears in the
+        // author-only REST detail (GET /dialogs/poll/:id).
+        isAnonymous = false,
         multipleAnswers = multipleAnswers ?: false,
         isQuiz = isQuiz ?: false,
-        isStopped = isStopped ?: false,
-        options = sortedOptions.map { it.toDomain() }
+        // `a == false` means the poll is finished; a missing `a` stays active.
+        isStopped = isActive == false,
+        options = sortedOptions.map { it.toDomain(answeredIds) },
+        authorId = author?.id,
     )
 }
 
-private fun ChatPollOption.toDomain(): PollOption = PollOption(
+private fun ChatPollOption.toDomain(answeredOptionIds: Set<String>): PollOption = PollOption(
     id = id.orEmpty(),
     value = value.orEmpty(),
     description = description,
-    isRightAnswer = null,
-    voteCount = voteCount ?: 0,
-    isVoted = isVoted ?: false,
+    isRightAnswer = isRightAnswer,
+    // The chat preview carries percentages (`pv`), not raw vote counts.
+    voteCount = 0,
+    percent = percent,
+    isVoted = id != null && id in answeredOptionIds,
     answeredUsers = emptyList()
 )
 
 private const val READ_STATUS = 3
+
+/** Статус участника звонка «Участвует» (см. docs/calls.md). */
+private const val CALL_STATUS_PARTICIPATING = 5
 
 private fun computeIsCurrentUserAdmin(info: DialogInfo, currentUserId: String?): Boolean {
     if (currentUserId.isNullOrEmpty()) return false
@@ -1092,6 +1262,9 @@ sealed class ChatDialogUiState {
         val attachedContact: ContactInfo? = null,
         val selectedContact: UserProfileFullInfo? = null,
         val editingMessage: MessageChat? = null,
+        val pinnedMessages: List<uddug.com.domain.entities.chat.PinnedMessagePreview> = emptyList(),
+        val activeCall: ActiveCall? = null,
+        val activeCallParticipantsCount: Int = 0,
     ) : ChatDialogUiState()
 
     data class Error(val message: String) : ChatDialogUiState()

@@ -53,7 +53,7 @@ fun Avatar(
             Text(
                 text = initials,
                 color = Color.White,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 fontSize = (size.value * 0.4f).sp
             )
         }

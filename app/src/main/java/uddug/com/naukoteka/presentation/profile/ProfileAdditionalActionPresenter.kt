@@ -1,5 +1,7 @@
 package uddug.com.naukoteka.presentation.profile
 
+import uddug.com.data.cache.cookies.CookiesCache
+import uddug.com.data.cache.user_id.UserIdCache
 import uddug.com.domain.interactors.user_profile.UserProfileInteractor
 import uddug.com.naukoteka.global.base.BasePresenterImpl
 import moxy.InjectViewState
@@ -9,7 +11,9 @@ import uddug.com.domain.entities.profile.UserProfileFullInfo
 @InjectConstructor
 @InjectViewState
 class ProfileAdditionalActionPresenter(
-    private val userProfileInteractor: UserProfileInteractor
+    private val userProfileInteractor: UserProfileInteractor,
+    private val cookiesCache: CookiesCache,
+    private val userIdCache: UserIdCache,
 ) : BasePresenterImpl<ProfileAdditionalActionView>() {
 
     private var profileFullInfo: UserProfileFullInfo? = null
@@ -35,5 +39,15 @@ class ProfileAdditionalActionPresenter(
     }
     fun selectOpenHelpWithSupport() {
         profileFullInfo?.let { this.viewState.helpWithSupport(it) }
+    }
+
+    fun selectExitProfile() {
+        viewState.openLogoutDialog()
+    }
+
+    fun selectConfirmExit() {
+        cookiesCache.clear()
+        userIdCache.clear()
+        viewState.openLoginPage()
     }
 }

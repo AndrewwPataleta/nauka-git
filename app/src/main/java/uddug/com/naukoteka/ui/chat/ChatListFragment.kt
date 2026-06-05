@@ -27,6 +27,10 @@ import uddug.com.naukoteka.ui.chat.ChatDialogFragment.Companion.DIALOG_ID
 import uddug.com.naukoteka.ui.chat.ChatDetailDialogFragment
 import uddug.com.naukoteka.ui.chat.compose.ChatListComponent
 import uddug.com.naukoteka.ui.theme.NaukotekaTheme
+import android.widget.Toast
+import com.google.android.material.snackbar.Snackbar
+import javax.inject.Inject
+import uddug.com.naukoteka.utils.SharedContentStore
 
 @AndroidEntryPoint
 class ChatListFragment : Fragment() {
@@ -34,6 +38,11 @@ class ChatListFragment : Fragment() {
     private var navigationView: ContainerNavigationView? = null
 
     private val viewModel: ChatListViewModel by viewModels()
+
+    @Inject
+    lateinit var sharedContentStore: SharedContentStore
+
+    private var shareSnackbar: Snackbar? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -103,25 +112,53 @@ class ChatListFragment : Fragment() {
             viewModel.events.collectLatest { state ->
                 when (state) {
                     is ChatListEvents.OpenDialogDetail -> {
-                        findNavController().navigate(
+                        navigateFromList(
                             R.id.chatDialogFragment,
-                            args = Bundle().apply {
-                                putLong(DIALOG_ID, state.dialogId)
-                            }
+                            Bundle().apply { putLong(DIALOG_ID, state.dialogId) },
                         )
                     }
 
                     ChatListEvents.OpenCreateDialog -> {
-                        findNavController().navigate(
-                            R.id.chatCreateSingleFragment,
-                            args = Bundle().apply {
-                             
-                            }
-                        )
+                        navigateFromList(R.id.chatCreateSingleFragment)
                     }
                 }
             }
         }
+        viewLifecycleOwner.lifecycleScope.launch {
+            sharedContentStore.uris.collectLatest { uris ->
+                if (uris.isNotEmpty()) {
+                    showShareBanner()
+                } else {
+                    shareSnackbar?.dismiss()
+                    shareSnackbar = null
+                }
+            }
+        }
+    }
+
+    /**
+     * Navigates away from the chat list, but only while chatListFragment is
+     * actually the current destination. A call teardown can over-pop the back
+     * stack and leave the NavController with no leaf destination; a raw
+     * navigate() there throws IllegalArgumentException and crashes the app.
+     */
+    private fun navigateFromList(destinationId: Int, args: Bundle? = null) {
+        val navController = findNavController()
+        if (navController.currentDestination?.id == R.id.chatListFragment) {
+            navController.navigate(destinationId, args)
+        }
+    }
+
+    private fun showShareBanner() {
+        val view = view ?: return
+        if (shareSnackbar?.isShown == true) return
+        shareSnackbar = Snackbar.make(
+            view,
+            getString(R.string.share_pick_chat_prompt),
+            Snackbar.LENGTH_INDEFINITE,
+        ).setAction(getString(R.string.share_cancel)) {
+            sharedContentStore.clear()
+        }.also { it.show() }
     }
 
     override fun onCreateView(

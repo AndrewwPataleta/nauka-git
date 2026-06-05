@@ -45,6 +45,7 @@ fun PollOptionDto.toDomain(): PollOption = PollOption(
     description = dsc,
     isRightAnswer = isRightAnswer,
     voteCount = voteCount ?: 0,
+    percent = null,
     isVoted = voted ?: false,
     answeredUsers = answeredUsers.orEmpty().map { it.toDomain() },
 )

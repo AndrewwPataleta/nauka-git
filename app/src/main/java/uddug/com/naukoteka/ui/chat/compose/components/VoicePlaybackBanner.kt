@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,7 +44,7 @@ fun VoicePlaybackBanner(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = Color.White,
+        color = colorResource(id = R.color.main_background),
         elevation = 4.dp
     ) {
         Row(
@@ -87,7 +88,7 @@ fun VoicePlaybackBanner(
                 modifier = Modifier.weight(1f),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF111827),
+                color = colorResource(id = R.color.main_text),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

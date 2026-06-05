@@ -5,5 +5,6 @@ data class CallParticipantState(
     val callId: Long,
     val userId: String,
     val mediaSessionId: String,
-    val state: CallSessionState,
+    // null, пока участник не передал своё медиа-состояние на бэк.
+    val state: CallSessionState?,
 )

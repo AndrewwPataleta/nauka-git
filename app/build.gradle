@@ -127,12 +127,41 @@ androidComponents {
             output.outputFileName.set(apkFileName)
         }
 
+        // ✅ Копируем готовый APK в корень проекта.
+        // AGP всегда кладёт APK глубоко в app/build/outputs/apk/<variant>/...,
+        // и его трудно найти. Этот таск дублирует собранный APK в корень
+        // репозитория. Корень проекта уже в .gitignore (*.apk), так что
+        // скопированный файл не попадёт в git.
+        def apkDir = variant.artifacts.get(
+            com.android.build.api.artifact.SingleArtifact.APK.INSTANCE
+        )
+        // ⚠️ Не используем тип Copy с `into rootProject` — тогда Gradle считает
+        // выходом задачи весь корень проекта и ругается на implicit dependency
+        // с задачами AGP (createApkListingFileRedirect и др.). Поэтому копируем
+        // файл вручную в doLast, не объявляя корень как output задачи.
+        def rootDir = rootProject.projectDir
+        def copyApkTask = tasks.register("copy${variant.name.capitalize()}ApkToRoot") {
+            doLast {
+                def srcDir = apkDir.get().asFile
+                def apk = srcDir.listFiles()?.find { it.name.endsWith(".apk") }
+                if (apk != null) {
+                    def dest = new File(rootDir, apkFileName)
+                    dest.bytes = apk.bytes
+                    println("✅ APK здесь: ${dest}")
+                } else {
+                    println("⚠️ APK не найден в ${srcDir}")
+                }
+            }
+        }
+
         // ✅ safe hook: задача может появиться позже — configureEach дождётся
         def assembleTaskName = "assemble${variant.name.capitalize()}"
         tasks.matching { it.name == assembleTaskName }.configureEach {
             doFirst {
                 println("Сборка APK: ${apkFileName}")
             }
+            // после сборки APK копируется в корень проекта
+            finalizedBy copyApkTask
         }
     }
 }
@@ -265,6 +294,7 @@ dependencies {
     implementation 'androidx.fragment:fragment-ktx:1.6.2'
     implementation "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.5.0"
     implementation "io.coil-kt:coil-compose:2.1.0"
+    implementation "io.coil-kt:coil-video:2.1.0"
     implementation("io.socket:socket.io-client:2.1.2") {
         exclude group: "org.json", module: "json"
     }

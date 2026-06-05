@@ -4,6 +4,7 @@ import javax.inject.Inject
 import uddug.com.data.mapper.toDomain
 import uddug.com.data.mapper.toDto
 import uddug.com.data.services.CallApiService
+import uddug.com.data.services.models.request.call.StartRecordingRequestDto
 import uddug.com.data.services.models.request.call.UpdateCallPermitsRequestDto
 import uddug.com.data.services.models.request.call.UpdateCallStateRequestDto
 import uddug.com.data.services.models.request.call.UpdateCallStatusRequestDto
@@ -67,8 +68,11 @@ class CallRepositoryImpl @Inject constructor(
         callApiService.stopCall(callId)
     }
 
-    override suspend fun startRecording(dialogId: Long) {
-        callApiService.startRecording(dialogId)
+    override suspend fun startRecording(dialogId: Long, name: String) {
+        callApiService.startRecording(
+            dialogId = dialogId,
+            request = StartRecordingRequestDto(name = name),
+        )
     }
 
     override suspend fun stopRecording(dialogId: Long) {

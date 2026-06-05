@@ -3,10 +3,12 @@ package uddug.com.data.services.models.response.chat
 import uddug.com.domain.entities.chat.ActiveCall
 import uddug.com.domain.entities.chat.DialogInfo
 import uddug.com.domain.entities.chat.File
+import uddug.com.domain.entities.chat.PinnedMessagePreview
 import uddug.com.domain.entities.chat.User
 
 
 fun mapDialogInfoDtoToDomain(dto: DialogInfoDto): DialogInfo {
+    val dialogUsersById = dto.users?.associateBy { it.userId } ?: emptyMap()
     return DialogInfo(
         id = dto.id,
         name = dto.name,
@@ -19,8 +21,33 @@ fun mapDialogInfoDtoToDomain(dto: DialogInfoDto): DialogInfo {
         isPinned = dto.isPinned ?: false,
         isUnread = dto.isUnread ?: false,
         pinnedMessageId = dto.pinnedMessageId,
+        pinnedMessages = dto.pinnedMessages
+            ?.mapNotNull { mapPinnedMessagePreview(it, dialogUsersById) }
+            ?: emptyList(),
         activeCall = dto.activeCall?.let { mapActiveCallDtoToDomain(it) },
         permits = dto.permits ?: emptyList()
+    )
+}
+
+private fun mapPinnedMessagePreview(
+    dto: MessagePreviewDto,
+    dialogUsersById: Map<String?, UserDto>,
+): PinnedMessagePreview? {
+    val ownerId = dto.owner?.userId
+    val fallbackUser = ownerId?.let { dialogUsersById[it] }
+    val ownerName = dto.owner?.fullName
+        ?: dto.owner?.nickname
+        ?: fallbackUser?.fullName
+        ?: fallbackUser?.nickname
+    val ownerAvatarUrl = dto.owner?.image?.path ?: fallbackUser?.image?.path
+    return PinnedMessagePreview(
+        id = dto.id,
+        text = dto.text,
+        messageType = dto.messageType,
+        ownerId = ownerId,
+        ownerName = ownerName,
+        ownerAvatarUrl = ownerAvatarUrl,
+        hasAttachment = !dto.files.isNullOrEmpty(),
     )
 }
 

@@ -1,11 +1,14 @@
 package uddug.com.naukoteka.ui.call
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Toast
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.runtime.collectAsState
@@ -23,6 +26,7 @@ import kotlinx.coroutines.launch
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallViewModel
+import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity
 import uddug.com.naukoteka.ui.call.compose.CallScreen
 import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
@@ -32,8 +36,14 @@ import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 class GroupCallFragment : Fragment() {
 
     private val viewModel: CallViewModel by activityViewModels()
+    private var navigationView: ContainerNavigationView? = null
     private var hasHandledCallFinish: Boolean = false
     private var pendingStartCallRequest: PendingStartCallRequest? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        navigationView = requireActivity() as? ContainerNavigationView
+    }
 
     private val callPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -67,7 +77,9 @@ class GroupCallFragment : Fragment() {
         val contactName = arguments?.getString(ARG_CONTACT_NAME)
         val avatarUrl = arguments?.getString(ARG_AVATAR_URL)
         val dialogId = arguments?.getLong(ARG_DIALOG_ID)
-        val isVideoCall = arguments?.getBoolean(ARG_IS_VIDEO_CALL) ?: true
+        // Default to audio: never enable the camera unless the call is
+        // explicitly a video call.
+        val isVideoCall = arguments?.getBoolean(ARG_IS_VIDEO_CALL) ?: false
         val resolvedDialogId = dialogId ?: viewModel.uiState.value.dialogId ?: 0L
 
         ensureCallPermissions(
@@ -91,11 +103,10 @@ class GroupCallFragment : Fragment() {
                         onToggleMicrophone = viewModel::toggleMicrophone,
                         onToggleCamera = viewModel::toggleCamera,
                         onToggleRecording = viewModel::toggleRecording,
+                        onStartRecording = viewModel::startRecording,
                         onMinimize = {
-                            if (!((requireActivity() as? ContainerActivity)?.enterCallPictureInPictureMode() ?: false)) {
-                                showFloatingCall()
-                                navigateBackToChatList()
-                            }
+                            showFloatingCall()
+                            navigateBackToChatList()
                         },
                         onRemoteRendererReady = viewModel::bindRemoteRenderer,
                         onRemoteRendererReleased = { viewModel.clearRemoteRenderer() },
@@ -104,6 +115,14 @@ class GroupCallFragment : Fragment() {
                         onReleaseLocalRenderer = viewModel::clearLocalRenderer,
                         onReleaseRemoteRenderer = viewModel::clearRemoteRenderer,
                         clearRemoteRenderer = viewModel::clearRemoteRenderer,
+                        onBindParticipantRenderer = { participantId, renderer ->
+                            viewModel.bindParticipantRenderer(participantId, renderer)
+                        },
+                        onReleaseParticipantRenderer = { participantId ->
+                            viewModel.releaseParticipantRenderer(participantId)
+                        },
+                        onMuteParticipant = { viewModel.muteParticipant(it) },
+                        onToastConsumed = viewModel::consumeToast,
                         onMicPermissionDenied = viewModel::onMicPermissionDenied,
                         onAudioFocusFailed = viewModel::onAudioFocusFailed,
                     )
@@ -115,6 +134,20 @@ class GroupCallFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         observeCallState()
+        observeToasts()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        navigationView?.showNavigationBottomBar(false)
+        requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        viewModel.ensureSpeakerphoneOn()
+        viewModel.onAppResumed()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     private fun observeCallState() {
@@ -131,13 +164,30 @@ class GroupCallFragment : Fragment() {
         }
     }
 
+    private fun observeToasts() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.toastEvents.collect { message ->
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     private fun handleCallFinished() {
         if (hasHandledCallFinish) return
 
         hasHandledCallFinish = true
         viewModel.endCall()
         removeFloatingCall()
-        findNavController().popBackStack()
+        runCatching {
+            val navController = findNavController()
+            // Pop only while this call screen is still the current destination —
+            // see SingleCallFragment.handleCallFinished for the over-pop rationale.
+            if (navController.currentDestination?.id == R.id.groupCallFragment) {
+                navController.popBackStack()
+            }
+        }
     }
 
     private fun showFloatingCall() {
@@ -159,10 +209,12 @@ class GroupCallFragment : Fragment() {
     }
 
     private fun navigateBackToChatList() {
-        val navController = requireActivity().findNavController(R.id.main_nav_host_fragment)
-        val popped = navController.popBackStack(R.id.chatListFragment, false)
-        if (!popped) {
-            navController.navigate(R.id.chatListFragment)
+        runCatching {
+            val navController = requireActivity().findNavController(R.id.main_nav_host_fragment)
+            val popped = navController.popBackStack(R.id.chatListFragment, false)
+            if (!popped) {
+                navController.navigate(R.id.chatListFragment)
+            }
         }
     }
 
@@ -206,6 +258,7 @@ class GroupCallFragment : Fragment() {
             avatarUrl = request.avatarUrl,
             callTitle = request.callTitle,
             isVideoCall = request.isVideoCall,
+            isGroupCall = true,
         )
     }
 

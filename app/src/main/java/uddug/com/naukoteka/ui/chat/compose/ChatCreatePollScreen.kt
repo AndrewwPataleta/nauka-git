@@ -201,28 +201,32 @@ private fun SettingsSection(
     onMultipleChange: (Boolean) -> Unit,
     onQuizModeChange: (Boolean) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = stringResource(R.string.chat_create_poll_settings_section),
             color = Color(0xFF1F1F1F),
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold
         )
+        Text(
+            text = stringResource(R.string.chat_create_poll_settings_description),
+            color = Color(0xFF6F6F7B),
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
         PollSettingItem(
             title = stringResource(R.string.chat_create_poll_setting_anonymous),
-            description = stringResource(R.string.chat_create_poll_setting_anonymous_description),
             checked = state.isAnonymous,
             onCheckedChange = onAnonymousChange
         )
         PollSettingItem(
             title = stringResource(R.string.chat_create_poll_setting_multiple),
-            description = stringResource(R.string.chat_create_poll_setting_multiple_description),
             checked = state.allowMultipleAnswers,
             onCheckedChange = onMultipleChange
         )
         PollSettingItem(
             title = stringResource(R.string.chat_create_poll_setting_quiz),
-            description = stringResource(R.string.chat_create_poll_setting_quiz_description),
             checked = state.isQuizMode,
             onCheckedChange = onQuizModeChange
         )
@@ -232,32 +236,20 @@ private fun SettingsSection(
 @Composable
 private fun PollSettingItem(
     title: String,
-    description: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth(),
-//            .background(Color(0xFFF5F5F9), RoundedCornerShape(16.dp))
-//            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                color = Color(0xFF6F6F7B),
-                fontSize = 18.sp,
-                lineHeight = 18.sp
-            )
-//            Spacer(modifier = Modifier.height(4.dp))
-//            Text(
-//                text = description,
-//                color = Color(0xFF6F6F7B),
-//                fontSize = 13.sp,
-//                lineHeight = 18.sp
-//            )
-        }
+        Text(
+            text = title,
+            color = Color(0xFF1F1F1F),
+            fontSize = 15.sp,
+            lineHeight = 20.sp,
+            modifier = Modifier.weight(1f),
+        )
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
@@ -265,7 +257,7 @@ private fun PollSettingItem(
                 checkedThumbColor = Color.White,
                 checkedTrackColor = Color(0xFF2E83D9),
                 uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = Color(0xFFE0E0E8)
+                uncheckedTrackColor = Color(0xFFE0E0E8),
             )
         )
     }
@@ -327,9 +319,28 @@ private fun PollOptionField(
                         checkedColor = Color(0xFF2E83D9),
                         uncheckedColor = Color(0xFFB0B2C3),
                         checkmarkColor = Color.White,
-                        disabledColor = Color(0xFFE0E0E8)
+                        disabledColor = Color(0xFFE0E0E8),
                     )
                 )
+            } else {
+                Icon(
+                    imageVector = Icons.Outlined.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFFB0B2C3),
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+        },
+        trailingIcon = {
+            if (value.isNotBlank()) {
+                IconButton(onClick = { onValueChange("") }) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = null,
+                        tint = Color(0xFF8F8FA0),
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
         },
         singleLine = true,
@@ -342,8 +353,9 @@ private fun PollOptionField(
             cursorColor = Color(0xFF2E83D9),
             textColor = Color(0xFF1F1F1F),
             placeholderColor = Color(0xFF8F8FA0),
-            leadingIconColor = if (isQuizMode) Color.Unspecified else Color(0xFFB0B2C3),
-            disabledLeadingIconColor = if (isQuizMode) Color.Unspecified else Color(0xFFB0B2C3)
+            leadingIconColor = Color.Unspecified,
+            disabledLeadingIconColor = Color.Unspecified,
+            trailingIconColor = Color(0xFF8F8FA0),
         )
     )
 }

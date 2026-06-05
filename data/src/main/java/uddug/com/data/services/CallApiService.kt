@@ -6,6 +6,8 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
+import uddug.com.data.services.models.request.call.StartRecordingRequestDto
 import uddug.com.data.services.models.request.call.UpdateCallPermitsRequestDto
 import uddug.com.data.services.models.request.call.UpdateCallStateRequestDto
 import uddug.com.data.services.models.request.call.UpdateCallStatusRequestDto
@@ -13,40 +15,43 @@ import uddug.com.data.services.models.response.call.CallParticipantDto
 
 interface CallApiService {
 
-    @GET("calls/dialog/{dialogId}/participants")
+    @GET("chat/v1/calls/dialog/{dialogId}/participants")
     suspend fun getParticipants(
         @Path("dialogId") dialogId: Long,
+        // details bitmask: 1 — include fullName & imageUrl. See docs/calls.md.
+        @Query("details") details: Int = 1,
     ): List<CallParticipantDto>
 
-    @PATCH("calls/dialog/{dialogId}/status")
+    @PATCH("chat/v1/calls/dialog/{dialogId}/status")
     suspend fun updateStatus(
         @Path("dialogId") dialogId: Long,
         @Body request: UpdateCallStatusRequestDto,
     )
 
-    @PATCH("calls/dialog/{dialogId}/permits")
+    @PATCH("chat/v1/calls/dialog/{dialogId}/permits")
     suspend fun updatePermits(
         @Path("dialogId") dialogId: Long,
         @Body request: UpdateCallPermitsRequestDto,
     )
 
-    @PATCH("calls/dialog/{dialogId}/state")
+    @PATCH("chat/v1/calls/dialog/{dialogId}/state")
     suspend fun updateState(
         @Path("dialogId") dialogId: Long,
         @Body request: UpdateCallStateRequestDto,
     )
 
-    @POST("calls/{callId}/stop")
+    @POST("chat/v1/calls/{callId}/stop")
     suspend fun stopCall(
         @Path("callId") callId: Long,
     )
 
-    @PUT("calls/record/start/dialog/{dialogId}")
+    @PUT("chat/v1/calls/record/start/dialog/{dialogId}")
     suspend fun startRecording(
         @Path("dialogId") dialogId: Long,
+        @Body request: StartRecordingRequestDto,
     )
 
-    @PUT("calls/record/stop/dialog/{dialogId}")
+    @PUT("chat/v1/calls/record/stop/dialog/{dialogId}")
     suspend fun stopRecording(
         @Path("dialogId") dialogId: Long,
     )

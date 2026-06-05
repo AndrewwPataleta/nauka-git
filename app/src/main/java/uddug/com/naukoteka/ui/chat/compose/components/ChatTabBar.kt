@@ -5,7 +5,6 @@ import ChatCard
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,9 +22,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -41,6 +43,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.domain.entities.chat.MessageType
@@ -85,63 +88,10 @@ fun ChatTabBar(
     }
 
     Box {
-        folderActionsTarget?.let { target ->
-            val folder = target.folder
-            AlertDialog(
-                onDismissRequest = { folderActionsTarget = null },
-                containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
-                text = {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        FolderActionItem(
-                            icon = painterResource(R.drawable.ic_create_new_folder),
-                            text = stringResource(R.string.chat_folder_menu_configure)
-                        ) {
-                            folderActionsTarget = null
-                            onOpenFolderSettings()
-                        }
-                        if (!target.isMainFolder) {
-                            FolderActionItem(
-                                icon = painterResource(R.drawable.ic_settings),
-                                text = stringResource(R.string.chat_folder_action_rename)
-                            ) {
-                                folderActionsTarget = null
-                                onEditFolder(folder.id)
-                            }
-                        }
-                        FolderActionItem(
-                            icon = painterResource(R.drawable.ic_nonread_chat_folder),
-                            text = stringResource(R.string.chat_folder_action_mark_read)
-                        ) {
-                            folderActionsTarget = null
-                            viewModel.markFolderAsRead(folder.id)
-                        }
-                        FolderActionItem(
-                            icon = painterResource(R.drawable.ic_swap_possition_folder),
-                            text = stringResource(R.string.chat_folder_menu_change_order)
-                        ) {
-                            folderActionsTarget = null
-                            onChangeFolderOrder()
-                        }
-                        if (!target.isMainFolder) {
-                            Divider()
-                            FolderActionItem(
-                                icon = painterResource(R.drawable.ic_remove_folder),
-                                text = stringResource(R.string.chat_folder_action_delete)
-                            ) {
-                                folderActionsTarget = null
-                                folderToDelete = folder
-                            }
-                        }
-                    }
-                },
-                confirmButton = {},
-                dismissButton = {}
-            )
-        }
-
         folderToDelete?.let { folder ->
             AlertDialog(
                 onDismissRequest = { folderToDelete = null },
+                containerColor = colorResource(id = R.color.main_background),
                 title = { Text(text = stringResource(R.string.chat_folder_action_delete_confirm_title)) },
                 text = {
                     Text(
@@ -183,9 +133,9 @@ fun ChatTabBar(
             ) {
                 if (folders.isNotEmpty()) {
                     TabRow(
-                        modifier = Modifier
-                            .weight(1f)
-                            .background(colorResource(id = R.color.main_background)),
+                        modifier = Modifier.weight(1f),
+                        containerColor = colorResource(id = R.color.main_background),
+                        contentColor = colorResource(id = R.color.main_text),
                         selectedTabIndex = selectedTabIndex,
                         indicator = { tabPositions ->
                             if (tabPositions.isNotEmpty()) {
@@ -257,23 +207,50 @@ fun ChatTabBar(
                     Spacer(modifier = Modifier.weight(1f))
                 }
 
-                IconButton(
-                    onClick = {
-                        val folder = folders.getOrNull(selectedTabIndex)
-                        if (folder != null) {
-                            folderActionsTarget = FolderActionsTarget(
-                                folder = folder,
-                                isMainFolder = mainFolderId != null && folder.id == mainFolderId
-                            )
-                        } else {
-                            onOpenFolderSettings()
+                Box {
+                    IconButton(
+                        onClick = {
+                            val folder = folders.getOrNull(selectedTabIndex)
+                            if (folder != null) {
+                                folderActionsTarget = FolderActionsTarget(
+                                    folder = folder,
+                                    isMainFolder = mainFolderId != null && folder.id == mainFolderId
+                                )
+                            } else {
+                                onOpenFolderSettings()
+                            }
                         }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = stringResource(R.string.chat_folder_menu_configure),
+                            tint = colorResource(id = R.color.secondary_text)
+                        )
                     }
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.MoreVert,
-                        contentDescription = stringResource(R.string.chat_folder_menu_configure),
-                        tint = colorResource(id = R.color.secondary_text)
+
+                    FolderActionsMenu(
+                        target = folderActionsTarget,
+                        onDismiss = { folderActionsTarget = null },
+                        onConfigure = {
+                            folderActionsTarget = null
+                            onOpenFolderSettings()
+                        },
+                        onRename = { folder ->
+                            folderActionsTarget = null
+                            onEditFolder(folder.id)
+                        },
+                        onMarkRead = { folder ->
+                            folderActionsTarget = null
+                            viewModel.markFolderAsRead(folder.id)
+                        },
+                        onChangeOrder = {
+                            folderActionsTarget = null
+                            onChangeFolderOrder()
+                        },
+                        onDelete = { folder ->
+                            folderActionsTarget = null
+                            folderToDelete = folder
+                        },
                     )
                 }
             }
@@ -351,6 +328,7 @@ fun ChatTabBar(
                                 selectionMode = isSelectionMode,
                                 isSelected = selectedChats.contains(chat.dialogId),
                                 messageType = messageType,
+                                hasActiveCall = chat.activeCall != null,
                                 onSelectChange = { onChatSelect(chat.dialogId) },
                                 onChatClick = {
                                     viewModel.onChatClick(it)
@@ -373,25 +351,97 @@ private data class FolderActionsTarget(
 )
 
 @Composable
+private fun FolderActionsMenu(
+    target: FolderActionsTarget?,
+    onDismiss: () -> Unit,
+    onConfigure: () -> Unit,
+    onRename: (ChatFolder) -> Unit,
+    onMarkRead: (ChatFolder) -> Unit,
+    onChangeOrder: () -> Unit,
+    onDelete: (ChatFolder) -> Unit,
+) {
+    // surfaceTint must equal surface: Material3 blends surfaceTint over surface for
+    // the tonal-elevation overlay, and Color.Transparent (RGB 0,0,0) would tint it gray.
+    val menuBackground = colorResource(id = R.color.main_background)
+    val menuColorScheme = MaterialTheme.colorScheme.copy(
+        surface = menuBackground,
+        surfaceTint = menuBackground,
+    )
+    MaterialTheme(colorScheme = menuColorScheme) {
+        DropdownMenu(
+            expanded = target != null,
+            onDismissRequest = onDismiss,
+            offset = DpOffset(x = 0.dp, y = 4.dp),
+        ) {
+            val folder = target?.folder ?: return@DropdownMenu
+            val isMainFolder = target.isMainFolder
+
+            FolderActionItem(
+                icon = painterResource(R.drawable.ic_create_new_folder),
+                text = stringResource(R.string.chat_folder_menu_configure),
+                onClick = onConfigure,
+            )
+            if (!isMainFolder) {
+                FolderActionItem(
+                    icon = painterResource(R.drawable.ic_settings),
+                    text = stringResource(R.string.chat_folder_action_rename),
+                    onClick = { onRename(folder) },
+                )
+            }
+            FolderActionItem(
+                icon = painterResource(R.drawable.ic_nonread_chat_folder),
+                text = stringResource(R.string.chat_folder_action_mark_read),
+                onClick = { onMarkRead(folder) },
+            )
+            FolderActionItem(
+                icon = painterResource(R.drawable.ic_swap_possition_folder),
+                text = stringResource(R.string.chat_folder_menu_change_order),
+                onClick = onChangeOrder,
+            )
+            if (!isMainFolder) {
+                Divider(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    color = colorResource(id = R.color.main_background_input_stroke),
+                )
+                FolderActionItem(
+                    icon = painterResource(R.drawable.ic_remove_folder),
+                    text = stringResource(R.string.chat_folder_action_delete),
+                    onClick = { onDelete(folder) },
+                    destructive = true,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun FolderActionItem(
     icon: Painter,
     text: String,
     onClick: () -> Unit,
+    destructive: Boolean = false,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier.size(24.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Image(painter = icon, contentDescription = null)
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(text = text)
+    val contentColor = if (destructive) {
+        colorResource(id = R.color.color_error)
+    } else {
+        colorResource(id = R.color.main_text)
     }
+    DropdownMenuItem(
+        text = {
+            Text(
+                text = text,
+                fontSize = 15.sp,
+                color = contentColor,
+            )
+        },
+        onClick = onClick,
+        leadingIcon = {
+            Image(
+                painter = icon,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+        },
+        contentPadding = PaddingValues(horizontal = 16.dp),
+    )
 }

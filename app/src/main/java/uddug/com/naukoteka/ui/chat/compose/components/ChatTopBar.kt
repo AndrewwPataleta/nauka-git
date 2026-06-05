@@ -40,7 +40,7 @@ fun ChatTopBar(
     status: String?,
     firstParticipantName: String? = null,
     onDetailClick: () -> Unit,
-    onSearchClick: () -> Unit,
+    onCallClick: () -> Unit = {},
     onBackPressed: () -> Unit,
     onMoreClick: () -> Unit,
 ) {
@@ -86,7 +86,7 @@ fun ChatTopBar(
                     Text(
                         text = name,
                         style = MaterialTheme.typography.subtitle1.copy(
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colors.onBackground
                         )
                     )
@@ -102,10 +102,12 @@ fun ChatTopBar(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                IconButton(onClick = { onSearchClick() }) {
+                // Кнопка звонка одинаковая в личных и групповых чатах:
+                // в группе она запускает групповой звонок.
+                IconButton(onClick = { onCallClick() }) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_search_chat),
-                        contentDescription = "Search",
+                        painter = painterResource(id = R.drawable.ic_profile_call),
+                        contentDescription = "Call",
                         tint = MaterialTheme.colors.primary
                     )
                 }

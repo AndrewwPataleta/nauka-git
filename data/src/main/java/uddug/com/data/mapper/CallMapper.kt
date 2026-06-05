@@ -11,6 +11,8 @@ fun CallParticipantDto.toDomain(): CallParticipant = CallParticipant(
     id = id,
     callId = call,
     userId = user,
+    fullName = fullName,
+    imageUrl = imageUrl,
     status = status,
     states = states.map { it.toDomain() },
     roles = roles,
@@ -22,7 +24,7 @@ fun CallParticipantStateDto.toDomain(): CallParticipantState = CallParticipantSt
     callId = call,
     userId = user,
     mediaSessionId = mediaSessionId,
-    state = state.toDomain(),
+    state = state?.toDomain(),
 )
 
 fun CallSessionStateDto.toDomain(): CallSessionState = CallSessionState(

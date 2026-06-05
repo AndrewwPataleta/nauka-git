@@ -17,8 +17,20 @@ data class DialogInfo(
     val isPinned: Boolean,
     val isUnread: Boolean,
     val pinnedMessageId: Long?,
+    val pinnedMessages: List<PinnedMessagePreview> = emptyList(),
     val activeCall: ActiveCall?,
     val permits: List<String>,
+): Parcelable
+
+@Parcelize
+data class PinnedMessagePreview(
+    val id: Long,
+    val text: String?,
+    val messageType: Int?,
+    val ownerId: String?,
+    val ownerName: String?,
+    val ownerAvatarUrl: String?,
+    val hasAttachment: Boolean,
 ): Parcelable
 
 @Parcelize

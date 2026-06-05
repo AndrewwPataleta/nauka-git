@@ -118,7 +118,7 @@ fun ChatCreateSingleScreen(
                             text = stringResource(R.string.subs),
                             fontSize = 18.sp,
                             color = MaterialTheme.colors.onBackground,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(vertical = 10.dp)
                         )
                     }

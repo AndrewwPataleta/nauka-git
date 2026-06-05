@@ -87,6 +87,7 @@ interface ChatApiService {
     @GET("chat/v1/dialogs/info/{dialogId}")
     suspend fun getDialogInfo(
         @Path("dialogId") dialogId: Long,
+        @Query("details") details: Int? = null,
     ): DialogInfoDto
 
     @GET("chat/v1/dialogs/info/by-peer/{interlocutorId}")
@@ -245,7 +246,7 @@ interface ChatApiService {
     suspend fun createPoll(@Body request: CreatePollRequestDto): PollDto
 
     @POST("chat/v1/dialogs/poll/{pollId}/stop")
-    suspend fun stopPoll(@Path("pollId") pollId: String): Boolean
+    suspend fun stopPoll(@Path("pollId") pollId: String)
 
     @DELETE("chat/v1/dialogs/poll/{pollId}")
     suspend fun deletePoll(@Path("pollId") pollId: String)
@@ -253,11 +254,13 @@ interface ChatApiService {
     @GET("chat/v1/dialogs/poll/{pollId}")
     suspend fun getPoll(@Path("pollId") pollId: String): PollDto
 
+    // Server returns HTTP 200 with an empty body on success. Do NOT declare a
+    // response type — Gson would choke on EOF.
     @PUT("chat/v1/dialogs/poll/{pollId}/answer")
     suspend fun answerPoll(
         @Path("pollId") pollId: String,
         @Body request: AnswerPollRequestDto,
-    ): PollDto
+    )
 
     @GET("chat/v1/dialogs/poll/{pollId}/answer-users/{optionId}")
     suspend fun getPollAnswerUsers(

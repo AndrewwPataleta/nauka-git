@@ -58,3 +58,15 @@ build
 local.properties
 
 app/src/main/play
+
+# Local documentation (not for version control)
+docs/
+
+# Local tooling / assistant config (not for version control)
+.claude/
+CLAUDE.md
+.codex/
+AGENTS.md
+.cursor/
+.cursorrules
+.aider*

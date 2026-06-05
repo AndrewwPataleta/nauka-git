@@ -86,7 +86,7 @@ fun ChatInputBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFEAEAF2))
+                .background(colorResource(R.color.main_background_input_stroke))
                 .height(1.dp)
         )
 
@@ -102,7 +102,7 @@ fun ChatInputBar(
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(colorResource(R.color.main_background))
                     .padding(horizontal = 8.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -156,7 +156,7 @@ fun ChatInputBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(colorResource(R.color.main_background))
                     .padding(horizontal = 12.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -171,7 +171,7 @@ fun ChatInputBar(
                         text = contact.fullName.orEmpty(),
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp,
-                        color = Color(0xFF1F1F1F)
+                        color = colorResource(R.color.main_text)
                     )
                     val phone = contact.phone ?: contact.phone2 ?: contact.phone3
                     phone?.takeIf { it.isNotBlank() }?.let {
@@ -197,7 +197,7 @@ fun ChatInputBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(colorResource(R.color.main_background))
                     .padding(horizontal = 12.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -212,7 +212,7 @@ fun ChatInputBar(
                         text = contact.name,
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp,
-                        color = Color(0xFF1F1F1F)
+                        color = colorResource(R.color.main_text)
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -236,7 +236,7 @@ fun ChatInputBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White)
+                        .background(colorResource(R.color.main_background))
                         .padding(horizontal = 8.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -275,7 +275,7 @@ fun ChatInputBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White)
+                        .background(colorResource(R.color.main_background))
                         .padding(horizontal = 8.dp, vertical = 8.dp)
                         .pointerInput(Unit) {
                             detectHorizontalDragGestures(
@@ -333,7 +333,7 @@ fun ChatInputBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White)
+                        .background(colorResource(R.color.main_background))
                         .padding(horizontal = 8.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -355,11 +355,13 @@ fun ChatInputBar(
                             .height(54.dp)
                             .border(
                                 width = 1.dp,
-                                color = Color(0xFFEAEAF2),
+                                color = colorResource(R.color.main_background_input_stroke),
                                 shape = RoundedCornerShape(12.dp)
                             ),
                         colors = TextFieldDefaults.textFieldColors(
-                            backgroundColor = Color.White,
+                            backgroundColor = colorResource(R.color.main_background),
+                            textColor = colorResource(R.color.main_text),
+                            cursorColor = colorResource(R.color.object_main),
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),
@@ -394,7 +396,7 @@ private fun ReplyInfoBlock(reply: MessageChat, onCancelReply: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(colorResource(R.color.main_background))
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -416,7 +418,7 @@ private fun ReplyInfoBlock(reply: MessageChat, onCancelReply: () -> Unit) {
             Text(
                 text = reply.ownerName ?: "",
                 color = iconColor,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp
             )
             Text(
@@ -442,7 +444,7 @@ private fun EditInfoBlock(message: MessageChat, onCancelEdit: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(colorResource(R.color.main_background))
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -464,7 +466,7 @@ private fun EditInfoBlock(message: MessageChat, onCancelEdit: () -> Unit) {
             Text(
                 text = stringResource(id = R.string.chat_editing_title),
                 color = accentColor,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp
             )
             Text(
@@ -501,19 +503,17 @@ fun RecordedAudioPreview(duration: String, isPlaying: Boolean, onPlay: () -> Uni
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .background(Color.White, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = if (isPlaying) painterResource(id = R.drawable.ic_stop_voice) else painterResource(
-                        id = R.drawable.ic_play_voice
-                    ),
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                )
-            }
+            // ic_play_voice / ic_stop_voice — самодостаточные иконки (белый
+            // круг + синий глиф). Рисуем их напрямую, без обёртки в белый Box
+            // и без Icon(tint=...), иначе многоцветная иконка схлопывается в
+            // сплошной кружок.
+            Image(
+                painter = painterResource(
+                    id = if (isPlaying) R.drawable.ic_stop_voice else R.drawable.ic_play_voice
+                ),
+                contentDescription = if (isPlaying) "Pause" else "Play",
+                modifier = Modifier.size(32.dp),
+            )
             Image(
                 painter = painterResource(id = R.drawable.background_voice_wave),
                 contentDescription = null,

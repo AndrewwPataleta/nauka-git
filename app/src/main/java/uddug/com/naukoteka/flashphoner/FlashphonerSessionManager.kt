@@ -109,6 +109,8 @@ class FlashphonerSessionManager @Inject constructor(
         return room
     }
 
+    fun isRoomJoined(): Boolean = roomRef.get() != null
+
     fun publishToCurrentRoom(
         streamName: String,
         renderer: SurfaceViewRenderer? = null,

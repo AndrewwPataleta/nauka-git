@@ -40,28 +40,35 @@ private fun FileDto.toDomain(): File = File(
 fun MessagePollDto.toDomain(questionFallback: String?, messageId: Long): Poll {
     val optionDtos = options ?: shortOptions ?: emptyList()
     val sortedOptions = optionDtos.sortedBy { it.order ?: Int.MAX_VALUE }
+    val answeredIds = answeredOptionIds?.toSet().orEmpty()
     return Poll(
         id = id ?: shortId.orEmpty(),
-        dialogId = dialogId ?: shortDialogId,
+        dialogId = dialogId,
         messageId = messageId,
         subject = (subject ?: shortSubject ?: questionFallback).orEmpty(),
         isAnonymous = isAnonymous ?: shortIsAnonymous ?: false,
         multipleAnswers = multipleAnswers ?: shortMultipleAnswers ?: false,
         isQuiz = isQuiz ?: shortIsQuiz ?: false,
         isStopped = isStopped ?: shortIsStopped ?: false,
-        options = sortedOptions.map { it.toDomain() },
+        options = sortedOptions.map { it.toDomain(answeredIds) },
     )
 }
 
-fun MessagePollOptionDto.toDomain(): PollOption = PollOption(
-    id = id ?: shortId.orEmpty(),
-    value = (value ?: shortValue).orEmpty(),
-    description = description ?: shortDescription,
-    isRightAnswer = isRightAnswer ?: shortIsRightAnswer,
-    voteCount = voteCount ?: shortVoteCount ?: 0,
-    isVoted = voted ?: shortVoted ?: false,
-    answeredUsers = emptyList(),
-)
+fun MessagePollOptionDto.toDomain(answeredIds: Set<String> = emptySet()): PollOption {
+    val optionId = id ?: shortId.orEmpty()
+    return PollOption(
+        id = optionId,
+        value = (value ?: shortValue).orEmpty(),
+        description = description ?: shortDescription,
+        isRightAnswer = isRightAnswer ?: shortIsRightAnswer,
+        voteCount = voteCount ?: 0,
+        percent = shortPercent,
+        // Voted is derived from poll-level `aa` array; fall back to legacy
+        // `voted` field for REST payloads that still use it.
+        isVoted = optionId in answeredIds || voted == true,
+        answeredUsers = emptyList(),
+    )
+}
 
 private fun String.toInstantOrEpoch(): Instant =
     runCatching { Instant.parse(this) }.getOrElse { Instant.EPOCH }

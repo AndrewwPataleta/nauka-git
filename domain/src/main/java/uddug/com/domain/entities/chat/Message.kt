@@ -29,12 +29,13 @@ data class Attachment(
 )
 
 enum class MessageType {
-    TEXT, SYSTEM, POLL, UNKNOWN;
+    TEXT, SYSTEM, POLL, VOICE, UNKNOWN;
 
     companion object {
         fun fromInt(value: Int): MessageType = when (value) {
             1 -> TEXT
             2 -> SYSTEM
+            4 -> VOICE
             5 -> SYSTEM
             6 -> SYSTEM
             9 -> POLL

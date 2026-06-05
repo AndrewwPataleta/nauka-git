@@ -39,6 +39,7 @@ fun MessageFunctionsBottomSheetDialog(
     onEdit: (MessageChat) -> Unit,
     onForward: (MessageChat) -> Unit,
     isCurrentUserAdmin: Boolean = false,
+    isPollAuthor: Boolean = false,
     onRevotePoll: (MessageChat) -> Unit = {},
     onStopPoll: (MessageChat) -> Unit = {},
     viewModel: MessageFunctionsViewModel = hiltViewModel(),
@@ -69,7 +70,9 @@ fun MessageFunctionsBottomSheetDialog(
                     if (message.poll != null && message.poll?.isStopped == true) {
                         add(R.string.chat_message_revote to { onRevotePoll(message) })
                     }
-                    if (isCurrentUserAdmin && message.poll != null && message.poll?.isStopped == false) {
+                    // Завершить опрос может только его автор (см. спецификацию
+                    // опросов), а не администратор чата.
+                    if (isPollAuthor && message.poll != null && message.poll?.isStopped == false) {
                         add(R.string.chat_message_stop_quiz to { onStopPoll(message) })
                     }
                     add(R.string.chat_message_forward to { onForward(message) })

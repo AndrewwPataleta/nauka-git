@@ -30,9 +30,16 @@ import uddug.com.naukoteka.mvvm.call.IncomingCallEvent
 import uddug.com.naukoteka.mvvm.call.IncomingCallViewModel
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallViewModel
+import android.net.Uri
+import android.widget.Toast
 import androidx.core.content.ContextCompat
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import uddug.com.naukoteka.services.NaukotekaPushService
 import uddug.com.naukoteka.services.IncomingCallSocketService
+import uddug.com.naukoteka.utils.SharedContentStore
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerPresenter
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerView
@@ -54,6 +61,17 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
     @Inject
     lateinit var flashphonerEnvironment: FlashphonerEnvironment
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface SharedContentStoreEntryPoint {
+        fun sharedContentStore(): SharedContentStore
+    }
+
+    private val sharedContentStore: SharedContentStore by lazy {
+        EntryPointAccessors.fromApplication(applicationContext, SharedContentStoreEntryPoint::class.java)
+            .sharedContentStore()
+    }
 
     private val incomingCallViewModel: IncomingCallViewModel by viewModels()
     private val callViewModel: CallViewModel by viewModels()
@@ -82,6 +100,7 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         const val SELECTED_COUNTRY_ID = "selectedCountryId"
         const val EDUCATION_SCREEN_TYPE = "education_screen_type"
         const val DYNAMIC_SETTINGS_FORM = "dynamic_settings_form"
+        private const val FRAGMENTS_STATE_KEY = "android:support:fragments"
     }
 
     @ProvidePresenter
@@ -90,7 +109,14 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        // Drop saved FragmentManager state — the NavController dynamically swaps
+        // between nav graphs (chat/sphere/profile) on bottom-nav switches, so a
+        // restored back stack may reference a destination that is not in the
+        // currently-inflated graph, causing IllegalArgumentException during
+        // NavHostFragment.onCreate. Starting the fragment state fresh is safer
+        // than crashing the app.
+        val cleanedState = savedInstanceState?.also { it.remove(FRAGMENTS_STATE_KEY) }
+        super.onCreate(cleanedState)
         setContentView(contentView.root)
 
         notificationPermissionRequester = NotificationPermissionRequester(this)
@@ -116,6 +142,7 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
         handleIncomingCallIntent(intent)
         handleChatDialogIntent(intent)
+        handleShareIntent(intent)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -163,6 +190,11 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
                 else -> true
             }
         }
+
+        // Default to chat tab on startup (graph XML also starts on nav_graph_chat).
+        if (savedInstanceState == null) {
+            contentView.bottomNav.menu.getItem(3).setChecked(true)
+        }
     }
 
 
@@ -171,6 +203,7 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         if (intent != null) {
             handleIncomingCallIntent(intent)
             handleChatDialogIntent(intent)
+            handleShareIntent(intent)
         }
     }
 
@@ -181,7 +214,11 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        contentView.bottomNav.isVisible = !isInPictureInPictureMode
+        if (isInPictureInPictureMode) {
+            contentView.bottomNav.isVisible = false
+        }
+        // On exit from PiP let the active fragment's onResume decide visibility
+        // (e.g. call fragments keep the bottom bar hidden).
     }
 
     fun enterCallPictureInPictureMode(): Boolean {
@@ -264,6 +301,57 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
     }
 
 
+    private fun handleShareIntent(intent: Intent) {
+        val uris: List<Uri> = when (intent.action) {
+            Intent.ACTION_SEND -> {
+                @Suppress("DEPRECATION")
+                val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                } else {
+                    intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+                }
+                listOfNotNull(uri)
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                @Suppress("DEPRECATION")
+                val list = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                } else {
+                    intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+                }
+                list?.toList() ?: emptyList()
+            }
+            else -> return
+        }
+
+        if (uris.isEmpty()) return
+
+        sharedContentStore.push(uris)
+        Toast.makeText(
+            this,
+            getString(R.string.share_pick_chat_prompt),
+            Toast.LENGTH_SHORT,
+        ).show()
+
+        // On cold start via share-intent the NavHostFragment hasn't yet published its
+        // NavController when onCreate runs, so findNavController() throws. Defer the
+        // navigation to the next frame, and guard with runCatching either way. Even
+        // if nav fails, the XML start destination is nav_graph_chat, so the user
+        // lands on ChatListFragment where the pending share banner is shown.
+        contentView.root.post {
+            runCatching {
+                val navController = findNavController(R.id.main_nav_host_fragment)
+                if (navController.graph.id != R.id.nav_graph_chat) {
+                    navController.setGraph(R.navigation.nav_graph_chat)
+                }
+                contentView.bottomNav.menu.getItem(3).setChecked(true)
+            }
+        }
+        // Clear the action so a back-press or re-entry doesn't re-trigger it.
+        intent.action = null
+        intent.removeExtra(Intent.EXTRA_STREAM)
+    }
+
     private fun handleIncomingCallIntent(intent: Intent) {
         val shouldOpenIncomingCall = intent.getBooleanExtra(
             NaukotekaPushService.EXTRA_OPEN_INCOMING_CALL,
@@ -291,6 +379,8 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
                 contactName = intent.getStringExtra(SingleCallFragment.ARG_CONTACT_NAME),
                 avatarUrl = intent.getStringExtra(SingleCallFragment.ARG_AVATAR_URL),
                 callTitle = intent.getStringExtra(SingleCallFragment.ARG_CALL_TITLE),
+                isGroupCall = intent.getBooleanExtra(SingleCallFragment.ARG_IS_GROUP_CALL, false),
+                isVideoCall = intent.getBooleanExtra(SingleCallFragment.ARG_IS_VIDEO_CALL, false),
             )
         )
         intent.removeExtra(NaukotekaPushService.EXTRA_OPEN_INCOMING_CALL)
@@ -306,37 +396,62 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         val dialogId = intent.getLongExtra(IncomingCallSocketService.EXTRA_CHAT_DIALOG_ID, -1L)
         if (dialogId <= 0) return
 
-        val navController = findNavController(R.id.main_nav_host_fragment)
-        if (navController.graph.id != R.id.nav_graph_chat) {
-            navController.setGraph(R.navigation.nav_graph_chat)
-            contentView.bottomNav.menu.getItem(3).setChecked(true)
+        // Deferred + guarded for the same reason as handleIncomingCall: on a
+        // cold start from a notification tap the NavController isn't ready yet.
+        contentView.root.post {
+            runCatching {
+                val navController = findNavController(R.id.main_nav_host_fragment)
+                if (navController.graph.id != R.id.nav_graph_chat) {
+                    navController.setGraph(R.navigation.nav_graph_chat)
+                    contentView.bottomNav.menu.getItem(3).setChecked(true)
+                }
+                navController.navigate(
+                    R.id.chatDialogFragment,
+                    Bundle().apply {
+                        putLong("DIALOG_ID", dialogId)
+                    },
+                )
+            }
         }
-        navController.navigate(
-            R.id.chatDialogFragment,
-            Bundle().apply {
-                putLong("DIALOG_ID", dialogId)
-            },
-        )
         intent.removeExtra(IncomingCallSocketService.EXTRA_OPEN_CHAT_DIALOG)
     }
 
     private fun handleIncomingCall(event: IncomingCallEvent) {
         incomingCallViewModel.clearPendingIncomingCall()
-        val navController = findNavController(R.id.main_nav_host_fragment)
-        if (navController.graph.id != R.id.nav_graph_chat) {
-            navController.setGraph(R.navigation.nav_graph_chat)
-            contentView.bottomNav.menu.getItem(3).setChecked(true)
-        }
-        navController.navigate(
-            R.id.singleCallFragment,
-            Bundle().apply {
-                putString(SingleCallFragment.ARG_CONTACT_NAME, event.contactName)
-                putString(SingleCallFragment.ARG_AVATAR_URL, event.avatarUrl.orEmpty())
-                putLong(SingleCallFragment.ARG_DIALOG_ID, event.dialogId)
-                putString(SingleCallFragment.ARG_CALL_TITLE, event.callTitle)
-                putBoolean(SingleCallFragment.ARG_IS_INCOMING_CALL, true)
+        // The call screen (singleCallFragment) lives in nav_graph_chat. When
+        // this runs from a notification tap inside onCreate/onNewIntent the
+        // NavHostFragment hasn't published its NavController yet, so a direct
+        // findNavController() throws and the call never opens. Defer to the
+        // next frame and guard with runCatching (same as handleShareIntent).
+        contentView.root.post {
+            runCatching {
+                val navController = findNavController(R.id.main_nav_host_fragment)
+                val currentDestination = navController.currentDestination?.id
+                // A call screen is already open (e.g. duplicate event from both
+                // the replayed flow and the pending-call store) — don't stack.
+                if (currentDestination == R.id.singleCallFragment ||
+                    currentDestination == R.id.groupCallFragment
+                ) {
+                    return@runCatching
+                }
+                if (navController.graph.id != R.id.nav_graph_chat) {
+                    navController.setGraph(R.navigation.nav_graph_chat)
+                    contentView.bottomNav.menu.getItem(3).setChecked(true)
+                }
+                navController.navigate(
+                    R.id.singleCallFragment,
+                    Bundle().apply {
+                        putString(SingleCallFragment.ARG_CONTACT_NAME, event.contactName)
+                        putString(SingleCallFragment.ARG_AVATAR_URL, event.avatarUrl.orEmpty())
+                        putLong(SingleCallFragment.ARG_DIALOG_ID, event.dialogId)
+                        putString(SingleCallFragment.ARG_CALL_TITLE, event.callTitle)
+                        putBoolean(SingleCallFragment.ARG_IS_INCOMING_CALL, true)
+                        putBoolean(SingleCallFragment.ARG_IS_GROUP_CALL, event.isGroupCall)
+                        putBoolean(SingleCallFragment.ARG_IS_VIDEO_CALL, event.isVideoCall)
+                    }
+                )
             }
-        )
+        }
     }
 
     private fun handleCallEnded(dialogId: Long) {

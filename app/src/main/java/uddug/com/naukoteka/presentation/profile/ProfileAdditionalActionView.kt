@@ -22,4 +22,8 @@ interface ProfileAdditionalActionView : MvpView, LoadingView, InformativeView {
     fun openAppProfileSettings(userProfileFullInfo: UserProfileFullInfo)
 
     fun helpWithSupport(userProfileFullInfo: UserProfileFullInfo)
+
+    fun openLogoutDialog()
+
+    fun openLoginPage()
 }

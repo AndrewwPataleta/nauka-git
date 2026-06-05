@@ -5,6 +5,7 @@ import android.app.DownloadManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Environment
 import android.widget.Toast
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -49,10 +51,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 
 
@@ -68,9 +73,11 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -80,7 +87,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.colorResource
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.decode.VideoFrameDecoder
+import coil.request.ImageRequest
+import coil.request.videoFrameMillis
 import com.bumptech.glide.Glide
 import com.stfalcon.imageviewer.StfalconImageViewer
 import uddug.com.domain.entities.chat.MediaFile
@@ -95,8 +107,12 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailShimmer
 import uddug.com.naukoteka.ui.chat.compose.components.FileFunctionAction
 import uddug.com.naukoteka.ui.chat.compose.components.FileFunctionsBottomSheetDialog
+import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDuration
+import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDurationFromMillis
+import uddug.com.naukoteka.ui.chat.compose.util.parseVoiceDurationToMillis
 import uddug.com.naukoteka.ui.chat.compose.util.uriToFile
 import uddug.com.naukoteka.ui.theme.NauTheme
+import kotlinx.coroutines.delay
 import uddug.com.naukoteka.utils.copyToClipboard
 import java.time.Instant
 import java.time.ZoneId
@@ -166,7 +182,7 @@ fun ChatDetailDialogComponent(
                     Text(
                         text = stringResource(R.string.chat_group_info_title),
                         fontSize = 20.sp,
-                        color = Color(0xFF10101C)
+                        color = colorResource(id = R.color.main_text)
                     )
                 },
                 actions = {
@@ -190,7 +206,7 @@ fun ChatDetailDialogComponent(
                         )
                     }
                 },
-                backgroundColor = Color.White,
+                backgroundColor = colorResource(id = R.color.main_background),
                 elevation = 0.dp
             )
         }
@@ -276,7 +292,7 @@ fun ChatDetailDialogComponent(
                         Text(
                             text = state.profile.fullName.orEmpty(),
                             fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
@@ -385,9 +401,9 @@ fun ChatDetailDialogComponent(
                     }
 
                     TabRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.background),
+                        modifier = Modifier.fillMaxWidth(),
+                        containerColor = colorResource(id = R.color.main_background),
+                        contentColor = colorResource(id = R.color.main_text),
                         selectedTabIndex = selectedTabIndex,
                         indicator = { tabPositions ->
                             TabRowDefaults.Indicator(
@@ -408,7 +424,7 @@ fun ChatDetailDialogComponent(
                                             maxLines = 1,
                                             style = TextStyle(
                                                 fontSize = 14.sp,
-                                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Bold,
+                                                fontWeight = if (selectedTabIndex == index) FontWeight.SemiBold else FontWeight.SemiBold,
                                                 color = if (selectedTabIndex == index) {
                                                     MaterialTheme.colorScheme.onBackground
                                                 } else {
@@ -481,7 +497,12 @@ fun MediaContent(items: List<MediaMessage>) {
             columns = GridCells.Fixed(3),
             modifier = Modifier.padding(8.dp)
         ) {
-            itemsIndexed(items, key = { _, item -> item.file.id }) { index, item ->
+            itemsIndexed(
+                items,
+                // The same file id can appear in several messages (e.g. forwarded
+                // media), so file.id alone is not unique — combine with messageId.
+                key = { index, item -> "${item.messageId}_${item.file.id}_$index" },
+            ) { index, item ->
                 Box(
                     modifier = Modifier
                         .padding(4.dp)
@@ -558,7 +579,10 @@ fun FilesContent(items: List<MediaMessage>) {
             .fillMaxSize()
             .padding(8.dp)
     ) {
-        items(items, key = { it.file.id }) { item ->
+        itemsIndexed(
+            items,
+            key = { index, item -> "${item.messageId}_${item.file.id}_$index" },
+        ) { _, item ->
             FileItem(
                 item = item,
                 onShowOptions = { selectedItem = it }
@@ -740,32 +764,383 @@ private fun CallOptionItem(
 
 @Composable
 fun VoiceContent(items: List<MediaMessage>) {
+    if (items.isEmpty()) {
+        EmptyTabPlaceholder(stringResource(R.string.chat_detail_voice_empty))
+        return
+    }
+
+    val context = LocalContext.current
+    val mediaPlayer = remember { MediaPlayer() }
+
+    var playingKey by remember { mutableStateOf<String?>(null) }
+    var isPlaying by remember { mutableStateOf(false) }
+    var isPreparing by remember { mutableStateOf(false) }
+    var positionMs by remember { mutableStateOf(0L) }
+    var durationMs by remember { mutableStateOf(0L) }
+
+    fun resetPlayback() {
+        playingKey = null
+        isPlaying = false
+        isPreparing = false
+        positionMs = 0L
+        durationMs = 0L
+        mediaPlayer.setOnPreparedListener(null)
+        mediaPlayer.setOnCompletionListener(null)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            runCatching { mediaPlayer.reset() }
+            mediaPlayer.release()
+        }
+    }
+
+    LaunchedEffect(playingKey, isPlaying, isPreparing) {
+        while (isPlaying) {
+            positionMs = runCatching { mediaPlayer.currentPosition.toLong() }
+                .getOrDefault(positionMs)
+            delay(200)
+        }
+    }
+
+    fun onVoiceClick(key: String, item: MediaMessage) {
+        if (playingKey == key) {
+            if (isPreparing) return
+            if (isPlaying) {
+                runCatching { mediaPlayer.pause() }
+                isPlaying = false
+            } else {
+                runCatching { mediaPlayer.start() }
+                isPlaying = true
+            }
+            return
+        }
+
+        runCatching { mediaPlayer.reset() }
+        playingKey = key
+        isPreparing = true
+        isPlaying = false
+        positionMs = 0L
+        durationMs = parseVoiceDurationToMillis(item.file.duration) ?: 0L
+
+        try {
+            mediaPlayer.setOnPreparedListener { player ->
+                isPreparing = false
+                isPlaying = true
+                durationMs = player.duration.toLong()
+                player.start()
+            }
+            mediaPlayer.setOnCompletionListener {
+                runCatching { mediaPlayer.reset() }
+                resetPlayback()
+            }
+            mediaPlayer.setDataSource(BuildConfig.IMAGE_SERVER_URL + item.file.path)
+            mediaPlayer.prepareAsync()
+        } catch (error: Exception) {
+            runCatching { mediaPlayer.reset() }
+            resetPlayback()
+            Toast.makeText(
+                context,
+                context.getString(R.string.chat_voice_message_playback_error),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp)
     ) {
-        items(items) { item ->
-            Text(
-                text = item.file.fileName,
-                modifier = Modifier.padding(4.dp)
+        itemsIndexed(
+            items,
+            key = { index, item -> "${item.messageId}_${item.file.id}_$index" },
+        ) { index, item ->
+            val key = "${item.messageId}_${item.file.id}_$index"
+            val isCurrent = playingKey == key
+            VoiceMessageItem(
+                item = item,
+                isPlaying = isCurrent && isPlaying,
+                isLoading = isCurrent && isPreparing,
+                progress = if (isCurrent && durationMs > 0L) {
+                    (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
+                } else {
+                    0f
+                },
+                elapsedText = if (isCurrent && positionMs > 0L) {
+                    formatVoiceDurationFromMillis(positionMs)
+                } else {
+                    null
+                },
+                onClick = { onVoiceClick(key, item) }
             )
         }
     }
 }
 
 @Composable
-fun NotesContent(items: List<MediaMessage>) {
-    LazyColumn(
+private fun VoiceMessageItem(
+    item: MediaMessage,
+    isPlaying: Boolean,
+    isLoading: Boolean,
+    progress: Float,
+    elapsedText: String?,
+    onClick: () -> Unit,
+) {
+    val accent = MaterialTheme.colorScheme.primary
+    val totalDuration = remember(item.file.duration) {
+        formatVoiceDuration(item.file.duration)
+    }
+    val title = item.sender?.fullName?.takeIf { it.isNotBlank() } ?: item.file.fileName
+    val durationText = when {
+        elapsedText != null && totalDuration != null -> "$elapsedText / $totalDuration"
+        elapsedText != null -> elapsedText
+        else -> totalDuration
+    }
+
+    Card(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp)
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        elevation = 0.dp,
+        backgroundColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(width = 1.dp, color = NauTheme.extendedColors.inputStroke)
     ) {
-        items(items) { item ->
-            Text(
-                text = item.file.fileName,
-                modifier = Modifier.padding(4.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(accent),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    isLoading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                    }
+
+                    isPlaying -> {
+                        Row {
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 4.dp, height = 14.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(Color.White)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 4.dp, height = 14.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(Color.White)
+                            )
+                        }
+                    }
+
+                    else -> {
+                        Icon(
+                            imageVector = Icons.Filled.PlayArrow,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(NauTheme.extendedColors.inputStroke)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(accent)
+                    )
+                }
+                if (!durationText.isNullOrEmpty()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = durationText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NotesContent(items: List<MediaMessage>) {
+    if (items.isEmpty()) {
+        EmptyTabPlaceholder(stringResource(R.string.chat_detail_records_empty))
+        return
+    }
+
+    val context = LocalContext.current
+    val videoImageLoader = remember {
+        ImageLoader.Builder(context)
+            .components { add(VideoFrameDecoder.Factory()) }
+            .crossfade(true)
+            .build()
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopStart
+    ) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.padding(8.dp)
+        ) {
+            itemsIndexed(
+                items,
+                key = { index, item -> "${item.messageId}_${item.file.id}_$index" },
+            ) { _, item ->
+                RecordVideoItem(
+                    item = item,
+                    imageLoader = videoImageLoader,
+                    onClick = {
+                        openRecordingVideo(
+                            context,
+                            BuildConfig.IMAGE_SERVER_URL + item.file.path
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecordVideoItem(
+    item: MediaMessage,
+    imageLoader: ImageLoader,
+    onClick: () -> Unit,
+) {
+    val context = LocalContext.current
+    val durationText = remember(item.file.duration) {
+        formatVoiceDuration(item.file.duration)
+    }
+    val thumbnailRequest = remember(item.file.path) {
+        ImageRequest.Builder(context)
+            .data(BuildConfig.IMAGE_SERVER_URL + item.file.path)
+            .videoFrameMillis(1_000)
+            .crossfade(true)
+            .build()
+    }
+
+    Box(
+        modifier = Modifier
+            .padding(4.dp)
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF1D2239))
+            .clickable(onClick = onClick)
+    ) {
+        AsyncImage(
+            model = thumbnailRequest,
+            imageLoader = imageLoader,
+            contentDescription = "Video recording",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color(0x991D2239))
+                    )
+                )
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color(0x99000000)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.PlayArrow,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
             )
         }
+        if (!durationText.isNullOrEmpty()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(6.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color(0xCC000000))
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = durationText,
+                    color = Color.White,
+                    fontSize = 11.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyTabPlaceholder(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+private fun openRecordingVideo(context: Context, videoUrl: String) {
+    runCatching {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.parse(videoUrl), "video/*")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(intent)
+    }.onFailure {
+        Toast.makeText(
+            context,
+            context.getString(R.string.chat_record_open_error),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 }

@@ -3,6 +3,8 @@ package uddug.com.naukoteka.ui.chat.compose.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,9 +22,12 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -98,29 +103,36 @@ private fun BottomSheetItem(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val isHighlighted = isSelected || isPressed
+
+    val accentColor = colorResource(id = R.color.object_main)
+    val backgroundColor = colorResource(id = R.color.background_more_info)
+
     Column(
         modifier = Modifier
             .width(72.dp)
-            .clickable { onClick() },
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
                 .size(56.dp)
                 .background(
-                    color = if (isSelected) {
-                        colorResource(id = R.color.object_main)
-                    } else {
-                        colorResource(id = R.color.background_more_info)
-                    },
-                    shape = CircleShape
+                    color = if (isHighlighted) accentColor else backgroundColor,
+                    shape = CircleShape,
                 ),
             contentAlignment = Alignment.Center
         ) {
             Image(
                 painter = icon,
                 contentDescription = text,
-                colorFilter = null,
+                colorFilter = if (isHighlighted) ColorFilter.tint(Color.White) else null,
                 modifier = Modifier.size(24.dp)
             )
         }

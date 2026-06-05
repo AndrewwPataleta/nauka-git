@@ -90,6 +90,9 @@ class LoginFragment : BaseFragment(R.layout.fragment_login), LoginView, BackButt
 
     override fun showSuccessLogin() {
         startActivity(Intent(requireContext(), ContainerActivity::class.java))
+        // See SplashFragment.showContainerActivity: AuthActivity must not stay
+        // behind ContainerActivity as a separate singleInstance task.
+        requireActivity().finish()
     }
 
     private fun showIsValidEmail(isValid: Boolean){

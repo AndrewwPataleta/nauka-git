@@ -13,6 +13,7 @@ data class DialogInfoDto(
     val isPinned: Boolean,
     val isUnread: Boolean,
     val pinnedMessageId: Long?,
+    val pinnedMessages: List<MessagePreviewDto>? = null,
     val activeCall: ActiveCallDto?,
     val permits: List<String>
 )

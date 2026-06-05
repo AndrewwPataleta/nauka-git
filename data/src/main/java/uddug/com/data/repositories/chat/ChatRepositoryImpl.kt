@@ -34,6 +34,7 @@ import uddug.com.data.services.models.response.chat.mapDialogInfoDtoToDomain
 import uddug.com.data.services.models.response.chat.SearchDialogDto
 import uddug.com.data.services.models.response.chat.SearchMessageDto
 import uddug.com.data.services.models.response.chat.toDomain
+import uddug.com.domain.entities.chat.ActiveCall
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.ChatFolderDetails
@@ -210,6 +211,16 @@ class ChatRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             println("Error getting dialog info by peer: ${e.message}")
             throw e
+        }
+    }
+
+    override suspend fun getDialogActiveCall(dialogId: Long): ActiveCall? {
+        return try {
+            val dialogInfoDto = apiService.getDialogInfo(dialogId, details = ACTIVE_CALL_DETAILS)
+            mapDialogInfoDtoToDomain(dialogInfoDto).activeCall
+        } catch (e: Exception) {
+            println("Error getting dialog active call: ${e.message}")
+            null
         }
     }
 
@@ -528,7 +539,9 @@ class ChatRepositoryImpl @Inject constructor(
         return apiService.createPoll(request).toDomain()
     }
 
-    override suspend fun stopPoll(pollId: String): Boolean = apiService.stopPoll(pollId)
+    override suspend fun stopPoll(pollId: String) {
+        apiService.stopPoll(pollId)
+    }
 
     override suspend fun deletePoll(pollId: String) {
         apiService.deletePoll(pollId)
@@ -536,9 +549,9 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun getPoll(pollId: String): Poll = apiService.getPoll(pollId).toDomain()
 
-    override suspend fun answerPoll(pollId: String, optionIds: List<String>): Poll {
+    override suspend fun answerPoll(pollId: String, optionIds: List<String>) {
         val request = AnswerPollRequestDto(optionIds)
-        return apiService.answerPoll(pollId, request).toDomain()
+        apiService.answerPoll(pollId, request)
     }
 
     override suspend fun getPollAnswerUsers(
@@ -549,6 +562,11 @@ class ChatRepositoryImpl @Inject constructor(
     ): List<UserProfileFullInfo> {
         return apiService.getPollAnswerUsers(pollId, optionId, limit, page)
             .map { it.toDomain() }
+    }
+
+    private companion object {
+        /** Битовая маска details для dialogs/info: бит 2 — включить поле activeCall. */
+        const val ACTIVE_CALL_DETAILS = 2
     }
 }
 

@@ -14,6 +14,12 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -23,12 +29,19 @@ import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.Icon
@@ -49,10 +62,15 @@ import com.stfalcon.imageviewer.StfalconImageViewer
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,11 +83,13 @@ import uddug.com.naukoteka.mvvm.chat.ContactInfo
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.ui.chat.compose.components.ChatInputBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageDateBadge
+import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageItem
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.AttachOptionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.ChatTopBar
+import uddug.com.naukoteka.ui.chat.compose.components.PinnedMessageBanner
 import uddug.com.naukoteka.ui.chat.compose.components.VoicePlaybackBanner
 import uddug.com.naukoteka.ui.chat.compose.components.MessageListShimmer
 import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDuration
@@ -87,12 +107,12 @@ import java.time.ZoneId
 
 private enum class AttachmentPickerType { MEDIA, FILE }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ChatDialogComponent(
     viewModel: ChatDialogViewModel,
     onBackPressed: () -> Unit,
-    onSearchClick: () -> Unit,
+    onCallClick: (name: String, avatar: String, isVideoCall: Boolean) -> Unit = { _, _, _ -> },
     onContactClick: () -> Unit,
     onCreatePoll: () -> Unit,
     onOpenPollResults: (String) -> Unit,
@@ -113,14 +133,29 @@ fun ChatDialogComponent(
     var showAttachmentSheet by remember { mutableStateOf(false) }
     var pendingPickerType by remember { mutableStateOf<AttachmentPickerType?>(null) }
     var showMoreDialog by remember { mutableStateOf(false) }
+    var showCallOptions by remember { mutableStateOf(false) }
+    val callSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val currentDialogId by viewModel.currentDialogId.collectAsState()
     val isCurrentUserAdmin by viewModel.isCurrentUserAdmin.collectAsState()
+    val currentUserId by viewModel.currentUserId.collectAsState()
     val notificationsDisabled by viewModel.notificationsDisabled.collectAsState()
     val pollRevoteTriggers = remember { mutableStateMapOf<String, Int>() }
     val isGroupChat = when (val state = uiState) {
         is ChatDialogUiState.Success -> state.isGroup
         is ChatDialogUiState.Loading -> state.isGroup
         else -> false
+    }
+
+    // Paginate older messages when the user scrolls near the top of the list.
+    val shouldLoadOlder by remember {
+        androidx.compose.runtime.derivedStateOf {
+            val firstVisible = scrollState.firstVisibleItemIndex
+            val totalItems = scrollState.layoutInfo.totalItemsCount
+            totalItems > 0 && firstVisible <= 3
+        }
+    }
+    LaunchedEffect(shouldLoadOlder) {
+        if (shouldLoadOlder) viewModel.loadOlderMessages()
     }
 
     val audioRecorder = remember { AudioRecorder(context) }
@@ -146,13 +181,33 @@ fun ChatDialogComponent(
         }
     }
 
-    fun openImageViewer(file: ChatAttachmentFile) {
-        val imageUrl = BuildConfig.IMAGE_SERVER_URL + file.path
+    fun openImageViewerByUrl(imageUrl: String) {
         StfalconImageViewer.Builder<String>(context, listOf(imageUrl)) { imageView, image ->
             Glide.with(context)
                 .load(image)
                 .into(imageView)
         }.show()
+    }
+
+    fun openImageViewer(file: ChatAttachmentFile) {
+        val imageUrl = BuildConfig.IMAGE_SERVER_URL + file.path
+        openImageViewerByUrl(imageUrl)
+    }
+
+    fun openVideoPlayer(videoUrl: String) {
+        runCatching {
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                setDataAndType(android.net.Uri.parse(videoUrl), "video/*")
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(intent)
+        }.onFailure {
+            android.widget.Toast.makeText(
+                context,
+                "Не удалось открыть видео",
+                android.widget.Toast.LENGTH_SHORT,
+            ).show()
+        }
     }
 
     DisposableEffect(Unit) {
@@ -376,7 +431,6 @@ fun ChatDialogComponent(
                         status = state.status,
                         firstParticipantName = state.firstParticipantName,
                         onDetailClick = {},
-                        onSearchClick = onSearchClick,
                         onBackPressed = { onBackPressed() },
                         onMoreClick = {}
                     )
@@ -471,9 +525,42 @@ fun ChatDialogComponent(
                             onDetailClick = {
                                 viewModel.onChatDetailClick()
                             },
-                            onSearchClick = onSearchClick,
+                            onCallClick = { showCallOptions = true },
                             onBackPressed = { onBackPressed() },
                             onMoreClick = { showMoreDialog = true }
+                        )
+                        state.pinnedMessages.firstOrNull()?.let { pinned ->
+                            PinnedMessageBanner(
+                                message = pinned,
+                                onClick = {
+                                    val targetIndex = messages.indexOfFirst { it.id == pinned.id }
+                                    if (targetIndex >= 0) {
+                                        scope.launch {
+                                            scrollState.animateScrollToItem(targetIndex)
+                                        }
+                                    }
+                                },
+                            )
+                        }
+                    }
+
+                    state.activeCall?.let { activeCall ->
+                        // Treat the call as video only when explicitly flagged
+                        // (type/format 3). Otherwise it is audio — joining must
+                        // not turn the camera on.
+                        val isVideoCall = activeCall.type == 3 || activeCall.format == 3
+                        OngoingCallBanner(
+                            isVideoCall = isVideoCall,
+                            participantsCount = state.activeCallParticipantsCount,
+                            avatarUrl = state.chatImage,
+                            callTitle = state.chatName,
+                            onJoinClick = {
+                                onCallClick(
+                                    state.chatName,
+                                    state.chatImage,
+                                    isVideoCall,
+                                )
+                            },
                         )
                     }
 
@@ -538,7 +625,14 @@ fun ChatDialogComponent(
                                 onPollResults = { pollId ->
                                     onOpenPollResults(pollId)
                                 },
-                                pollRevoteTrigger = message.poll?.let { pollRevoteTriggers[it.id] ?: 0 } ?: 0
+                                pollRevoteTrigger = message.poll?.let { pollRevoteTriggers[it.id] ?: 0 } ?: 0,
+                                onImageClick = { url -> openImageViewerByUrl(url) },
+                                onVideoClick = { url -> openVideoPlayer(url) },
+                                onVoiceMessageClick = { msg, file ->
+                                    handleVoiceMessageClick(msg, file)
+                                },
+                                isPollAuthor = message.poll?.authorId != null &&
+                                    message.poll?.authorId == currentUserId,
                             )
                         }
                     }
@@ -721,6 +815,8 @@ fun ChatDialogComponent(
                     onForwardMessage(msg)
                 },
                 isCurrentUserAdmin = isCurrentUserAdmin,
+                isPollAuthor = message.poll?.authorId != null &&
+                    message.poll?.authorId == currentUserId,
                 onRevotePoll = { msg ->
                     msg.poll?.id?.let { pollId ->
                         val current = pollRevoteTriggers[pollId] ?: 0
@@ -762,6 +858,176 @@ fun ChatDialogComponent(
                 showMoreDialog = false
             }
         }
+        if (showCallOptions) {
+            val callState = uiState as? ChatDialogUiState.Success
+            ModalBottomSheet(
+                onDismissRequest = { showCallOptions = false },
+                sheetState = callSheetState,
+                containerColor = MaterialTheme.colors.background,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(top = 16.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        text = stringResource(R.string.call_create_title),
+                        style = MaterialTheme.typography.subtitle1.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colors.onBackground,
+                        ),
+                    )
+                    CallOptionItem(
+                        icon = Icons.Filled.Phone,
+                        text = stringResource(R.string.call_audio),
+                    ) {
+                        showCallOptions = false
+                        onCallClick(
+                            callState?.chatName.orEmpty(),
+                            callState?.chatImage.orEmpty(),
+                            false,
+                        )
+                    }
+                    CallOptionItem(
+                        icon = Icons.Filled.Call,
+                        text = stringResource(R.string.call_video),
+                    ) {
+                        showCallOptions = false
+                        onCallClick(
+                            callState?.chatName.orEmpty(),
+                            callState?.chatImage.orEmpty(),
+                            true,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OngoingCallBanner(
+    isVideoCall: Boolean,
+    participantsCount: Int,
+    avatarUrl: String?,
+    callTitle: String?,
+    onJoinClick: () -> Unit,
+) {
+    // Бэкенд не отдаёт время начала звонка, поэтому длительность считаем
+    // локально с момента появления баннера. Когда звонок завершается, баннер
+    // уходит из композиции и счётчик сбрасывается сам собой.
+    var elapsedSeconds by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1_000)
+            elapsedSeconds++
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colorResource(id = R.color.main_background))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(
+                    if (isVideoCall) R.string.chat_ongoing_call_video
+                    else R.string.chat_ongoing_call_audio
+                ),
+                color = colorResource(id = R.color.main_text),
+                fontWeight = FontWeight.Normal,
+                fontSize = 15.sp,
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (participantsCount > 0) {
+                    Text(
+                        text = pluralStringResource(
+                            id = R.plurals.chat_ongoing_call_participants,
+                            count = participantsCount,
+                            participantsCount,
+                        ),
+                        color = colorResource(id = R.color.secondary_text),
+                        fontSize = 13.sp,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(colorResource(id = R.color.main_background_input))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                ) {
+                    Text(
+                        text = formatOngoingCallDuration(elapsedSeconds),
+                        color = colorResource(id = R.color.secondary_text),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp,
+                    )
+                }
+            }
+        }
+
+        Avatar(url = avatarUrl, name = callTitle, size = 40.dp)
+
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(colorResource(id = R.color.object_main))
+                .clickable { onJoinClick() }
+                .padding(horizontal = 16.dp, vertical = 9.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.chat_ongoing_call_join),
+                color = Color.White,
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
+            )
+        }
+    }
+}
+
+/** Длительность звонка в формате MM:SS для баннера активного звонка. */
+private fun formatOngoingCallDuration(totalSeconds: Int): String {
+    val safeSeconds = totalSeconds.coerceAtLeast(0)
+    return "%02d:%02d".format(safeSeconds / 60, safeSeconds % 60)
+}
+
+@Composable
+private fun CallOptionItem(
+    icon: ImageVector,
+    text: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colors.primary,
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.body1.copy(
+                color = MaterialTheme.colors.onBackground,
+            ),
+        )
     }
 }
 

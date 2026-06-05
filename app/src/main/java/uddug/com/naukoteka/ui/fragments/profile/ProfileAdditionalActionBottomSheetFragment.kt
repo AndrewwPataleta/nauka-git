@@ -1,11 +1,13 @@
 package uddug.com.naukoteka.ui.fragments.profile
 
+import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.core.os.bundleOf
@@ -83,7 +85,7 @@ class ProfileAdditionalActionBottomSheetFragment : BaseBottomSheetDialogFragment
             dismiss()
         }
         contentView.editFromApp.setOnClickListener {
-            startActivity(Intent(requireActivity(), AuthActivity::class.java))
+            presenter.selectExitProfile()
         }
         contentView.settingsAppContainer.setOnClickListener {
             presenter.selectOpenAppSettings()
@@ -121,6 +123,32 @@ class ProfileAdditionalActionBottomSheetFragment : BaseBottomSheetDialogFragment
     override fun helpWithSupport(userProfileFullInfo: UserProfileFullInfo) {
         dismiss()
         containerNavigation?.openSupportWithHelp(userProfileFullInfo)
+    }
+
+    override fun openLogoutDialog() {
+        val dialog = Dialog(requireActivity(), R.style.Theme_Dialog)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+        )
+        dialog.setCancelable(true)
+        dialog.setCanceledOnTouchOutside(true)
+        dialog.setContentView(R.layout.dialog_exit_profile)
+        (dialog.findViewById(R.id.cancelDeleteBtn) as? View)?.setOnClickListener {
+            dialog.dismiss()
+        }
+        (dialog.findViewById(R.id.deleteConfirmBtn) as? View)?.setOnClickListener {
+            dialog.dismiss()
+            presenter.selectConfirmExit()
+        }
+        dialog.show()
+    }
+
+    override fun openLoginPage() {
+        val activity = requireActivity()
+        activity.finishAffinity()
+        activity.startActivity(Intent(activity, AuthActivity::class.java))
     }
 
 }

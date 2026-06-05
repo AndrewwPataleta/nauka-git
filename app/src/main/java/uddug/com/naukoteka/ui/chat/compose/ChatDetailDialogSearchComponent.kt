@@ -122,6 +122,8 @@ fun ChatDetailDialogSearchComponent(
         ) {
             TabRow(
                 selectedTabIndex = selectedTabIndex,
+                containerColor = Color.White,
+                contentColor = MaterialTheme.colorScheme.onBackground,
                 indicator = { tabPositions ->
                     TabRowDefaults.Indicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
@@ -140,7 +142,7 @@ fun ChatDetailDialogSearchComponent(
                             maxLines = 1,
                             style = TextStyle(
                                 fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = if (selectedTabIndex == index) {
                                     MaterialTheme.colorScheme.onBackground
                                 } else {

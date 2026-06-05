@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -126,7 +127,7 @@ private fun PollResultsContent(model: PollResultsUiModel) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .background(surfaceColor())
-            .padding(vertical = 4.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -223,41 +224,38 @@ private fun PollResultsContent(model: PollResultsUiModel) {
 
 @Composable
 private fun PollResultOptionItem(option: PollResultOptionUi) {
-    val background = when {
-        option.isRightAnswer -> accentColor().copy(alpha = 0.08f)
-        option.isSelected -> accentColor().copy(alpha = 0.05f)
-        else -> surfaceColor()
-    }
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top,
         ) {
             Text(
                 text = "${option.percent}%",
                 color = primaryTextColor(),
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp
+                fontSize = 14.sp,
+                modifier = Modifier.widthIn(min = 44.dp),
             )
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 Text(
                     text = option.text,
                     color = primaryTextColor(),
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     fontWeight = if (option.isSelected || option.isRightAnswer) FontWeight.SemiBold else FontWeight.Normal,
-                    lineHeight = 20.sp
+                    lineHeight = 20.sp,
                 )
                 option.description?.takeIf { it.isNotBlank() }?.let { description ->
                     Text(
                         text = description,
                         color = secondaryTextColor(),
                         fontSize = 13.sp,
-                        lineHeight = 18.sp
+                        lineHeight = 18.sp,
                     )
                 }
                 if (option.isRightAnswer) {
@@ -265,14 +263,14 @@ private fun PollResultOptionItem(option: PollResultOptionUi) {
                         text = stringResource(id = R.string.chat_poll_results_correct_answer),
                         color = accentColor(),
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
                     )
                 } else if (option.isSelected) {
                     Text(
                         text = stringResource(id = R.string.chat_poll_results_your_choice),
                         color = accentColor(),
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
             }
@@ -281,10 +279,11 @@ private fun PollResultOptionItem(option: PollResultOptionUi) {
             progress = option.percent.coerceIn(0, 100) / 100f,
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(start = 56.dp)
                 .height(2.dp)
                 .clip(RoundedCornerShape(3.dp)),
             backgroundColor = questionBorderColor(),
-            color = accentColor()
+            color = accentColor(),
         )
     }
 }

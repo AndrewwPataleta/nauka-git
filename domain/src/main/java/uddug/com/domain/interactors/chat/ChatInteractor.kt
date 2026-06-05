@@ -1,5 +1,6 @@
 package uddug.com.domain.interactors.chat
 
+import uddug.com.domain.entities.chat.ActiveCall
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.ChatFolderDetails
@@ -64,6 +65,9 @@ class ChatInteractor @Inject constructor(
 
     suspend fun getDialogInfoByPeer(interlocutorId: String): DialogInfo =
         chatRepository.getDialogInfoByPeer(interlocutorId)
+
+    suspend fun getDialogActiveCall(dialogId: Long): ActiveCall? =
+        chatRepository.getDialogActiveCall(dialogId)
 
     suspend fun getMessagesWithOwnerInfo(
         currentUserId: String,
@@ -184,13 +188,13 @@ class ChatInteractor @Inject constructor(
     ): Poll =
         chatRepository.createPoll(subject, isAnonymous, multipleAnswers, isQuiz, options)
 
-    suspend fun stopPoll(pollId: String): Boolean = chatRepository.stopPoll(pollId)
+    suspend fun stopPoll(pollId: String) = chatRepository.stopPoll(pollId)
 
     suspend fun deletePoll(pollId: String) = chatRepository.deletePoll(pollId)
 
     suspend fun getPoll(pollId: String): Poll = chatRepository.getPoll(pollId)
 
-    suspend fun answerPoll(pollId: String, optionIds: List<String>): Poll =
+    suspend fun answerPoll(pollId: String, optionIds: List<String>) =
         chatRepository.answerPoll(pollId, optionIds)
 
     suspend fun getPollAnswerUsers(

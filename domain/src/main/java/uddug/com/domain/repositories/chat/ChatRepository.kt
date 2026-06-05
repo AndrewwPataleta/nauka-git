@@ -1,5 +1,6 @@
 package uddug.com.domain.repositories.chat
 
+import uddug.com.domain.entities.chat.ActiveCall
 import uddug.com.domain.entities.chat.Chat
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.domain.entities.chat.ChatFolderDetails
@@ -67,6 +68,9 @@ interface ChatRepository {
     suspend fun getDialogInfo(dialogId: Long): DialogInfo
 
     suspend fun getDialogInfoByPeer(interlocutorId: String): DialogInfo
+
+    /** Возвращает активный звонок диалога (запрос с details=2), либо null если звонка нет. */
+    suspend fun getDialogActiveCall(dialogId: Long): ActiveCall?
 
     suspend fun getDialogMedia(
         dialogId: Long,
@@ -181,13 +185,13 @@ interface ChatRepository {
         options: List<PollOptionInput>,
     ): Poll
 
-    suspend fun stopPoll(pollId: String): Boolean
+    suspend fun stopPoll(pollId: String)
 
     suspend fun deletePoll(pollId: String)
 
     suspend fun getPoll(pollId: String): Poll
 
-    suspend fun answerPoll(pollId: String, optionIds: List<String>): Poll
+    suspend fun answerPoll(pollId: String, optionIds: List<String>)
 
     suspend fun getPollAnswerUsers(
         pollId: String,

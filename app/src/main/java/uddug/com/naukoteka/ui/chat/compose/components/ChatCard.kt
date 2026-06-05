@@ -60,6 +60,7 @@ fun ChatCard(
     notificationsDisable: Boolean = false,
     isPinned: Boolean = false,
     isMuted: Boolean = false,
+    hasActiveCall: Boolean = false,
     selectionMode: Boolean = false,
     isSelected: Boolean = false,
     messageType: MessageType = MessageType.TEXT,
@@ -147,6 +148,16 @@ fun ChatCard(
                                 tint = Color.Gray
                             )
                         }
+                        if (hasActiveCall) {
+                            Icon(
+                                modifier = Modifier
+                                    .padding(start = 4.dp)
+                                    .size(16.dp),
+                                painter = painterResource(id = R.drawable.ic_phone),
+                                contentDescription = "Active call",
+                                tint = Color(0xFF2EB66D)
+                            )
+                        }
                     }
 
 
@@ -211,7 +222,7 @@ fun ChatCard(
                                 } else {
                                     colorResource(id = R.color.secondary_text)
                                 },
-                                fontWeight = if (isRepost) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (isRepost) FontWeight.SemiBold else FontWeight.Normal
                             ),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -256,7 +267,7 @@ fun ChatCard(
                                     text = it.toString(),
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         color = Color.White,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                 )
                             }

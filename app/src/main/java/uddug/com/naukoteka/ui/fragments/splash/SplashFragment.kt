@@ -56,6 +56,11 @@ class SplashFragment : BaseFragment(R.layout.fragment_splash), SplashView {
 
     override fun showContainerActivity() {
         startActivity(Intent(requireContext(), ContainerActivity::class.java))
+        // Finish AuthActivity so it doesn't linger as a second singleInstance
+        // task behind ContainerActivity. Otherwise the launcher icon re-opens
+        // this already-finished splash task (blue-screen hang), and exiting the
+        // app needs extra Back presses to pop through both tasks.
+        requireActivity().finish()
     }
 
     override fun showAuthActivity() {

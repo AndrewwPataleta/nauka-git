@@ -1,12 +1,18 @@
 package uddug.com.naukoteka.ui.chat
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.compose.ui.platform.ComposeView
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -26,11 +32,16 @@ import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.ChatDetailDialogFragment.Companion.DIALOG_DETAIL
 import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_MESSAGE_ID
+import uddug.com.naukoteka.ui.call.GroupCallFragment
+import uddug.com.naukoteka.ui.call.SingleCallFragment
 import uddug.com.naukoteka.ui.chat.compose.ChatDialogComponent
+import uddug.com.naukoteka.services.IncomingCallSocketService
 import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 import uddug.com.naukoteka.ui.chat.compose.ChatListComponent
 import uddug.com.naukoteka.ui.chat.ChatEditGroupFragment
 import uddug.com.naukoteka.ui.chat.ChatPollResultsFragment
+import javax.inject.Inject
+import uddug.com.naukoteka.utils.SharedContentStore
 
 @AndroidEntryPoint
 class ChatDialogFragment : Fragment() {
@@ -39,7 +50,34 @@ class ChatDialogFragment : Fragment() {
 
     private val viewModel: ChatDialogViewModel by viewModels()
 
+    @Inject
+    lateinit var sharedContentStore: SharedContentStore
+
     private var dialogId: Long = 0
+    private var hasConsumedSharedContent = false
+
+    private var pendingCallRequest: PendingCallRequest? = null
+
+    private val callPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            val request = pendingCallRequest ?: return@registerForActivityResult
+            pendingCallRequest = null
+
+            val hasMicrophonePermission = permissions[Manifest.permission.RECORD_AUDIO] == true ||
+                isPermissionGranted(Manifest.permission.RECORD_AUDIO)
+            val hasCameraPermission = !request.isVideoCall || permissions[Manifest.permission.CAMERA] == true ||
+                isPermissionGranted(Manifest.permission.CAMERA)
+
+            if (!hasMicrophonePermission) {
+                showMicrophonePermissionAlert()
+                return@registerForActivityResult
+            }
+            if (!hasCameraPermission) {
+                showCameraPermissionAlert()
+                return@registerForActivityResult
+            }
+            startCall(request)
+        }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -49,6 +87,18 @@ class ChatDialogFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         navigationView?.showNavigationBottomBar(false)
+        dismissMessageNotification()
+    }
+
+    /**
+     * Clears the new-message notification for this dialog (and with it the
+     * launcher-icon badge) once the user is actually viewing the conversation.
+     * The notification id mirrors IncomingCallSocketService.sendMessageNotification.
+     */
+    private fun dismissMessageNotification() {
+        if (dialogId == 0L) return
+        NotificationManagerCompat.from(requireContext())
+            .cancel(IncomingCallSocketService.CHAT_NOTIFICATION_BASE_ID + dialogId.toInt())
     }
 
     companion object {
@@ -66,6 +116,17 @@ class ChatDialogFragment : Fragment() {
             viewModel.loadMessages(dialogId)
         } else if (!peerId.isNullOrEmpty()) {
             viewModel.loadMessagesByPeer(peerId)
+        }
+        consumeSharedContentIfAny()
+    }
+
+    private fun consumeSharedContentIfAny() {
+        if (hasConsumedSharedContent) return
+        if (!sharedContentStore.hasPending()) return
+        hasConsumedSharedContent = true
+        val files = sharedContentStore.consumeAsFiles(requireContext())
+        if (files.isNotEmpty()) {
+            viewModel.attachFiles(files)
         }
     }
 
@@ -140,11 +201,21 @@ class ChatDialogFragment : Fragment() {
                         onBackPressed = {
                             requireActivity().onBackPressed()
                         },
-                        onSearchClick = {
-                            findNavController().navigate(
-                                R.id.chatDetailSearchFragment,
-                                Bundle().apply { putLong(ChatDetailDialogFragment.DIALOG_ID, dialogId) }
-                            )
+                        onCallClick = { name, avatar, isVideoCall ->
+                            val callDialogId = viewModel.currentDialogId.value ?: dialogId
+                            if (callDialogId != 0L) {
+                                val isGroupCall = (viewModel.uiState.value as? ChatDialogUiState.Success)
+                                    ?.isGroup ?: false
+                                ensureCallPermissions(
+                                    PendingCallRequest(
+                                        name = name,
+                                        avatar = avatar,
+                                        dialogId = callDialogId,
+                                        isVideoCall = isVideoCall,
+                                        isGroupCall = isGroupCall,
+                                    )
+                                )
+                            }
                         },
                         onContactClick = {
                             findNavController().navigate(R.id.sendContactFragment)
@@ -184,4 +255,79 @@ class ChatDialogFragment : Fragment() {
         super.onDestroyView()
         requireActivity().window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_UNSPECIFIED)
     }
+
+    private fun ensureCallPermissions(request: PendingCallRequest) {
+        val requiredPermissions = buildList {
+            add(Manifest.permission.RECORD_AUDIO)
+            if (request.isVideoCall) {
+                add(Manifest.permission.CAMERA)
+            }
+        }
+
+        val missingPermissions = requiredPermissions.filterNot(::isPermissionGranted)
+
+        if (missingPermissions.isEmpty()) {
+            startCall(request)
+            return
+        }
+
+        pendingCallRequest = request
+        callPermissionLauncher.launch(missingPermissions.toTypedArray())
+    }
+
+    private fun startCall(request: PendingCallRequest) {
+        // Групповой чат — отдельный экран groupCallFragment (как из деталей
+        // группы), личный — singleCallFragment.
+        if (request.isGroupCall) {
+            findNavController().navigate(
+                R.id.groupCallFragment,
+                Bundle().apply {
+                    putString(GroupCallFragment.ARG_CONTACT_NAME, request.name)
+                    putString(GroupCallFragment.ARG_AVATAR_URL, request.avatar.orEmpty())
+                    putLong(GroupCallFragment.ARG_DIALOG_ID, request.dialogId)
+                    putBoolean(GroupCallFragment.ARG_IS_VIDEO_CALL, request.isVideoCall)
+                }
+            )
+        } else {
+            findNavController().navigate(
+                R.id.singleCallFragment,
+                Bundle().apply {
+                    putString(SingleCallFragment.ARG_CONTACT_NAME, request.name)
+                    putString(SingleCallFragment.ARG_AVATAR_URL, request.avatar)
+                    putLong(SingleCallFragment.ARG_DIALOG_ID, request.dialogId)
+                    putBoolean(SingleCallFragment.ARG_IS_VIDEO_CALL, request.isVideoCall)
+                    putBoolean(SingleCallFragment.ARG_IS_GROUP_CALL, request.isGroupCall)
+                }
+            )
+        }
+    }
+
+    private fun showMicrophonePermissionAlert() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.call_permission_microphone_title)
+            .setMessage(R.string.call_permission_microphone_message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    private fun showCameraPermissionAlert() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.call_permission_camera_title)
+            .setMessage(R.string.call_permission_camera_message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    private fun isPermissionGranted(permission: String): Boolean {
+        return ContextCompat.checkSelfPermission(requireContext(), permission) ==
+            PackageManager.PERMISSION_GRANTED
+    }
+
+    private data class PendingCallRequest(
+        val name: String?,
+        val avatar: String?,
+        val dialogId: Long,
+        val isVideoCall: Boolean,
+        val isGroupCall: Boolean,
+    )
 }

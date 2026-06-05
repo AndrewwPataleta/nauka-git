@@ -4,6 +4,8 @@ data class CallParticipantDto(
     val id: Long,
     val call: Long,
     val user: String,
+    val fullName: String? = null,
+    val imageUrl: String? = null,
     val status: Int,
     val states: List<CallParticipantStateDto> = emptyList(),
     val roles: List<String> = emptyList(),

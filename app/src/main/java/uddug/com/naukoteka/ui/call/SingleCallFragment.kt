@@ -4,9 +4,11 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.content.Context
 import android.os.Bundle
+import android.widget.Toast
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.runtime.collectAsState
@@ -70,6 +72,14 @@ class SingleCallFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         navigationView?.showNavigationBottomBar(false)
+        requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        viewModel.ensureSpeakerphoneOn()
+        viewModel.onAppResumed()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     override fun onCreateView(
@@ -82,8 +92,11 @@ class SingleCallFragment : Fragment() {
         val callTitle = arguments?.getString(ARG_CALL_TITLE)
         val participants = arguments?.getParcelableArrayList<CallParticipant>(ARG_PARTICIPANTS)
         val dialogId = arguments?.getLong(ARG_DIALOG_ID)
-        val isVideoCall = arguments?.getBoolean(ARG_IS_VIDEO_CALL) ?: true
+        // Default to audio: never enable the camera unless the call is
+        // explicitly a video call (see incoming-call isVideoCall threading).
+        val isVideoCall = arguments?.getBoolean(ARG_IS_VIDEO_CALL) ?: false
         val isIncomingCall = arguments?.getBoolean(ARG_IS_INCOMING_CALL) ?: false
+        val isGroupCall = arguments?.getBoolean(ARG_IS_GROUP_CALL) ?: false
         val resolvedDialogId = dialogId ?: viewModel.uiState.value.dialogId ?: 0L
 
         if (isIncomingCall) {
@@ -94,6 +107,7 @@ class SingleCallFragment : Fragment() {
                 participants = participants,
                 callTitle = callTitle,
                 isVideoCall = isVideoCall,
+                isGroupCall = isGroupCall,
             )
         } else {
             ensureCallPermissions(
@@ -104,6 +118,7 @@ class SingleCallFragment : Fragment() {
                 callTitle = callTitle,
                 isVideoCall = isVideoCall,
                 isAcceptingIncomingCall = false,
+                isGroupCall = isGroupCall,
             )
         }
 
@@ -126,12 +141,14 @@ class SingleCallFragment : Fragment() {
                                 callTitle = callTitle,
                                 isVideoCall = isVideoCall,
                                 isAcceptingIncomingCall = isIncomingCall,
+                                isGroupCall = isGroupCall,
                             )
                         },
                         onDeclineCall = viewModel::endCall,
                         onToggleMicrophone = viewModel::toggleMicrophone,
                         onToggleCamera = viewModel::toggleCamera,
                         onToggleRecording = viewModel::toggleRecording,
+                        onStartRecording = viewModel::startRecording,
                         onMinimize = {
                             showFloatingCall()
                             navigateBackToChatList()
@@ -143,6 +160,14 @@ class SingleCallFragment : Fragment() {
                         onReleaseLocalRenderer = viewModel::clearLocalRenderer,
                         onReleaseRemoteRenderer = { viewModel.clearRemoteRenderer() },
                         clearRemoteRenderer = { viewModel.clearRemoteRenderer() },
+                        onBindParticipantRenderer = { participantId, renderer ->
+                            viewModel.bindParticipantRenderer(participantId, renderer)
+                        },
+                        onReleaseParticipantRenderer = { participantId ->
+                            viewModel.releaseParticipantRenderer(participantId)
+                        },
+                        onMuteParticipant = { viewModel.muteParticipant(it) },
+                        onToastConsumed = viewModel::consumeToast,
                         onMicPermissionDenied = viewModel::onMicPermissionDenied,
                         onAudioFocusFailed = viewModel::onAudioFocusFailed,
                     )
@@ -154,6 +179,17 @@ class SingleCallFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         observeCallState()
+        observeToasts()
+    }
+
+    private fun observeToasts() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.toastEvents.collect { message ->
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     private fun showFloatingCall() {
@@ -186,7 +222,17 @@ class SingleCallFragment : Fragment() {
         hasHandledCallFinish = true
         viewModel.endCall()
         removeFloatingCall()
-        findNavController().popBackStack()
+        runCatching {
+            val navController = findNavController()
+            // Pop only while this call screen is still the current destination.
+            // The call can also be torn down by ContainerActivity.handleCallEnded
+            // (cType=6 socket event), which already pops back to the chat list.
+            // A blind popBackStack() here would then over-pop past chatListFragment,
+            // collapse the back stack to the root graph, and crash the next navigate().
+            if (navController.currentDestination?.id == R.id.singleCallFragment) {
+                navController.popBackStack()
+            }
+        }
     }
 
     private fun navigateBackToChatList() {
@@ -213,6 +259,7 @@ class SingleCallFragment : Fragment() {
         callTitle: String?,
         isVideoCall: Boolean,
         isAcceptingIncomingCall: Boolean,
+        isGroupCall: Boolean,
     ) {
         val missingPermissions = buildList {
             if (!isPermissionGranted(Manifest.permission.RECORD_AUDIO)) {
@@ -231,6 +278,7 @@ class SingleCallFragment : Fragment() {
             callTitle = callTitle,
             isVideoCall = isVideoCall,
             isAcceptingIncomingCall = isAcceptingIncomingCall,
+            isGroupCall = isGroupCall,
         )
 
         if (missingPermissions.isEmpty()) {
@@ -251,6 +299,7 @@ class SingleCallFragment : Fragment() {
             callTitle = request.callTitle,
             isVideoCall = request.isVideoCall,
             isAcceptingIncomingCall = request.isAcceptingIncomingCall,
+            isGroupCall = request.isGroupCall,
         )
     }
 
@@ -283,6 +332,7 @@ class SingleCallFragment : Fragment() {
         const val ARG_DIALOG_ID = "dialog_id"
         const val ARG_IS_VIDEO_CALL = "is_video_call"
         const val ARG_IS_INCOMING_CALL = "is_incoming_call"
+        const val ARG_IS_GROUP_CALL = "is_group_call"
     }
 
     private data class PendingStartCallRequest(
@@ -293,5 +343,6 @@ class SingleCallFragment : Fragment() {
         val callTitle: String?,
         val isVideoCall: Boolean,
         val isAcceptingIncomingCall: Boolean,
+        val isGroupCall: Boolean,
     )
 }
