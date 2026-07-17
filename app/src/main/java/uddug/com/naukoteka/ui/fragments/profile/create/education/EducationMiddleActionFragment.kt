@@ -78,10 +78,8 @@ class EducationMiddleActionFragment : BaseFragment(R.layout.fragment_education_m
     }
 
     private fun setupArguments() {
-        arguments?.getParcelable<UserProfileFullInfo>(PROFILE_ARGS)
-            ?.let { presenter.setProfileFullInfo(it) }
-        arguments?.getString(SELECTED_EDUCATION_ID)
-            ?.let { presenter.setCurrentEducationId(it) }
+        arguments?.getParcelable<UserProfileFullInfo>(PROFILE_ARGS)?.let { presenter.setProfileFullInfo(it) }
+        arguments?.getString(SELECTED_EDUCATION_ID)?.let { presenter.setCurrentEducationId(it) }
     }
 
     private fun setupListeners() {
@@ -93,7 +91,7 @@ class EducationMiddleActionFragment : BaseFragment(R.layout.fragment_education_m
             back.setOnClickListener { findNavController().popBackStack() }
             startEducation.setOnClickListener {
                 showYearPicker(
-                    currentYear = startEducation.text.toString().format(dateFormat).toIntOrNull() ?: DEFAULT_YEAR_PICKER,
+                    currentYear = startEducation.text.toString().toIntOrNull() ?: DEFAULT_YEAR_PICKER,
                     onYearSelected = { year ->
                         startEducation.text = year.toString()
                         presenter.setStartYear(year.toString())
@@ -102,7 +100,7 @@ class EducationMiddleActionFragment : BaseFragment(R.layout.fragment_education_m
             }
             endEducation.setOnClickListener {
                 showYearPicker(
-                    currentYear = endEducation.text.toString().format(dateFormat).toIntOrNull() ?: DEFAULT_YEAR_PICKER,
+                    currentYear = endEducation.text.toString().toIntOrNull() ?: DEFAULT_YEAR_PICKER,
                     onYearSelected = { year ->
                         endEducation.text = year.toString()
                         presenter.setEndYear(year.toString())
@@ -113,7 +111,7 @@ class EducationMiddleActionFragment : BaseFragment(R.layout.fragment_education_m
     }
 
     private fun showYearPicker(currentYear: Int, onYearSelected: (Int) -> Unit) {
-        val numberPicker = MaterialNumberPicker(
+        val picker = MaterialNumberPicker(
             context = requireActivity(),
             minValue = MIN_YEAR_PICKER,
             maxValue = Calendar.getInstance().get(Calendar.YEAR),
@@ -126,9 +124,9 @@ class EducationMiddleActionFragment : BaseFragment(R.layout.fragment_education_m
         )
         AlertDialog.Builder(requireActivity())
             .setTitle(getString(R.string.select_year))
-            .setView(numberPicker)
+            .setView(picker)
             .setNegativeButton(getString(R.string.cancel), null)
-            .setPositiveButton(getString(R.string.choose)) { _, _ -> onYearSelected(numberPicker.value) }
+            .setPositiveButton(getString(R.string.choose)) { _, _ -> onYearSelected(picker.value) }
             .show()
     }
 
@@ -159,11 +157,7 @@ class EducationMiddleActionFragment : BaseFragment(R.layout.fragment_education_m
     }
 
     override fun educationSuccessUpdated() {
-        setFragmentResult(
-            CREATE_EDUCATION_RESULT, bundleOf(
-                CREATE_EDUCATION_RESULT_KEY to true
-            )
-        )
+        setFragmentResult(CREATE_EDUCATION_RESULT, bundleOf(CREATE_EDUCATION_RESULT_KEY to true))
         findNavController().popBackStack()
     }
 

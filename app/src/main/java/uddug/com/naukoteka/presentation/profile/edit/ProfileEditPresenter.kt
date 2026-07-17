@@ -1,7 +1,6 @@
 package uddug.com.naukoteka.presentation.profile.edit
 
 import android.annotation.SuppressLint
-import android.util.Log
 import uddug.com.domain.interactors.user_profile.UserProfileInteractor
 import uddug.com.naukoteka.global.base.BasePresenterImpl
 import moxy.InjectViewState
@@ -13,10 +12,6 @@ import uddug.com.domain.entities.profile.UserProfileFullInfo
 class ProfileEditPresenter(
     private val userProfileInteractor: UserProfileInteractor
 ) : BasePresenterImpl<ProfileEditView>() {
-
-    companion object {
-        private const val errorTag = "ProfileEditPresenterError"
-    }
 
     var userProfileFullInfo: UserProfileFullInfo? = null
 
@@ -34,9 +29,7 @@ class ProfileEditPresenter(
     }
 
     fun selectEditProfileId() {
-        userProfileFullInfo?.let {
-            viewState.openEditProfileId(it)
-        }
+        userProfileFullInfo?.let { viewState.openEditProfileId(it) }
     }
 
     fun askForDeleteBanner() {
@@ -45,12 +38,10 @@ class ProfileEditPresenter(
 
     @SuppressLint("CheckResult")
     fun confirmDeleteBanner() {
-        userProfileFullInfo?.id?.let {
-            userProfileInteractor.deleteUserBanner(userId = it).subscribe({
+        userProfileFullInfo?.id?.let { userId ->
+            userProfileInteractor.deleteUserBanner(userId = userId).subscribe({
                 loadProfile()
-            }, {
-                Log.e(errorTag, it.message.toString())
-            })
+            }, {})
         }
     }
 
@@ -61,7 +52,6 @@ class ProfileEditPresenter(
     fun askForOpenPersonalIds() {
         userProfileFullInfo?.let { viewState.openProfileEditPersonalIdsData(it) }
     }
-
 
     fun askForOpenAcademicProfile() {
         userProfileFullInfo?.let { viewState.openProfileAcademicDegreeEdit(it) }
@@ -89,10 +79,9 @@ class ProfileEditPresenter(
 
     @SuppressLint("CheckResult")
     fun loadProfile() {
-        userProfileInteractor.getUserProfilePreviewInfo().subscribe({
-            userProfileFullInfo = it
-            viewState.setMainInformation(it)
-        }, {
-        })
+        userProfileInteractor.getUserProfilePreviewInfo().subscribe({ profile ->
+            userProfileFullInfo = profile
+            viewState.setMainInformation(profile)
+        }, {})
     }
 }

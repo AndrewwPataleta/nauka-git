@@ -15,15 +15,11 @@ class ProfileEditSettingsPersonalPresenter(
     var userProfileFullInfo: UserProfileFullInfo? = null
 
     init {
-        userProfileInteractor.getUserSettings().subscribe({
-
-        }, {
-
-        })
+        userProfileInteractor.getUserSettings().subscribe({}, {})
     }
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
-        this.userProfileFullInfo = profileFullInfo
+        userProfileFullInfo = profileFullInfo
         viewState.setMainInformation(profileFullInfo)
     }
 
@@ -33,12 +29,7 @@ class ProfileEditSettingsPersonalPresenter(
 
     fun setVisibilityResult(visibilityType: VisibilityType, visibilityMode: VisibilityMode) {
         when (visibilityType) {
-            VisibilityType.BLOCK_MAIN_INFO -> {
-                viewState.setVisibilitySettings(
-                    visibilityType,
-                    visibilityMode
-                )
-            }
+            VisibilityType.BLOCK_MAIN_INFO -> viewState.setVisibilitySettings(visibilityType, visibilityMode)
         }
     }
 }

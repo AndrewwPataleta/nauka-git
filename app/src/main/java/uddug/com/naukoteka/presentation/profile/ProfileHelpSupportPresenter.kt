@@ -17,6 +17,4 @@ class ProfileHelpSupportPresenter(
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
         this.profileFullInfo = profileFullInfo
     }
-
-
 }

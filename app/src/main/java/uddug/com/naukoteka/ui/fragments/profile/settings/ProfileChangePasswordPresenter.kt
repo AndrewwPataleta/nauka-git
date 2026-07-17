@@ -18,64 +18,69 @@ class ProfileChangePasswordPresenter(
     private var currentPassword: String = ""
     private var newPassword: String = ""
     private var newPasswordConfirm: String = ""
-    private var isVisibleNewPassword: Boolean = false
-    private var isVisibleNewPasswordConfirm: Boolean = false
-    private var isVisibleCurrentPasswordConfirm: Boolean = false
+    private var isNewPasswordVisible: Boolean = false
+    private var isNewPasswordConfirmVisible: Boolean = false
+    private var isCurrentPasswordVisible: Boolean = false
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
-        this.userProfileFullInfo = profileFullInfo
+        userProfileFullInfo = profileFullInfo
         viewState.setMainInformation(profileFullInfo)
     }
 
-    fun setNewPassword(newPassword: String) {
-        this.newPassword = newPassword
-        checkAvailableChange()
+    fun setNewPassword(password: String) {
+        newPassword = password
+        refreshButtonState()
+    }
+
+    fun setNewPasswordConfirm(password: String) {
+        newPasswordConfirm = password
+        refreshButtonState()
+    }
+
+    fun setCurrentPassword(password: String) {
+        currentPassword = password
+        refreshButtonState()
     }
 
     fun onNewPasswordVisibilitySelect() {
-        isVisibleNewPassword = !isVisibleNewPassword
-        viewState.setVisibilityNewPassword(isVisibleNewPassword)
+        isNewPasswordVisible = !isNewPasswordVisible
+        viewState.setVisibilityNewPassword(isNewPasswordVisible)
     }
 
     fun onNewPasswordConfirmVisibilitySelect() {
-        isVisibleNewPasswordConfirm = !isVisibleNewPasswordConfirm
-        viewState.setVisibilityNewPasswordConfirm(isVisibleNewPasswordConfirm)
+        isNewPasswordConfirmVisible = !isNewPasswordConfirmVisible
+        viewState.setVisibilityNewPasswordConfirm(isNewPasswordConfirmVisible)
     }
 
     fun onCurrentPasswordVisibilitySelect() {
-        isVisibleCurrentPasswordConfirm = !isVisibleCurrentPasswordConfirm
-        viewState.setVisibilityCurrentPasswordConfirm(isVisibleCurrentPasswordConfirm)
-    }
-
-    fun setNewPasswordConfirm(newPasswordConfirm: String) {
-        this.newPasswordConfirm = newPasswordConfirm
-        checkAvailableChange()
-    }
-
-    fun setCurrentPassword(currentPassword: String) {
-        this.currentPassword = currentPassword
-        checkAvailableChange()
-    }
-
-    private fun checkAvailableChange() {
-        if (newPasswordConfirm != newPassword || newPasswordConfirm.isEmpty() || newPassword.isEmpty() || currentPassword.isEmpty()) {
-            viewState.setUpdateButtonStatus(PasswordButtonStatus.DISABLED)
-        } else {
-            viewState.setUpdateButtonStatus(PasswordButtonStatus.ENABLED)
-        }
+        isCurrentPasswordVisible = !isCurrentPasswordVisible
+        viewState.setVisibilityCurrentPasswordConfirm(isCurrentPasswordVisible)
     }
 
     fun selectChangePassword() {
-        if (newPasswordConfirm == newPassword && newPasswordConfirm.isNotNullOrEmpty() && newPassword.isNotNullOrEmpty() && currentPassword.isNotNullOrEmpty()) {
-            userProfileInteractor.updatePassword(
-                newPassword = newPassword,
-                currentPassword = currentPassword
-            ).subscribe({
-                viewState.showPasswordUpdateToast()
-            }, {
-                viewState.showPasswordUpdateFailToast()
-            })
-        }
+        if (!isPasswordChangeValid()) return
+        userProfileInteractor.updatePassword(
+            newPassword = newPassword,
+            currentPassword = currentPassword
+        ).subscribe({
+            viewState.showPasswordUpdateToast()
+        }, {
+            viewState.showPasswordUpdateFailToast()
+        })
     }
 
+    private fun refreshButtonState() {
+        val status = if (isPasswordChangeValid()) {
+            PasswordButtonStatus.ENABLED
+        } else {
+            PasswordButtonStatus.DISABLED
+        }
+        viewState.setUpdateButtonStatus(status)
+    }
+
+    private fun isPasswordChangeValid(): Boolean =
+        newPassword.isNotNullOrEmpty() &&
+        newPasswordConfirm.isNotNullOrEmpty() &&
+        currentPassword.isNotNullOrEmpty() &&
+        newPassword == newPasswordConfirm
 }

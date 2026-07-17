@@ -31,7 +31,7 @@ import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBott
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment.Companion.UPLOAD_AVATAR_RESULT
 import uddug.com.naukoteka.ui.fragments.wall.bottom.WallDetailActionBottomSheetFragment
 import uddug.com.naukoteka.utils.doIfIsNotNullOrEmptyString
-import uddug.com.naukoteka.utils.getHashCodeToString
+import uddug.com.naukoteka.utils.profileGradientRes
 import uddug.com.naukoteka.utils.text.isNotNullOrEmpty
 import uddug.com.naukoteka.utils.ui.load
 import uddug.com.naukoteka.utils.viewBinding
@@ -101,33 +101,28 @@ class ProfileFragment : BaseFragment(R.layout.fragment_profile), ProfileView {
         contentView.profileImage.setImageDrawable(null)
         contentView.initials.isVisible = false
         contentView.profileTopBackground.setImageDrawable(null)
-        profileInfo.bannerUrl?.let {
-            contentView.profileTopBackground.load(withAnimation = false, model = BuildConfig.IMAGE_SERVER_URL.plus(it))
+        profileInfo.bannerUrl?.let { bannerPath ->
+            contentView.profileTopBackground.load(
+                withAnimation = false,
+                model = BuildConfig.IMAGE_SERVER_URL.plus(bannerPath)
+            )
         }
         if (profileInfo.image?.path.isNotNullOrEmpty()) {
-            profileInfo.image?.path?.let { path ->
-                contentView.profileImage.load(withAnimation = false, model = BuildConfig.IMAGE_SERVER_URL.plus(path))
+            profileInfo.image?.path?.let { avatarPath ->
+                contentView.profileImage.load(
+                    withAnimation = false,
+                    model = BuildConfig.IMAGE_SERVER_URL.plus(avatarPath)
+                )
             }
         } else {
-            val gradientRes = when (getHashCodeToString(profileInfo.id, 8)) {
-                0 -> R.drawable.background_gradient_one
-                1 -> R.drawable.background_gradient_two
-                2 -> R.drawable.background_gradient_three
-                3 -> R.drawable.background_gradient_four
-                4 -> R.drawable.background_gradient_five
-                5 -> R.drawable.background_gradient_six
-                6 -> R.drawable.background_gradient_seven
-                7 -> R.drawable.background_gradient_eight
-                else -> R.drawable.background_gradient_one
-            }
-            contentView.profileImage.background = resources.getDrawable(gradientRes)
-            contentView.initials.text =
-                (profileInfo.firstName?.firstOrNull()?.toString() ?: "") + (profileInfo.lastName?.firstOrNull()
-                    ?.toString() ?: "")
+            contentView.profileImage.background = resources.getDrawable(profileGradientRes(profileInfo.id))
+            val firstInitial = profileInfo.firstName?.firstOrNull()?.toString() ?: ""
+            val lastInitial = profileInfo.lastName?.firstOrNull()?.toString() ?: ""
+            contentView.initials.text = firstInitial + lastInitial
             contentView.initials.isVisible = true
         }
-        doIfIsNotNullOrEmptyString(model = profileInfo.dsc) {
-            contentView.mainDescription.text = it
+        doIfIsNotNullOrEmptyString(model = profileInfo.dsc) { description ->
+            contentView.mainDescription.text = description
             contentView.mainDescription.isVisible = true
         }
         contentView.followersFollowingAmount.text = resources.getString(

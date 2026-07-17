@@ -24,25 +24,24 @@ class EducationHighActionPresenter(
     private var screenActionType: ScreenActionType = ScreenActionType.CREATE
     private var currentEducationId: String? = null
     private val compositeDisposable = CompositeDisposable()
-    var userProfileFullInfo: UserProfileFullInfo? = null
     private var currentEducation: Education = Education()
     private val calendar = GregorianCalendar()
     private var lastSettlements: List<Settlement> = emptyList()
 
+    var userProfileFullInfo: UserProfileFullInfo? = null
+
     companion object {
-        private const val middleCType = "53:5"
         private const val highCType = "53:6"
-        private const val additionalCType = "53:4"
     }
 
     fun setCurrentEducationId(educationId: String) {
         currentEducationId = educationId
         currentEducation.id = educationId
         screenActionType = ScreenActionType.EDIT
-        setEducationInfo()
+        loadEducationInfo()
     }
 
-    private fun setEducationInfo() {
+    private fun loadEducationInfo() {
         userProfileFullInfo?.education?.find { it.id == currentEducationId }?.let { education ->
             currentEducation = education
             viewState.setCurrentEducationInfo(education)
@@ -65,7 +64,6 @@ class EducationHighActionPresenter(
             }
             return
         }
-
         val disposable = when (screenActionType) {
             ScreenActionType.CREATE -> {
                 currentEducation.cLevel = highCType
@@ -80,31 +78,22 @@ class EducationHighActionPresenter(
                     education = currentEducation
                 )
             }
-        }.subscribe({
-            viewState.educationSuccessUpdated()
-        }, {
-            
-        })
-
+        }.subscribe({ viewState.educationSuccessUpdated() }, {})
         compositeDisposable.add(disposable)
     }
 
     fun setEducationSettlement(settlement: String) {
         currentEducation.city = settlement
         if (settlement.isNotNullOrEmpty() && !currentEducation.country?.id.isNullOrEmpty()) {
-            currentEducation.country!!.id?.let {
-                locationInteractor.findSettlementsByCountry(
-                    countryId = it,
-                    query = settlement
-                ).subscribe({ settlements ->
-                    lastSettlements = settlements
-                    viewState.setSettlements(settlements)
-                }, {
-                    
-                })
-            }?.let {
+            currentEducation.country!!.id?.let { countryId ->
                 compositeDisposable.add(
-                    it
+                    locationInteractor.findSettlementsByCountry(
+                        countryId = countryId,
+                        query = settlement
+                    ).subscribe({ settlements ->
+                        lastSettlements = settlements
+                        viewState.setSettlements(settlements)
+                    }, {})
                 )
             }
         }

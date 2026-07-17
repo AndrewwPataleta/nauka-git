@@ -31,14 +31,15 @@ class ProfileAdditionalActionPresenter(
     }
 
     fun selectCopyToClipboard() {
-        profileFullInfo?.nickname?.let { this.viewState.copyToClipboardAndClose(it) }
+        profileFullInfo?.nickname?.let { viewState.copyToClipboardAndClose(it) }
     }
 
     fun selectOpenAppSettings() {
-        profileFullInfo?.let { this.viewState.openAppProfileSettings(it) }
+        profileFullInfo?.let { viewState.openAppProfileSettings(it) }
     }
+
     fun selectOpenHelpWithSupport() {
-        profileFullInfo?.let { this.viewState.helpWithSupport(it) }
+        profileFullInfo?.let { viewState.helpWithSupport(it) }
     }
 
     fun selectExitProfile() {

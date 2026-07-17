@@ -20,7 +20,6 @@ import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.IMAGE_
 import uddug.com.naukoteka.utils.ui.load
 import uddug.com.naukoteka.utils.viewBinding
 
-
 class ProfilePhotoViewFragment : BaseFragment(R.layout.fragment_profile_photo_view) {
 
     override val contentView: FragmentProfilePhotoViewBinding by viewBinding(
@@ -48,37 +47,34 @@ class ProfilePhotoViewFragment : BaseFragment(R.layout.fragment_profile_photo_vi
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         arguments?.getParcelable<UserProfileFullInfo>(ContainerActivity.PROFILE_ARGS)
-            ?.let {
+            ?.let { profileInfo ->
                 val imageType = arguments?.getString(IMAGE_TYPE_PARAM)
                 when (imageType) {
                     IMAGE_TYPE_AVATAR -> {
-                        it.image?.path?.let {
+                        profileInfo.image?.path?.let { path ->
                             contentView.photoView.load(
                                 withAnimation = false,
-                                model = BuildConfig.IMAGE_SERVER_URL.plus(it)
+                                model = BuildConfig.IMAGE_SERVER_URL.plus(path)
                             )
                         }
                     }
-
                     IMAGE_TYPE_BANNER -> {
-                        it.bannerUrl?.let {
+                        profileInfo.bannerUrl?.let { bannerUrl ->
                             contentView.photoView.load(
                                 withAnimation = false,
-                                model = BuildConfig.IMAGE_SERVER_URL.plus(it)
+                                model = BuildConfig.IMAGE_SERVER_URL.plus(bannerUrl)
                             )
                         }
                     }
-
                     else -> {
-                        it.image?.path?.let {
+                        profileInfo.image?.path?.let { path ->
                             contentView.photoView.load(
                                 withAnimation = false,
-                                model = BuildConfig.IMAGE_SERVER_URL.plus(it)
+                                model = BuildConfig.IMAGE_SERVER_URL.plus(path)
                             )
                         }
                     }
                 }
-
             }
         contentView.back.setOnClickListener {
             findNavController().popBackStack()
@@ -87,5 +83,4 @@ class ProfilePhotoViewFragment : BaseFragment(R.layout.fragment_profile_photo_vi
             findNavController().popBackStack()
         }
     }
-
 }

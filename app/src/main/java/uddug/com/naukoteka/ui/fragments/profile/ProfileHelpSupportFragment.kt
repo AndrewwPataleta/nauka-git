@@ -5,30 +5,21 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.core.os.bundleOf
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import moxy.presenter.InjectPresenter
 import moxy.presenter.ProvidePresenter
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.core.deeplink.launchCustomTabsByUrl
-import uddug.com.naukoteka.databinding.FragmentProfileAdditionalActionBinding
 import uddug.com.naukoteka.databinding.FragmentProfileHelpSupportBinding
-import uddug.com.naukoteka.global.base.BaseBottomSheetDialogFragment
 import uddug.com.naukoteka.global.base.BaseFragment
 import uddug.com.naukoteka.presentation.profile.HelpSupportView
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerView
-import uddug.com.naukoteka.presentation.profile.ProfileAdditionalActionPresenter
 import uddug.com.naukoteka.presentation.profile.ProfileHelpSupportPresenter
 import uddug.com.naukoteka.utils.viewBinding
 
-
 class ProfileHelpSupportFragment : BaseFragment(R.layout.fragment_profile_help_support),
     HelpSupportView {
-
-    private lateinit var mBehavior: BottomSheetBehavior<FrameLayout>
 
     private var containerNavigation: ContainerView? = null
 
@@ -97,6 +88,4 @@ class ProfileHelpSupportFragment : BaseFragment(R.layout.fragment_profile_help_s
             }
         }
     }
-
-
 }

@@ -2,17 +2,13 @@ package uddug.com.naukoteka.presentation.profile.edit
 
 import android.annotation.SuppressLint
 import io.reactivex.Completable
-import io.reactivex.CompletableSource
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.subjects.BehaviorSubject
 import moxy.InjectViewState
 import toothpick.InjectConstructor
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.user_profile.UserProfileInteractor
 import uddug.com.naukoteka.global.base.BasePresenterImpl
 import uddug.com.naukoteka.utils.text.isNotNullOrEmpty
-import java.util.concurrent.TimeUnit
-
 
 @InjectConstructor
 @InjectViewState
@@ -21,120 +17,75 @@ class ProfileEditPersonalIdsPresenter(
 ) : BasePresenterImpl<ProfileEditPersonalIdsView>() {
 
     companion object {
-        private const val errorTag = "ProfileEditPresenterError"
-        private const val spinCodeId = 3100
-        private const val orchidCodeId = 3097
-        private const val resId = 3098
+        private const val spinCodeSystemId = 3100
+        private const val orchidSystemId = 3097
+        private const val researcherSystemId = 3098
     }
 
-
-    var compositeDisposable: CompositeDisposable = CompositeDisposable()
+    private val compositeDisposable = CompositeDisposable()
 
     var userProfileFullInfo: UserProfileFullInfo? = null
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
         this.userProfileFullInfo = profileFullInfo
-        userProfileFullInfo?.authors?.firstOrNull()?.identifiers?.find {
-            it.cIdentSystemItem?.id == spinCodeId
-        }?.cIdentSystemItem?.identifier?.let {
-            viewState.setSpinCode(
-                it
-            )
-        }
-        userProfileFullInfo?.authors?.firstOrNull()?.identifiers?.find {
-            it.cIdentSystemItem?.id == orchidCodeId
-        }?.cIdentSystemItem?.identifier?.let {
-            viewState.setOrchid(
-                it
-            )
-        }
-        userProfileFullInfo?.authors?.firstOrNull()?.identifiers?.find {
-            it.cIdentSystemItem?.id == resId
-        }?.cIdentSystemItem?.identifier?.let {
-            viewState.setReserch(
-                it
-            )
-        }
+        val identifiers = profileFullInfo.authors?.firstOrNull()?.identifiers
+        identifiers?.find { it.cIdentSystemItem?.id == spinCodeSystemId }
+            ?.cIdentSystemItem?.identifier?.let { viewState.setSpinCode(it) }
+        identifiers?.find { it.cIdentSystemItem?.id == orchidSystemId }
+            ?.cIdentSystemItem?.identifier?.let { viewState.setOrchid(it) }
+        identifiers?.find { it.cIdentSystemItem?.id == researcherSystemId }
+            ?.cIdentSystemItem?.identifier?.let { viewState.setReserch(it) }
         viewState.setMainInformation(profileFullInfo)
     }
 
     fun setCurrentSpinCode(spinCode: String) {
-        userProfileFullInfo?.authors?.first().apply {
-            this?.identifiers?.find {
-                it.cIdentSystemItem?.id == spinCodeId
-            }?.cIdentSystemItem?.identifier = spinCode
-        }
+        findIdentifier(spinCodeSystemId)?.cIdentSystemItem?.identifier = spinCode
     }
 
     fun setCurrentOrchid(orchid: String) {
-        userProfileFullInfo?.authors?.first().apply {
-            this?.identifiers?.find {
-                it.cIdentSystemItem?.id == orchidCodeId
-            }?.cIdentSystemItem?.identifier = orchid
-        }
+        findIdentifier(orchidSystemId)?.cIdentSystemItem?.identifier = orchid
     }
 
-    fun setCurrentReserchId(reserchedId: String) {
-        userProfileFullInfo?.authors?.first().apply {
-            this?.identifiers?.find {
-                it.cIdentSystemItem?.id == resId
-            }?.cIdentSystemItem?.identifier = reserchedId
-        }
+    fun setCurrentReserchId(researcherId: String) {
+        findIdentifier(researcherSystemId)?.cIdentSystemItem?.identifier = researcherId
     }
 
     fun selectUpdateUserIds() {
-        userProfileFullInfo?.id?.let {
-            userProfileFullInfo?.authors?.first()?.let { it1 ->
-                val spinCode = it1.identifiers.find { it.cIdentSystemItem?.id == spinCodeId }
-                val orchidCodeId = it1.identifiers.find { it.cIdentSystemItem?.id == orchidCodeId }
-                val reserchedId = it1.identifiers.find { it.cIdentSystemItem?.id == resId }
-                userProfileInteractor.updateUserObjectId(
-                    it,
-                    spinCode?.id.orEmpty(),
-                    spinCode?.cIdentSystemItem?.identifier.orEmpty(),
-                    spinCode?.rObject.orEmpty(),
-                    spinCode?.cIdentSystem.orEmpty()
-                ).andThen(
-                    if (orchidCodeId?.cIdentSystemItem?.identifier.isNotNullOrEmpty()) {
-                        userProfileInteractor.updateUserObjectId(
-                            it,
-                            orchidCodeId?.id.orEmpty(),
-                            orchidCodeId?.cIdentSystemItem?.identifier.orEmpty(),
-                            orchidCodeId?.rObject.orEmpty(),
-                            orchidCodeId?.cIdentSystem.orEmpty()
-                        )
-                    } else {
-                        Completable.fromAction { }
-                    }
-                ).andThen(
-                    if (reserchedId?.cIdentSystemItem?.identifier.isNotNullOrEmpty()) {
-                        userProfileInteractor.updateUserObjectId(
-                            it,
-                            reserchedId?.id.orEmpty(),
-                            reserchedId?.cIdentSystemItem?.identifier.orEmpty(),
-                            reserchedId?.rObject.orEmpty(),
-                            reserchedId?.cIdentSystem.orEmpty()
-                        )
-                    } else {
-                        Completable.fromAction { }
-                    }
-                ).subscribe({
-                    viewState.showIdsUpdatedSuccess()
-                }, {
-                    it.printStackTrace()
-                })
-            }
-        }
+        val userId = userProfileFullInfo?.id ?: return
+        val author = userProfileFullInfo?.authors?.first() ?: return
+        val spinCode = author.identifiers.find { it.cIdentSystemItem?.id == spinCodeSystemId }
+        val orchid = author.identifiers.find { it.cIdentSystemItem?.id == orchidSystemId }
+        val researcher = author.identifiers.find { it.cIdentSystemItem?.id == researcherSystemId }
+
+        fun updateId(id: String, identifier: String, rObject: String, cIdentSystem: String) =
+            userProfileInteractor.updateUserObjectId(userId, id, identifier, rObject, cIdentSystem)
+
+        userProfileInteractor.updateUserObjectId(
+            userId,
+            spinCode?.id.orEmpty(),
+            spinCode?.cIdentSystemItem?.identifier.orEmpty(),
+            spinCode?.rObject.orEmpty(),
+            spinCode?.cIdentSystem.orEmpty()
+        ).andThen(
+            if (orchid?.cIdentSystemItem?.identifier.isNotNullOrEmpty())
+                updateId(orchid?.id.orEmpty(), orchid?.cIdentSystemItem?.identifier.orEmpty(), orchid?.rObject.orEmpty(), orchid?.cIdentSystem.orEmpty())
+            else Completable.fromAction {}
+        ).andThen(
+            if (researcher?.cIdentSystemItem?.identifier.isNotNullOrEmpty())
+                updateId(researcher?.id.orEmpty(), researcher?.cIdentSystemItem?.identifier.orEmpty(), researcher?.rObject.orEmpty(), researcher?.cIdentSystem.orEmpty())
+            else Completable.fromAction {}
+        ).subscribe({
+            viewState.showIdsUpdatedSuccess()
+        }, {
+            it.printStackTrace()
+        })
     }
+
+    private fun findIdentifier(systemId: Int) =
+        userProfileFullInfo?.authors?.firstOrNull()?.identifiers?.find { it.cIdentSystemItem?.id == systemId }
 
     override fun onDestroy() {
         super.onDestroy()
         compositeDisposable.dispose()
     }
-
-    override fun onFirstViewAttach() {
-        super.onFirstViewAttach()
-    }
-
-
 }

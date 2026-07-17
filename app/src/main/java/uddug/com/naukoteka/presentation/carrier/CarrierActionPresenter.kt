@@ -22,153 +22,114 @@ class CarrierActionPresenter(
 ) : BasePresenterImpl<CarrierActionView>() {
 
     private var screenActionType: ScreenActionType = ScreenActionType.CREATE
-
-    private var currentcarrierId: String? = null
-
-    var compositeDisposable: CompositeDisposable = CompositeDisposable()
+    private var currentCarrierId: String? = null
+    private val compositeDisposable = CompositeDisposable()
+    private var currentCarrier: LaborActivities = LaborActivities()
+    private val calendar = GregorianCalendar()
+    private var lastSettlements: List<Settlement> = emptyList()
 
     var userProfileFullInfo: UserProfileFullInfo? = null
 
-    private var currentcarrier: LaborActivities = LaborActivities()
-
-    val calendar: GregorianCalendar = GregorianCalendar()
-
-    private var lastSettlements: List<Settlement> = emptyList()
-
-    companion object {
-        private const val middleCType = "53:5"
-        private const val highCType = "53:6"
-        private const val additionalCType = "53:4"
-    }
-
     fun setCurrentcarrierId(carrierId: String) {
-        currentcarrierId = carrierId
-        currentcarrier.id = currentcarrierId
+        currentCarrierId = carrierId
+        currentCarrier.id = carrierId
         screenActionType = ScreenActionType.EDIT
-        setcarrierInfo()
+        loadCarrierInfo()
     }
 
-    private fun setcarrierInfo() {
-        userProfileFullInfo?.laborActivity?.find {
-            it.id == currentcarrierId
-        }?.let { carrier ->
-            currentcarrier = carrier
+    private fun loadCarrierInfo() {
+        userProfileFullInfo?.laborActivity?.find { it.id == currentCarrierId }?.let { carrier ->
+            currentCarrier = carrier
             viewState.setCurrentCarrierInfo(carrier)
         }
     }
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
         this.userProfileFullInfo = profileFullInfo
-
     }
 
     fun askForOpenCountrySelect() {
-        viewState.openCountrySelectPage(
-            currentcarrier?.country?.id
-        )
+        viewState.openCountrySelectPage(currentCarrier.country?.id)
     }
 
     fun selectUpdatecarrier() {
         when (screenActionType) {
             ScreenActionType.CREATE -> {
-                if (currentcarrier.country?.id.isNullOrEmpty()) {
+                if (currentCarrier.country?.id.isNullOrEmpty()) {
                     viewState.showCreateValidationError()
                 } else {
-                    currentcarrier?.let {
+                    compositeDisposable.add(
                         userProfileInteractor.createUserLabor(
                             userId = userProfileFullInfo?.id.orEmpty(),
-                            labor = it,
-                        ).subscribe({
-                            viewState.carrierSuccessUpdated()
-                        }, {})
-                    }?.let {
-                        compositeDisposable.add(
-                            it
-                        )
-                    }
+                            labor = currentCarrier,
+                        ).subscribe({ viewState.carrierSuccessUpdated() }, {})
+                    )
                 }
             }
-
             ScreenActionType.EDIT -> {
-                if (currentcarrier?.country?.id.isNullOrEmpty()) {
+                if (currentCarrier.country?.id.isNullOrEmpty()) {
                     viewState.showUpdateValidationError()
                 } else {
-                    currentcarrier?.let {
+                    compositeDisposable.add(
                         userProfileInteractor.updateUserCarrier(
                             userId = userProfileFullInfo?.id.orEmpty(),
-                            labor = it,
-                        ).subscribe({
-                            viewState.carrierSuccessUpdated()
-                        }, {})
-                    }?.let {
-                        compositeDisposable.add(
-                            it
-                        )
-                    }
+                            labor = currentCarrier,
+                        ).subscribe({ viewState.carrierSuccessUpdated() }, {})
+                    )
                 }
             }
         }
     }
 
     fun setcarrierSettlement(settlement: String) {
-        currentcarrier.city = settlement
+        currentCarrier.city = settlement
         if (settlement.isNotNullOrEmpty()) {
-            currentcarrier.country?.id?.let {
+            currentCarrier.country?.id?.let { countryId ->
                 compositeDisposable.add(
                     locationInteractor.findSettlementsByCountry(
-                        countryId = it,
+                        countryId = countryId,
                         query = settlement,
-                    ).subscribe({
-                        lastSettlements = it
-                        viewState.setSettlements(it)
-                    }, {
-
-                    })
+                    ).subscribe({ settlements ->
+                        lastSettlements = settlements
+                        viewState.setSettlements(settlements)
+                    }, {})
                 )
             }
         }
     }
-
 
     override fun onDestroy() {
         super.onDestroy()
         compositeDisposable.dispose()
     }
 
-    override fun onFirstViewAttach() {
-        super.onFirstViewAttach()
-    }
-
     fun setEndYear(year: String) {
         calendar.set(year.toInt(), Calendar.JULY, 31)
-        currentcarrier.endWork = calendar.toZonedDateTime().toLocalDate().toString()
+        currentCarrier.endWork = calendar.toZonedDateTime().toLocalDate().toString()
     }
 
     fun setStartYear(year: String) {
         calendar.set(year.toInt(), Calendar.JULY, 31)
-        currentcarrier.startWork = calendar.toZonedDateTime().toLocalDate().toString()
+        currentCarrier.startWork = calendar.toZonedDateTime().toLocalDate().toString()
     }
 
     fun setRank(rank: String) {
-        currentcarrier.position = rank
+        currentCarrier.position = rank
     }
 
     fun setOrg(orgName: String) {
-        currentcarrier.orgName = orgName
+        currentCarrier.orgName = orgName
     }
 
-    fun setWorkDirection(workDirection: String) {
-
-    }
+    fun setWorkDirection(workDirection: String) {}
 
     fun setSelectedCountry(country: Country) {
-        currentcarrier.country = country
-        currentcarrier.let { viewState.setCurrentCarrierInfo(it) }
+        currentCarrier.country = country
+        viewState.setCurrentCarrierInfo(currentCarrier)
     }
 
     enum class ScreenActionType {
         CREATE,
         EDIT
     }
-
 }

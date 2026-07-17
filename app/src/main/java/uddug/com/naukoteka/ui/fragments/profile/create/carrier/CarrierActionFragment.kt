@@ -21,29 +21,23 @@ import moxy.presenter.InjectPresenter
 import moxy.presenter.ProvidePresenter
 import uddug.com.domain.entities.country.Country
 import uddug.com.domain.entities.country.Settlement
-import uddug.com.domain.entities.profile.Education
 import uddug.com.domain.entities.profile.LaborActivities
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.databinding.FragmentCarrierActionBinding
-import uddug.com.naukoteka.databinding.FragmentEducationMiddleActionBinding
 import uddug.com.naukoteka.global.base.BaseFragment
 import uddug.com.naukoteka.presentation.carrier.CarrierActionPresenter
 import uddug.com.naukoteka.presentation.carrier.CarrierActionView
-import uddug.com.naukoteka.presentation.education.EducationMiddleActionPresenter
-import uddug.com.naukoteka.presentation.education.EducationMiddleActionView
 import uddug.com.naukoteka.presentation.profile.edit.adapter.EducationAdapter.Companion.dateFormat
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.PROFILE_ARGS
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.SELECTED_CARRIER_ID
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.SELECTED_COUNTRY_ID
-import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.SELECTED_EDUCATION_ID
 import uddug.com.naukoteka.ui.fragments.county.CountrySelectFragment.Companion.SELECTED_COUNTRY
 import uddug.com.naukoteka.ui.fragments.county.CountrySelectFragment.Companion.SELECTED_COUNTRY_RESULT
 import uddug.com.naukoteka.utils.viewBinding
 import java.time.LocalDate
 import java.util.Calendar
-
 
 class CarrierActionFragment :
     BaseFragment(R.layout.fragment_carrier_action),
@@ -66,9 +60,8 @@ class CarrierActionFragment :
     }
 
     @ProvidePresenter
-    fun providePresenter(): CarrierActionPresenter {
-        return getScope().getInstance(CarrierActionPresenter::class.java)
-    }
+    fun providePresenter(): CarrierActionPresenter =
+        getScope().getInstance(CarrierActionPresenter::class.java)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -82,94 +75,56 @@ class CarrierActionFragment :
             ?.let { presenter.setProfileFullInfo(it) }
         arguments?.getString(SELECTED_CARRIER_ID)
             ?.let { presenter.setCurrentcarrierId(it) }
-        contentView.country.setOnClickListener {
-            presenter.askForOpenCountrySelect()
-        }
-        contentView.done.setOnClickListener {
-            presenter.selectUpdatecarrier()
-        }
-        contentView.settlement.addTextChangedListener {
-            presenter.setcarrierSettlement(it.toString())
-        }
-        contentView.rank.addTextChangedListener {
-            presenter.setRank(it.toString())
-        }
-        contentView.placeWork.addTextChangedListener {
-            presenter.setOrg(it.toString())
-        }
-        contentView.workDirection.addTextChangedListener {
-            presenter.setWorkDirection(it.toString())
-        }
-
-        contentView.back.setOnClickListener {
-            findNavController().popBackStack()
-        }
-
-        contentView.startLabor.setOnClickListener {
-            val numberPicker = MaterialNumberPicker(
-                context = requireActivity(),
-                minValue = MIN_YEAR_PICKER,
-                maxValue = Calendar.getInstance().get(Calendar.YEAR),
-                value = contentView.startLabor.text.toString().format(
-                    dateFormat
-                ).toIntOrNull() ?: DEFAULT_YEAR_PICKER,
-                separatorColor = ContextCompat.getColor(
-                    requireActivity(),
-                    android.R.color.transparent
-                ),
-                textStyle = Typeface.BOLD_ITALIC,
-                editable = false,
-                wrapped = false,
-                formatter = NumberPicker.Formatter {
-                    return@Formatter "${it}"
-                }
-            )
-            AlertDialog.Builder(requireActivity())
-                .setTitle(requireActivity().getString(R.string.select_year))
-                .setView(numberPicker)
-                .setNegativeButton(requireActivity().getString(R.string.cancel), null)
-                .setPositiveButton(requireActivity().getString(R.string.choose)) { _, _ ->
-                    contentView.startLabor.text = numberPicker.value.toString()
-                    presenter.setStartYear(numberPicker.value.toString())
-                }
-                .show()
-        }
-        contentView.endLabor.setOnClickListener {
-            val numberPicker = MaterialNumberPicker(
-                context = requireActivity(),
-                minValue = MIN_YEAR_PICKER,
-                maxValue = Calendar.getInstance().get(Calendar.YEAR),
-                value = contentView.endLabor.text.toString().format(
-                    dateFormat
-                ).toIntOrNull() ?: DEFAULT_YEAR_PICKER,
-                separatorColor = ContextCompat.getColor(
-                    requireActivity(),
-                    android.R.color.transparent
-                ),
-                textStyle = Typeface.BOLD_ITALIC,
-                editable = false,
-                wrapped = false,
-                formatter = NumberPicker.Formatter {
-                    return@Formatter "${it}"
-                }
-            )
-            AlertDialog.Builder(requireActivity())
-                .setTitle(requireActivity().getString(R.string.select_year))
-                .setView(numberPicker)
-                .setNegativeButton(requireActivity().getString(R.string.cancel), null)
-                .setPositiveButton(requireActivity().getString(R.string.choose)) { _, _ ->
-                    contentView.endLabor.text = numberPicker.value.toString()
-                    presenter.setEndYear(numberPicker.value.toString())
-                }
-                .show()
-        }
-        setFragmentResultListener(SELECTED_COUNTRY_RESULT) { key, bundle ->
-            bundle.getParcelable<Country>(SELECTED_COUNTRY)?.let {
-                presenter.setSelectedCountry(
-                    it
+        with(contentView) {
+            country.setOnClickListener { presenter.askForOpenCountrySelect() }
+            done.setOnClickListener { presenter.selectUpdatecarrier() }
+            settlement.addTextChangedListener { presenter.setcarrierSettlement(it.toString()) }
+            rank.addTextChangedListener { presenter.setRank(it.toString()) }
+            placeWork.addTextChangedListener { presenter.setOrg(it.toString()) }
+            workDirection.addTextChangedListener { presenter.setWorkDirection(it.toString()) }
+            back.setOnClickListener { findNavController().popBackStack() }
+            startLabor.setOnClickListener {
+                showYearPicker(
+                    currentYear = startLabor.text.toString().toIntOrNull() ?: DEFAULT_YEAR_PICKER,
+                    onYearSelected = { year ->
+                        startLabor.text = year.toString()
+                        presenter.setStartYear(year.toString())
+                    }
+                )
+            }
+            endLabor.setOnClickListener {
+                showYearPicker(
+                    currentYear = endLabor.text.toString().toIntOrNull() ?: DEFAULT_YEAR_PICKER,
+                    onYearSelected = { year ->
+                        endLabor.text = year.toString()
+                        presenter.setEndYear(year.toString())
+                    }
                 )
             }
         }
+        setFragmentResultListener(SELECTED_COUNTRY_RESULT) { _, bundle ->
+            bundle.getParcelable<Country>(SELECTED_COUNTRY)?.let { presenter.setSelectedCountry(it) }
+        }
+    }
+
+    private fun showYearPicker(currentYear: Int, onYearSelected: (Int) -> Unit) {
+        val picker = MaterialNumberPicker(
+            context = requireActivity(),
+            minValue = MIN_YEAR_PICKER,
+            maxValue = Calendar.getInstance().get(Calendar.YEAR),
+            value = currentYear,
+            separatorColor = ContextCompat.getColor(requireActivity(), android.R.color.transparent),
+            textStyle = Typeface.BOLD_ITALIC,
+            editable = false,
+            wrapped = false,
+            formatter = NumberPicker.Formatter { it.toString() }
+        )
+        AlertDialog.Builder(requireActivity())
+            .setTitle(getString(R.string.select_year))
+            .setView(picker)
+            .setNegativeButton(getString(R.string.cancel), null)
+            .setPositiveButton(getString(R.string.choose)) { _, _ -> onYearSelected(picker.value) }
+            .show()
     }
 
     override fun onAttach(context: Context) {
@@ -183,63 +138,43 @@ class CarrierActionFragment :
     }
 
     override fun openCountrySelectPage(selectedCountryId: String?) {
-        val bundle = Bundle()
-        selectedCountryId?.let { bundle.putString(SELECTED_COUNTRY_ID, it) }
+        val bundle = Bundle().apply { selectedCountryId?.let { putString(SELECTED_COUNTRY_ID, it) } }
         findNavController().navigate(R.id.countrySelect, bundle)
     }
 
     override fun setCurrentCarrierInfo(labor: LaborActivities) {
-        contentView.toolbar.text = getString(R.string.edit_carrier)
-        contentView.country.text = labor.country?.term.toString()
-        contentView.settlement.setText(labor.cityAsString)
-        contentView.placeWork.setText(labor.orgName)
-        contentView.rank.setText(labor.position)
-        contentView.workDirection.setText(labor.activityAreasMap.values.firstOrNull())
-
-        labor.startWork?.let {
-            contentView.startLabor.text =
-                LocalDate.parse(labor.startWork, dateFormat).year.toString()
-        }
-        labor.endWork?.let {
-            contentView.endLabor.text =
-                LocalDate.parse(labor.endWork, dateFormat).year.toString()
+        with(contentView) {
+            toolbar.text = getString(R.string.edit_carrier)
+            country.text = labor.country?.term.toString()
+            settlement.setText(labor.cityAsString)
+            placeWork.setText(labor.orgName)
+            rank.setText(labor.position)
+            workDirection.setText(labor.activityAreasMap.values.firstOrNull())
+            labor.startWork?.let { startLabor.text = LocalDate.parse(it, dateFormat).year.toString() }
+            labor.endWork?.let { endLabor.text = LocalDate.parse(it, dateFormat).year.toString() }
         }
     }
 
     override fun carrierSuccessUpdated() {
-        setFragmentResult(
-            CREATE_CARRIER_RESULT, bundleOf(
-                CREATE_CARRIER_RESULT_KEY to true
-            )
-        )
+        setFragmentResult(CREATE_CARRIER_RESULT, bundleOf(CREATE_CARRIER_RESULT_KEY to true))
         findNavController().popBackStack()
     }
 
     override fun setSettlements(settlements: List<Settlement>) {
         contentView.settlement.setAdapter(
-            ArrayAdapter<String>(
+            ArrayAdapter(
                 requireActivity(),
-                android.R.layout.simple_dropdown_item_1line, settlements.map { it.city }
+                android.R.layout.simple_dropdown_item_1line,
+                settlements.map { it.city }
             )
         )
     }
 
     override fun showUpdateValidationError() {
-        Toast.makeText(
-            requireActivity(),
-            getString(R.string.check_correct_fields), Toast.LENGTH_LONG
-        )
-            .show()
+        Toast.makeText(requireActivity(), getString(R.string.check_correct_fields), Toast.LENGTH_LONG).show()
     }
 
     override fun showCreateValidationError() {
-        Toast.makeText(
-            requireActivity(),
-            getString(R.string.check_correct_fields),
-            Toast.LENGTH_LONG
-        )
-            .show()
+        Toast.makeText(requireActivity(), getString(R.string.check_correct_fields), Toast.LENGTH_LONG).show()
     }
-
-
 }

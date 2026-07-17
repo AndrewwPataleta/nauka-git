@@ -15,28 +15,11 @@ interface ProfileEditView : MvpView, LoadingView, InformativeView {
     fun openProfileEditPersonalData(profileInfo: UserProfileFullInfo)
     fun openProfileEditPersonalIdsData(profileInfo: UserProfileFullInfo)
     fun openProfileAcademicDegreeEdit(profileInfo: UserProfileFullInfo)
-    fun openProfileEducationInfo(
-        profileInfo: UserProfileFullInfo,
-
-        )
-
-    fun openProfileCarrierInfo(
-        profileInfo: UserProfileFullInfo,
-
-        )
-
-    fun openProfileAddressesEdit(
-        profileInfo: UserProfileFullInfo,
-    )
-
-    fun openProfileContactsEdit(
-        profileInfo: UserProfileFullInfo,
-    )
-
-    fun openProfileSettings(
-        profileInfo: UserProfileFullInfo,
-    )
-
+    fun openProfileEducationInfo(profileInfo: UserProfileFullInfo)
+    fun openProfileCarrierInfo(profileInfo: UserProfileFullInfo)
+    fun openProfileAddressesEdit(profileInfo: UserProfileFullInfo)
+    fun openProfileContactsEdit(profileInfo: UserProfileFullInfo)
+    fun openProfileSettings(profileInfo: UserProfileFullInfo)
     fun openEditProfileId(profileInfo: UserProfileFullInfo)
     fun askForDeleteBanner()
 }

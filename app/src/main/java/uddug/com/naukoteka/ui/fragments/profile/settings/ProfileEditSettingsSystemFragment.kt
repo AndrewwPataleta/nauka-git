@@ -1,38 +1,21 @@
 package uddug.com.naukoteka.ui.fragments.profile.settings
 
-import android.annotation.SuppressLint
-import android.app.Dialog
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.Window
-import android.view.animation.Animation
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.view.isVisible
-import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
 import moxy.presenter.InjectPresenter
 import moxy.presenter.ProvidePresenter
 import uddug.com.domain.entities.profile.UserProfileFullInfo
-import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
-import uddug.com.naukoteka.databinding.FragmentProfileEditBinding
 import uddug.com.naukoteka.databinding.FragmentSettingsSystemBinding
 import uddug.com.naukoteka.global.base.BaseFragment
-import uddug.com.naukoteka.presentation.profile.ProfileAvatarActionPresenter
-import uddug.com.naukoteka.presentation.profile.edit.ProfileEditPresenter
-import uddug.com.naukoteka.presentation.profile.edit.ProfileEditView
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.PROFILE_ARGS
-import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment.Companion.PROFILE_FULL_INFO_ARGS
-import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment.Companion.UPLOAD_AVATAR_RESULT
-import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileEditPersonalInfoFragment.Companion.UPDATE_PROFILE_INFO
-import uddug.com.naukoteka.utils.getHashCodeToString
-import uddug.com.naukoteka.utils.text.isNotNullOrEmpty
-import uddug.com.naukoteka.utils.ui.load
 import uddug.com.naukoteka.utils.viewBinding
 import java.io.File
 
@@ -49,8 +32,6 @@ class ProfileEditSettingsSystemFragment : BaseFragment(R.layout.fragment_setting
 
     private var navigationView: ContainerNavigationView? = null
 
-    private var pulseAnimation: Animation? = null
-
     @ProvidePresenter
     fun providePresenter(): ProfileSettingsSystemPresenter {
         return getScope().getInstance(ProfileSettingsSystemPresenter::class.java)
@@ -66,37 +47,25 @@ class ProfileEditSettingsSystemFragment : BaseFragment(R.layout.fragment_setting
         super.onViewCreated(view, savedInstanceState)
         arguments?.getParcelable<UserProfileFullInfo>(PROFILE_ARGS)
             ?.let { presenter.setProfileFullInfo(it) }
-        contentView.back.setOnClickListener {
-            findNavController().popBackStack()
-        }
-        contentView.lightTheme.setOnClickListener {
-            presenter.selectLightMode()
-        }
-        contentView.darkTheme.setOnClickListener {
-            presenter.selectDarkMode()
-        }
-        contentView.clearCache.setOnClickListener {
-            presenter.selectClearCache()
-        }
-        contentView.compressImagesSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
+        contentView.back.setOnClickListener { findNavController().popBackStack() }
+        contentView.lightTheme.setOnClickListener { presenter.selectLightMode() }
+        contentView.darkTheme.setOnClickListener { presenter.selectDarkMode() }
+        contentView.clearCache.setOnClickListener { presenter.selectClearCache() }
+        contentView.compressImagesSwitch.setOnCheckedChangeListener { _, isChecked ->
             presenter.selectCompressImage(isChecked)
         }
-        contentView.compressVideoSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
+        contentView.compressVideoSwitch.setOnCheckedChangeListener { _, isChecked ->
             presenter.selectCompressVideoSwitch(isChecked)
         }
-        contentView.autoPlayGif.setOnCheckedChangeListener { buttonView, isChecked ->
+        contentView.autoPlayGif.setOnCheckedChangeListener { _, isChecked ->
             presenter.selectAutoPlayGif(isChecked)
         }
-        contentView.autoPlayVideoSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
+        contentView.autoPlayVideoSwitch.setOnCheckedChangeListener { _, isChecked ->
             presenter.selectAutoPlayVideoSwitch(isChecked)
         }
         contentView.environmentSwitch.setOnCheckedChangeListener { _, isChecked ->
             presenter.selectEnvironment(isChecked)
-            Toast.makeText(
-                requireContext(),
-                getString(R.string.environment_changed_message),
-                Toast.LENGTH_LONG
-            ).show()
+            showEnvironmentChangedToast()
         }
     }
 
@@ -110,15 +79,10 @@ class ProfileEditSettingsSystemFragment : BaseFragment(R.layout.fragment_setting
         navigationView?.showNavigationBottomBar(false)
     }
 
-    override fun setMainInformation(profileInfo: UserProfileFullInfo) {
-
-    }
+    override fun setMainInformation(profileInfo: UserProfileFullInfo) {}
 
     override fun showClearCacheSuccess() {
-        Toast.makeText(
-            requireActivity(),
-            getString(R.string.cache_delete_successfull), Toast.LENGTH_LONG
-        ).show()
+        Toast.makeText(requireActivity(), getString(R.string.cache_delete_successfull), Toast.LENGTH_LONG).show()
     }
 
     override fun setCompressImage(compress: Boolean) {
@@ -138,15 +102,11 @@ class ProfileEditSettingsSystemFragment : BaseFragment(R.layout.fragment_setting
     }
 
     override fun setThemeMode(themeMode: ThemeMode) {
-        when (themeMode) {
-            ThemeMode.LIGHT -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            }
-
-            ThemeMode.DARK -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-            }
+        val nightMode = when (themeMode) {
+            ThemeMode.LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+            ThemeMode.DARK -> AppCompatDelegate.MODE_NIGHT_YES
         }
+        AppCompatDelegate.setDefaultNightMode(nightMode)
     }
 
     override fun setEnvironment(environment: AppEnvironmentMode) {
@@ -156,16 +116,11 @@ class ProfileEditSettingsSystemFragment : BaseFragment(R.layout.fragment_setting
         } else {
             getString(R.string.environment_prod)
         }
-
         contentView.environmentSwitch.setOnCheckedChangeListener(null)
         contentView.environmentSwitch.isChecked = isDev
         contentView.environmentSwitch.setOnCheckedChangeListener { _, isChecked ->
             presenter.selectEnvironment(isChecked)
-            Toast.makeText(
-                requireContext(),
-                getString(R.string.environment_changed_message),
-                Toast.LENGTH_LONG
-            ).show()
+            showEnvironmentChangedToast()
         }
     }
 
@@ -174,4 +129,7 @@ class ProfileEditSettingsSystemFragment : BaseFragment(R.layout.fragment_setting
         showClearCacheSuccess()
     }
 
+    private fun showEnvironmentChangedToast() {
+        Toast.makeText(requireContext(), getString(R.string.environment_changed_message), Toast.LENGTH_LONG).show()
+    }
 }

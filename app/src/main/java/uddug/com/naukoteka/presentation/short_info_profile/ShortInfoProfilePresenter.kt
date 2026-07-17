@@ -40,20 +40,25 @@ class ShortInfoProfilePresenter(
             .connect()
     }
 
-    fun isValidFields(surname: String, name: String, patronymic: String, withoutPatronymic : Boolean, link: String) {
-        viewState.showButtonState(
-            fieldsValidator.isNotEmpty(surname) &&
-                    fieldsValidator.isNotEmpty(name) &&
-                    (withoutPatronymic || fieldsValidator.isNotEmpty(patronymic)) &&
-                    fieldsValidator.isNotEmpty(link) &&
-                    isAvailableNickname
-        )
+    fun isValidFields(
+        surname: String,
+        name: String,
+        patronymic: String,
+        withoutPatronymic: Boolean,
+        link: String
+    ) {
+        val isValid = fieldsValidator.isNotEmpty(surname) &&
+            fieldsValidator.isNotEmpty(name) &&
+            (withoutPatronymic || fieldsValidator.isNotEmpty(patronymic)) &&
+            fieldsValidator.isNotEmpty(link) &&
+            isAvailableNickname
+        viewState.showButtonState(isValid)
     }
 
     fun checkFreeNickname(nickname: String) {
         if (nickname == defaultNickname) {
             isAvailableNickname = true
-            viewState.showNicknameAvailable(isAvailableNickname)
+            viewState.showNicknameAvailable(true)
         } else {
             inputNicknameSubject.onNext(nickname)
         }

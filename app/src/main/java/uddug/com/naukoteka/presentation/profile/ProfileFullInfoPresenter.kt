@@ -18,5 +18,4 @@ class ProfileFullInfoPresenter(
         this.profileFullInfo = profileFullInfo
         viewState.setProfileFullInfo(profileFullInfo)
     }
-
 }

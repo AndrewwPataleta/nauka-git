@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.Animation
 import androidx.navigation.fragment.findNavController
 import moxy.presenter.InjectPresenter
 import moxy.presenter.ProvidePresenter
@@ -23,8 +22,6 @@ import uddug.com.naukoteka.ui.custom.AcademicDegreeEditView
 import uddug.com.naukoteka.utils.getCurrentDateTime
 import uddug.com.naukoteka.utils.toString
 import uddug.com.naukoteka.utils.viewBinding
-import java.util.Calendar
-
 
 class ProfileEditAcademicDegreeFragment :
     BaseFragment(R.layout.fragment_profile_edit_academic_degree),
@@ -39,14 +36,11 @@ class ProfileEditAcademicDegreeFragment :
 
     private var navigationView: ContainerNavigationView? = null
 
-    private var pulseAnimation: Animation? = null
-
-    private var academicDegrees: MutableList<AcademicDegreeEditView> = mutableListOf()
+    private val academicDegreeViews: MutableList<AcademicDegreeEditView> = mutableListOf()
 
     @ProvidePresenter
-    fun providePresenter(): ProfileEditAcademicDegreePresenter {
-        return getScope().getInstance(ProfileEditAcademicDegreePresenter::class.java)
-    }
+    fun providePresenter(): ProfileEditAcademicDegreePresenter =
+        getScope().getInstance(ProfileEditAcademicDegreePresenter::class.java)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -58,16 +52,9 @@ class ProfileEditAcademicDegreeFragment :
         super.onViewCreated(view, savedInstanceState)
         arguments?.getParcelable<UserProfileFullInfo>(PROFILE_ARGS)
             ?.let { presenter.setProfileFullInfo(it) }
-        contentView.done.setOnClickListener {
-            presenter.askToSaveNewAcademicDegree()
-        }
-        contentView.back.setOnClickListener {
-            findNavController().popBackStack()
-        }
-        contentView.addDegree.setOnClickListener {
-            presenter.askToAddNewAcademicDegree()
-        }
-
+        contentView.done.setOnClickListener { presenter.askToSaveNewAcademicDegree() }
+        contentView.back.setOnClickListener { findNavController().popBackStack() }
+        contentView.addDegree.setOnClickListener { presenter.askToAddNewAcademicDegree() }
     }
 
     override fun onAttach(context: Context) {
@@ -84,41 +71,33 @@ class ProfileEditAcademicDegreeFragment :
     override fun setMainInformation(profileInfo: UserProfileFullInfo) {
         contentView.degreeContainer.removeAllViews()
         profileInfo.userAcademicDegree.map { academic ->
-            val view = AcademicDegreeEditView(
-                context = requireContext(),
-            ).apply {
+            val degreeView = AcademicDegreeEditView(context = requireContext()).apply {
                 attachAcademicDegree(
                     id = academic.id,
                     academicDegree = academic.name ?: "",
-                    date = academic.titleDate ?:  getCurrentDateTime().toString(dateFormat.toString()),
+                    date = academic.titleDate ?: getCurrentDateTime().toString(dateFormat.toString()),
                     parent = contentView.degreeContainer,
                 )
             }
-            academicDegrees.add(view)
-            contentView.degreeContainer.addView(view)
+            academicDegreeViews.add(degreeView)
+            contentView.degreeContainer.addView(degreeView)
         }
     }
 
     override fun addNewAcademicDegree() {
-        val view = AcademicDegreeEditView(
-            context = requireContext(),
-        ).apply {
-            val currentDate = getCurrentDateTime().toString("yyyy-MM-dd")
+        val degreeView = AcademicDegreeEditView(context = requireContext()).apply {
             attachAcademicDegree(
                 id = null,
                 academicDegree = "",
-                date = currentDate,
+                date = getCurrentDateTime().toString("yyyy-MM-dd"),
                 parent = contentView.degreeContainer,
             )
         }
-        academicDegrees.add(view)
-        contentView.degreeContainer.addView(view)
+        academicDegreeViews.add(degreeView)
+        contentView.degreeContainer.addView(degreeView)
     }
 
     override fun getListDegrees(listDegrees: (List<AcademicDegreeModel>) -> Unit) {
-        listDegrees(academicDegrees.map {
-            it.getValue()
-        })
+        listDegrees(academicDegreeViews.map { it.getValue() })
     }
-
 }

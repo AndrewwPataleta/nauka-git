@@ -52,7 +52,6 @@ class UserProfileInteractor(
 
     fun checkNickname(nickname: String): Observable<Boolean> {
         return userProfileRepository.checkNickname(nickname)
-            
             .onErrorReturn {
                 if (it is HttpException && it.statusCode == ServerApiError.Unauthorized) {
                     throw it
@@ -62,7 +61,6 @@ class UserProfileInteractor(
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
-
 
     fun updateUserId(
         id: String,
@@ -92,7 +90,6 @@ class UserProfileInteractor(
             .observeOn(schedulers.ui())
     }
 
-
     fun uploadUserAvatar(userId: String, avatar: File): Completable {
         return userProfileRepository.uploadUserAvatar(userId = userId, file = avatar)
             .subscribeOn(schedulers.io())
@@ -110,7 +107,6 @@ class UserProfileInteractor(
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
-
 
     fun removeUserEducation(userId: String, education: Education): Completable {
         return userProfileRepository.removeUserEducation(userId, education)
@@ -178,12 +174,8 @@ class UserProfileInteractor(
             .observeOn(schedulers.ui())
     }
 
-    fun updateAddress(
-        address: Addresses,
-    ): Completable {
-        return userProfileRepository.updateUserAddress(
-            address = address
-        )
+    fun updateAddress(address: Addresses): Completable {
+        return userProfileRepository.updateUserAddress(address = address)
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
@@ -192,10 +184,7 @@ class UserProfileInteractor(
         userId: String,
         contacts: List<ContactData>,
     ): Completable {
-        return userProfileRepository.updateUserContacts(
-            userId,
-            contacts = contacts
-        )
+        return userProfileRepository.updateUserContacts(userId, contacts = contacts)
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
@@ -204,10 +193,7 @@ class UserProfileInteractor(
         userId: String,
         contacts: List<ContactData>,
     ): Completable {
-        return userProfileRepository.saveUserContacts(
-            userId,
-            contacts = contacts
-        )
+        return userProfileRepository.saveUserContacts(userId, contacts = contacts)
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
@@ -230,93 +216,59 @@ class UserProfileInteractor(
             .observeOn(schedulers.ui())
     }
 
-
     fun getUserCls(
         pageSize: Int = 1000,
         cls: Int,
     ): Single<List<DefaultCls>> {
-        return userProfileRepository.getUserCls(
-            pageSize = pageSize,
-            cls = cls
-        )
+        return userProfileRepository.getUserCls(pageSize = pageSize, cls = cls)
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
 
-    fun updateCurrentSettings(
-        settings: MutableMap<String, String>,
-    ): Completable {
-        return userProfileRepository.updateUserSettings(
-            settings = settings
-        )
+    fun updateCurrentSettings(settings: MutableMap<String, String>): Completable {
+        return userProfileRepository.updateUserSettings(settings = settings)
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
 
-    fun getFeedWritable(
-    ): Single<List<WritableItem>> {
-        return userProfileRepository.getFeedWritable(
-        )
+    fun getFeedWritable(): Single<List<WritableItem>> {
+        return userProfileRepository.getFeedWritable()
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
 
-    fun getUserFeed(
-        userId: String,
-    ): Single<List<FeedContainer>> {
-        return userProfileRepository.getUserFeed(
-            userId = userId,
-        )
+    fun getUserFeed(userId: String): Single<List<FeedContainer>> {
+        return userProfileRepository.getUserFeed(userId = userId)
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
 
-    fun getUserFeedsRecommends(
-        userId: String,
-    ): Single<List<FeedContainer>> {
-        return userProfileRepository.getUserFeedsRecommendations(
-            userId = userId,
-        )
+    fun getUserFeedsRecommends(userId: String): Single<List<FeedContainer>> {
+        return userProfileRepository.getUserFeedsRecommendations(userId = userId)
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
 
-    fun addToFavorite(
-        feedContainer: FeedContainer,
-    ): Completable {
-        return userProfileRepository.addToFavorite(
-            feedContainer
-        )
+    fun addToFavorite(feedContainer: FeedContainer): Completable {
+        return userProfileRepository.addToFavorite(feedContainer)
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
 
-    fun hideAuthorPosts(
-        feedContainer: FeedContainer,
-    ): Completable {
-        return userProfileRepository.hideAuthorPosts(
-            feedContainer
-        )
+    fun hideAuthorPosts(feedContainer: FeedContainer): Completable {
+        return userProfileRepository.hideAuthorPosts(feedContainer)
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
 
-    fun getWallComments(
-        postId: String,
-    ): Single<List<PostComment>> {
-        return userProfileRepository.getPostComments(
-            postId
-        )
+    fun getWallComments(postId: String): Single<List<PostComment>> {
+        return userProfileRepository.getPostComments(postId)
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }
 
-    fun sendComment(
-        postComment: PostCommentAddRequest,
-    ): Single<PostComment> {
-        return userProfileRepository.sendComment(
-            postComment
-        )
+    fun sendComment(postComment: PostCommentAddRequest): Single<PostComment> {
+        return userProfileRepository.sendComment(postComment)
             .subscribeOn(schedulers.io())
             .observeOn(schedulers.ui())
     }

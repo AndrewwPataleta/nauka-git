@@ -26,7 +26,6 @@ import uddug.com.naukoteka.ui.activities.main.AuthActivity
 import uddug.com.naukoteka.utils.copyToClipboard
 import uddug.com.naukoteka.utils.viewBinding
 
-
 class ProfileAdditionalActionBottomSheetFragment : BaseBottomSheetDialogFragment(),
     ProfileAdditionalActionView {
 
@@ -92,7 +91,6 @@ class ProfileAdditionalActionBottomSheetFragment : BaseBottomSheetDialogFragment
         }
         contentView.helpWithSupport.setOnClickListener {
             presenter.selectOpenHelpWithSupport()
-
         }
     }
 
@@ -150,5 +148,4 @@ class ProfileAdditionalActionBottomSheetFragment : BaseBottomSheetDialogFragment
         activity.finishAffinity()
         activity.startActivity(Intent(activity, AuthActivity::class.java))
     }
-
 }

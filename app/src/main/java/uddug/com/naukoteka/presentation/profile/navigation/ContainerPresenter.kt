@@ -12,25 +12,16 @@ class ContainerPresenter(
     private val userProfileInteractor: UserProfileInteractor
 ) : BasePresenterImpl<ContainerView>() {
 
-    companion object {}
-
     private var profileFullInfo: UserProfileFullInfo? = null
 
     fun selectOpenEditFragment(profileFullInfo: UserProfileFullInfo) {
         viewState.openEditFragment(profileFullInfo)
     }
 
-    fun uploadUserImage(
-        imageType: IMAGE_TYPE_AVATAR,
-        file: File
-    ) {
-        profileFullInfo?.id?.let {
-            userProfileInteractor.uploadUserAvatar(
-                userId = it,
-                avatar = file
-            ).subscribe({
-
-            }, {})
+    fun uploadUserImage(imageType: IMAGE_TYPE_AVATAR, file: File) {
+        profileFullInfo?.id?.let { userId ->
+            userProfileInteractor.uploadUserAvatar(userId = userId, avatar = file)
+                .subscribe({}, {})
         }
     }
 }

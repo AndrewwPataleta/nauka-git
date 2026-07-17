@@ -74,10 +74,8 @@ class EducationHighActionFragment : BaseFragment(R.layout.fragment_education_hig
     }
 
     private fun setupArguments() {
-        arguments?.getParcelable<UserProfileFullInfo>(PROFILE_ARGS)
-            ?.let { presenter.setProfileFullInfo(it) }
-        arguments?.getString(SELECTED_EDUCATION_ID)
-            ?.let { presenter.setCurrentEducationId(it) }
+        arguments?.getParcelable<UserProfileFullInfo>(PROFILE_ARGS)?.let { presenter.setProfileFullInfo(it) }
+        arguments?.getString(SELECTED_EDUCATION_ID)?.let { presenter.setCurrentEducationId(it) }
     }
 
     private fun setupListeners() {
@@ -99,7 +97,7 @@ class EducationHighActionFragment : BaseFragment(R.layout.fragment_education_hig
             )
             startEducation.setOnClickListener {
                 showYearPicker(
-                    currentYear = startEducation.text.toString().format(dateFormat).toIntOrNull() ?: DEFAULT_YEAR_PICKER,
+                    currentYear = startEducation.text.toString().toIntOrNull() ?: DEFAULT_YEAR_PICKER,
                     onYearSelected = { year ->
                         startEducation.text = year.toString()
                         presenter.setStartYear(year.toString())
@@ -108,7 +106,7 @@ class EducationHighActionFragment : BaseFragment(R.layout.fragment_education_hig
             }
             endEducation.setOnClickListener {
                 showYearPicker(
-                    currentYear = endEducation.text.toString().format(dateFormat).toIntOrNull() ?: DEFAULT_YEAR_PICKER,
+                    currentYear = endEducation.text.toString().toIntOrNull() ?: DEFAULT_YEAR_PICKER,
                     onYearSelected = { year ->
                         endEducation.text = year.toString()
                         presenter.setEndYear(year.toString())
@@ -119,7 +117,7 @@ class EducationHighActionFragment : BaseFragment(R.layout.fragment_education_hig
     }
 
     private fun showYearPicker(currentYear: Int, onYearSelected: (Int) -> Unit) {
-        val numberPicker = MaterialNumberPicker(
+        val picker = MaterialNumberPicker(
             context = requireActivity(),
             minValue = MIN_YEAR_PICKER,
             maxValue = Calendar.getInstance().get(Calendar.YEAR),
@@ -132,9 +130,9 @@ class EducationHighActionFragment : BaseFragment(R.layout.fragment_education_hig
         )
         AlertDialog.Builder(requireActivity())
             .setTitle(getString(R.string.select_year))
-            .setView(numberPicker)
+            .setView(picker)
             .setNegativeButton(getString(R.string.cancel), null)
-            .setPositiveButton(getString(R.string.choose)) { _, _ -> onYearSelected(numberPicker.value) }
+            .setPositiveButton(getString(R.string.choose)) { _, _ -> onYearSelected(picker.value) }
             .show()
     }
 

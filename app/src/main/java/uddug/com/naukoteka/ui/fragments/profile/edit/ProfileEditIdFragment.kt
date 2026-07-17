@@ -21,10 +21,6 @@ import uddug.com.naukoteka.ui.activities.main.ContainerActivity
 
 class ProfileEditIdFragment : BaseFragment(R.layout.fragment_profile_edit_id), ProfileEditIdView {
 
-    companion object {
-        private const val FRAGMENT_FULL_INFO_TAG = "FRAGMENT_FULL_INFO_TAG"
-    }
-
     override val contentView by viewBinding(FragmentProfileEditIdBinding::bind)
 
     private var navigationView: ContainerNavigationView? = null
@@ -32,11 +28,9 @@ class ProfileEditIdFragment : BaseFragment(R.layout.fragment_profile_edit_id), P
     @InjectPresenter
     lateinit var presenter: ProfileEditIdPresenter
 
-
     @ProvidePresenter
-    fun providePresenter(): ProfileEditIdPresenter {
-        return getScope().getInstance(ProfileEditIdPresenter::class.java)
-    }
+    fun providePresenter(): ProfileEditIdPresenter =
+        getScope().getInstance(ProfileEditIdPresenter::class.java)
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -45,19 +39,15 @@ class ProfileEditIdFragment : BaseFragment(R.layout.fragment_profile_edit_id), P
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        contentView.back.setOnClickListener {
-            findNavController().popBackStack()
-        }
+        contentView.back.setOnClickListener { findNavController().popBackStack() }
         contentView.done.setOnClickListener {
             presenter.updateCurrentUserId(contentView.newAddress.text.toString())
         }
         arguments?.getParcelable<UserProfileFullInfo>(ContainerActivity.PROFILE_ARGS)
             ?.let { presenter.setProfileFullInfo(it) }
-
         contentView.newAddress.addTextChangedListener {
             presenter.checkFreeNickname(it.toString())
         }
-
     }
 
     override fun onResume() {
@@ -70,21 +60,11 @@ class ProfileEditIdFragment : BaseFragment(R.layout.fragment_profile_edit_id), P
     }
 
     override fun showNicknameAvailable(isAvailable: Boolean) {
-        if (isAvailable) {
-            contentView.editIdSuccess.isVisible = true
-            contentView.editIdError.isVisible = false
-        } else {
-            contentView.editIdSuccess.isVisible = false
-            contentView.editIdError.isVisible = true
-        }
+        contentView.editIdSuccess.isVisible = isAvailable
+        contentView.editIdError.isVisible = !isAvailable
     }
 
     override fun showUpdatedDone() {
-        Toast.makeText(
-            requireActivity(),
-            getString(R.string.id_has_been_updated), Toast.LENGTH_LONG
-        ).show()
+        Toast.makeText(requireActivity(), getString(R.string.id_has_been_updated), Toast.LENGTH_LONG).show()
     }
-
-
 }

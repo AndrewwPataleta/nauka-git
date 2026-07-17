@@ -19,7 +19,7 @@ class ProfileSecurityPresenter(
     var userProfileFullInfo: UserProfileFullInfo? = null
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
-        this.userProfileFullInfo = profileFullInfo
+        userProfileFullInfo = profileFullInfo
         viewState.setMainInformation(profileFullInfo)
     }
 
@@ -44,5 +44,4 @@ class ProfileSecurityPresenter(
     fun selectChangePassword() {
         viewState.openChangePasswordDialog()
     }
-
 }

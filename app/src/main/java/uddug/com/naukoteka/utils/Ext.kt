@@ -6,7 +6,9 @@ import android.content.Context
 import android.content.res.Resources
 import android.widget.EditText
 import androidx.annotation.CheckResult
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import uddug.com.naukoteka.R
 import androidx.core.text.parseAsHtml
 import androidx.core.text.toHtml
 import androidx.core.text.toSpanned
@@ -57,6 +59,18 @@ public fun getHashCodeToString(str:String?, maxVariants:Int):Int {
         hashCode += value.toInt()
     }
     return hashCode % maxVariants
+}
+
+@DrawableRes
+fun profileGradientRes(id: String?): Int = when (getHashCodeToString(id, 8)) {
+    1 -> R.drawable.background_gradient_two
+    2 -> R.drawable.background_gradient_three
+    3 -> R.drawable.background_gradient_four
+    4 -> R.drawable.background_gradient_five
+    5 -> R.drawable.background_gradient_six
+    6 -> R.drawable.background_gradient_seven
+    7 -> R.drawable.background_gradient_eight
+    else -> R.drawable.background_gradient_one
 }
 
 fun Context.copyToClipboard(text: CharSequence){

@@ -8,7 +8,6 @@ import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.user_profile.UserProfileInteractor
 import uddug.com.naukoteka.global.base.BasePresenterImpl
 
-
 @InjectConstructor
 @InjectViewState
 class ProfileEditEducationPresenter(
@@ -16,136 +15,81 @@ class ProfileEditEducationPresenter(
 ) : BasePresenterImpl<ProfileMiddleActionEducationView>() {
 
     companion object {
-        private const val errorTag = "ProfileEditPlacementViewError"
         private const val middleCType = "53:5"
         private const val middleSecondCType = "53:4"
         private const val highCType = "53:6"
         private const val highCTypeSecond = "53:7"
-        private const val additionalCType = "53:4"
-
     }
 
-    var compositeDisposable: CompositeDisposable = CompositeDisposable()
+    private val compositeDisposable = CompositeDisposable()
 
     var userProfileFullInfo: UserProfileFullInfo? = null
-
     var educationScreenType: EducationScreenType? = null
 
     fun setEducationType(educationScreenType: String) {
         this.educationScreenType = when (educationScreenType) {
-            EducationScreenType.MIDDLE.name -> {
-                EducationScreenType.MIDDLE
-            }
-
-            EducationScreenType.HIGH.name -> {
-                EducationScreenType.HIGH
-            }
-
-            EducationScreenType.ADDITIONAL.name -> {
-                EducationScreenType.ADDITIONAL
-            }
-
+            EducationScreenType.MIDDLE.name -> EducationScreenType.MIDDLE
+            EducationScreenType.HIGH.name -> EducationScreenType.HIGH
+            EducationScreenType.ADDITIONAL.name -> EducationScreenType.ADDITIONAL
             else -> EducationScreenType.MIDDLE
         }
-
     }
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
         this.userProfileFullInfo = profileFullInfo
-        when (educationScreenType) {
-            EducationScreenType.MIDDLE -> {
-                viewState.setEducationItems(profileFullInfo.education.filter {
-                    it.cLevel == middleCType || it.cLevel == middleSecondCType
-                })
+        val filtered = when (educationScreenType) {
+            EducationScreenType.MIDDLE -> profileFullInfo.education.filter {
+                it.cLevel == middleCType || it.cLevel == middleSecondCType
             }
-
-            EducationScreenType.HIGH -> {
-                viewState.setEducationItems(profileFullInfo.education.filter {
-                    it.cLevel == highCType || it.cLevel == highCTypeSecond
-                })
+            EducationScreenType.HIGH -> profileFullInfo.education.filter {
+                it.cLevel == highCType || it.cLevel == highCTypeSecond
             }
-
-            EducationScreenType.ADDITIONAL -> {
-                viewState.setEducationItems(profileFullInfo.education.filter {
-                    it.cLevel == null
-                })
-            }
-
-            null -> {
-                viewState.setEducationItems(profileFullInfo.education)
-            }
+            EducationScreenType.ADDITIONAL -> profileFullInfo.education.filter { it.cLevel == null }
+            null -> profileFullInfo.education
         }
-
+        viewState.setEducationItems(filtered)
     }
 
     fun askForDeleteItem(education: Education) {
-        viewState.showDeleteDialog(
-            education
-        )
+        viewState.showDeleteDialog(education)
     }
 
     fun askForDetailInfoItem(education: Education) {
-        userProfileFullInfo?.let {
-            educationScreenType?.let { it1 ->
-                viewState.showDetailScreen(
-                    it, education.id, type = it1
-                )
-            }
-        }
+        val profile = userProfileFullInfo ?: return
+        val type = educationScreenType ?: return
+        viewState.showDetailScreen(profile, education.id, type)
     }
 
     fun askForAddNewEducation() {
-        userProfileFullInfo?.let { user ->
-            educationScreenType?.let { educationScreenType ->
-                viewState.showAddNewEducation(
-                    profileInfo = user,
-                    type = educationScreenType
-                )
-            }
-
-        }
+        val profile = userProfileFullInfo ?: return
+        val type = educationScreenType ?: return
+        viewState.showAddNewEducation(profileInfo = profile, type = type)
     }
 
     fun confirmDeleteEducation(education: Education) {
-        userProfileFullInfo?.id?.let {
-            userProfileInteractor.removeUserEducation(
-                userId = it, education
-            ).subscribe({
-                userProfileFullInfo = userProfileFullInfo?.copy(
-                    education = userProfileFullInfo?.education?.filter {
-                        it.id != education.id
-                    } ?: emptyList()
-                )
-                userProfileFullInfo?.let { viewState.setEducationItems(it.education) }
-            }, {
-            })
-        }?.let {
+        userProfileFullInfo?.id?.let { userId ->
             compositeDisposable.add(
-                it
+                userProfileInteractor.removeUserEducation(userId = userId, education).subscribe({
+                    userProfileFullInfo = userProfileFullInfo?.copy(
+                        education = userProfileFullInfo?.education?.filter { it.id != education.id } ?: emptyList()
+                    )
+                    userProfileFullInfo?.let { viewState.setEducationItems(it.education) }
+                }, {})
             )
         }
-
     }
 
     fun loadProfile() {
         compositeDisposable.add(
-            userProfileInteractor.getUserProfilePreviewInfo().subscribe({
-                userProfileFullInfo = it
-                setProfileFullInfo(it)
-            }, {
-            })
+            userProfileInteractor.getUserProfilePreviewInfo().subscribe({ profile ->
+                userProfileFullInfo = profile
+                setProfileFullInfo(profile)
+            }, {})
         )
     }
-
 
     override fun onDestroy() {
         super.onDestroy()
         compositeDisposable.dispose()
     }
-
-    override fun onFirstViewAttach() {
-        super.onFirstViewAttach()
-    }
-
-
 }

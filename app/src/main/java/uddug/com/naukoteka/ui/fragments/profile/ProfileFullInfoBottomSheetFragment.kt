@@ -24,10 +24,8 @@ import uddug.com.naukoteka.utils.doIfIsNotNullOrEmpty
 import uddug.com.naukoteka.utils.doIfIsNotNullOrEmptyString
 import uddug.com.naukoteka.utils.viewBinding
 import java.time.LocalDate
-import java.time.Month
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-
 
 class ProfileFullInfoBottomSheetFragment : BaseBottomSheetDialogFragment(), ProfileFullView {
 
@@ -61,7 +59,6 @@ class ProfileFullInfoBottomSheetFragment : BaseBottomSheetDialogFragment(), Prof
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
         arguments?.getParcelable<UserProfileFullInfo>(PROFILE_FULL_INFO_ARGS)
             ?.let { presenter.setProfileFullInfo(it) }
         return inflater.inflate(R.layout.fragment_profile_full_info, container, false)
@@ -69,16 +66,15 @@ class ProfileFullInfoBottomSheetFragment : BaseBottomSheetDialogFragment(), Prof
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        pulseAnimation = AnimationUtils.loadAnimation(requireContext(), R.anim.pulse);
-
+        pulseAnimation = AnimationUtils.loadAnimation(requireContext(), R.anim.pulse)
     }
 
     override fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
         contentView.mainDescription.text = profileFullInfo.dsc
         contentView.subs.text = profileFullInfo.meta?.subscnCount.toString()
         contentView.subr.text = profileFullInfo.meta?.subscrCount.toString()
-        profileFullInfo.nickname?.let {
-            contentView.link.text = getString(R.string.naukotheka_ru_link, profileFullInfo.nickname)
+        profileFullInfo.nickname?.let { nickname ->
+            contentView.link.text = getString(R.string.naukotheka_ru_link, nickname)
         }
         contentView.profileLink.setOnClickListener {
             requireActivity().copyToClipboard(getString(R.string.naukotheka_ru_link, it))
@@ -88,23 +84,6 @@ class ProfileFullInfoBottomSheetFragment : BaseBottomSheetDialogFragment(), Prof
                 Toast.LENGTH_LONG
             ).show()
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         doIfIsNotNullOrEmptyString(profileFullInfo.birthDate) {
             contentView.birthdayContainer.isVisible
@@ -134,7 +113,7 @@ class ProfileFullInfoBottomSheetFragment : BaseBottomSheetDialogFragment(), Prof
             contentView.email.text = it
         }
         contentView.emailContainer.setOnClickListener {
-            profileFullInfo.email?.let { it1 -> requireActivity().copyToClipboard(it1) }
+            profileFullInfo.email?.let { email -> requireActivity().copyToClipboard(email) }
             Toast.makeText(
                 requireActivity(),
                 getString(R.string.email_hash_been_copied),
@@ -150,25 +129,17 @@ class ProfileFullInfoBottomSheetFragment : BaseBottomSheetDialogFragment(), Prof
             contentView.socialMedia.text = it
         }
 
-        doIfIsNotNullOrEmpty(profileFullInfo.laborActivity) {
+        doIfIsNotNullOrEmpty(profileFullInfo.laborActivity) { laborList ->
             contentView.careerContainer.isVisible = true
-            it.forEach { job ->
-                val view = CareerExperienceView(
-                    context = requireContext(),
-                ).apply {
-                    val start = try {
-                        (LocalDate.parse(
-                            job.startWork.orEmpty(),
-                            dateFormatterWork
-                        ).year).toString()
+            laborList.forEach { job ->
+                val careerView = CareerExperienceView(context = requireContext()).apply {
+                    val startYear = try {
+                        LocalDate.parse(job.startWork.orEmpty(), dateFormatterWork).year.toString()
                     } catch (e: Exception) {
                         ""
                     }
-                    val end = try {
-                        (LocalDate.parse(
-                            job.startWork.orEmpty(),
-                            dateFormatterWork
-                        ).year).toString()
+                    val endYear = try {
+                        LocalDate.parse(job.startWork.orEmpty(), dateFormatterWork).year.toString()
                     } catch (e: Exception) {
                         ""
                     }
@@ -177,34 +148,25 @@ class ProfileFullInfoBottomSheetFragment : BaseBottomSheetDialogFragment(), Prof
                         jobName = job.position.toString(),
                         jobPlace = job.orgName.toString(),
                         parent = contentView.careerContainer,
-                        jobDate = context.getString(R.string.date_start_params, start, end)
+                        jobDate = context.getString(R.string.date_start_params, startYear, endYear)
                     )
                 }
-                contentView.careerContainer.addView(
-                    view
-                )
+                contentView.careerContainer.addView(careerView)
             }
         }
-        doIfIsNotNullOrEmpty(profileFullInfo.education) {
+        doIfIsNotNullOrEmpty(profileFullInfo.education) { educationList ->
             contentView.educationContainer.isVisible = true
-
-            it.forEach { education ->
-                val studyView = EducationExperienceView(
-                    context = requireContext(),
-                ).apply {
+            educationList.forEach { education ->
+                val studyView = EducationExperienceView(context = requireContext()).apply {
                     attachStudyExperience(
                         educationName = education.name.orEmpty(),
                         placeWithDate = education.cityAsString.orEmpty(),
                         speciality = education.department.orEmpty(),
                         parent = contentView.educationContainer
                     )
-
                 }
-                contentView.educationContainer.addView(
-                    studyView
-                )
+                contentView.educationContainer.addView(studyView)
             }
         }
     }
-
 }

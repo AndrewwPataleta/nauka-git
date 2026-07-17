@@ -19,73 +19,49 @@ class ProfileAvatarActionPresenter(
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
         this.profileFullInfo = profileFullInfo
-        viewState.setOpenPhotoAvailable(
-            available = profileFullInfo.image?.path.isNotNullOrEmpty()
-        )
+        viewState.setOpenPhotoAvailable(available = profileFullInfo.image?.path.isNotNullOrEmpty())
     }
 
     fun setCurrentChangeType(changeType: String) {
-        when (changeType) {
-            IMAGE_TYPE_AVATAR.AVATAR.type -> currentChangeType = IMAGE_TYPE_AVATAR.AVATAR
-            IMAGE_TYPE_AVATAR.BANNER.type -> currentChangeType = IMAGE_TYPE_AVATAR.BANNER
+        currentChangeType = when (changeType) {
+            IMAGE_TYPE_AVATAR.AVATAR.type -> IMAGE_TYPE_AVATAR.AVATAR
+            IMAGE_TYPE_AVATAR.BANNER.type -> IMAGE_TYPE_AVATAR.BANNER
+            else -> null
         }
     }
 
     fun selectShowProfileImage() {
         when (currentChangeType) {
-            IMAGE_TYPE_AVATAR.AVATAR -> {
-                profileFullInfo?.let { viewState.openProfilePhotoImageView(it) }
-            }
-            IMAGE_TYPE_AVATAR.BANNER -> {
-                profileFullInfo?.let { viewState.openProfileBannerImageView(it) }
-            }
-            null -> {
-
-
-            }
+            IMAGE_TYPE_AVATAR.AVATAR -> profileFullInfo?.let { viewState.openProfilePhotoImageView(it) }
+            IMAGE_TYPE_AVATAR.BANNER -> profileFullInfo?.let { viewState.openProfileBannerImageView(it) }
+            null -> Unit
         }
-
     }
 
     fun chooseDeletePhoto() {
         viewState.showDeletePhotoDialog()
     }
 
-    fun uploadUserImage(
-        file: File
-    ) {
-        profileFullInfo?.id?.let {
+    fun uploadUserImage(file: File) {
+        profileFullInfo?.id?.let { userId ->
             when (currentChangeType) {
                 IMAGE_TYPE_AVATAR.AVATAR -> {
-                    userProfileInteractor.uploadUserAvatar(
-                        userId = it,
-                        avatar = file
-                    ).subscribe({
-                        viewState.successfulUpload()
-                    }, {})
+                    userProfileInteractor.uploadUserAvatar(userId = userId, avatar = file)
+                        .subscribe({ viewState.successfulUpload() }, {})
                 }
                 IMAGE_TYPE_AVATAR.BANNER -> {
-                    userProfileInteractor.uploadUserBanner(
-                        userId = it,
-                        avatar = file
-                    ).subscribe({
-                        viewState.successfulUpload()
-                    }, {})
+                    userProfileInteractor.uploadUserBanner(userId = userId, avatar = file)
+                        .subscribe({ viewState.successfulUpload() }, {})
                 }
                 null -> Unit
             }
-
         }
     }
 
-
     fun confirmDeletePhoto() {
-        profileFullInfo?.id?.let {
-            userProfileInteractor.deleteUserAvatar(
-                userId = it
-            ).subscribe({
-                viewState.successfulDeleteAvatar()
-            }, {})
+        profileFullInfo?.id?.let { userId ->
+            userProfileInteractor.deleteUserAvatar(userId = userId)
+                .subscribe({ viewState.successfulDeleteAvatar() }, {})
         }
     }
 
@@ -93,5 +69,4 @@ class ProfileAvatarActionPresenter(
         AVATAR("avatar"),
         BANNER("banner")
     }
-
 }

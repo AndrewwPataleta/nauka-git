@@ -16,10 +16,7 @@ class UserProfileMapper(
             firstName = name,
             lastName = surname,
             middleName = if (middleName.isNullOrEmpty()) " " else middleName,
-            
             nickname = "id${nickname}"
         )
     }
-
-
 }

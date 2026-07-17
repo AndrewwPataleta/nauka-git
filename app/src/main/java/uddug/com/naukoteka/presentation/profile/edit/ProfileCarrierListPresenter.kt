@@ -8,86 +8,54 @@ import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.user_profile.UserProfileInteractor
 import uddug.com.naukoteka.global.base.BasePresenterImpl
 
-
 @InjectConstructor
 @InjectViewState
 class ProfileCarrierListPresenter(
     private val userProfileInteractor: UserProfileInteractor
 ) : BasePresenterImpl<ProfileCarrierListView>() {
 
-    companion object {
-        private const val errorTag = "ProfileEditPlacementViewError"
-    }
-
-    var compositeDisposable: CompositeDisposable = CompositeDisposable()
+    private val compositeDisposable = CompositeDisposable()
 
     var userProfileFullInfo: UserProfileFullInfo? = null
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
         this.userProfileFullInfo = profileFullInfo
-        viewState.setCarrierItems(
-            profileFullInfo.laborActivity
-        )
+        viewState.setCarrierItems(profileFullInfo.laborActivity)
     }
 
     fun loadProfile() {
         compositeDisposable.add(
-            userProfileInteractor.getUserProfilePreviewInfo().subscribe({
-                userProfileFullInfo = it
-                viewState.setCarrierItems(it.laborActivity)
-            }, {
-
-            })
+            userProfileInteractor.getUserProfilePreviewInfo().subscribe({ profile ->
+                userProfileFullInfo = profile
+                viewState.setCarrierItems(profile.laborActivity)
+            }, {})
         )
     }
 
     fun askForDeleteItem(laborActivities: LaborActivities) {
-        viewState.showDeleteDialog(
-            laborActivities
-        )
+        viewState.showDeleteDialog(laborActivities)
     }
 
     fun askForDetailInfoItem(laborActivities: LaborActivities) {
-        userProfileFullInfo?.let {
-            viewState.showDetailScreen(
-                it, laborActivities.id
-            )
-        }
+        userProfileFullInfo?.let { viewState.showDetailScreen(it, laborActivities.id) }
     }
 
     fun askForCreateEducation() {
-        userProfileFullInfo?.let {
-            viewState.showDetailScreen(
-                it,
-                null
-            )
-        }
+        userProfileFullInfo?.let { viewState.showDetailScreen(it, null) }
     }
 
     fun confirmDeleteLaborActivities(laborActivities: LaborActivities) {
-        userProfileFullInfo?.id?.let {
-            userProfileInteractor.removeUserLaborActivity(
-                userId = it, laborActivities
-            ).subscribe({
-                loadProfile()
-            }, {
-            })
-        }?.let {
+        userProfileFullInfo?.id?.let { userId ->
             compositeDisposable.add(
-                it
+                userProfileInteractor.removeUserLaborActivity(userId = userId, laborActivities).subscribe({
+                    loadProfile()
+                }, {})
             )
         }
-
     }
 
     override fun onDestroy() {
         super.onDestroy()
         compositeDisposable.dispose()
     }
-
-    override fun onFirstViewAttach() {
-        super.onFirstViewAttach()
-    }
-
-
 }

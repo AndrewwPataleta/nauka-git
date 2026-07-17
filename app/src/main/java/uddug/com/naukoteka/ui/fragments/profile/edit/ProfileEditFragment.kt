@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
-import android.view.animation.Animation
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.setFragmentResultListener
@@ -28,7 +27,7 @@ import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.PROFIL
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment.Companion.DELETE_AVATAR_RESULT
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileAvatarEditActionBottomSheetFragment.Companion.UPLOAD_AVATAR_RESULT
 import uddug.com.naukoteka.ui.fragments.profile.edit.ProfileEditPersonalInfoFragment.Companion.UPDATE_PROFILE_INFO
-import uddug.com.naukoteka.utils.getHashCodeToString
+import uddug.com.naukoteka.utils.profileGradientRes
 import uddug.com.naukoteka.utils.text.isNotNullOrEmpty
 import uddug.com.naukoteka.utils.ui.load
 import uddug.com.naukoteka.utils.viewBinding
@@ -41,7 +40,6 @@ class ProfileEditFragment : BaseFragment(R.layout.fragment_profile_edit), Profil
     lateinit var presenter: ProfileEditPresenter
 
     private var navigationView: ContainerNavigationView? = null
-    private var pulseAnimation: Animation? = null
 
     @ProvidePresenter
     fun providePresenter(): ProfileEditPresenter =
@@ -110,18 +108,7 @@ class ProfileEditFragment : BaseFragment(R.layout.fragment_profile_edit), Profil
                 profileImage.load(withAnimation = false, model = BuildConfig.IMAGE_SERVER_URL + path)
             }
         } else {
-            val gradientRes = when (getHashCodeToString(profileInfo.id, 8)) {
-                0 -> R.drawable.background_gradient_one
-                1 -> R.drawable.background_gradient_two
-                2 -> R.drawable.background_gradient_three
-                3 -> R.drawable.background_gradient_four
-                4 -> R.drawable.background_gradient_five
-                5 -> R.drawable.background_gradient_six
-                6 -> R.drawable.background_gradient_seven
-                7 -> R.drawable.background_gradient_eight
-                else -> R.drawable.background_gradient_one
-            }
-            profileImage.background = resources.getDrawable(gradientRes)
+            profileImage.background = resources.getDrawable(profileGradientRes(profileInfo.id))
             initials.text = (profileInfo.firstName?.firstOrNull()?.toString() ?: "") +
                     (profileInfo.lastName?.firstOrNull()?.toString() ?: "")
             initials.isVisible = true
@@ -146,8 +133,7 @@ class ProfileEditFragment : BaseFragment(R.layout.fragment_profile_edit), Profil
     }
 
     private fun navigateTo(destination: Int, profileInfo: UserProfileFullInfo) {
-        val bundle = bundleOf(PROFILE_ARGS to profileInfo)
-        findNavController().navigate(destination, bundle)
+        findNavController().navigate(destination, bundleOf(PROFILE_ARGS to profileInfo))
     }
 
     override fun openProfileEditPersonalData(profileInfo: UserProfileFullInfo) {

@@ -22,36 +22,27 @@ class EducationMiddleActionPresenter(
 ) : BasePresenterImpl<EducationMiddleActionView>() {
 
     private var screenActionType: ScreenActionType = ScreenActionType.CREATE
-
     private var currentEducationId: String? = null
-
-    var compositeDisposable: CompositeDisposable = CompositeDisposable()
+    private val compositeDisposable = CompositeDisposable()
+    private var currentEducation: Education = Education()
+    private val calendar = GregorianCalendar()
+    private var lastSettlements: List<Settlement> = emptyList()
 
     var userProfileFullInfo: UserProfileFullInfo? = null
 
-    private var currentEducation: Education = Education()
-
-    val calendar: GregorianCalendar = GregorianCalendar()
-
-    private var lastSettlements: List<Settlement> = emptyList()
-
     companion object {
         private const val middleCType = "53:5"
-        private const val highCType = "53:6"
-        private const val additionalCType = "53:4"
     }
 
     fun setCurrentEducationId(educationId: String) {
         currentEducationId = educationId
-        currentEducation.id = currentEducationId
+        currentEducation.id = educationId
         screenActionType = ScreenActionType.EDIT
-        setEducationInfo()
+        loadEducationInfo()
     }
 
-    private fun setEducationInfo() {
-        userProfileFullInfo?.education?.find {
-            it.id == currentEducationId
-        }?.let { education ->
+    private fun loadEducationInfo() {
+        userProfileFullInfo?.education?.find { it.id == currentEducationId }?.let { education ->
             currentEducation = education
             viewState.setCurrentEducationInfo(education)
         }
@@ -59,13 +50,10 @@ class EducationMiddleActionPresenter(
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
         this.userProfileFullInfo = profileFullInfo
-
     }
 
     fun askForOpenCountrySelect() {
-        viewState.openCountrySelectPage(
-            currentEducation?.country?.id
-        )
+        viewState.openCountrySelectPage(currentEducation.country?.id)
     }
 
     fun selectUpdateEducation() {
@@ -74,38 +62,25 @@ class EducationMiddleActionPresenter(
                 if (currentEducation.country?.id.isNullOrEmpty()) {
                     viewState.showCreateValidationError()
                 } else {
-                    currentEducation?.let {
-                        currentEducation.cLevel = middleCType
+                    currentEducation.cLevel = middleCType
+                    compositeDisposable.add(
                         userProfileInteractor.createUserEducation(
                             userId = userProfileFullInfo?.id.orEmpty(),
-                            education = listOf(it),
-                        ).subscribe({
-                            viewState.educationSuccessUpdated()
-                        }, {})
-                    }?.let {
-                        compositeDisposable.add(
-                            it
-                        )
-                    }
+                            education = listOf(currentEducation),
+                        ).subscribe({ viewState.educationSuccessUpdated() }, {})
+                    )
                 }
             }
-
             ScreenActionType.EDIT -> {
-                if (currentEducation?.country?.id.isNullOrEmpty()) {
+                if (currentEducation.country?.id.isNullOrEmpty()) {
                     viewState.showUpdateValidationError()
                 } else {
-                    currentEducation?.let {
+                    compositeDisposable.add(
                         userProfileInteractor.updateUserEducation(
                             userId = userProfileFullInfo?.id.orEmpty(),
-                            education = it,
-                        ).subscribe({
-                            viewState.educationSuccessUpdated()
-                        }, {})
-                    }?.let {
-                        compositeDisposable.add(
-                            it
-                        )
-                    }
+                            education = currentEducation,
+                        ).subscribe({ viewState.educationSuccessUpdated() }, {})
+                    )
                 }
             }
         }
@@ -114,17 +89,15 @@ class EducationMiddleActionPresenter(
     fun setEducationSettlement(settlement: String) {
         currentEducation.city = settlement
         if (settlement.isNotNullOrEmpty()) {
-            currentEducation.country?.id?.let {
+            currentEducation.country?.id?.let { countryId ->
                 compositeDisposable.add(
                     locationInteractor.findSettlementsByCountry(
-                        countryId = it,
+                        countryId = countryId,
                         query = settlement,
-                    ).subscribe({
-                        lastSettlements = it
-                        viewState.setSettlements(it)
-                    }, {
-
-                    })
+                    ).subscribe({ settlements ->
+                        lastSettlements = settlements
+                        viewState.setSettlements(settlements)
+                    }, {})
                 )
             }
         }
@@ -139,10 +112,6 @@ class EducationMiddleActionPresenter(
         compositeDisposable.dispose()
     }
 
-    override fun onFirstViewAttach() {
-        super.onFirstViewAttach()
-    }
-
     fun setEndYear(year: String) {
         calendar.set(year.toInt(), Calendar.JULY, 31)
         currentEducation.endDate = calendar.toZonedDateTime().toLocalDate().toString()
@@ -155,12 +124,11 @@ class EducationMiddleActionPresenter(
 
     fun setSelectedCountry(country: Country) {
         currentEducation.country = country
-        currentEducation.let { viewState.setCurrentEducationInfo(it) }
+        viewState.setCurrentEducationInfo(currentEducation)
     }
 
     enum class ScreenActionType {
         CREATE,
         EDIT
     }
-
 }

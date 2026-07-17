@@ -51,11 +51,11 @@ class ProfileAvatarEditActionBottomSheetFragment : BaseDialogFragment(), Profile
     override val contentView: FragmentProfileAvatarEditBinding by viewBinding(
         FragmentProfileAvatarEditBinding::bind
     )
-    private var dialogUploadChoose: AlertDialog? = null
+    private var uploadChooseDialog: AlertDialog? = null
 
     companion object {
         const val GALLERY_CODE = 102
-        private const val VIDEO_CAMERA = 555
+        private const val CAMERA_CODE = 555
         const val PROFILE_FULL_INFO_ARGS = "PROFILE_FULL_INFO_ARGS"
         const val DELETE_AVATAR_RESULT = "DELETE_AVATAR_RESULT"
         const val UPLOAD_AVATAR_RESULT = "UPLOAD_AVATAR_RESULT"
@@ -112,7 +112,7 @@ class ProfileAvatarEditActionBottomSheetFragment : BaseDialogFragment(), Profile
     }
 
     private fun showUploadPhotoDialog() {
-        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        val mediaPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_VISUAL_USER_SELECTED)
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
@@ -132,9 +132,9 @@ class ProfileAvatarEditActionBottomSheetFragment : BaseDialogFragment(), Profile
             .setCancelable(true)
             .setView(dialogView)
         dialogView.findViewById<View>(R.id.openPhotoContainer).setOnClickListener {
-            PermissionX.init(requireActivity()).permissions(*permissions).request { allGranted, _, _ ->
+            PermissionX.init(requireActivity()).permissions(*mediaPermissions).request { allGranted, _, _ ->
                 if (allGranted) {
-                    dialogUploadChoose?.dismiss()
+                    uploadChooseDialog?.dismiss()
                     ImagePicker.with(this)
                         .galleryOnly()
                         .galleryMimeTypes(arrayOf("image/png", "image/jpeg", "image/jpg"))
@@ -147,38 +147,35 @@ class ProfileAvatarEditActionBottomSheetFragment : BaseDialogFragment(), Profile
                 if (allGranted) {
                     val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
                     currentPhotoFile = try {
-                        createFileInAppDir()
+                        createImageFileInDownloads()
                     } catch (ex: IOException) {
                         null
                     }
                     currentPhotoFile?.let { file ->
-                        val photoURI = FileProvider.getUriForFile(
+                        val photoUri = FileProvider.getUriForFile(
                             requireContext(),
                             "com.nauchat.fileprovider",
                             file
                         )
-                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
                         takePictureIntent.addFlags(
                             Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                         )
-                        val chooserIntent = Intent.createChooser(
-                            takePictureIntent,
-                            getString(R.string.take_photo_profile)
-                        )
-                        dialogUploadChoose?.dismiss()
-                        startActivityForResult(chooserIntent, VIDEO_CAMERA)
+                        val chooserIntent = Intent.createChooser(takePictureIntent, getString(R.string.take_photo_profile))
+                        uploadChooseDialog?.dismiss()
+                        startActivityForResult(chooserIntent, CAMERA_CODE)
                     }
                 }
             }
         }
-        dialogUploadChoose = builder.show()
+        uploadChooseDialog = builder.show()
     }
 
     @Throws(IOException::class)
-    private fun createFileInAppDir(): File {
-        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-        val imagePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        return File(imagePath, "FILE_${timeStamp}")
+    private fun createImageFileInDownloads(): File {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        return File(downloadsDir, "FILE_$timestamp")
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?) =
@@ -193,38 +190,29 @@ class ProfileAvatarEditActionBottomSheetFragment : BaseDialogFragment(), Profile
     }
 
     override fun showDeletePhotoDialog() {
-        val dialog = Dialog(requireActivity(), R.style.Theme_Dialog)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.window?.setLayout(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-        dialog.setCancelable(true)
-        dialog.setCanceledOnTouchOutside(true)
-        dialog.setContentView(R.layout.dialog_remove_photo)
-        dialog.findViewById<View>(R.id.cancelDeleteBtn)?.setOnClickListener { dialog.dismiss() }
-        dialog.findViewById<View>(R.id.deleteConfirmBtn)?.setOnClickListener {
-            dialog.dismiss()
-            presenter.confirmDeletePhoto()
-        }
-        dialog.show()
+        Dialog(requireActivity(), R.style.Theme_Dialog).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            setCancelable(true)
+            setCanceledOnTouchOutside(true)
+            setContentView(R.layout.dialog_remove_photo)
+            findViewById<View>(R.id.cancelDeleteBtn)?.setOnClickListener { dismiss() }
+            findViewById<View>(R.id.deleteConfirmBtn)?.setOnClickListener {
+                dismiss()
+                presenter.confirmDeletePhoto()
+            }
+        }.show()
     }
 
     override fun successfulDeleteAvatar() {
-        setFragmentResult(
-            DELETE_AVATAR_RESULT,
-            bundleOf(RESULT_OF_DELETE to true)
-        )
-        dialogUploadChoose?.dismiss()
+        setFragmentResult(DELETE_AVATAR_RESULT, bundleOf(RESULT_OF_DELETE to true))
+        uploadChooseDialog?.dismiss()
         dismiss()
     }
 
     override fun successfulUpload() {
-        setFragmentResult(
-            UPLOAD_AVATAR_RESULT,
-            bundleOf(RESULT_OF_UPLOAD to true)
-        )
-        dialogUploadChoose?.dismiss()
+        setFragmentResult(UPLOAD_AVATAR_RESULT, bundleOf(RESULT_OF_UPLOAD to true))
+        uploadChooseDialog?.dismiss()
         dismiss()
     }
 
@@ -233,7 +221,7 @@ class ProfileAvatarEditActionBottomSheetFragment : BaseDialogFragment(), Profile
         if (resultCode == RESULT_OK) {
             when (requestCode) {
                 UCrop.REQUEST_CROP -> handleCropResult(data)
-                VIDEO_CAMERA -> handleCameraResult()
+                CAMERA_CODE -> handleCameraResult()
                 GALLERY_CODE -> handleGalleryResult(data)
             }
         }
@@ -247,20 +235,20 @@ class ProfileAvatarEditActionBottomSheetFragment : BaseDialogFragment(), Profile
             } else {
                 val outputUri = UCrop.getOutput(it)
                 outputUri?.let { uri ->
-                    val id = DocumentsContract.getDocumentId(uri)
-                    if (id.startsWith("msf:")) {
-                        val file = try { createFileInAppDir() } catch (ex: IOException) { null }
-                        file?.let { f ->
+                    val docId = DocumentsContract.getDocumentId(uri)
+                    if (docId.startsWith("msf:")) {
+                        val file = try { createImageFileInDownloads() } catch (ex: IOException) { null }
+                        file?.let { destFile ->
                             try {
                                 context?.contentResolver?.openInputStream(uri).use { inputStream ->
-                                    FileOutputStream(f).use { output ->
+                                    FileOutputStream(destFile).use { output ->
                                         val buffer = ByteArray(4 * 1024)
                                         var read: Int
                                         while ((inputStream?.read(buffer).also { read = it!! }) != -1) {
                                             output.write(buffer, 0, read)
                                         }
                                         output.flush()
-                                        presenter.uploadUserImage(f)
+                                        presenter.uploadUserImage(destFile)
                                     }
                                 }
                             } catch (ex: IOException) {
@@ -269,8 +257,7 @@ class ProfileAvatarEditActionBottomSheetFragment : BaseDialogFragment(), Profile
                         }
                     } else {
                         val path = URIPathHelper().getPath(requireActivity(), uri)
-                        val file = File(path)
-                        presenter.uploadUserImage(file)
+                        presenter.uploadUserImage(File(path))
                     }
                 }
             }

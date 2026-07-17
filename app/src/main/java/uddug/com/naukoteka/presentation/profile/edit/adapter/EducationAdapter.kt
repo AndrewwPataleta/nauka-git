@@ -15,11 +15,9 @@ import java.time.format.DateTimeFormatter
 class EducationAdapter(
     private val onDeleteClick: (Education) -> Unit,
     private val onDetailClick: (Education) -> Unit
-) :
-    BaseAdapter<Education, EducationAdapter.ViewHolder>() {
+) : BaseAdapter<Education, EducationAdapter.ViewHolder>() {
 
     companion object {
-
         val dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     }
 
@@ -30,34 +28,18 @@ class EducationAdapter(
         BaseViewHolder<Education>(layoutRes, parent) {
 
         private val rootView: ItemEducationMiddleBinding
-            get() = ItemEducationMiddleBinding.bind(
-                itemView
-            )
+            get() = ItemEducationMiddleBinding.bind(itemView)
 
         override fun updateView(item: Education) {
-            rootView.root.setOnClickListener {
-                onDetailClick(item)
-            }
-            rootView.removeEducation.setOnClickListener {
-                onDeleteClick(item)
-            }
+            rootView.root.setOnClickListener { onDetailClick(item) }
+            rootView.removeEducation.setOnClickListener { onDeleteClick(item) }
             rootView.title.text = item.name ?: item.specialty
-            rootView.subTitle.text = item.cityAsString.toString().plus(
-                if (item.startDate != null) {
-                    " • ${LocalDate.parse(item.startDate, dateFormat).year}"
-                } else ""
-            ).plus(
-                if (item.endDate != null) {
-                    " – ${
-                        LocalDate.parse(item.endDate, dateFormat).year
-                    } "
-                } else ""
-            )
-            if (item.cLevelName.isNotNullOrEmpty()) {
-                rootView.subTitleDirection.text = item.cLevelName
-                rootView.subTitleDirection.isVisible = true
-            }
-
+            rootView.subTitle.text = item.cityAsString.toString()
+                .plus(if (item.startDate != null) " • ${LocalDate.parse(item.startDate, dateFormat).year}" else "")
+                .plus(if (item.endDate != null) " – ${LocalDate.parse(item.endDate, dateFormat).year} " else "")
+            val hasLevel = item.cLevelName.isNotNullOrEmpty()
+            rootView.subTitleDirection.isVisible = hasLevel
+            if (hasLevel) rootView.subTitleDirection.text = item.cLevelName
         }
     }
 }

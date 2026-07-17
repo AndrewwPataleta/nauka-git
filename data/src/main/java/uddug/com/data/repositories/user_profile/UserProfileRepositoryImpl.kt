@@ -3,7 +3,6 @@ package uddug.com.data.repositories.user_profile
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
-import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -39,7 +38,6 @@ import java.io.File
 import java.util.Calendar
 import java.util.GregorianCalendar
 
-
 @InjectConstructor
 class UserProfileRepositoryImpl(
     private val profileApiService: UserProfileApiService,
@@ -68,15 +66,11 @@ class UserProfileRepositoryImpl(
     }
 
     override fun deleteUserAvatar(userId: String): Completable {
-        return profileApiService.deleteUserPhoto(
-            userId = userId
-        )
+        return profileApiService.deleteUserPhoto(userId = userId)
     }
 
     override fun deleteUserBanner(userId: String): Completable {
-        return profileApiService.deleteUserBanner(
-            userId = userId
-        )
+        return profileApiService.deleteUserBanner(userId = userId)
     }
 
     override fun uploadUserAvatar(userId: String, file: File): Completable {
@@ -84,7 +78,7 @@ class UserProfileRepositoryImpl(
             userId = userId,
             filePart = MultipartBody.Part.createFormData(
                 "image",
-                file.getName(),
+                file.name,
                 RequestBody.create("image/*".toMediaTypeOrNull(), file)
             )
         )
@@ -95,7 +89,7 @@ class UserProfileRepositoryImpl(
             userId = userId,
             filePart = MultipartBody.Part.createFormData(
                 "image",
-                file.getName(),
+                file.name,
                 RequestBody.create("image/*".toMediaTypeOrNull(), file)
             )
         )
@@ -131,95 +125,65 @@ class UserProfileRepositoryImpl(
     }
 
     override fun updateUserEducation(userId: String, education: Education): Completable {
+        val calendar = GregorianCalendar()
+        val startDate = yearToIsoDate(education.startDate, calendar)
+        val endDate = yearToIsoDate(education.endDate, calendar)
 
-        val calendar: GregorianCalendar = GregorianCalendar()
-
-        var startDate: String? = null
-        education.startDate?.toIntOrNull()?.let {
-            calendar.set(it, Calendar.JULY, 31)
-            startDate = calendar.toZonedDateTime().toLocalDate().toString()
-        }
-
-        var endDate: String? = null
-        education.endDate?.toIntOrNull()?.let {
-            calendar.set(it, Calendar.JULY, 31)
-            endDate = calendar.toZonedDateTime().toLocalDate().toString()
-        }
-        val userEducation = UpdateUserProfileEducationDto(
+        val educationDto = UpdateUserProfileEducationDto(
             cCountry = education.country?.uref,
             name = education.name,
             city = education.city
         ).apply {
-            if (endDate != null) {
-                this.endDate = endDate
-            }
-            if (startDate != null) {
-                this.startDate = startDate
-            }
+            if (endDate != null) this.endDate = endDate
+            if (startDate != null) this.startDate = startDate
         }
 
         return profileApiService.updateEducationInfo(
             userId = userId,
             educationId = education.id.toString(),
-            userEducation = userEducation
+            userEducation = educationDto
         )
     }
 
     override fun updateUserLaborActivities(userId: String, labor: LaborActivities): Completable {
-        val calendar: GregorianCalendar = GregorianCalendar()
+        val calendar = GregorianCalendar()
+        val startDate = yearToIsoDate(labor.startWork, calendar)
+        val endDate = yearToIsoDate(labor.endWork, calendar)
 
-        var startDate: String? = null
-        labor.startWork?.toIntOrNull()?.let {
-            calendar.set(it, Calendar.JULY, 31)
-            startDate = calendar.toZonedDateTime().toLocalDate().toString()
-        }
-
-        var endDate: String? = null
-        labor.endWork?.toIntOrNull()?.let {
-            calendar.set(it, Calendar.JULY, 31)
-            endDate = calendar.toZonedDateTime().toLocalDate().toString()
-        }
-        val userEducation = UpdateUserProfileLaborDto(
+        val laborDto = UpdateUserProfileLaborDto(
             cCountry = labor.country?.uref,
             position = labor.position,
             city = labor.city
         ).apply {
-            if (endDate != null) {
-                this.endWork = endDate
-            }
-            if (startDate != null) {
-                this.startWork = startDate
-            }
+            if (endDate != null) this.endWork = endDate
+            if (startDate != null) this.startWork = startDate
         }
 
         return profileApiService.updateLaborInfo(
             userId = userId,
             educationId = labor.id.toString(),
-            userEducation = userEducation
+            userEducation = laborDto
         )
     }
 
     override fun createUserEducation(userId: String, education: List<Education>): Completable {
-
-        val education = education.first()
-
-        val userEducation = UpdateUserProfileEducationDto(
-            cCountry = education.country?.uref,
-            name = education.name,
-            city = education.city,
-            cLevel = education.cLevel,
-            startDate = education.startDate,
-            endDate = education.endDate
+        val firstEducation = education.first()
+        val educationDto = UpdateUserProfileEducationDto(
+            cCountry = firstEducation.country?.uref,
+            name = firstEducation.name,
+            city = firstEducation.city,
+            cLevel = firstEducation.cLevel,
+            startDate = firstEducation.startDate,
+            endDate = firstEducation.endDate
         )
         return profileApiService.createEducationInfo(
             userId = userId,
-            userEducation = listOf(userEducation)
+            userEducation = listOf(educationDto)
         )
     }
 
     override fun createUserLabor(userId: String, labor: LaborActivities): Completable {
-
-        val userEducation = UpdateUserProfileLaborDto(
+        val laborDto = UpdateUserProfileLaborDto(
             cCountry = labor.country?.uref,
             position = labor.position,
             city = labor.city,
@@ -229,7 +193,7 @@ class UserProfileRepositoryImpl(
         )
         return profileApiService.createLaborActivityInfo(
             userId = userId,
-            userEducation = listOf(userEducation)
+            userEducation = listOf(laborDto)
         )
     }
 
@@ -312,21 +276,15 @@ class UserProfileRepositoryImpl(
     }
 
     override fun getUserSettings(): Single<SettingsForm> {
-        return profileApiService.getUserSettings(
-
-        )
+        return profileApiService.getUserSettings()
     }
 
     override fun getUserCls(pageSize: Int, cls: Int): Single<List<DefaultCls>> {
-        return profileApiService.getCls(
-            cls = cls, pageSize = pageSize
-        )
+        return profileApiService.getCls(cls = cls, pageSize = pageSize)
     }
 
     override fun updateUserSettings(settings: MutableMap<String, String>): Completable {
-        return profileApiService.updateUserSettings(
-            settings
-        )
+        return profileApiService.updateUserSettings(settings)
     }
 
     override fun getFeedWritable(): Single<List<WritableItem>> {
@@ -334,21 +292,15 @@ class UserProfileRepositoryImpl(
     }
 
     override fun getUserFeed(userId: String): Single<List<FeedContainer>> {
-        return profileApiService.getUserFeeds(
-            userId
-        )
+        return profileApiService.getUserFeeds(userId)
     }
 
     override fun getUserFeedsRecommendations(userId: String): Single<List<FeedContainer>> {
-        return profileApiService.getUsersMessagesPosts(
-            userId
-        )
+        return profileApiService.getUsersMessagesPosts(userId)
     }
 
     override fun addToFavorite(feedContainer: FeedContainer): Completable {
-        return profileApiService.addPostToFavorite(
-            feedContainer = feedContainer
-        )
+        return profileApiService.addPostToFavorite(feedContainer = feedContainer)
     }
 
     override fun hideAuthorPosts(feedContainer: FeedContainer): Completable {
@@ -367,19 +319,16 @@ class UserProfileRepositoryImpl(
     }
 
     override fun sendComment(postComment: PostCommentAddRequest): Single<PostComment> {
-        return profileApiService.sendPostComment(
-            postComment
-        )
+        return profileApiService.sendPostComment(postComment)
     }
 
     override fun setUser(shortInfoEntity: ShortInfoUi): Completable {
         return profileApiService.setUser(
             userProfileRequestDto = userProfileMapper.mapDomainToDto(shortInfoEntity)
-        )
-            .flatMapCompletable {
-                userUUIDCache.entity = it
-                Completable.complete()
-            }
+        ).flatMapCompletable {
+            userUUIDCache.entity = it
+            Completable.complete()
+        }
     }
 
     override fun validateProfile(): Completable {
@@ -392,5 +341,9 @@ class UserProfileRepositoryImpl(
             .flatMap { Observable.just(it.nicknameIsFree) }
     }
 
-
+    private fun yearToIsoDate(yearString: String?, calendar: GregorianCalendar): String? {
+        val year = yearString?.toIntOrNull() ?: return null
+        calendar.set(year, Calendar.JULY, 31)
+        return calendar.toZonedDateTime().toLocalDate().toString()
+    }
 }

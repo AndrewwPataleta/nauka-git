@@ -15,9 +15,7 @@ class ProfileEditSettingsActionProfilePresenter(
     var userProfileFullInfo: UserProfileFullInfo? = null
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
-        this.userProfileFullInfo = profileFullInfo
+        userProfileFullInfo = profileFullInfo
         viewState.setMainInformation(profileFullInfo)
     }
-
-
 }

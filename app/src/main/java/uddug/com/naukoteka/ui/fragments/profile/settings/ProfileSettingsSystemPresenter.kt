@@ -28,65 +28,50 @@ class ProfileSettingsSystemPresenter(
     }
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
-        this.userProfileFullInfo = profileFullInfo
+        userProfileFullInfo = profileFullInfo
         viewState.setMainInformation(profileFullInfo)
-        updateUserSettingsDisplay()
+        pushSettingsToView()
     }
 
-    private fun updateUserSettingsDisplay() {
-        userSystemSettingsCache.entity?.let {
-            viewState.setEnvironment(environmentSwitcherService.getCurrentEnvironment().toViewMode())
-            viewState.setCompressImage(it.compressImage)
-            viewState.setCompressVideo(it.compressVideo)
-            viewState.setAutoPlayGif(it.autoPlayGif)
-            viewState.setAutoplayVideo(it.autoPlayVideo)
-        }
-
+    private fun pushSettingsToView() {
+        val settings = userSystemSettingsCache.entity ?: return
+        viewState.setEnvironment(environmentSwitcherService.getCurrentEnvironment().toViewMode())
+        viewState.setCompressImage(settings.compressImage)
+        viewState.setCompressVideo(settings.compressVideo)
+        viewState.setAutoPlayGif(settings.autoPlayGif)
+        viewState.setAutoplayVideo(settings.autoPlayVideo)
     }
 
     fun selectDarkMode() {
-        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(
-            theme = UserTheme.DARK
-        )
+        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(theme = UserTheme.DARK)
         viewState.setThemeMode(ThemeMode.DARK)
     }
 
     fun selectLightMode() {
-        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(
-            theme = UserTheme.LIGHT
-        )
+        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(theme = UserTheme.LIGHT)
         viewState.setThemeMode(ThemeMode.LIGHT)
-
     }
 
     fun selectClearCache() {
         viewState.clearCache()
         userSystemSettingsCache.entity = UserSystemSettings()
-        updateUserSettingsDisplay()
+        pushSettingsToView()
     }
 
-    fun selectCompressImage(compress: Boolean) {
-        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(
-            compressImage = compress
-        )
+    fun selectCompressImage(enabled: Boolean) {
+        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(compressImage = enabled)
     }
 
-    fun selectCompressVideoSwitch(compress: Boolean) {
-        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(
-            compressVideo = compress
-        )
+    fun selectCompressVideoSwitch(enabled: Boolean) {
+        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(compressVideo = enabled)
     }
 
-    fun selectAutoPlayGif(compress: Boolean) {
-        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(
-            autoPlayGif = compress
-        )
+    fun selectAutoPlayGif(enabled: Boolean) {
+        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(autoPlayGif = enabled)
     }
 
-    fun selectAutoPlayVideoSwitch(compress: Boolean) {
-        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(
-            autoPlayVideo = compress
-        )
+    fun selectAutoPlayVideoSwitch(enabled: Boolean) {
+        userSystemSettingsCache.entity = userSystemSettingsCache.entity?.copy(autoPlayVideo = enabled)
     }
 
     fun selectEnvironment(isDev: Boolean) {
@@ -99,5 +84,4 @@ class ProfileSettingsSystemPresenter(
         AppEnvironment.DEV -> AppEnvironmentMode.DEV
         AppEnvironment.PROD -> AppEnvironmentMode.PROD
     }
-
 }

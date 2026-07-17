@@ -15,43 +15,16 @@ class EducationTypeAdapter(fragment: Fragment, val userProfileFullInfo: UserProf
     override fun getItemCount(): Int = 3
 
     override fun createFragment(position: Int): Fragment {
-        when (position) {
-            0 -> {
-                val fragment = ProfileActionEducationFragment()
-                fragment.arguments = Bundle().apply {
-                    putParcelable(PROFILE_ARGS, userProfileFullInfo)
-                    putString(EDUCATION_SCREEN_TYPE, EducationScreenType.MIDDLE.name)
-                }
-                return fragment
+        val screenType = when (position) {
+            1 -> EducationScreenType.HIGH
+            2 -> EducationScreenType.ADDITIONAL
+            else -> EducationScreenType.MIDDLE
+        }
+        return ProfileActionEducationFragment().apply {
+            arguments = Bundle().apply {
+                putParcelable(PROFILE_ARGS, userProfileFullInfo)
+                putString(EDUCATION_SCREEN_TYPE, screenType.name)
             }
-
-            1 -> {
-                val fragment = ProfileActionEducationFragment()
-                fragment.arguments = Bundle().apply {
-                    putParcelable(PROFILE_ARGS, userProfileFullInfo)
-                    putString(EDUCATION_SCREEN_TYPE, EducationScreenType.HIGH.name)
-                }
-                return fragment
-            }
-
-            2 -> {
-                val fragment = ProfileActionEducationFragment()
-                fragment.arguments = Bundle().apply {
-                    putParcelable(PROFILE_ARGS, userProfileFullInfo)
-                    putString(EDUCATION_SCREEN_TYPE, EducationScreenType.ADDITIONAL.name)
-                }
-                return fragment
-            }
-
-            else -> {
-                val fragment = ProfileActionEducationFragment()
-                fragment.arguments = Bundle().apply {
-                    putParcelable(PROFILE_ARGS, userProfileFullInfo)
-                    putString(EDUCATION_SCREEN_TYPE, EducationScreenType.MIDDLE.name)
-                }
-                return fragment
-            }
-
         }
     }
 }

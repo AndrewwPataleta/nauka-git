@@ -2,7 +2,6 @@ package uddug.com.naukoteka.presentation.profile.edit
 
 import android.annotation.SuppressLint
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.subjects.BehaviorSubject
 import moxy.InjectViewState
 import toothpick.InjectConstructor
 import uddug.com.domain.entities.profile.UserProfileFullInfo
@@ -12,8 +11,6 @@ import uddug.com.naukoteka.global.base.BasePresenterImpl
 import uddug.com.naukoteka.utils.text.isNotNullOrEmpty
 import java.util.Calendar
 import java.util.GregorianCalendar
-import java.util.concurrent.TimeUnit
-
 
 @InjectConstructor
 @InjectViewState
@@ -21,15 +18,10 @@ class ProfileEditAcademicDegreePresenter(
     private val userProfileInteractor: UserProfileInteractor
 ) : BasePresenterImpl<ProfileEditAcademicDegreeView>() {
 
-    companion object {
-        private const val errorTag = "ProfileEditPlacementViewError"
-    }
-
-    var compositeDisposable: CompositeDisposable = CompositeDisposable()
+    private val compositeDisposable = CompositeDisposable()
+    private val calendar: GregorianCalendar = GregorianCalendar()
 
     var userProfileFullInfo: UserProfileFullInfo? = null
-
-    val calendar: GregorianCalendar = GregorianCalendar()
 
     fun setProfileFullInfo(profileFullInfo: UserProfileFullInfo) {
         this.userProfileFullInfo = profileFullInfo
@@ -43,65 +35,48 @@ class ProfileEditAcademicDegreePresenter(
     @SuppressLint("CheckResult")
     fun askToSaveNewAcademicDegree() {
         viewState.getListDegrees { list ->
-            userProfileFullInfo?.id?.let {
-                userProfileInteractor.addUserAcademic(
-                    userId = it,
-                    degrees = list.filter { it.id == null && it.academicName.isNotNullOrEmpty() && it.academicYear.isNotNullOrEmpty() }
-                        .map { academic ->
-                            UserAcademicDegrees(
-                                name = academic.academicName,
-                                titleDate = let {
-                                    calendar.set(academic.academicYear.toInt(), Calendar.JULY, 31)
-                                    calendar.toZonedDateTime().toLocalDate().toString()
-                                }
-                            )
-                        }
-                ).andThen(
-                    userProfileInteractor.updateUserAcademic(
-                        userId = it,
-                        degrees = list.filter { it.id != null && it.academicName.isNotNullOrEmpty() && it.academicYear.isNotNullOrEmpty() }
-                            .map { academic ->
-                                UserAcademicDegrees(
-                                    id = academic.id,
-                                    name = academic.academicName,
-                                    titleDate = let {
-                                        calendar.set(
-                                            academic.academicYear.toInt(),
-                                            Calendar.JULY,
-                                            31
-                                        )
-                                        calendar.toZonedDateTime().toLocalDate().toString()
-                                    }
-                                )
-                            }
-                    )
-                ).subscribe({
-                    updateUserProfile()
-                }, {
-                    updateUserProfile()
-                    it.printStackTrace()
-                })
+            userProfileFullInfo?.id?.let { userId ->
+                val newDegrees = list.filter { it.id == null && it.academicName.isNotNullOrEmpty() && it.academicYear.isNotNullOrEmpty() }
+                    .map { academic ->
+                        UserAcademicDegrees(
+                            name = academic.academicName,
+                            titleDate = buildDateString(academic.academicYear)
+                        )
+                    }
+                val updatedDegrees = list.filter { it.id != null && it.academicName.isNotNullOrEmpty() && it.academicYear.isNotNullOrEmpty() }
+                    .map { academic ->
+                        UserAcademicDegrees(
+                            id = academic.id,
+                            name = academic.academicName,
+                            titleDate = buildDateString(academic.academicYear)
+                        )
+                    }
+                userProfileInteractor.addUserAcademic(userId = userId, degrees = newDegrees)
+                    .andThen(userProfileInteractor.updateUserAcademic(userId = userId, degrees = updatedDegrees))
+                    .subscribe({
+                        refreshProfile()
+                    }, {
+                        refreshProfile()
+                        it.printStackTrace()
+                    })
             }
         }
     }
 
-    fun updateUserProfile() {
-        userProfileInteractor.getUserProfilePreviewInfo().subscribe({
-            userProfileFullInfo = it
-            viewState.setMainInformation(it)
-        }, {
+    private fun buildDateString(year: String): String {
+        calendar.set(year.toInt(), Calendar.JULY, 31)
+        return calendar.toZonedDateTime().toLocalDate().toString()
+    }
 
-        })
+    private fun refreshProfile() {
+        userProfileInteractor.getUserProfilePreviewInfo().subscribe({ profile ->
+            userProfileFullInfo = profile
+            viewState.setMainInformation(profile)
+        }, {})
     }
 
     override fun onDestroy() {
         super.onDestroy()
         compositeDisposable.dispose()
     }
-
-    override fun onFirstViewAttach() {
-        super.onFirstViewAttach()
-    }
-
-
 }

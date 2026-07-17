@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.Animation
 import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.tabs.TabLayoutMediator
@@ -22,10 +21,8 @@ import uddug.com.naukoteka.presentation.profile.edit.ProfileEditEducationContain
 import uddug.com.naukoteka.presentation.profile.edit.adapter.EducationTypeAdapter
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity.Companion.PROFILE_ARGS
-import uddug.com.naukoteka.ui.custom.AcademicDegreeEditView
 import uddug.com.naukoteka.ui.fragments.profile.create.education.EducationMiddleActionFragment.Companion.CREATE_EDUCATION_RESULT
 import uddug.com.naukoteka.utils.viewBinding
-
 
 class ProfileEditEducationContainerFragment :
     BaseFragment(R.layout.fragment_profile_edit_education_container),
@@ -40,14 +37,9 @@ class ProfileEditEducationContainerFragment :
 
     private var navigationView: ContainerNavigationView? = null
 
-    private var pulseAnimation: Animation? = null
-
-    private var academicDegrees: MutableList<AcademicDegreeEditView> = mutableListOf()
-
     @ProvidePresenter
-    fun providePresenter(): ProfileEditEducationContainerPresenter {
-        return getScope().getInstance(ProfileEditEducationContainerPresenter::class.java)
-    }
+    fun providePresenter(): ProfileEditEducationContainerPresenter =
+        getScope().getInstance(ProfileEditEducationContainerPresenter::class.java)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -57,15 +49,10 @@ class ProfileEditEducationContainerFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setFragmentResultListener(CREATE_EDUCATION_RESULT, { key, bundle ->
-            presenter.loadProfile()
-        })
+        setFragmentResultListener(CREATE_EDUCATION_RESULT) { _, _ -> presenter.loadProfile() }
         arguments?.getParcelable<UserProfileFullInfo>(PROFILE_ARGS)
             ?.let { presenter.setProfileFullInfo(it) }
-        contentView.back.setOnClickListener {
-            findNavController().popBackStack()
-        }
-
+        contentView.back.setOnClickListener { findNavController().popBackStack() }
     }
 
     override fun onAttach(context: Context) {
@@ -80,10 +67,7 @@ class ProfileEditEducationContainerFragment :
 
     @SuppressLint("UseCompatLoadingForDrawables")
     override fun setMainInformation(profileInfo: UserProfileFullInfo) {
-        contentView.pager.adapter = EducationTypeAdapter(
-            this,
-            profileInfo
-        )
+        contentView.pager.adapter = EducationTypeAdapter(this, profileInfo)
         TabLayoutMediator(contentView.tabs, contentView.pager) { tab, position ->
             when (position) {
                 0 -> tab.text = getString(R.string.middle)
@@ -93,9 +77,5 @@ class ProfileEditEducationContainerFragment :
         }.attach()
     }
 
-    override fun setNavigationScreen(typeScreen: EducationScreenType) {
-
-    }
-
-
+    override fun setNavigationScreen(typeScreen: EducationScreenType) {}
 }

@@ -1,6 +1,5 @@
 package uddug.com.naukoteka.presentation.profile.edit
 
-import android.annotation.SuppressLint
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import moxy.InjectViewState
@@ -10,23 +9,18 @@ import uddug.com.domain.interactors.user_profile.UserProfileInteractor
 import uddug.com.naukoteka.global.base.BasePresenterImpl
 import java.util.concurrent.TimeUnit
 
-
 @InjectConstructor
 @InjectViewState
 class ProfileEditIdPresenter(
     private val userProfileInteractor: UserProfileInteractor
 ) : BasePresenterImpl<ProfileEditIdView>() {
 
-    companion object {
-        private const val errorTag = "ProfileEditPresenterError"
-    }
-
-    private var isAvailableNickname = false
+    private var isNicknameAvailable = false
     private var defaultNickname: String? = null
 
-    private val inputNicknameSubject = BehaviorSubject.create<String>()
+    private val nicknameInputSubject = BehaviorSubject.create<String>()
 
-    var compositeDisposable: CompositeDisposable = CompositeDisposable()
+    private val compositeDisposable = CompositeDisposable()
 
     var userProfileFullInfo: UserProfileFullInfo? = null
 
@@ -36,30 +30,28 @@ class ProfileEditIdPresenter(
     }
 
     fun updateCurrentUserId(userId: String) {
-        if (isAvailableNickname) {
-            userProfileFullInfo?.let { profile ->
-                userProfileFullInfo?.nickname = userId
-                compositeDisposable.add(
-                    userProfileInteractor.updateUserId(
-                        id = profile.id ?: "",
-                        nickname = userId,
-                        firstname = profile.firstName ?: "",
-                        lastname = profile.lastName ?: ""
-                    ).subscribe({
-                        viewState.showUpdatedDone()
-                    }, {})
-                )
-            }
-
+        if (!isNicknameAvailable) return
+        userProfileFullInfo?.let { profile ->
+            profile.nickname = userId
+            compositeDisposable.add(
+                userProfileInteractor.updateUserId(
+                    id = profile.id ?: "",
+                    nickname = userId,
+                    firstname = profile.firstName ?: "",
+                    lastname = profile.lastName ?: ""
+                ).subscribe({
+                    viewState.showUpdatedDone()
+                }, {})
+            )
         }
     }
 
     fun checkFreeNickname(nickname: String) {
         if (nickname == defaultNickname) {
-            isAvailableNickname = true
-            viewState.showNicknameAvailable(isAvailableNickname)
+            isNicknameAvailable = true
+            viewState.showNicknameAvailable(true)
         } else {
-            inputNicknameSubject.onNext(nickname)
+            nicknameInputSubject.onNext(nickname)
         }
     }
 
@@ -70,17 +62,16 @@ class ProfileEditIdPresenter(
 
     override fun onFirstViewAttach() {
         super.onFirstViewAttach()
-        startListenNicknameChanges()
+        startListeningNicknameChanges()
     }
 
-    private fun startListenNicknameChanges() {
-        inputNicknameSubject.debounce(500L, TimeUnit.MILLISECONDS)
+    private fun startListeningNicknameChanges() {
+        nicknameInputSubject.debounce(500L, TimeUnit.MILLISECONDS)
             .switchMap { nickname -> userProfileInteractor.checkNickname(nickname) }
-            .subscribe({ nickNameAvailable ->
-                isAvailableNickname = nickNameAvailable
-                viewState.showNicknameAvailable(nickNameAvailable)
+            .subscribe({ available ->
+                isNicknameAvailable = available
+                viewState.showNicknameAvailable(available)
             }, this::onError)
             .connect()
     }
-
 }

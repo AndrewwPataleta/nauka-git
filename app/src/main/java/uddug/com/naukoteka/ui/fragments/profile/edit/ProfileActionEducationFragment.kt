@@ -38,11 +38,9 @@ class ProfileActionEducationFragment :
 
     private var navigationView: ContainerNavigationView? = null
 
-
     @ProvidePresenter
-    fun providePresenter(): ProfileEditEducationPresenter {
-        return getScope().getInstance(ProfileEditEducationPresenter::class.java)
-    }
+    fun providePresenter(): ProfileEditEducationPresenter =
+        getScope().getInstance(ProfileEditEducationPresenter::class.java)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -52,14 +50,9 @@ class ProfileActionEducationFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        arguments?.getString((EDUCATION_SCREEN_TYPE))
-            ?.let { presenter.setEducationType(it) }
-        arguments?.getParcelable<UserProfileFullInfo>(PROFILE_ARGS)
-            ?.let { presenter.setProfileFullInfo(it) }
-        contentView.addEducation.setOnClickListener {
-            presenter.askForAddNewEducation()
-        }
+        arguments?.getString(EDUCATION_SCREEN_TYPE)?.let { presenter.setEducationType(it) }
+        arguments?.getParcelable<UserProfileFullInfo>(PROFILE_ARGS)?.let { presenter.setProfileFullInfo(it) }
+        contentView.addEducation.setOnClickListener { presenter.askForAddNewEducation() }
     }
 
     override fun onAttach(context: Context) {
@@ -73,91 +66,44 @@ class ProfileActionEducationFragment :
     }
 
     override fun setEducationItems(educations: List<Education>) {
-        contentView.educationList.adapter =
-            EducationAdapter(
-                onDeleteClick = {
-                    presenter.askForDeleteItem(
-                        it
-                    )
-                },
-                onDetailClick = {
-                    presenter.askForDetailInfoItem(it)
-                }
-            ).apply { setItems(educations) }
+        contentView.educationList.adapter = EducationAdapter(
+            onDeleteClick = { presenter.askForDeleteItem(it) },
+            onDetailClick = { presenter.askForDetailInfoItem(it) }
+        ).apply { setItems(educations) }
     }
 
     override fun showDeleteDialog(education: Education) {
-        val dialog = Dialog(requireActivity())
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        val window: Window? = dialog.window
-        window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-        dialog.setCancelable(true)
-        dialog.setCanceledOnTouchOutside(true)
-        dialog.setContentView(R.layout.dialog_remove_education)
-        (dialog.findViewById(R.id.cancelDeleteBtn) as? View)?.setOnClickListener {
-            dialog.dismiss()
-        }
-        (dialog.findViewById(R.id.deleteConfirmBtn) as? View)?.setOnClickListener {
-            dialog.dismiss()
-            presenter.confirmDeleteEducation(education)
-        }
-        dialog.show()
+        Dialog(requireActivity()).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            setCancelable(true)
+            setCanceledOnTouchOutside(true)
+            setContentView(R.layout.dialog_remove_education)
+            (findViewById(R.id.cancelDeleteBtn) as? View)?.setOnClickListener { dismiss() }
+            (findViewById(R.id.deleteConfirmBtn) as? View)?.setOnClickListener {
+                dismiss()
+                presenter.confirmDeleteEducation(education)
+            }
+        }.show()
     }
 
     override fun showDetailScreen(profileInfo: UserProfileFullInfo, educationId: String?, type: EducationScreenType) {
-
-        when (type) {
-            EducationScreenType.MIDDLE -> {
-                val bundle = Bundle()
-                bundle.putParcelable(PROFILE_ARGS, profileInfo)
-                educationId?.let {
-                    bundle.putString(SELECTED_EDUCATION_ID, educationId)
-                }
-                findNavController().navigate(R.id.educationMiddleActionFragment, bundle)
-            }
-
-            EducationScreenType.HIGH -> {
-                val bundle = Bundle()
-                bundle.putParcelable(PROFILE_ARGS, profileInfo)
-                educationId?.let {
-                    bundle.putString(SELECTED_EDUCATION_ID, educationId)
-                }
-                findNavController().navigate(R.id.educationHighActionFragment, bundle)
-            }
-
-            EducationScreenType.ADDITIONAL -> {
-                val bundle = Bundle()
-                bundle.putParcelable(PROFILE_ARGS, profileInfo)
-                educationId?.let {
-                    bundle.putString(SELECTED_EDUCATION_ID, educationId)
-                }
-                findNavController().navigate(R.id.educationAdditionalActionFragment, bundle)
-            }
-        }
+        navigateToEducation(profileInfo, educationId, type)
     }
-
 
     override fun showAddNewEducation(profileInfo: UserProfileFullInfo, type: EducationScreenType) {
-        when (type) {
-            EducationScreenType.MIDDLE -> {
-                val bundle = Bundle()
-                bundle.putParcelable(PROFILE_ARGS, profileInfo)
-                findNavController().navigate(R.id.educationMiddleActionFragment, bundle)
-            }
-
-            EducationScreenType.HIGH -> {
-                val bundle = Bundle()
-                bundle.putParcelable(PROFILE_ARGS, profileInfo)
-                findNavController().navigate(R.id.educationHighActionFragment, bundle)
-            }
-
-            EducationScreenType.ADDITIONAL -> {
-                val bundle = Bundle()
-                bundle.putParcelable(PROFILE_ARGS, profileInfo)
-                findNavController().navigate(R.id.educationAdditionalActionFragment, bundle)
-            }
-        }
-
+        navigateToEducation(profileInfo, null, type)
     }
 
+    private fun navigateToEducation(profileInfo: UserProfileFullInfo, educationId: String?, type: EducationScreenType) {
+        val destination = when (type) {
+            EducationScreenType.MIDDLE -> R.id.educationMiddleActionFragment
+            EducationScreenType.HIGH -> R.id.educationHighActionFragment
+            EducationScreenType.ADDITIONAL -> R.id.educationAdditionalActionFragment
+        }
+        val bundle = Bundle()
+        bundle.putParcelable(PROFILE_ARGS, profileInfo)
+        educationId?.let { bundle.putString(SELECTED_EDUCATION_ID, it) }
+        findNavController().navigate(destination, bundle)
+    }
 }
