@@ -101,7 +101,7 @@ class ChatDetailDialogFragment : Fragment() {
                         onCreatePoll = {
 
                         },
-                        onOpenPollResults = {
+                        onOpenPollResults = { _, _ ->
 
                         },
                         onForwardMessage = { message ->

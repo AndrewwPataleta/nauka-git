@@ -1,7 +1,6 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -19,25 +18,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import uddug.com.domain.entities.chat.MessageChat
-import uddug.com.naukoteka.R
 import uddug.com.naukoteka.ui.theme.NauTheme
 
 @Composable
-fun ReplyBlock(
-    reply: MessageChat,
+fun ForwardedBlock(
+    authorName: String,
+    text: String?,
     isMine: Boolean,
     modifier: Modifier = Modifier,
-    backgroundColor: Color? = null,
-    onReplyClick: (Long) -> Unit = {},
 ) {
     val chatColors = NauTheme.extendedColors
-    val resolvedBackgroundColor = backgroundColor ?: if (isMine) {
+    val backgroundColor = if (isMine) {
         Color.White.copy(alpha = 0.1f)
     } else {
         chatColors.chatBubbleOther
@@ -46,9 +41,8 @@ fun ReplyBlock(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onReplyClick(reply.id) }
             .clip(RoundedCornerShape(8.dp))
-            .background(resolvedBackgroundColor)
+            .background(backgroundColor)
             .height(IntrinsicSize.Min)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -65,8 +59,7 @@ fun ReplyBlock(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = reply.ownerName?.takeIf { it.isNotBlank() }
-                    ?: stringResource(R.string.chat_reply_default_author),
+                text = authorName,
                 color = if (isMine) Color.White else chatColors.accent,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
@@ -74,14 +67,9 @@ fun ReplyBlock(
                 overflow = TextOverflow.Ellipsis
             )
 
-            val previewText = when {
-                !reply.text.isNullOrBlank() -> reply.text
-                else -> reply.files.firstOrNull()?.fileName
-            }?.takeIf { it.isNotBlank() }
-
-            if (previewText != null) {
+            if (!text.isNullOrBlank()) {
                 Text(
-                    text = previewText,
+                    text = text,
                     color = if (isMine) Color.White else chatColors.chatTextOther,
                     fontSize = 12.sp,
                     maxLines = 2,

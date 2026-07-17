@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.mvvm.chat
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,6 +43,7 @@ class ChatDialogDetailViewModel @Inject constructor(
         1 to ChatMediaCategory.FILES,
         2 to ChatMediaCategory.VOICE_MESSAGES,
         3 to ChatMediaCategory.CALL_RECORDINGS,
+        4 to ChatMediaCategory.LINKS,
     )
 
     private val _uiState = MutableStateFlow<ChatDetailUiState>(ChatDetailUiState.Loading)
@@ -116,6 +118,7 @@ class ChatDialogDetailViewModel @Inject constructor(
                 files = emptyList(),
                 voices = emptyList(),
                 notes = emptyList(),
+                links = emptyList(),
                 dialogId = dialogInfo.id,
                 isCurrentUserAdmin = isAdmin,
                 avatarPath = avatarPath,
@@ -326,9 +329,15 @@ class ChatDialogDetailViewModel @Inject constructor(
                     1 -> currentState.copy(files = media)
                     2 -> currentState.copy(voices = media)
                     3 -> currentState.copy(notes = media)
+                    4 -> currentState.copy(links = media)
                     else -> currentState
                 }
             } catch (e: Exception) {
+                Log.e(
+                    "ChatDetailDialogVM",
+                    "loadTabData failed: tab=$index category=$category dialogId=$dialogId",
+                    e
+                )
             }
         }
     }
@@ -343,6 +352,7 @@ sealed class ChatDetailUiState {
         val files: List<MediaMessage>,
         val voices: List<MediaMessage>,
         val notes: List<MediaMessage>,
+        val links: List<MediaMessage> = emptyList(),
         val dialogId: Long,
         val isCurrentUserAdmin: Boolean,
         val avatarPath: String?,

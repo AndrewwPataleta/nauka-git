@@ -3,6 +3,7 @@ package uddug.com.naukoteka.ui.chat.compose.util
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import java.io.File
 
 fun uriToFile(context: Context, uri: Uri): File? {
@@ -36,6 +37,7 @@ fun uriToFile(context: Context, uri: Uri): File? {
 
         targetFile
     } catch (e: Exception) {
+        Log.e("uriToFile", "Failed to convert uri=$uri to file", e)
         null
     }
 }

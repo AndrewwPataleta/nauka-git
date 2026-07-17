@@ -48,6 +48,7 @@ import uddug.com.naukoteka.R
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
+import uddug.com.naukoteka.mvvm.chat.PendingForward
 import java.io.File
 import java.util.Locale
 
@@ -57,6 +58,7 @@ fun ChatInputBar(
     currentMessage: String,
     attachedFiles: List<File>,
     replyMessage: MessageChat?,
+    forwardMessage: PendingForward?,
     editingMessage: MessageChat?,
     isRecording: Boolean,
     recordedAudio: File?,
@@ -70,6 +72,7 @@ fun ChatInputBar(
     onAttachClick: () -> Unit,
     onRemoveFile: (File) -> Unit,
     onCancelReply: () -> Unit,
+    onCancelForward: () -> Unit,
     onCancelEditing: () -> Unit,
     onRemoveSelectedContact: () -> Unit,
     onRemoveAttachedContact: () -> Unit,
@@ -92,6 +95,10 @@ fun ChatInputBar(
 
         replyMessage?.let { reply ->
             ReplyInfoBlock(reply = reply, onCancelReply = onCancelReply)
+        }
+
+        forwardMessage?.let { forward ->
+            ForwardInfoBlock(forward = forward, onCancelForward = onCancelForward)
         }
 
         editingMessage?.let { message ->
@@ -368,7 +375,7 @@ fun ChatInputBar(
                         shape = RoundedCornerShape(12.dp),
                     )
 
-                    if (currentMessage.isBlank() && attachedFiles.isEmpty()) {
+                    if (currentMessage.isBlank() && attachedFiles.isEmpty() && forwardMessage == null) {
                         IconButton(onClick = onVoiceClick) {
                             Image(
                                 painter = painterResource(id = R.drawable.ic_rec_mic_inactive),
@@ -429,6 +436,56 @@ private fun ReplyInfoBlock(reply: MessageChat, onCancelReply: () -> Unit) {
             )
         }
         IconButton(onClick = onCancelReply) {
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = stringResource(id = R.string.cancel_button),
+                tint = Color(0XFF8083A0)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ForwardInfoBlock(forward: PendingForward, onCancelForward: () -> Unit) {
+    val accentColor = colorResource(id = R.color.object_main)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colorResource(R.color.main_background))
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_forward),
+            contentDescription = null,
+            tint = accentColor
+        )
+        Image(
+            painter = painterResource(id = R.drawable.ic_chat_separator),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .width(2.dp)
+                .height(24.dp),
+            colorFilter = ColorFilter.tint(accentColor)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            if (!forward.authorName.isNullOrBlank()) {
+                Text(
+                    text = forward.authorName,
+                    color = accentColor,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp
+                )
+            }
+            Text(
+                text = forward.text.orEmpty(),
+                color = Color(0XFF8083A0),
+                fontSize = 12.sp,
+                maxLines = 1
+            )
+        }
+        IconButton(onClick = onCancelForward) {
             Icon(
                 imageVector = Icons.Filled.Close,
                 contentDescription = stringResource(id = R.string.cancel_button),

@@ -191,7 +191,7 @@ interface ChatRepository {
 
     suspend fun getPoll(pollId: String): Poll
 
-    suspend fun answerPoll(pollId: String, optionIds: List<String>)
+    suspend fun answerPoll(pollId: String, optionIds: List<String>): Poll?
 
     suspend fun getPollAnswerUsers(
         pollId: String,

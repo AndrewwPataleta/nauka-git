@@ -68,7 +68,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.TopAppBar
@@ -172,7 +172,8 @@ fun ChatDetailDialogComponent(
         stringResource(R.string.chat_detail_tab_media),
         stringResource(R.string.chat_detail_tab_files),
         stringResource(R.string.chat_detail_tab_voice),
-        stringResource(R.string.chat_detail_tab_records)
+        stringResource(R.string.chat_detail_tab_records),
+        stringResource(R.string.chat_detail_tab_links),
     )
 
     Scaffold(
@@ -400,8 +401,9 @@ fun ChatDetailDialogComponent(
                         }
                     }
 
-                    TabRow(
+                    ScrollableTabRow(
                         modifier = Modifier.fillMaxWidth(),
+                        edgePadding = 0.dp,
                         containerColor = colorResource(id = R.color.main_background),
                         contentColor = colorResource(id = R.color.main_text),
                         selectedTabIndex = selectedTabIndex,
@@ -445,6 +447,7 @@ fun ChatDetailDialogComponent(
                         1 -> FilesContent(state.files)
                         2 -> VoiceContent(state.voices)
                         3 -> NotesContent(state.notes)
+                        4 -> LinksContent(state.links)
                     }
                     if (showMoreDialog) {
                         ChatDetailMoreSheetDialog(
@@ -486,7 +489,7 @@ fun ChatDetailDialogComponent(
 fun MediaContent(items: List<MediaMessage>) {
     val context = LocalContext.current
     val imageUrls = remember(items) {
-        items.map { BuildConfig.IMAGE_SERVER_URL + it.file.path }
+        items.mapNotNull { it.file?.let { f -> BuildConfig.IMAGE_SERVER_URL + f.path } }
     }
 
     Box(
@@ -501,7 +504,7 @@ fun MediaContent(items: List<MediaMessage>) {
                 items,
                 // The same file id can appear in several messages (e.g. forwarded
                 // media), so file.id alone is not unique — combine with messageId.
-                key = { index, item -> "${item.messageId}_${item.file.id}_$index" },
+                key = { index, item -> "${item.messageId}_${item.file?.id}_$index" },
             ) { index, item ->
                 Box(
                     modifier = Modifier
@@ -524,7 +527,7 @@ fun MediaContent(items: List<MediaMessage>) {
                         }
                 ) {
                     AsyncImage(
-                        model = BuildConfig.IMAGE_SERVER_URL + item.file.path,
+                        model = item.file?.let { BuildConfig.IMAGE_SERVER_URL + it.path },
                         contentDescription = "Media",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -545,22 +548,22 @@ fun FilesContent(items: List<MediaMessage>) {
 
     selectedItem?.let { mediaMessage ->
         FileFunctionsBottomSheetDialog(
-            fileName = mediaMessage.file.fileName,
+            fileName = mediaMessage.file?.fileName ?: "",
             onDismissRequest = { selectedItem = null },
             onActionSelected = { action ->
                 when (action) {
                     FileFunctionAction.COPY_LINK -> {
-                        val link = BuildConfig.IMAGE_SERVER_URL + mediaMessage.file.path
+                        val link = BuildConfig.IMAGE_SERVER_URL + (mediaMessage.file?.path ?: "")
                         context.copyToClipboard(link)
                         Toast.makeText(context, linkCopiedText, Toast.LENGTH_SHORT).show()
                     }
 
                     FileFunctionAction.DOWNLOAD -> {
-                        downloadMediaFile(context, mediaMessage.file)
+                        mediaMessage.file?.let { downloadMediaFile(context, it) }
                     }
 
                     FileFunctionAction.SHARE -> {
-                        shareMediaFile(context, mediaMessage.file, shareTitle)
+                        mediaMessage.file?.let { shareMediaFile(context, it, shareTitle) }
                     }
 
                     FileFunctionAction.EDIT_INFO,
@@ -581,7 +584,7 @@ fun FilesContent(items: List<MediaMessage>) {
     ) {
         itemsIndexed(
             items,
-            key = { index, item -> "${item.messageId}_${item.file.id}_$index" },
+            key = { index, item -> "${item.messageId}_${item.file?.id}_$index" },
         ) { _, item ->
             FileItem(
                 item = item,
@@ -597,7 +600,7 @@ private fun FileItem(
     item: MediaMessage,
     onShowOptions: (MediaMessage) -> Unit,
 ) {
-    val sizeText = remember(item.file.fileSize) { formatFileSize(item.file.fileSize) }
+    val sizeText = remember(item.file?.fileSize) { formatFileSize(item.file?.fileSize) }
     val dateText = remember(item.createdAt) { formatFileDate(item.createdAt) }
     val metaText = remember(sizeText, dateText) {
         listOfNotNull(sizeText, dateText).joinToString(separator = " • ")
@@ -632,7 +635,7 @@ private fun FileItem(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = item.file.fileName,
+                    text = item.file?.fileName ?: "",
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -686,7 +689,8 @@ private fun formatFileSize(sizeInBytes: Int?): String? {
     ) + units[unitIndex].lowercase(Locale.getDefault())
 }
 
-private fun formatFileDate(rawDate: String): String? {
+private fun formatFileDate(rawDate: String?): String? {
+    rawDate ?: return null
     return try {
         val instant = Instant.parse(rawDate)
         val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
@@ -821,7 +825,7 @@ fun VoiceContent(items: List<MediaMessage>) {
         isPreparing = true
         isPlaying = false
         positionMs = 0L
-        durationMs = parseVoiceDurationToMillis(item.file.duration) ?: 0L
+        durationMs = parseVoiceDurationToMillis(item.file?.duration) ?: 0L
 
         try {
             mediaPlayer.setOnPreparedListener { player ->
@@ -834,7 +838,7 @@ fun VoiceContent(items: List<MediaMessage>) {
                 runCatching { mediaPlayer.reset() }
                 resetPlayback()
             }
-            mediaPlayer.setDataSource(BuildConfig.IMAGE_SERVER_URL + item.file.path)
+            mediaPlayer.setDataSource(BuildConfig.IMAGE_SERVER_URL + (item.file?.path ?: ""))
             mediaPlayer.prepareAsync()
         } catch (error: Exception) {
             runCatching { mediaPlayer.reset() }
@@ -854,9 +858,9 @@ fun VoiceContent(items: List<MediaMessage>) {
     ) {
         itemsIndexed(
             items,
-            key = { index, item -> "${item.messageId}_${item.file.id}_$index" },
+            key = { index, item -> "${item.messageId}_${item.file?.id}_$index" },
         ) { index, item ->
-            val key = "${item.messageId}_${item.file.id}_$index"
+            val key = "${item.messageId}_${item.file?.id}_$index"
             val isCurrent = playingKey == key
             VoiceMessageItem(
                 item = item,
@@ -888,10 +892,10 @@ private fun VoiceMessageItem(
     onClick: () -> Unit,
 ) {
     val accent = MaterialTheme.colorScheme.primary
-    val totalDuration = remember(item.file.duration) {
-        formatVoiceDuration(item.file.duration)
+    val totalDuration = remember(item.file?.duration) {
+        formatVoiceDuration(item.file?.duration)
     }
-    val title = item.sender?.fullName?.takeIf { it.isNotBlank() } ?: item.file.fileName
+    val title = item.sender?.fullName?.takeIf { it.isNotBlank() } ?: item.file?.fileName ?: ""
     val durationText = when {
         elapsedText != null && totalDuration != null -> "$elapsedText / $totalDuration"
         elapsedText != null -> elapsedText
@@ -1020,16 +1024,15 @@ fun NotesContent(items: List<MediaMessage>) {
         ) {
             itemsIndexed(
                 items,
-                key = { index, item -> "${item.messageId}_${item.file.id}_$index" },
+                key = { index, item -> "${item.messageId}_${item.file?.id}_$index" },
             ) { _, item ->
                 RecordVideoItem(
                     item = item,
                     imageLoader = videoImageLoader,
                     onClick = {
-                        openRecordingVideo(
-                            context,
-                            BuildConfig.IMAGE_SERVER_URL + item.file.path
-                        )
+                        item.file?.path?.let {
+                            openRecordingVideo(context, BuildConfig.IMAGE_SERVER_URL + it)
+                        }
                     }
                 )
             }
@@ -1044,12 +1047,12 @@ private fun RecordVideoItem(
     onClick: () -> Unit,
 ) {
     val context = LocalContext.current
-    val durationText = remember(item.file.duration) {
-        formatVoiceDuration(item.file.duration)
+    val durationText = remember(item.file?.duration) {
+        formatVoiceDuration(item.file?.duration)
     }
-    val thumbnailRequest = remember(item.file.path) {
+    val thumbnailRequest = remember(item.file?.path) {
         ImageRequest.Builder(context)
-            .data(BuildConfig.IMAGE_SERVER_URL + item.file.path)
+            .data(BuildConfig.IMAGE_SERVER_URL + (item.file?.path ?: ""))
             .videoFrameMillis(1_000)
             .crossfade(true)
             .build()
@@ -1126,6 +1129,100 @@ private fun EmptyTabPlaceholder(message: String) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+fun LinksContent(items: List<MediaMessage>) {
+    if (items.isEmpty()) {
+        EmptyTabPlaceholder(stringResource(R.string.chat_detail_links_empty))
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
+    ) {
+        items(
+            items,
+            key = { item -> item.messageId },
+        ) { item ->
+            LinkItem(item = item)
+        }
+    }
+}
+
+@Composable
+private fun LinkItem(item: MediaMessage) {
+    val context = LocalContext.current
+    val url = item.linkPreview?.url ?: item.text
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .clickable {
+                if (!url.isNullOrBlank()) {
+                    runCatching {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    }
+                }
+            },
+        elevation = 0.dp,
+        backgroundColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(width = 1.dp, color = NauTheme.extendedColors.inputStroke)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val imageUrl = item.linkPreview?.image
+            if (!imageUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                val title = item.linkPreview?.title
+                if (!title.isNullOrBlank()) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (!url.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+                if (!url.isNullOrBlank()) {
+                    Text(
+                        text = url,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
     }
 }
 

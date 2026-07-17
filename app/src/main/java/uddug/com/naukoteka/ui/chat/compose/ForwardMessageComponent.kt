@@ -1,5 +1,6 @@
 package uddug.com.naukoteka.ui.chat.compose
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,12 +12,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -30,6 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +49,8 @@ import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 @Composable
 fun ForwardMessageComponent(
     viewModel: ForwardMessageViewModel,
+    forwardAuthor: String? = null,
+    forwardText: String? = null,
     onBack: () -> Unit,
     onSelect: (ForwardMessageItem) -> Unit,
 ) {
@@ -71,7 +78,7 @@ fun ForwardMessageComponent(
                 title = {
                     Text(
                         text = stringResource(R.string.forward_message_title),
-                        color = Color(0xFF1F1F1F),
+                        color = MaterialTheme.colors.onBackground,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -79,23 +86,30 @@ fun ForwardMessageComponent(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_back),
+                            painter = painterResource(id = R.drawable.ic_chat_back),
                             contentDescription = null,
-                            tint = Color(0xFF1F1F1F)
+                            tint = MaterialTheme.colors.primary
                         )
                     }
                 },
-                backgroundColor = Color.White,
+                backgroundColor = MaterialTheme.colors.background,
                 elevation = 0.dp,
             )
         },
-        backgroundColor = Color(0xFFF5F5F9),
+        backgroundColor = MaterialTheme.colors.background,
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            if (!forwardAuthor.isNullOrBlank() || !forwardText.isNullOrBlank()) {
+                ForwardPreviewBlock(
+                    author = forwardAuthor,
+                    text = forwardText,
+                )
+            }
+
             TextField(
                 value = state.query,
                 onValueChange = viewModel::onQueryChange,
@@ -112,12 +126,12 @@ fun ForwardMessageComponent(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = Color.White,
+                    backgroundColor = colorResource(R.color.main_background_input),
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent,
-                    cursorColor = Color(0xFF2E83D9),
-                    textColor = Color(0xFF1F1F1F),
+                    cursorColor = colorResource(R.color.object_main),
+                    textColor = MaterialTheme.colors.onBackground,
                     placeholderColor = Color(0xFF8F8FA0),
                     leadingIconColor = Color(0xFF8F8FA0),
                 ),
@@ -142,13 +156,68 @@ fun ForwardMessageComponent(
 }
 
 @Composable
+private fun ForwardPreviewBlock(
+    author: String?,
+    text: String?,
+) {
+    val accentColor = colorResource(id = R.color.object_main)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colors.background)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_forward),
+            contentDescription = null,
+            tint = accentColor
+        )
+        Image(
+            painter = painterResource(id = R.drawable.ic_chat_separator),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .width(2.dp)
+                .height(24.dp),
+            colorFilter = ColorFilter.tint(accentColor)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            if (!author.isNullOrBlank()) {
+                Text(
+                    text = author,
+                    color = accentColor,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            if (!text.isNullOrBlank()) {
+                Text(
+                    text = text,
+                    color = Color(0xFF8083A0),
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+    Divider(
+        color = colorResource(R.color.main_background_input_stroke),
+        thickness = 1.dp,
+    )
+}
+
+@Composable
 private fun ForwardMessageListItem(
     item: ForwardMessageItem,
     onClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
-            .background(Color.White)
+            .background(MaterialTheme.colors.background)
             .clickable(onClick = onClick)
     ) {
         Row(
@@ -166,7 +235,7 @@ private fun ForwardMessageListItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.title,
-                    color = Color(0xFF1F1F1F),
+                    color = MaterialTheme.colors.onBackground,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
@@ -185,7 +254,7 @@ private fun ForwardMessageListItem(
             }
         }
         Divider(
-            color = Color(0xFFE7E8EC),
+            color = colorResource(R.color.main_background_input_stroke),
             thickness = 1.dp,
             modifier = Modifier.padding(start = 76.dp)
         )

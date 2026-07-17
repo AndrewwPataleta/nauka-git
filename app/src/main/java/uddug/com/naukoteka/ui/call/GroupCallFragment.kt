@@ -3,6 +3,7 @@ package uddug.com.naukoteka.ui.call
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import android.view.LayoutInflater
@@ -30,6 +31,7 @@ import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationVi
 import uddug.com.naukoteka.ui.activities.main.ContainerActivity
 import uddug.com.naukoteka.ui.call.compose.CallScreen
 import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
+import uddug.com.naukoteka.ui.chat.ChatDialogFragment
 import uddug.com.naukoteka.ui.theme.NaukotekaTheme
 
 @AndroidEntryPoint
@@ -208,11 +210,22 @@ class GroupCallFragment : Fragment() {
         }
     }
 
+    // При сворачивании звонка возвращаемся в ленту чата, где идёт звонок, а не в
+    // список диалогов. Если чат уже в бэкстеке — попаем к нему, иначе открываем
+    // заново по dialogId.
     private fun navigateBackToChatList() {
         runCatching {
             val navController = requireActivity().findNavController(R.id.main_nav_host_fragment)
-            val popped = navController.popBackStack(R.id.chatListFragment, false)
-            if (!popped) {
+            if (navController.popBackStack(R.id.chatDialogFragment, false)) return@runCatching
+
+            val dialogId = viewModel.uiState.value.dialogId
+            if (dialogId != null && dialogId != 0L) {
+                navController.popBackStack(R.id.chatListFragment, false)
+                navController.navigate(
+                    R.id.chatDialogFragment,
+                    Bundle().apply { putLong(ChatDialogFragment.DIALOG_ID, dialogId) },
+                )
+            } else if (!navController.popBackStack(R.id.chatListFragment, false)) {
                 navController.navigate(R.id.chatListFragment)
             }
         }
@@ -231,6 +244,11 @@ class GroupCallFragment : Fragment() {
             }
             if (isVideoCall && !isPermissionGranted(Manifest.permission.CAMERA)) {
                 add(Manifest.permission.CAMERA)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                !isPermissionGranted(Manifest.permission.BLUETOOTH_CONNECT)
+            ) {
+                add(Manifest.permission.BLUETOOTH_CONNECT)
             }
         }
 

@@ -20,6 +20,7 @@ import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Switch
@@ -39,11 +40,13 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.ui.theme.NauTheme
 import uddug.com.naukoteka.mvvm.chat.ChatCreatePollUiState
 import uddug.com.naukoteka.mvvm.chat.ChatCreatePollViewModel
 import uddug.com.naukoteka.mvvm.chat.PollOptionUi
@@ -67,7 +70,7 @@ fun ChatCreatePollScreen(
                 title = {
                     Text(
                         text = stringResource(R.string.chat_create_poll_title),
-                        color = Color(0xFF1F1F1F),
+                        color = colorResource(id = R.color.main_text),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -77,20 +80,20 @@ fun ChatCreatePollScreen(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = null,
-                            tint = Color(0xFF1F1F1F)
+                            tint = colorResource(id = R.color.main_text)
                         )
                     }
                 },
-                backgroundColor = Color.White,
+                backgroundColor = MaterialTheme.colors.surface,
                 elevation = 0.dp
             )
         },
-        backgroundColor = Color.White
+        backgroundColor = MaterialTheme.colors.surface
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(MaterialTheme.colors.surface)
                 .padding(padding)
         ) {
             val scrollState = rememberScrollState()
@@ -165,7 +168,7 @@ private fun QuestionSection(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = stringResource(R.string.chat_create_poll_question_section),
-            color = Color(0xFF1F1F1F),
+            color = colorResource(id = R.color.main_text),
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold
         )
@@ -183,11 +186,11 @@ private fun QuestionSection(
             singleLine = false,
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                backgroundColor = Color(0xFFF5F5F9),
+                backgroundColor = NauTheme.extendedColors.backgroundMoreInfo,
                 focusedBorderColor = Color(0xFF2E83D9),
                 unfocusedBorderColor = Color(0xFFE0E0E8),
                 cursorColor = Color(0xFF2E83D9),
-                textColor = Color(0xFF1F1F1F),
+                textColor = colorResource(id = R.color.main_text),
                 placeholderColor = Color(0xFFB0B2C3)
             )
         )
@@ -204,7 +207,7 @@ private fun SettingsSection(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = stringResource(R.string.chat_create_poll_settings_section),
-            color = Color(0xFF1F1F1F),
+            color = colorResource(id = R.color.main_text),
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold
         )
@@ -245,7 +248,7 @@ private fun PollSettingItem(
     ) {
         Text(
             text = title,
-            color = Color(0xFF1F1F1F),
+            color = colorResource(id = R.color.main_text),
             fontSize = 15.sp,
             lineHeight = 20.sp,
             modifier = Modifier.weight(1f),
@@ -273,7 +276,7 @@ private fun OptionsSection(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = stringResource(R.string.chat_create_poll_options_section),
-            color = Color(0xFF1F1F1F),
+            color = colorResource(id = R.color.main_text),
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold
         )
@@ -346,12 +349,12 @@ private fun PollOptionField(
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
         colors = TextFieldDefaults.textFieldColors(
-            backgroundColor = Color(0xFFF5F5F9),
+            backgroundColor = NauTheme.extendedColors.backgroundMoreInfo,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent,
             cursorColor = Color(0xFF2E83D9),
-            textColor = Color(0xFF1F1F1F),
+            textColor = colorResource(id = R.color.main_text),
             placeholderColor = Color(0xFF8F8FA0),
             leadingIconColor = Color.Unspecified,
             disabledLeadingIconColor = Color.Unspecified,

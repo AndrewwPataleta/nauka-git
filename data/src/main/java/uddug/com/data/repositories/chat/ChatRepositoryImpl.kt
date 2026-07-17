@@ -499,7 +499,7 @@ class ChatRepositoryImpl @Inject constructor(
             )
         }
         return try {
-            apiService.uploadFiles(parts, raw).map { it.toDomain() }
+            apiService.uploadFiles(parts, if (raw) true else null).map { it.toDomain() }
         } catch (e: Exception) {
             println("upload files error ${e.message}")
             emptyList()
@@ -549,9 +549,17 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun getPoll(pollId: String): Poll = apiService.getPoll(pollId).toDomain()
 
-    override suspend fun answerPoll(pollId: String, optionIds: List<String>) {
+    override suspend fun answerPoll(pollId: String, optionIds: List<String>): Poll? {
         val request = AnswerPollRequestDto(optionIds)
-        apiService.answerPoll(pollId, request)
+        val response = apiService.answerPoll(pollId, request)
+        val body = response.body()?.string()
+        if (body.isNullOrBlank()) return null
+        return try {
+            val dto = com.google.gson.Gson().fromJson(body, uddug.com.data.services.models.response.chat.MessagePollDto::class.java)
+            dto.toDomain(null, 0L)
+        } catch (_: Exception) {
+            null
+        }
     }
 
     override suspend fun getPollAnswerUsers(

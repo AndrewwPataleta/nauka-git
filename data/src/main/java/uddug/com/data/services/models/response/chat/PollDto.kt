@@ -23,6 +23,7 @@ data class PollOptionDto(
     val dsc: String? = null,
     val isRightAnswer: Boolean? = null,
     val voteCount: Int? = null,
+    val percent: Int? = null,
     val voted: Boolean? = null,
     val answeredUsers: List<UserProfileFullInfoDto>? = null,
 )
@@ -45,7 +46,7 @@ fun PollOptionDto.toDomain(): PollOption = PollOption(
     description = dsc,
     isRightAnswer = isRightAnswer,
     voteCount = voteCount ?: 0,
-    percent = null,
+    percent = percent,
     isVoted = voted ?: false,
     answeredUsers = answeredUsers.orEmpty().map { it.toDomain() },
 )

@@ -57,7 +57,7 @@ fun ChatToolbarCreateSingleComponent(
                 )
             }
         },
-        backgroundColor = Color.White,
+        backgroundColor = MaterialTheme.colors.surface,
         elevation = 0.dp
     )
 }

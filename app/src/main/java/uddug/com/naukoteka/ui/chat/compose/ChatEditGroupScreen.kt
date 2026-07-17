@@ -30,6 +30,7 @@ import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme as M3MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -131,7 +133,7 @@ fun ChatEditGroupScreen(
                     Text(
                         text = stringResource(R.string.chat_edit_group),
                         fontSize = 20.sp,
-                        color = Color.Black
+                        color = MaterialTheme.colors.onSurface
                     )
                 },
                 navigationIcon = {
@@ -155,16 +157,16 @@ fun ChatEditGroupScreen(
                         )
                     }
                 },
-                backgroundColor = Color.White,
+                backgroundColor = MaterialTheme.colors.surface,
                 elevation = 0.dp
             )
         },
-        backgroundColor = Color.White
+        backgroundColor = MaterialTheme.colors.surface
     ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(MaterialTheme.colors.surface)
         ) {
             when (val state = uiState) {
                 ChatEditGroupUiState.Loading -> {
@@ -220,7 +222,7 @@ fun ChatEditGroupScreen(
                                 ),
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 16.sp,
-                                color = Color.Black
+                                color = MaterialTheme.colors.onSurface
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                         }
@@ -299,11 +301,11 @@ private fun EditGroupHeader(
                     },
                     singleLine = true,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        backgroundColor = Color.White,
+                        backgroundColor = MaterialTheme.colors.surface,
                         focusedBorderColor = Color(0xFF2E83D9),
                         unfocusedBorderColor = Color(0xFFE0E0E8),
                         cursorColor = Color(0xFF2E83D9),
-                        textColor = Color.Black
+                        textColor = MaterialTheme.colors.onSurface
                     )
                 )
                 Text(
@@ -425,7 +427,7 @@ private fun GroupMemberActionsBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        containerColor = Color.White
+        containerColor = M3MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -436,7 +438,7 @@ private fun GroupMemberActionsBottomSheet(
                 text = stringResource(R.string.chat_group_participant_actions_title),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp,
-                color = Color.Black
+                color = MaterialTheme.colors.onSurface
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -525,7 +527,7 @@ private fun GroupMemberRow(
                 text = member.user.fullName.orEmpty(),
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp,
-                color = Color.Black
+                color = MaterialTheme.colors.onSurface
             )
             if (member.isAdmin && !member.isCreator) {
                 Spacer(modifier = Modifier.height(4.dp))

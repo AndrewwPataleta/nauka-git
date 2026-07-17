@@ -78,11 +78,11 @@ private fun ChatAvatarPreviewScreen(
                     )
                 }
             },
-            backgroundColor = Color.White,
+            backgroundColor = MaterialTheme.colors.surface,
             elevation = 0.dp
         )
     },
-        backgroundColor = Color.White
+        backgroundColor = MaterialTheme.colors.surface
     ) { padding ->
         Box(
             modifier = Modifier

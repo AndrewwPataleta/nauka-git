@@ -239,7 +239,7 @@ interface ChatApiService {
     @POST("core/files")
     suspend fun uploadFiles(
         @Part files: List<MultipartBody.Part>,
-        @Query("raw") raw: Boolean = false,
+        @Query("raw") raw: Boolean? = null,
     ): List<FileDto>
 
     @POST("chat/v1/dialogs/poll")
@@ -254,13 +254,11 @@ interface ChatApiService {
     @GET("chat/v1/dialogs/poll/{pollId}")
     suspend fun getPoll(@Path("pollId") pollId: String): PollDto
 
-    // Server returns HTTP 200 with an empty body on success. Do NOT declare a
-    // response type — Gson would choke on EOF.
     @PUT("chat/v1/dialogs/poll/{pollId}/answer")
     suspend fun answerPoll(
         @Path("pollId") pollId: String,
         @Body request: AnswerPollRequestDto,
-    )
+    ): retrofit2.Response<okhttp3.ResponseBody>
 
     @GET("chat/v1/dialogs/poll/{pollId}/answer-users/{optionId}")
     suspend fun getPollAnswerUsers(

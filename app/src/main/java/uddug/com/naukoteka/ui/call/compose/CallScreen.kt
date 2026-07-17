@@ -50,6 +50,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -789,6 +790,28 @@ private fun GroupVideoCallGrid(
     val columns = if (tileCount <= 1) 1 else 2
     val rows = maxOf((tileCount + columns - 1) / columns, 1)
 
+    // Movable-тайлы: сохраняем состояние тайла участника (и его WebRTC-рендерер)
+    // при переезде между строками/колонками сетки, когда участники входят/выходят.
+    // Обычный key() этого не даёт — при смене родительской Row тайл пересоздаётся,
+    // рвётся подписка на стрим и у соседа "отваливается" камера. movableContentOf
+    // переносит тайл без dispose/recreate.
+    val participantTiles = remember { mutableMapOf<String, @Composable (CallParticipant, Modifier) -> Unit>() }
+    participantTiles.keys.retainAll(remoteParticipants.mapTo(HashSet()) { it.id })
+    remoteParticipants.forEach { participant ->
+        participantTiles.getOrPut(participant.id) {
+            movableContentOf { p, tileModifier ->
+                VideoParticipantTile(
+                    label = p.name ?: p.id,
+                    avatarUrl = p.avatarUrl,
+                    isMuted = p.isMuted,
+                    modifier = tileModifier,
+                    onRendererReady = { renderer -> onBindParticipantRenderer(p.id, renderer) },
+                    onRendererReleased = { onReleaseParticipantRenderer(p.id) },
+                )
+            }
+        }
+    }
+
     Box(modifier = modifier) {
         if (tileCount == 0) {
             Box(
@@ -818,20 +841,8 @@ private fun GroupVideoCallGrid(
                                         .weight(1f)
                                         .fillMaxHeight(),
                                 ) {
-                                    key(participant.id) {
-                                        VideoParticipantTile(
-                                            label = participant.name ?: participant.id,
-                                            avatarUrl = participant.avatarUrl,
-                                            isMuted = participant.isMuted,
-                                            modifier = Modifier.fillMaxSize(),
-                                            onRendererReady = { renderer ->
-                                                onBindParticipantRenderer(participant.id, renderer)
-                                            },
-                                            onRendererReleased = {
-                                                onReleaseParticipantRenderer(participant.id)
-                                            },
-                                        )
-                                    }
+                                    participantTiles.getValue(participant.id)
+                                        .invoke(participant, Modifier.fillMaxSize())
                                 }
                             } else {
                                 Spacer(modifier = Modifier.weight(1f))

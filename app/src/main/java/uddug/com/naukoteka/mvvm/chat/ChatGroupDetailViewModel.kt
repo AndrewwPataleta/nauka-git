@@ -44,6 +44,7 @@ class ChatGroupDetailViewModel @Inject constructor(
     private var currentDialogInfo: DialogInfo? = null
     private var isMediaLoading = false
     private var isFilesLoading = false
+    private var isLinksLoading = false
 
     private val _avatarEvents = MutableSharedFlow<AvatarUpdateEvent>()
     val avatarEvents: SharedFlow<AvatarUpdateEvent> = _avatarEvents.asSharedFlow()
@@ -54,6 +55,7 @@ class ChatGroupDetailViewModel @Inject constructor(
         when (index) {
             1 -> if (!currentState.isMediaLoaded) loadMedia(currentState.dialogId)
             2 -> if (!currentState.isFilesLoaded) loadFiles(currentState.dialogId)
+            3 -> if (!currentState.isLinksLoaded) loadLinks(currentState.dialogId)
         }
     }
 
@@ -288,6 +290,30 @@ class ChatGroupDetailViewModel @Inject constructor(
         }
     }
 
+    private fun loadLinks(dialogId: Long) {
+        val currentState = _uiState.value as? ChatGroupDetailUiState.Success ?: return
+        if (isLinksLoading || currentState.isLinksLoaded) return
+        isLinksLoading = true
+        viewModelScope.launch {
+            try {
+                val links = chatInteractor.getDialogMedia(
+                    dialogId,
+                    category = ChatMediaCategory.LINKS,
+                    limit = 50,
+                    page = 1,
+                    query = null,
+                    sd = null,
+                    ed = null,
+                )
+                updateSuccessState { it.copy(links = links, isLinksLoaded = true) }
+            } catch (e: Exception) {
+                // Ignore and allow retry on next tab selection
+            } finally {
+                isLinksLoading = false
+            }
+        }
+    }
+
     private fun updateSuccessState(transform: (ChatGroupDetailUiState.Success) -> ChatGroupDetailUiState.Success) {
         val currentState = _uiState.value as? ChatGroupDetailUiState.Success ?: return
         _uiState.value = transform(currentState)
@@ -341,10 +367,12 @@ sealed class ChatGroupDetailUiState {
         val participants: List<Participant>,
         val media: List<MediaMessage>,
         val files: List<MediaMessage>,
+        val links: List<MediaMessage> = emptyList(),
         val dialogId: Long,
         val isCurrentUserAdmin: Boolean,
         val isMediaLoaded: Boolean = false,
         val isFilesLoaded: Boolean = false,
+        val isLinksLoaded: Boolean = false,
         val isAvatarUpdating: Boolean = false,
     ) : ChatGroupDetailUiState()
 

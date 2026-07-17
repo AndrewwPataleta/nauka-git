@@ -17,6 +17,7 @@ data class MessageChat(
     val isMine: Boolean,
     val replyTo: MessageChat? = null,
     val poll: Poll? = null,
+    val forwardedFromName: String? = null,
 )
 
 data class Attachment(
@@ -32,12 +33,13 @@ enum class MessageType {
     TEXT, SYSTEM, POLL, VOICE, UNKNOWN;
 
     companion object {
+        // Системные сообщения о звонках: 3 - начался, 6 - завершён,
+        // 6003 - "Вызов пропущен", 6004 - "Звонок пропущен". Их создаёт сервер,
+        // отображаются по центру, а не баблом.
         fun fromInt(value: Int): MessageType = when (value) {
             1 -> TEXT
-            2 -> SYSTEM
+            2, 3, 5, 6, 6003, 6004 -> SYSTEM
             4 -> VOICE
-            5 -> SYSTEM
-            6 -> SYSTEM
             9 -> POLL
             else -> UNKNOWN
         }

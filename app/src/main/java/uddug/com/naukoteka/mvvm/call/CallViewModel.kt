@@ -51,6 +51,7 @@ class CallViewModel @Inject constructor(
     private val socketService: SocketService,
     private val callAudioManager: CallAudioManager,
     private val incomingCallStore: IncomingCallStore,
+    private val activeCallStore: ActiveCallStore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CallUiState())
@@ -166,7 +167,15 @@ class CallViewModel @Inject constructor(
         isAcceptingIncomingCall: Boolean = false,
         isGroupCall: Boolean = false,
     ) {
-        if (isCallStarted) return
+        if (isCallStarted) {
+            if (!flashphonerSessionManager.isRoomJoined()) {
+                logCallStep("rejoin_stale_session", "resetting dead session for dialogId=$dialogId")
+                isCallStarted = false
+                flashphonerSessionManager.reset()
+            } else {
+                return
+            }
+        }
 
         if (resetReconnectAttempts) {
             reconnectAttempts = 0
@@ -314,6 +323,7 @@ class CallViewModel @Inject constructor(
         // Drop the pending-call record so ContainerActivity.onStart() can't
         // re-open the call screen on every resume/unlock after the call ended.
         incomingCallStore.clear()
+        activeCallStore.clear()
         lastCallParams = null
         clearVideoStreams()
         flashphonerSessionManager.disconnectRoom()
@@ -567,6 +577,18 @@ class CallViewModel @Inject constructor(
             return
         }
         localPublishStarted = true
+        lastCallParams?.let { params ->
+            activeCallStore.save(
+                ActiveCallState(
+                    dialogId = params.dialogId,
+                    contactName = params.contactName,
+                    avatarUrl = params.avatarUrl,
+                    callTitle = params.callTitle,
+                    isVideoCall = params.isVideoCall,
+                    isGroupCall = params.isGroupCall,
+                )
+            )
+        }
         logCallStep("publish_local_stream_start", "streamName=$streamName isVideoCall=$isVideoCall")
 
         Log.d("CallVM", "PUBLISHING STREAM: $streamName")
@@ -1023,13 +1045,17 @@ class CallViewModel @Inject constructor(
         val current = _uiState.value.participants
         if (current.any { it.id == participantId }) return
         val cached = current.associateBy { it.id }
+        val resolvedName = cached[participantId]?.name ?: participantId
         _uiState.value = _uiState.value.copy(
             participants = current + CallParticipant(
                 id = participantId,
-                name = cached[participantId]?.name ?: participantId,
+                name = resolvedName,
                 avatarUrl = cached[participantId]?.avatarUrl,
             )
         )
+        if (resolvedName == participantId) {
+            refreshParticipants()
+        }
     }
 
     private fun removeParticipantStream(participant: Participant) {
@@ -1075,6 +1101,7 @@ class CallViewModel @Inject constructor(
     private fun handleCallFailure(@Suppress("UNUSED_PARAMETER") message: String? = null) {
         logCallStep("call_failed", message ?: "unknown")
         incomingCallStore.clear()
+        activeCallStore.clear()
         lastCallParams = null
         clearVideoStreams()
         flashphonerSessionManager.disconnectRoom()

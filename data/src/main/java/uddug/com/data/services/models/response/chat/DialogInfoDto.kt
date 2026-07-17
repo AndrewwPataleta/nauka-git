@@ -24,11 +24,11 @@ data class FileDto(
     val path: String,
     val fileName: String,
     val contentType: String? = null,
-    val fileSize: Int,
-    val fileType: Int,
-    val fileKind: Int,
-    val duration: String?,
-    val viewCount: Int
+    val fileSize: Int? = null,
+    val fileType: Int? = null,
+    val fileKind: Int? = null,
+    val duration: String? = null,
+    val viewCount: Int? = null,
 )
 
 data class ActiveCallDto(

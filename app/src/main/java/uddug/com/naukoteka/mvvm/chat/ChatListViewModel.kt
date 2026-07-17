@@ -292,7 +292,7 @@ class ChatListViewModel @Inject constructor(
                             if (chat.dialogId == dialogId) {
                                 chat.copy(isPinned = pinned)
                             } else chat
-                        }
+                        }.sortedByDescending { it.isPinned }
                         ChatListUiState.Success(updatedChats)
                     } else state
                 }

@@ -5,6 +5,9 @@
 
     <style name="ContainerAppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/dark_main_background</item>
+        <item name="android:statusBarColor">@color/dark_main_background</item>
+        <item name="android:navigationBarColor">@color/main_background</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="NauWidget.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">

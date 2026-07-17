@@ -4,20 +4,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import uddug.com.naukoteka.R
-import uddug.com.naukoteka.mvvm.chat.ForwardMessageEvent
 import uddug.com.naukoteka.mvvm.chat.ForwardMessageItem
 import uddug.com.naukoteka.mvvm.chat.ForwardMessageViewModel
 import uddug.com.naukoteka.ui.chat.compose.ForwardMessageComponent
@@ -28,11 +21,21 @@ class ForwardMessageFragment : Fragment() {
 
     private val viewModel: ForwardMessageViewModel by viewModels()
 
-    private var messageId: Long = 0L
+    private var messageIds: List<Long> = emptyList()
+    private var forwardText: String? = null
+    private var forwardAuthor: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        messageId = requireArguments().getLong(ARG_MESSAGE_ID)
+        val singleId = arguments?.getLong(ARG_MESSAGE_ID, 0L) ?: 0L
+        val multipleIds = arguments?.getLongArray(ARG_MESSAGE_IDS)
+        messageIds = when {
+            multipleIds != null && multipleIds.isNotEmpty() -> multipleIds.toList()
+            singleId != 0L -> listOf(singleId)
+            else -> emptyList()
+        }
+        forwardText = arguments?.getString(ARG_FORWARD_TEXT)
+        forwardAuthor = arguments?.getString(ARG_FORWARD_AUTHOR)
     }
 
     override fun onCreateView(
@@ -45,6 +48,8 @@ class ForwardMessageFragment : Fragment() {
                 NaukotekaTheme {
                     ForwardMessageComponent(
                         viewModel = viewModel,
+                        forwardAuthor = forwardAuthor,
+                        forwardText = forwardText,
                         onBack = { requireActivity().onBackPressed() },
                         onSelect = { item -> onDialogSelected(item) }
                     )
@@ -53,44 +58,27 @@ class ForwardMessageFragment : Fragment() {
         }
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.events.collectLatest { event ->
-                    when (event) {
-                        is ForwardMessageEvent.ForwardSuccess -> navigateToDialog(event.dialogId)
-                        ForwardMessageEvent.ForwardError -> showError()
-                    }
-                }
-            }
-        }
-    }
 
     private fun onDialogSelected(item: ForwardMessageItem) {
-        viewModel.forwardMessage(messageId, item.dialogId)
-    }
-
-    private fun navigateToDialog(dialogId: Long) {
         val navOptions = NavOptions.Builder()
             .setPopUpTo(R.id.chatDialogFragment, true)
             .build()
         findNavController().navigate(
             R.id.chatDialogFragment,
-            Bundle().apply { putLong(ChatDialogFragment.DIALOG_ID, dialogId) },
+            Bundle().apply {
+                putLong(ChatDialogFragment.DIALOG_ID, item.dialogId)
+                putLongArray(ChatDialogFragment.ARG_PENDING_FORWARD_IDS, messageIds.toLongArray())
+                putString(ChatDialogFragment.ARG_PENDING_FORWARD_TEXT, forwardText)
+                putString(ChatDialogFragment.ARG_PENDING_FORWARD_AUTHOR, forwardAuthor)
+            },
             navOptions
         )
     }
 
-    private fun showError() {
-        Toast.makeText(
-            requireContext(),
-            getString(R.string.forward_message_error),
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-
     companion object {
         const val ARG_MESSAGE_ID = "forward_message_id"
+        const val ARG_MESSAGE_IDS = "forward_message_ids"
+        const val ARG_FORWARD_TEXT = "forward_message_text"
+        const val ARG_FORWARD_AUTHOR = "forward_message_author"
     }
 }

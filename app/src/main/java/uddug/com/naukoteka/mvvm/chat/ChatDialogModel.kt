@@ -69,6 +69,11 @@ private val DOCUMENT_EXTENSIONS = setOf(
     "csv"
 )
 
+// cType, которые клиент имеет право отправлять: 1 - текст/медиа, 4 - голосовое,
+// 7 - контакт, 9 - опрос. Системные типы (2, 3, 5, 6) создаёт только сервер;
+// их отправка ломала валидацию на бэке (инцидент с сообщениями type=3).
+private val ALLOWED_OUTGOING_CTYPES = setOf(1, 4, 7, 9)
+
 @HiltViewModel
 class ChatDialogViewModel @Inject constructor(
     private val userRepository: UserProfileRepository,
@@ -100,6 +105,8 @@ class ChatDialogViewModel @Inject constructor(
 
     private var selectedUser: UserProfileFullInfo? = null
 
+    private var lastSentForwardAuthor: String? = null
+
     private var currentUser: UserProfileFullInfo? = null
 
     private val _currentDialogId = MutableStateFlow<Long?>(null)
@@ -110,6 +117,7 @@ class ChatDialogViewModel @Inject constructor(
 
     private val _currentUserId = MutableStateFlow<String?>(null)
     val currentUserId: StateFlow<String?> = _currentUserId
+    val currentUserName: String? get() = currentUser?.fullName
 
     private val _notificationsDisabled = MutableStateFlow(false)
     val notificationsDisabled: StateFlow<Boolean> = _notificationsDisabled
@@ -209,6 +217,7 @@ class ChatDialogViewModel @Inject constructor(
                     attachedFiles = attachedFiles.toList(),
                     pinnedMessages = info.pinnedMessages,
                 )
+                applyPendingForwardIfAny()
                 markMessagesRead(dialogId, messages)
                 refreshActiveCall(dialogId)
             } catch (e: Exception) {
@@ -321,16 +330,25 @@ class ChatDialogViewModel @Inject constructor(
                 if (dialogId != 0L) {
                     currentDialogID = dialogId
                     val currentUserId = user.id ?: return@launch
-                    val messages = chatInteractor.getMessagesWithOwnerInfo(
-                        currentUserId = currentUserId,
-                        dialogId = dialogId,
-                        limit = PAGE_SIZE,
-                        lastMessageId = null,
-                    ).sortedBy { it.createdAt }
+                    val messages = try {
+                        chatInteractor.getMessagesWithOwnerInfo(
+                            currentUserId = currentUserId,
+                            dialogId = dialogId,
+                            limit = PAGE_SIZE,
+                            lastMessageId = null,
+                        ).sortedBy { it.createdAt }
+                    } catch (e: retrofit2.HttpException) {
+                        if (e.code() == 403) {
+                            _currentDialogId.value = 0L
+                            currentDialogID = 0L
+                            currentDialogInfo = info.copy(id = 0L)
+                            null
+                        } else throw e
+                    }
                     val elapsed = System.currentTimeMillis() - startTime
                     if (elapsed < 500L) delay(500L - elapsed)
                     _uiState.value = ChatDialogUiState.Success(
-                        chats = messages,
+                        chats = messages ?: emptyList(),
                         chatName = name,
                         chatImage = image,
                         isGroup = isGroup,
@@ -339,7 +357,7 @@ class ChatDialogViewModel @Inject constructor(
                         attachedFiles = attachedFiles.toList(),
                         pinnedMessages = info.pinnedMessages,
                     )
-                    markMessagesRead(dialogId, messages)
+                    if (messages != null) markMessagesRead(dialogId, messages)
                 } else {
                     val elapsed = System.currentTimeMillis() - startTime
                     if (elapsed < 500L) delay(500L - elapsed)
@@ -546,6 +564,43 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    fun setPendingForward(messageIds: List<Long>, text: String?, authorName: String?) {
+        val forward = PendingForward(messageIds = messageIds, text = text, authorName = authorName)
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(
+                pendingForward = forward,
+                replyMessage = null,
+                editingMessage = null,
+                currentMessage = if (currentState.editingMessage != null) "" else currentState.currentMessage,
+            )
+        } else {
+            pendingForwardFromArgs = forward
+        }
+    }
+
+    private var pendingForwardFromArgs: PendingForward? = null
+
+    fun applyPendingForwardIfAny() {
+        val forward = pendingForwardFromArgs ?: return
+        pendingForwardFromArgs = null
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(
+                pendingForward = forward,
+                replyMessage = null,
+                editingMessage = null,
+            )
+        }
+    }
+
+    fun clearForwardMessage() {
+        val currentState = _uiState.value
+        if (currentState is ChatDialogUiState.Success) {
+            _uiState.value = currentState.copy(pendingForward = null)
+        }
+    }
+
     fun startEditingMessage(message: MessageChat) {
         val currentState = _uiState.value
         if (currentState is ChatDialogUiState.Success && message.isMine) {
@@ -687,19 +742,47 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Единая точка отправки сообщений в сокет. Гарантирует, что клиент никогда
+     * не отправит системный тип (2, 3, 5, 6) и не пришлёт поля, которые заполняет
+     * только сервер в ответных сообщениях (id/read/createdAt/ownerName/
+     * ownerAvatarUrl). Иначе такие поля могли перетереть type/read на бэке.
+     */
+    private fun emitChatMessage(message: ChatSocketMessage) {
+        if (message.cType !in ALLOWED_OUTGOING_CTYPES) {
+            Log.e(
+                "ChatViewModel",
+                "Refusing to emit message with system/unknown cType=${message.cType}; " +
+                    "client must never send system message types"
+            )
+            return
+        }
+        val sanitized = message.copy(
+            id = null,
+            read = null,
+            createdAt = null,
+            ownerName = null,
+            ownerAvatarUrl = null,
+        )
+        socketService.sendMessage("message", sanitized)
+    }
+
     fun sendMessage(text: String) {
         viewModelScope.launch {
             val dialog = currentDialogInfo ?: return@launch
             val currentState = _uiState.value
             val successState = currentState as? ChatDialogUiState.Success
             val replyId = successState?.replyMessage?.id
+            val pendingForward = successState?.pendingForward
+            val forwardId = pendingForward?.messageIds?.firstOrNull()
+            val forwardIds = pendingForward?.messageIds
             val sanitizedText = text.trim()
-            val outgoingText = sanitizedText.takeIf { it.isNotEmpty() }
+            val outgoingText = if (forwardId != null) null else sanitizedText.takeIf { it.isNotEmpty() }
 
             selectedUser?.let { user ->
                 val payload = buildUserContactPayload(user) ?: return@launch
                 val message = createContactSocketMessage(dialog, payload, replyId) ?: return@launch
-                socketService.sendMessage("message", message)
+                emitChatMessage(message)
                 selectedUser = null
                 if (currentState is ChatDialogUiState.Success) {
                     _uiState.value = currentState.copy(
@@ -714,7 +797,7 @@ class ChatDialogViewModel @Inject constructor(
             attachedContact?.let { contact ->
                 val payload = buildPhoneContactPayload(contact)
                 val message = createContactSocketMessage(dialog, payload, replyId) ?: return@launch
-                socketService.sendMessage("message", message)
+                emitChatMessage(message)
                 attachedContact = null
                 if (currentState is ChatDialogUiState.Success) {
                     _uiState.value = currentState.copy(
@@ -726,7 +809,7 @@ class ChatDialogViewModel @Inject constructor(
                 return@launch
             }
 
-            if (sanitizedText.isEmpty() && attachedFiles.isEmpty()) {
+            if (sanitizedText.isEmpty() && attachedFiles.isEmpty() && forwardId == null) {
                 Log.d("ChatViewModel", "Message is blank and no files attached — skipping")
                 return@launch
             }
@@ -801,8 +884,9 @@ class ChatDialogViewModel @Inject constructor(
                 )
             }
 
-            val cType = if (fileDescriptors.isEmpty()) 1 else 3
+            val cType = 1
 
+            val useForwardedN = forwardIds != null && forwardIds.size > 1
             val message = if (dialog.id != 0L) {
                 ChatSocketMessage(
                     dialog = dialog.id,
@@ -810,7 +894,9 @@ class ChatDialogViewModel @Inject constructor(
                     text = outgoingText,
                     owner = currentUser?.id.orEmpty(),
                     files = fileDescriptors.ifEmpty { null },
-                    answered = replyId
+                    answered = replyId,
+                    forwarded = if (!useForwardedN) forwardId else null,
+                    forwardedn = if (useForwardedN) forwardIds else null
                 )
             } else {
                 val peer = dialog.interlocutor?.userId ?: return@launch
@@ -820,16 +906,20 @@ class ChatDialogViewModel @Inject constructor(
                     text = outgoingText,
                     owner = currentUser?.id.orEmpty(),
                     files = fileDescriptors.ifEmpty { null },
-                    answered = replyId
+                    answered = replyId,
+                    forwarded = if (!useForwardedN) forwardId else null,
+                    forwardedn = if (useForwardedN) forwardIds else null
                 )
             }
             if (successState != null) {
                 _uiState.value = successState.copy(currentMessage = "")
             }
+            lastSentForwardAuthor = pendingForward?.authorName
             Log.d("ChatViewModel", "Sending socket message: $message")
-            socketService.sendMessage("message", message)
+            emitChatMessage(message)
             clearAttachedFiles()
             clearReplyMessage()
+            clearForwardMessage()
         }
     }
 
@@ -855,22 +945,14 @@ class ChatDialogViewModel @Inject constructor(
                 )
             }
 
-            socketService.sendMessage("message", message)
+            emitChatMessage(message)
         }
     }
 
     fun voteInPoll(pollId: String, optionIds: List<String>) {
         viewModelScope.launch {
             try {
-                // Vote: server returns 200 with empty body. If it returns 400,
-                // the poll is already stopped or doesn't allow multiple answers.
-                chatInteractor.answerPoll(pollId, optionIds)
-
-                // Do NOT re-fetch via GET /dialogs/poll/:id — that endpoint is
-                // author-only and returns a minimal payload without the options
-                // array, which would wipe the locally cached options. Instead
-                // update the existing poll optimistically: mark the selected
-                // options as voted and adjust vote counts.
+                val statsPreview = chatInteractor.answerPoll(pollId, optionIds)
                 val selectedSet = optionIds.toSet()
                 val currentState = _uiState.value
                 if (currentState is ChatDialogUiState.Success) {
@@ -878,12 +960,24 @@ class ChatDialogViewModel @Inject constructor(
                         val poll = message.poll
                         if (poll == null || poll.id != pollId) {
                             message
+                        } else if (statsPreview != null) {
+                            val statsOptions = statsPreview.options.associateBy { it.id }
+                            val answeredIds = statsPreview.options
+                                .filter { it.isVoted }
+                                .map { it.id }
+                                .toSet()
+                            val updatedOptions = poll.options.map { option ->
+                                val stat = statsOptions[option.id]
+                                option.copy(
+                                    isVoted = option.id in answeredIds,
+                                    percent = stat?.percent ?: option.percent,
+                                    voteCount = stat?.voteCount.takeIf { it != 0 } ?: option.voteCount,
+                                    isRightAnswer = stat?.isRightAnswer ?: option.isRightAnswer,
+                                    description = stat?.description ?: option.description,
+                                )
+                            }
+                            message.copy(poll = poll.copy(options = updatedOptions))
                         } else {
-                            // Optimistically highlight the user's choice. Vote
-                            // percentages (`pv`) are computed by the server and
-                            // cannot be recalculated client-side without raw
-                            // counts — they refresh with the next poll payload
-                            // from the socket / on chat reload.
                             val updatedOptions = poll.options.map { option ->
                                 option.copy(isVoted = option.id in selectedSet)
                             }
@@ -925,23 +1019,25 @@ class ChatDialogViewModel @Inject constructor(
 
     fun sendVoiceMessage(file: File) {
         viewModelScope.launch {
-            val dialog = currentDialogInfo ?: return@launch
+            val dialog = currentDialogInfo ?: run {
+                Log.e("ChatViewModel", "Voice: no currentDialogInfo")
+                return@launch
+            }
+            Log.d("ChatViewModel", "Voice: uploading ${file.name} (${file.length()} bytes)")
             val uploaded = try {
                 val requiresRawUpload = determineFileType(file) != IMAGE_FILE_TYPE
                 chatInteractor.uploadFiles(listOf(file), requiresRawUpload)
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("ChatViewModel", "Voice: upload exception", e)
                 emptyList()
             }
+            Log.d("ChatViewModel", "Voice: uploaded ${uploaded.size} files: ${uploaded.map { it.id }}")
             val descriptor = uploaded.firstOrNull()?.let { uploadedFile ->
                 FileDescriptor(
                     id = uploadedFile.id,
                     fileType = determineFileType(file)
                 )
             }
-            // Without a successfully uploaded file there is nothing to play, so
-            // do not send a contentless cType=4 message that would render as an
-            // empty bubble — surface the failure instead.
             if (descriptor == null) {
                 Log.e("ChatViewModel", "Voice message upload failed — message not sent")
                 return@launch
@@ -950,7 +1046,6 @@ class ChatDialogViewModel @Inject constructor(
                 ChatSocketMessage(
                     dialog = dialog.id,
                     cType = 4,
-                    text = "",
                     owner = currentUser?.id.orEmpty(),
                     files = listOf(descriptor)
                 )
@@ -959,12 +1054,13 @@ class ChatDialogViewModel @Inject constructor(
                 ChatSocketMessage(
                     interlocutor = peer,
                     cType = 4,
-                    text = "",
                     owner = currentUser?.id.orEmpty(),
                     files = listOf(descriptor)
                 )
             }
-            socketService.sendMessage("message", message)
+            Log.d("ChatViewModel", "Voice: sending socket message cType=4, fileId=${descriptor.id}")
+            emitChatMessage(message)
+            Log.d("ChatViewModel", "Voice: socket message sent successfully")
         }
     }
 
@@ -999,7 +1095,7 @@ class ChatDialogViewModel @Inject constructor(
                 }
                 val jsonObject = JSONObject(jsonString)
 
-                
+
                 if (jsonObject.has("action")) {
                     val action = jsonObject.getJSONObject("action")
                     val actionType = action.optString("type")
@@ -1045,7 +1141,13 @@ class ChatDialogViewModel @Inject constructor(
                                 val updatedChats = currentState.chats.map { msg ->
                                     if (msg.id == messageId) {
                                         msg.copy(
-                                            text = socketMessage.text ?: msg.text
+                                            text = socketMessage.text ?: msg.text,
+                                            // Динамическое обновление опроса: когда другой участник
+                                            // голосует, бэк шлёт update-сообщение с актуальным poll
+                                            // (новые проценты pv и aa текущего пользователя). Раньше
+                                            // это поле игнорировалось и опрос не обновлялся вживую.
+                                            poll = socketMessage.poll?.toDomain(msg.id, msg.text)
+                                                ?: msg.poll
                                         )
                                     } else msg
                                 }
@@ -1059,15 +1161,12 @@ class ChatDialogViewModel @Inject constructor(
                 val gson = Gson()
                 val socketMessage = gson.fromJson(jsonString, ChatSocketMessage::class.java)
 
-                // Call signaling messages must not appear in the chat history,
-                // but they do drive the "ongoing call" banner in the dialog.
                 val isCallSignal = socketMessage.cType in listOf(2, 3) &&
                     socketMessage.files.isNullOrEmpty() &&
                     socketMessage.text?.contains("звонок", ignoreCase = true) == true
                 val isCallEnded = socketMessage.cType == 6
                 if (isCallSignal || isCallEnded) {
                     updateActiveCallFromSignal(started = isCallSignal, cType = socketMessage.cType)
-                    return@launch
                 }
 
                 if ((currentDialogInfo?.id ?: 0L) == 0L && (socketMessage.dialog ?: 0L) != 0L) {
@@ -1092,8 +1191,13 @@ class ChatDialogViewModel @Inject constructor(
                     )
                 }
 
+                val isForwarded = socketMessage.forwarded != null || !socketMessage.forwardedn.isNullOrEmpty()
+                val forwardAuthor = if (isForwarded) {
+                    lastSentForwardAuthor.also { lastSentForwardAuthor = null }
+                } else null
+
                 val newMessage = socketMessage
-                    .toMessageChat(replyPreview)
+                    .toMessageChat(replyPreview, forwardAuthor)
                     .let { message ->
                         currentDialogInfo?.let { info ->
                             message.updateOwnerInfoFromDialog(info)
@@ -1102,8 +1206,15 @@ class ChatDialogViewModel @Inject constructor(
 
                 val currentState = _uiState.value
                 if (currentState is ChatDialogUiState.Success) {
-                    val updatedChats = currentState.chats.toMutableList().apply {
-                        add(newMessage)
+                    val existingIndex = currentState.chats.indexOfFirst { it.id == newMessage.id }
+                    val updatedChats = if (existingIndex >= 0) {
+                        currentState.chats.toMutableList().apply {
+                            set(existingIndex, newMessage)
+                        }
+                    } else {
+                        currentState.chats.toMutableList().apply {
+                            add(newMessage)
+                        }
                     }
                     _uiState.value = currentState.copy(chats = updatedChats)
                 }
@@ -1119,17 +1230,23 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
-    private fun ChatSocketMessage.toMessageChat(replyPreview: MessageChat?): MessageChat {
+    private fun ChatSocketMessage.toMessageChat(
+        replyPreview: MessageChat?,
+        forwardedFromName: String? = null,
+    ): MessageChat {
         val createdAtInstant = parseInstantOrNow(createdAt)
         val attachments = files?.mapNotNull { it.toChatFile() } ?: emptyList()
         val isMineMessage = owner == currentUser?.id
         val type = when (cType) {
+            // 6003 "Вызов пропущен" / 6004 "Звонок пропущен" — системные события
+            // звонков, как и 2/3/5/6. Показываем по центру, а не баблом.
+            2, 3, 5, 6, 6003, 6004 -> MessageType.SYSTEM
             4 -> MessageType.VOICE
-            5 -> MessageType.SYSTEM
             9 -> MessageType.POLL
             else -> MessageType.TEXT
         }
         val pollDomain = poll?.toDomain(id, text)
+        val isForwarded = forwarded != null || !forwardedn.isNullOrEmpty()
 
         return MessageChat(
             id = id ?: 0L,
@@ -1144,7 +1261,8 @@ class ChatDialogViewModel @Inject constructor(
             ownerIsAdmin = false,
             isMine = isMineMessage,
             replyTo = replyPreview,
-            poll = pollDomain
+            poll = pollDomain,
+            forwardedFromName = if (isForwarded) forwardedFromName else null,
         )
     }
 
@@ -1262,6 +1380,7 @@ sealed class ChatDialogUiState {
         val attachedContact: ContactInfo? = null,
         val selectedContact: UserProfileFullInfo? = null,
         val editingMessage: MessageChat? = null,
+        val pendingForward: PendingForward? = null,
         val pinnedMessages: List<uddug.com.domain.entities.chat.PinnedMessagePreview> = emptyList(),
         val activeCall: ActiveCall? = null,
         val activeCallParticipantsCount: Int = 0,
@@ -1269,3 +1388,9 @@ sealed class ChatDialogUiState {
 
     data class Error(val message: String) : ChatDialogUiState()
 }
+
+data class PendingForward(
+    val messageIds: List<Long>,
+    val text: String?,
+    val authorName: String?,
+)

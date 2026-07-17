@@ -93,7 +93,7 @@ fun ChatDetailDialogSearchComponent(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -122,7 +122,7 @@ fun ChatDetailDialogSearchComponent(
         ) {
             TabRow(
                 selectedTabIndex = selectedTabIndex,
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onBackground,
                 indicator = { tabPositions ->
                     TabRowDefaults.Indicator(

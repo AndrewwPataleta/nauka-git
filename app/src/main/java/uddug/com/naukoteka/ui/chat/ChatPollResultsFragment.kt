@@ -36,5 +36,6 @@ class ChatPollResultsFragment : Fragment() {
 
     companion object {
         const val ARG_POLL_ID = "pollId"
+        const val ARG_POLL_JSON = "pollJson"
     }
 }

@@ -39,7 +39,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.MaterialTheme
@@ -179,7 +179,8 @@ fun ChatGroupDetailComponent(
                         state.participants.size
                     ),
                     stringResource(R.string.chat_group_tab_media),
-                    stringResource(R.string.chat_group_tab_files)
+                    stringResource(R.string.chat_group_tab_files),
+                    stringResource(R.string.chat_group_tab_links),
                 )
 
                 var showCallOptions by remember { mutableStateOf(false) }
@@ -249,6 +250,7 @@ fun ChatGroupDetailComponent(
                         when (selectedTabIndex) {
                             1 -> MediaContent(state.media)
                             2 -> FilesContent(state.files)
+                            3 -> LinksContent(state.links)
                             else -> Unit
                         }
                     }
@@ -596,8 +598,9 @@ private fun GroupTabRow(
     onTabSelected: (Int) -> Unit,
 ) {
     Column(modifier = Modifier.background(colorResource(id = R.color.main_background))) {
-        TabRow(
+        ScrollableTabRow(
             modifier = Modifier.fillMaxWidth(),
+            edgePadding = 0.dp,
             containerColor = colorResource(id = R.color.main_background),
             contentColor = colorResource(id = R.color.main_text),
             selectedTabIndex = selectedTabIndex,

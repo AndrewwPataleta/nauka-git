@@ -32,6 +32,11 @@ import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.ChatDetailDialogFragment.Companion.DIALOG_DETAIL
 import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_MESSAGE_ID
+import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_MESSAGE_IDS
+import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_FORWARD_TEXT
+import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_FORWARD_AUTHOR
+import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.MessageType
 import uddug.com.naukoteka.ui.call.GroupCallFragment
 import uddug.com.naukoteka.ui.call.SingleCallFragment
 import uddug.com.naukoteka.ui.chat.compose.ChatDialogComponent
@@ -105,6 +110,9 @@ class ChatDialogFragment : Fragment() {
         const val DIALOG_ID = "DIALOG_ID"
         const val INTERLOCUTOR_ID = "INTERLOCUTOR_ID"
         const val CREATED_POLL_ID_KEY = "createdPollId"
+        const val ARG_PENDING_FORWARD_IDS = "pending_forward_ids"
+        const val ARG_PENDING_FORWARD_TEXT = "pending_forward_text"
+        const val ARG_PENDING_FORWARD_AUTHOR = "pending_forward_author"
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -118,6 +126,16 @@ class ChatDialogFragment : Fragment() {
             viewModel.loadMessagesByPeer(peerId)
         }
         consumeSharedContentIfAny()
+        consumePendingForwardIfAny()
+    }
+
+    private fun consumePendingForwardIfAny() {
+        val forwardIds = arguments?.getLongArray(ARG_PENDING_FORWARD_IDS) ?: return
+        if (forwardIds.isEmpty()) return
+        val text = arguments?.getString(ARG_PENDING_FORWARD_TEXT)
+        val author = arguments?.getString(ARG_PENDING_FORWARD_AUTHOR)
+        viewModel.setPendingForward(forwardIds.toList(), text, author)
+        arguments?.remove(ARG_PENDING_FORWARD_IDS)
     }
 
     private fun consumeSharedContentIfAny() {
@@ -223,15 +241,28 @@ class ChatDialogFragment : Fragment() {
                         onCreatePoll = {
                             findNavController().navigate(R.id.chatCreatePollFragment)
                         },
-                        onOpenPollResults = { pollId ->
+                        onOpenPollResults = { pollId, poll ->
                             val args = Bundle().apply {
                                 putString(ChatPollResultsFragment.ARG_POLL_ID, pollId)
+                                if (poll != null) {
+                                    putString(ChatPollResultsFragment.ARG_POLL_JSON, com.google.gson.Gson().toJson(poll))
+                                }
                             }
                             findNavController().navigate(R.id.chatPollResultsFragment, args)
                         },
                         onForwardMessage = { message ->
+                            val forwardText = message.text?.takeIf { it.isNotBlank() }
+                                ?: describeMessageContent(message)
                             val args = Bundle().apply {
                                 putLong(ARG_MESSAGE_ID, message.id)
+                                putString(ARG_FORWARD_TEXT, forwardText)
+                                putString(ARG_FORWARD_AUTHOR, message.ownerName)
+                            }
+                            findNavController().navigate(R.id.forwardMessageFragment, args)
+                        },
+                        onForwardSelected = { ids ->
+                            val args = Bundle().apply {
+                                putLongArray(ARG_MESSAGE_IDS, ids.toLongArray())
                             }
                             findNavController().navigate(R.id.forwardMessageFragment, args)
                         },
@@ -330,4 +361,21 @@ class ChatDialogFragment : Fragment() {
         val isVideoCall: Boolean,
         val isGroupCall: Boolean,
     )
+
+    private fun describeMessageContent(message: MessageChat): String? {
+        if (message.type == MessageType.POLL) return getString(R.string.chat_poll_label)
+        if (message.type == MessageType.VOICE) return getString(R.string.chat_voice_message)
+        val file = message.files.firstOrNull() ?: return null
+        val ct = file.contentType?.lowercase()
+        return when {
+            ct?.startsWith("image") == true -> getString(R.string.chat_last_message_image)
+            ct?.startsWith("video") == true -> getString(R.string.chat_last_message_video)
+            ct?.startsWith("audio") == true -> getString(R.string.chat_voice_message)
+            file.fileType == 1 -> getString(R.string.chat_last_message_image)
+            file.fileType == 30 -> getString(R.string.chat_last_message_video)
+            file.fileType == 21 -> getString(R.string.chat_voice_message)
+            file.fileType == 20 -> getString(R.string.chat_last_message_file)
+            else -> getString(R.string.chat_last_message_file)
+        }
+    }
 }

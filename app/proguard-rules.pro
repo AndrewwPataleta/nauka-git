@@ -55,3 +55,9 @@
 -keep class uddug.com.domain.entities.chat.PreviewOwner { *; }
 -keep class uddug.com.domain.entities.chat.PreviewFile { *; }
 -keep class uddug.com.domain.entities.chat.PreviewFileStat { *; }
+
+# Jackson (transitive) references JDK/optional classes absent on Android.
+# R8 full-mode treats these as errors; suppress the warnings (AGP-generated).
+-dontwarn java.beans.ConstructorProperties
+-dontwarn java.beans.Transient
+-dontwarn org.w3c.dom.bootstrap.DOMImplementationRegistry

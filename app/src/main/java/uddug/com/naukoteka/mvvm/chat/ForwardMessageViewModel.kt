@@ -57,8 +57,26 @@ class ForwardMessageViewModel @Inject constructor(
             try {
                 val message = ChatSocketMessage(
                     dialog = dialogId,
-                    text = "",
                     forwarded = messageId
+                )
+                socketService.sendMessage("message", message)
+                _events.emit(ForwardMessageEvent.ForwardSuccess(dialogId))
+            } catch (e: Exception) {
+                _events.emit(ForwardMessageEvent.ForwardError)
+            }
+        }
+    }
+
+    fun forwardMessages(messageIds: List<Long>, dialogId: Long) {
+        if (messageIds.size == 1) {
+            forwardMessage(messageIds.first(), dialogId)
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val message = ChatSocketMessage(
+                    dialog = dialogId,
+                    forwardedn = messageIds
                 )
                 socketService.sendMessage("message", message)
                 _events.emit(ForwardMessageEvent.ForwardSuccess(dialogId))

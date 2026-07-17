@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
@@ -28,7 +29,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +41,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatEditFolderState
 import uddug.com.naukoteka.mvvm.chat.ChatEditFolderViewModel
 import uddug.com.naukoteka.mvvm.chat.ChatFolderSelectionItem
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
+import uddug.com.naukoteka.ui.theme.NauTheme
 
 @Composable
 fun ChatEditFolderScreen(
@@ -59,7 +60,7 @@ fun ChatEditFolderScreen(
                     Text(
                         text = stringResource(R.string.chat_edit_folder_title),
                         fontSize = 20.sp,
-                        color = Color.Black
+                        color = MaterialTheme.colors.onBackground
                     )
                 },
                 navigationIcon = {
@@ -67,7 +68,7 @@ fun ChatEditFolderScreen(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_chat_back),
                             contentDescription = null,
-                            tint = Color(0xFF2E83D9)
+                            tint = MaterialTheme.colors.primary
                         )
                     }
                 },
@@ -79,11 +80,11 @@ fun ChatEditFolderScreen(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_chat_create_apply),
                             contentDescription = null,
-                            tint = if (isActionEnabled) Color(0xFF2E83D9) else Color(0x4D2E83D9)
+                            tint = if (isActionEnabled) MaterialTheme.colors.primary else MaterialTheme.colors.primary.copy(alpha = 0.3f)
                         )
                     }
                 },
-                backgroundColor = Color.White,
+                backgroundColor = MaterialTheme.colors.background,
                 elevation = 0.dp
             )
         }
@@ -93,11 +94,11 @@ fun ChatEditFolderScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.White)
+                        .background(MaterialTheme.colors.background)
                         .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = Color(0xFF2E83D9))
+                    CircularProgressIndicator(color = MaterialTheme.colors.primary)
                 }
             }
 
@@ -105,7 +106,7 @@ fun ChatEditFolderScreen(
                 ChatEditFolderError(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.White)
+                        .background(MaterialTheme.colors.background)
                         .padding(padding),
                     message = state.errorMessage,
                     onRetryClick = onRetryClick
@@ -116,7 +117,7 @@ fun ChatEditFolderScreen(
                 ChatEditFolderContent(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.White)
+                        .background(MaterialTheme.colors.background)
                         .padding(padding)
                         .padding(horizontal = 16.dp),
                     state = state,
@@ -142,14 +143,14 @@ private fun ChatEditFolderError(
     ) {
         Text(
             text = message ?: stringResource(id = R.string.chat_edit_folder_generic_error),
-            color = Color(0xFF8083A0),
+            color = NauTheme.extendedColors.inactive,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 24.dp)
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.chat_edit_folder_retry),
-            color = Color(0xFF2E83D9),
+            color = MaterialTheme.colors.primary,
             modifier = Modifier.clickable(onClick = onRetryClick)
         )
     }
@@ -168,14 +169,14 @@ private fun ChatEditFolderContent(
     ) {
         Text(
             text = stringResource(R.string.chat_edit_folder_description),
-            color = Color(0xFF8083A0),
+            color = NauTheme.extendedColors.inactive,
             fontSize = 14.sp,
             modifier = Modifier.padding(top = 16.dp)
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = stringResource(R.string.chat_create_folder_name_label),
-            color = Color.Black,
+            color = MaterialTheme.colors.onBackground,
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp
         )
@@ -189,12 +190,12 @@ private fun ChatEditFolderContent(
             modifier = Modifier
                 .fillMaxWidth(),
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                backgroundColor = Color(0xFFF5F5F9),
-                focusedBorderColor = Color(0xFF2E83D9),
-                unfocusedBorderColor = Color(0xFFE0E0E8),
-                cursorColor = Color(0xFF2E83D9),
-                textColor = Color(0xFF1F1F1F),
-                placeholderColor = Color(0xFFB0B2C3)
+                backgroundColor = NauTheme.extendedColors.inputBackground,
+                focusedBorderColor = MaterialTheme.colors.primary,
+                unfocusedBorderColor = NauTheme.extendedColors.inputStroke,
+                cursorColor = MaterialTheme.colors.primary,
+                textColor = MaterialTheme.colors.onBackground,
+                placeholderColor = NauTheme.extendedColors.inactive
             )
         )
         Spacer(modifier = Modifier.height(24.dp))
@@ -205,13 +206,13 @@ private fun ChatEditFolderContent(
         ) {
             Text(
                 text = stringResource(R.string.chat_create_folder_selected_title),
-                color = Color.Black,
+                color = MaterialTheme.colors.onBackground,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp
             )
             Text(
                 text = stringResource(R.string.chat_create_folder_add),
-                color = Color(0xFF2E83D9),
+                color = MaterialTheme.colors.primary,
                 fontSize = 16.sp,
                 modifier = Modifier
                     .align(Alignment.CenterVertically)
@@ -222,7 +223,7 @@ private fun ChatEditFolderContent(
         if (state.selectedChats.isEmpty()) {
             Text(
                 text = stringResource(R.string.chat_create_folder_empty_placeholder),
-                color = Color(0xFF8083A0),
+                color = NauTheme.extendedColors.inactive,
                 fontSize = 14.sp
             )
         } else {
@@ -257,7 +258,7 @@ private fun ChatEditFolderRow(
         ) {
             Text(
                 text = item.title,
-                color = Color.Black,
+                color = MaterialTheme.colors.onBackground,
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp,
                 maxLines = 1,
@@ -266,7 +267,7 @@ private fun ChatEditFolderRow(
             item.subtitle?.takeIf { it.isNotBlank() }?.let { subtitle ->
                 Text(
                     text = subtitle,
-                    color = Color(0xFF8083A0),
+                    color = NauTheme.extendedColors.inactive,
                     fontSize = 14.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -277,7 +278,7 @@ private fun ChatEditFolderRow(
             Icon(
                 imageVector = Icons.Filled.Close,
                 contentDescription = null,
-                tint = Color(0xFFBFC4D5)
+                tint = NauTheme.extendedColors.inactive
             )
         }
     }

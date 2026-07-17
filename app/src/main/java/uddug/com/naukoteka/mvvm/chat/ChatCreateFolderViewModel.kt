@@ -48,6 +48,8 @@ class ChatCreateFolderViewModel @Inject constructor(
             viewModelScope.launch { _events.emit(ChatCreateFolderEvent.ShowNameRequired) }
             return
         }
+        // Бэк не создаёт пустую папку (HTTP 400) — не отправляем запрос без чатов.
+        if (current.selectedChats.isEmpty()) return
         if (current.isSaving) return
 
         _uiState.update { it.copy(isSaving = true) }

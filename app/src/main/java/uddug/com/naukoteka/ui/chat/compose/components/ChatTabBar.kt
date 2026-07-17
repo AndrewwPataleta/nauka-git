@@ -5,10 +5,12 @@ import ChatCard
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -28,17 +30,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -46,6 +43,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.burnoutcrew.reorderable.ReorderableItem
+import org.burnoutcrew.reorderable.detectReorderAfterLongPress
+import org.burnoutcrew.reorderable.rememberReorderableLazyListState
+import org.burnoutcrew.reorderable.reorderable
 import uddug.com.domain.entities.chat.MessageType
 import uddug.com.domain.entities.chat.ChatFolder
 import uddug.com.naukoteka.R
@@ -74,6 +75,11 @@ fun ChatTabBar(
     val mainFolderId = folders.firstOrNull()?.id
     var folderActionsTarget by remember { mutableStateOf<FolderActionsTarget?>(null) }
     var folderToDelete by remember { mutableStateOf<ChatFolder?>(null) }
+
+    val reorderState = rememberReorderableLazyListState(
+        onMove = { from, to -> viewModel.reorderFolders(from.index, to.index) },
+        onDragEnd = { _, _ -> viewModel.persistFolderOrder() }
+    )
 
     LaunchedEffect(folders, currentFolderId) {
         if (folders.isEmpty()) {
@@ -132,74 +138,63 @@ fun ChatTabBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (folders.isNotEmpty()) {
-                    TabRow(
-                        modifier = Modifier.weight(1f),
-                        containerColor = colorResource(id = R.color.main_background),
-                        contentColor = colorResource(id = R.color.main_text),
-                        selectedTabIndex = selectedTabIndex,
-                        indicator = { tabPositions ->
-                            if (tabPositions.isNotEmpty()) {
-                                val safeIndex = selectedTabIndex.coerceIn(tabPositions.indices)
-                                TabRowDefaults.Indicator(
-                                    Modifier.tabIndicatorOffset(tabPositions[safeIndex]),
-                                    color = Color(0xFF2E83D9)
-                                )
-                            }
-                        },
-                        divider = {},
+                    LazyRow(
+                        state = reorderState.listState,
+                        modifier = Modifier
+                            .weight(1f)
+                            .reorderable(reorderState),
                     ) {
-                        folders.forEachIndexed { index, folder ->
-                            val onTabClick = {
-                                selectedTabIndex = index
-                                viewModel.onFolderSelected(folder.id)
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .background(colorResource(id = R.color.main_background))
-                                    .pointerInput(mainFolderId, folder.id) {
-                                        detectTapGestures(
-                                            onTap = { onTabClick() },
-                                            onLongPress = {
-                                                folderActionsTarget = FolderActionsTarget(
-                                                    folder = folder,
-                                                    isMainFolder = mainFolderId != null && folder.id == mainFolderId
-                                                )
-                                            }
-                                        )
-                                    }
-                            ) {
-                                Tab(
-                                    selected = selectedTabIndex == index,
-                                    onClick = onTabClick,
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = folder.name,
-                                                maxLines = 1,
-                                                style = androidx.compose.material3.MaterialTheme.typography.titleSmall.copy(
-                                                    fontWeight = if (selectedTabIndex == index) FontWeight.SemiBold else FontWeight.Normal,
-                                                    color = if (selectedTabIndex == index) {
-                                                        colorResource(id = R.color.main_text)
-                                                    } else {
-                                                        colorResource(id = R.color.secondary_text)
-                                                    }
-                                                )
-                                            )
-                                            if (folder.unreadCount > 0) {
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Badge(
-                                                    containerColor = Color(0xFF2E83D9),
-                                                    contentColor = Color.White
-                                                ) {
-                                                    Text(
-                                                        text = folder.unreadCount.toString(),
-                                                        fontSize = 10.sp
-                                                    )
+                        itemsIndexed(folders, key = { _, folder -> folder.id }) { index, folder ->
+                            ReorderableItem(reorderState, key = folder.id) { isDragging ->
+                                Column(
+                                    modifier = Modifier
+                                        .width(IntrinsicSize.Max)
+                                        .detectReorderAfterLongPress(reorderState)
+                                        .clickable {
+                                            selectedTabIndex = index
+                                            viewModel.onFolderSelected(folder.id)
+                                        }
+                                        .padding(horizontal = 16.dp)
+                                        .padding(top = 12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = folder.name,
+                                            maxLines = 1,
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontWeight = if (selectedTabIndex == index) FontWeight.SemiBold else FontWeight.Normal,
+                                                color = if (selectedTabIndex == index) {
+                                                    colorResource(id = R.color.main_text)
+                                                } else {
+                                                    colorResource(id = R.color.secondary_text)
                                                 }
+                                            )
+                                        )
+                                        if (folder.unreadCount > 0) {
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Badge(
+                                                containerColor = MaterialTheme.colorScheme.primary,
+                                                contentColor = Color.White
+                                            ) {
+                                                Text(
+                                                    text = folder.unreadCount.toString(),
+                                                    fontSize = 10.sp
+                                                )
                                             }
                                         }
                                     }
-                                )
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(2.dp)
+                                            .background(
+                                                if (selectedTabIndex == index) MaterialTheme.colorScheme.primary
+                                                else Color.Transparent
+                                            )
+                                    )
+                                }
                             }
                         }
                     }
@@ -270,7 +265,7 @@ fun ChatTabBar(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 80.dp)
                     ) {
-                        items(chats) { chat ->
+                        items(chats, key = { it.dialogId }) { chat ->
                             val displayName = when {
                                 chat.dialogType != 1 && chat.dialogName.isNotBlank() -> chat.dialogName
                                 !chat.interlocutor.fullName.isNullOrBlank() -> chat.interlocutor.fullName!!
@@ -309,34 +304,35 @@ fun ChatTabBar(
                             } else {
                                 null
                             }
-                            ChatCard(
-                                dialogId = chat.dialogId,
-                                avatarUrl = avatarUrl,
-                                name = displayName,
-                                message = chat.lastMessage.text.orEmpty(),
-                                time = chat.lastMessage.createdAt ?: stringResource(R.string.chat_unknown_time),
-                                newMessagesCount = chat.unreadMessages,
-                                attachmentPreview = attachmentPreview,
-                                isRepost = false,
-                               //     chat.lastMessage.type == 5,
-                                isGroupChat = isGroupChat,
-                                isFromMe = isFromMe,
-                                authorName = authorName,
-                                notificationsDisable = chat.notificationsDisable,
-                                isPinned = chat.isPinned,
-                                isMuted = chat.notificationsDisable,
-                                selectionMode = isSelectionMode,
-                                isSelected = selectedChats.contains(chat.dialogId),
-                                messageType = messageType,
-                                hasActiveCall = chat.activeCall != null,
-                                onSelectChange = { onChatSelect(chat.dialogId) },
-                                onChatClick = {
-                                    viewModel.onChatClick(it)
-                                },
-                                onChatLongClick = {
-                                    if (!isSelectionMode) onChatLongClick(it) else onChatSelect(it)
-                                }
-                            )
+                            Column(modifier = Modifier.animateItemPlacement()) {
+                                ChatCard(
+                                    dialogId = chat.dialogId,
+                                    avatarUrl = avatarUrl,
+                                    name = displayName,
+                                    message = chat.lastMessage.text.orEmpty(),
+                                    time = chat.lastMessage.createdAt ?: stringResource(R.string.chat_unknown_time),
+                                    newMessagesCount = chat.unreadMessages,
+                                    attachmentPreview = attachmentPreview,
+                                    isRepost = false,
+                                    isGroupChat = isGroupChat,
+                                    isFromMe = isFromMe,
+                                    authorName = authorName,
+                                    notificationsDisable = chat.notificationsDisable,
+                                    isPinned = chat.isPinned,
+                                    isMuted = chat.notificationsDisable,
+                                    selectionMode = isSelectionMode,
+                                    isSelected = selectedChats.contains(chat.dialogId),
+                                    messageType = messageType,
+                                    hasActiveCall = chat.activeCall != null,
+                                    onSelectChange = { onChatSelect(chat.dialogId) },
+                                    onChatClick = {
+                                        viewModel.onChatClick(it)
+                                    },
+                                    onChatLongClick = {
+                                        if (!isSelectionMode) onChatLongClick(it) else onChatSelect(it)
+                                    }
+                                )
+                            }
                         }
                     }
                 }

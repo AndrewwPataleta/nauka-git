@@ -59,6 +59,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.bumptech.glide.Glide
 import com.stfalcon.imageviewer.StfalconImageViewer
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -115,8 +116,9 @@ fun ChatDialogComponent(
     onCallClick: (name: String, avatar: String, isVideoCall: Boolean) -> Unit = { _, _, _ -> },
     onContactClick: () -> Unit,
     onCreatePoll: () -> Unit,
-    onOpenPollResults: (String) -> Unit,
+    onOpenPollResults: (String, uddug.com.domain.entities.chat.Poll?) -> Unit,
     onForwardMessage: (MessageChat) -> Unit,
+    onForwardSelected: (Set<Long>) -> Unit = {},
     onEditGroup: (Long) -> Unit,
     onChatDeleted: () -> Unit,
     initialMessageId: Long? = null,
@@ -352,22 +354,15 @@ fun ChatDialogComponent(
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
     ) { uris: List<Uri> ->
-        val files = uris.mapNotNull { uri -> uriToFile(context, uri) }
-        if (files.isNotEmpty()) {
-            viewModel.attachFiles(files)
+        // Копирование (особенно видео) выносим в IO, чтобы не блокировать UI-поток.
+        scope.launch(Dispatchers.IO) {
+            val files = uris.mapNotNull { uri -> uriToFile(context, uri) }
+            if (files.isNotEmpty()) {
+                viewModel.attachFiles(files)
+            }
         }
     }
 
-    val mediaPermissions = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VIDEO
-            )
-        } else {
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-        }
-    }
     val filePermissions = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             emptyArray()
@@ -377,9 +372,12 @@ fun ChatDialogComponent(
     }
 
     fun attachMediaFiles(uris: List<Uri>) {
-        val files = uris.mapNotNull { uri -> uriToFile(context, uri) }
-        if (files.isNotEmpty()) {
-            viewModel.attachFiles(files)
+        if (uris.isEmpty()) return
+        scope.launch(Dispatchers.IO) {
+            val files = uris.mapNotNull { uri -> uriToFile(context, uri) }
+            if (files.isNotEmpty()) {
+                viewModel.attachFiles(files)
+            }
         }
     }
 
@@ -496,6 +494,20 @@ fun ChatDialogComponent(
                                         }
                                     },
                                     actions = {
+                                        IconButton(
+                                            onClick = {
+                                                val ids = selectedMessages.toSet()
+                                                viewModel.clearSelection()
+                                                onForwardSelected(ids)
+                                            },
+                                            enabled = selectedMessages.isNotEmpty()
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_forward),
+                                                contentDescription = "Forward",
+                                                tint = MaterialTheme.colors.onBackground
+                                            )
+                                        }
                                         IconButton(onClick = { viewModel.deleteSelectedMessages() }) {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.ic_trash),
@@ -622,8 +634,8 @@ fun ChatDialogComponent(
                                 onPollVote = { pollId, optionIds ->
                                     viewModel.voteInPoll(pollId, optionIds)
                                 },
-                                onPollResults = { pollId ->
-                                    onOpenPollResults(pollId)
+                                onPollResults = { pollId, poll ->
+                                    onOpenPollResults(pollId, poll)
                                 },
                                 pollRevoteTrigger = message.poll?.let { pollRevoteTriggers[it.id] ?: 0 } ?: 0,
                                 onImageClick = { url -> openImageViewerByUrl(url) },
@@ -642,6 +654,7 @@ fun ChatDialogComponent(
                         currentMessage = state.currentMessage,
                         attachedFiles = state.attachedFiles,
                         replyMessage = state.replyMessage,
+                        forwardMessage = state.pendingForward,
                         editingMessage = state.editingMessage,
                         isRecording = isRecording,
                         recordedAudio = recordedAudio,
@@ -680,6 +693,9 @@ fun ChatDialogComponent(
                         },
                         onCancelReply = {
                             viewModel.clearReplyMessage()
+                        },
+                        onCancelForward = {
+                            viewModel.clearForwardMessage()
                         },
                         onCancelEditing = {
                             viewModel.clearEditingMessage()
@@ -763,15 +779,11 @@ fun ChatDialogComponent(
                 onDismissRequest = { showAttachmentSheet = false },
                 onMediaClick = {
                     showAttachmentSheet = false
-                    val hasPermissions = mediaPermissions.all { permission ->
-                        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
-                    }
-                    if (hasPermissions) {
-                        openMediaPicker()
-                    } else {
-                        pendingPickerType = AttachmentPickerType.MEDIA
-                        permissionLauncher.launch(mediaPermissions)
-                    }
+                    // PickMultipleVisualMedia (системный Photo Picker) не требует
+                    // разрешений READ_MEDIA_*. Запускаем напрямую, как и файловый пикер
+                    // на API 33+. Прежний gate на partial-access (Android 13/14) возвращал
+                    // granted=false и пикер не открывался -> вложения не прикреплялись.
+                    openMediaPicker()
                 },
                 onFileClick = {
                     showAttachmentSheet = false
@@ -812,7 +824,12 @@ fun ChatDialogComponent(
                     selectedMessage = null
                 },
                 onForward = { msg ->
-                    onForwardMessage(msg)
+                    val enriched = if (msg.ownerName.isNullOrBlank()) {
+                        val chatName = (uiState as? ChatDialogUiState.Success)?.chatName
+                        val fallbackName = if (msg.isMine) viewModel.currentUserName else chatName
+                        msg.copy(ownerName = fallbackName)
+                    } else msg
+                    onForwardMessage(enriched)
                 },
                 isCurrentUserAdmin = isCurrentUserAdmin,
                 isPollAuthor = message.poll?.authorId != null &&

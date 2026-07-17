@@ -26,6 +26,8 @@ import uddug.com.naukoteka.R
 import uddug.com.naukoteka.databinding.ActivityMainBinding
 import uddug.com.naukoteka.flashphoner.FlashphonerEnvironment
 import uddug.com.naukoteka.global.base.BaseActivity
+import uddug.com.naukoteka.mvvm.call.ActiveCallState
+import uddug.com.naukoteka.mvvm.call.ActiveCallStore
 import uddug.com.naukoteka.mvvm.call.IncomingCallEvent
 import uddug.com.naukoteka.mvvm.call.IncomingCallViewModel
 import uddug.com.naukoteka.mvvm.call.CallStatus
@@ -66,11 +68,17 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
     @InstallIn(SingletonComponent::class)
     interface SharedContentStoreEntryPoint {
         fun sharedContentStore(): SharedContentStore
+        fun activeCallStore(): ActiveCallStore
     }
 
     private val sharedContentStore: SharedContentStore by lazy {
         EntryPointAccessors.fromApplication(applicationContext, SharedContentStoreEntryPoint::class.java)
             .sharedContentStore()
+    }
+
+    private val activeCallStore: ActiveCallStore by lazy {
+        EntryPointAccessors.fromApplication(applicationContext, SharedContentStoreEntryPoint::class.java)
+            .activeCallStore()
     }
 
     private val incomingCallViewModel: IncomingCallViewModel by viewModels()
@@ -209,7 +217,56 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
 
     override fun onStart() {
         super.onStart()
+        val activeCall = activeCallStore.get()
+        if (activeCall != null) {
+            val liveStatus = callViewModel.uiState.value.status
+            val liveDialogId = callViewModel.uiState.value.dialogId
+            val isLiveCallInProgress = liveDialogId != null &&
+                (liveStatus == CallStatus.DIALING ||
+                    liveStatus == CallStatus.CONNECTING ||
+                    liveStatus == CallStatus.IN_CALL ||
+                    liveStatus == CallStatus.INCOMING)
+            if (!isLiveCallInProgress) {
+                restoreActiveCall(activeCall)
+                return
+            }
+        }
         incomingCallViewModel.emitPendingIncomingCallIfAny()
+    }
+
+    private fun restoreActiveCall(state: ActiveCallState) {
+        contentView.root.post {
+            runCatching {
+                val navController = findNavController(R.id.main_nav_host_fragment)
+                val currentDestination = navController.currentDestination?.id
+                if (currentDestination == R.id.singleCallFragment ||
+                    currentDestination == R.id.groupCallFragment
+                ) {
+                    return@runCatching
+                }
+                if (navController.graph.id != R.id.nav_graph_chat) {
+                    navController.setGraph(R.navigation.nav_graph_chat)
+                    contentView.bottomNav.menu.getItem(3).setChecked(true)
+                }
+                val destination = if (state.isGroupCall) {
+                    R.id.groupCallFragment
+                } else {
+                    R.id.singleCallFragment
+                }
+                navController.navigate(
+                    destination,
+                    Bundle().apply {
+                        putString(SingleCallFragment.ARG_CONTACT_NAME, state.contactName)
+                        putString(SingleCallFragment.ARG_AVATAR_URL, state.avatarUrl.orEmpty())
+                        putLong(SingleCallFragment.ARG_DIALOG_ID, state.dialogId)
+                        putString(SingleCallFragment.ARG_CALL_TITLE, state.callTitle)
+                        putBoolean(SingleCallFragment.ARG_IS_INCOMING_CALL, false)
+                        putBoolean(SingleCallFragment.ARG_IS_GROUP_CALL, state.isGroupCall)
+                        putBoolean(SingleCallFragment.ARG_IS_VIDEO_CALL, state.isVideoCall)
+                    }
+                )
+            }
+        }
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {

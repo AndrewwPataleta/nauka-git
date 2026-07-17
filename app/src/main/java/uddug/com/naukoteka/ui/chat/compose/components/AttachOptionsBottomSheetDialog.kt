@@ -58,7 +58,7 @@ fun AttachOptionsBottomSheetDialog(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier
@@ -132,7 +132,7 @@ private fun BottomSheetItem(
             Image(
                 painter = icon,
                 contentDescription = text,
-                colorFilter = if (isHighlighted) ColorFilter.tint(Color.White) else null,
+                colorFilter = ColorFilter.tint(if (isHighlighted) Color.White else accentColor),
                 modifier = Modifier.size(24.dp)
             )
         }

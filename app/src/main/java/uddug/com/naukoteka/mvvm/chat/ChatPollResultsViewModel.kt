@@ -25,10 +25,21 @@ class ChatPollResultsViewModel @Inject constructor(
 
     private val pollId: String = savedStateHandle.get<String>(ChatPollResultsFragment.ARG_POLL_ID).orEmpty()
 
+    private val initialPoll: Poll? = savedStateHandle.get<String>(ChatPollResultsFragment.ARG_POLL_JSON)?.let { json ->
+        try {
+            com.google.gson.Gson().fromJson(json, Poll::class.java)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private val _uiState = MutableStateFlow(ChatPollResultsUiState(isLoading = true))
     val uiState: StateFlow<ChatPollResultsUiState> = _uiState.asStateFlow()
 
     init {
+        if (initialPoll != null) {
+            _uiState.update { it.copy(isLoading = false, poll = initialPoll.toUi()) }
+        }
         loadPoll()
     }
 
@@ -37,23 +48,28 @@ class ChatPollResultsViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = false, errorMessage = null, poll = null) }
             return
         }
-        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+        if (_uiState.value.poll == null) {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+        }
         viewModelScope.launch {
             try {
                 val poll = withContext(Dispatchers.IO) { chatInteractor.getPoll(pollId) }
-                _uiState.update { state ->
-                    state.copy(
-                        isLoading = false,
-                        errorMessage = null,
-                        poll = poll.toUi()
-                    )
+                val uiModel = poll.toUi()
+                val hasData = uiModel.totalVotes > 0 || uiModel.options.any { it.percent > 0 }
+                if (hasData) {
+                    _uiState.update { state ->
+                        state.copy(isLoading = false, errorMessage = null, poll = uiModel)
+                    }
+                } else {
+                    _uiState.update { state ->
+                        state.copy(isLoading = false, errorMessage = null, poll = state.poll ?: uiModel)
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.update { state ->
                     state.copy(
                         isLoading = false,
-                        errorMessage = e.message,
-                        poll = null
+                        errorMessage = if (state.poll == null) e.message else null,
                     )
                 }
             }
@@ -64,11 +80,12 @@ class ChatPollResultsViewModel @Inject constructor(
         val totalVotes = options.sumOf { it.voteCount }
         val safeTotal = if (totalVotes <= 0) 0 else totalVotes
         val optionUi = options.map { option ->
-            val percent = if (safeTotal > 0) {
-                ((option.voteCount.toDouble() / safeTotal) * 100).roundToInt()
-            } else {
-                0
-            }
+            val percent = option.percent
+                ?: if (safeTotal > 0) {
+                    ((option.voteCount.toDouble() / safeTotal) * 100).roundToInt()
+                } else {
+                    0
+                }
             PollResultOptionUi(
                 id = option.id,
                 text = option.value,

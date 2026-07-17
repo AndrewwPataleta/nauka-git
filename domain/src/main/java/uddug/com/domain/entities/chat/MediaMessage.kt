@@ -1,15 +1,19 @@
 package uddug.com.domain.entities.chat
 
+import com.google.gson.annotations.SerializedName
+
 data class MediaMessage(
     val messageId: Long,
     val dialogId: Long,
     val mediaType: Int,
-    val file: MediaFile,
-    val createdAt: String,
+    val file: MediaFile? = null,
+    val createdAt: String? = null,
     // Gson десериализует MediaMessage напрямую из ответа API и игнорирует
     // Kotlin non-null типы: если поле отсутствует в JSON (напр. у голосовых
     // сообщений), оно будет null. Поэтому sender обязан быть nullable.
-    val sender: SenderInfo? = null
+    val sender: SenderInfo? = null,
+    val text: String? = null,
+    val linkPreview: LinkPreview? = null,
 )
 
 data class MediaFile(
@@ -28,4 +32,11 @@ data class MediaFile(
 data class SenderInfo(
     val id: String? = null,
     val fullName: String? = null
+)
+
+data class LinkPreview(
+    @SerializedName("og:url")   val url: String? = null,
+    @SerializedName("og:title") val title: String? = null,
+    @SerializedName("og:image") val image: String? = null,
+    @SerializedName("og:type")  val type: String? = null,
 )

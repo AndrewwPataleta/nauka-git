@@ -78,6 +78,10 @@ data class NaukotekaExtendedColors(
     val accent: Color,
     val inactive: Color,
     val iconAccent: Color,
+    val chatBubbleOther: Color,
+    val chatTextOther: Color,
+    val chatTextSecondary: Color,
+    val chatFileIconBg: Color,
 )
 
 private val LocalNaukotekaExtendedColors = staticCompositionLocalOf {
@@ -88,6 +92,10 @@ private val LocalNaukotekaExtendedColors = staticCompositionLocalOf {
         accent = Primary,
         inactive = Inactive,
         iconAccent = IconAccent,
+        chatBubbleOther = ChatBubbleOtherLight,
+        chatTextOther = ChatTextOtherLight,
+        chatTextSecondary = ChatTextSecondaryLight,
+        chatFileIconBg = ChatFileIconBgLight,
     )
 }
 
@@ -98,6 +106,10 @@ private val LightExtendedColors = NaukotekaExtendedColors(
     accent = Primary,
     inactive = Inactive,
     iconAccent = IconAccent,
+    chatBubbleOther = ChatBubbleOtherLight,
+    chatTextOther = ChatTextOtherLight,
+    chatTextSecondary = ChatTextSecondaryLight,
+    chatFileIconBg = ChatFileIconBgLight,
 )
 
 private val DarkExtendedColors = NaukotekaExtendedColors(
@@ -107,6 +119,10 @@ private val DarkExtendedColors = NaukotekaExtendedColors(
     accent = Primary,
     inactive = Inactive,
     iconAccent = IconAccent,
+    chatBubbleOther = ChatBubbleOtherDark,
+    chatTextOther = ChatTextOtherDark,
+    chatTextSecondary = ChatTextSecondaryDark,
+    chatFileIconBg = ChatFileIconBgDark,
 )
 
 @Composable

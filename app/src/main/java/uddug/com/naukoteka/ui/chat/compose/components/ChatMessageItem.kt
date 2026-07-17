@@ -71,7 +71,7 @@ import uddug.com.domain.entities.chat.MessageType
 import uddug.com.domain.entities.chat.Poll
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
-
+import uddug.com.naukoteka.ui.theme.NauTheme
 import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDuration
 import uddug.com.domain.entities.chat.File as ChatFile
 import java.time.ZoneId
@@ -89,14 +89,14 @@ fun ChatMessageItem(
     onLongPress: (MessageChat) -> Unit,
     onReplyReferenceClick: (Long) -> Unit = {},
     onPollVote: (pollId: String, optionIds: List<String>) -> Unit = { _, _ -> },
-    onPollResults: (pollId: String) -> Unit = {},
+    onPollResults: (pollId: String, poll: uddug.com.domain.entities.chat.Poll?) -> Unit = { _, _ -> },
     pollRevoteTrigger: Int = 0,
     onImageClick: (url: String) -> Unit = {},
     onVideoClick: (url: String) -> Unit = {},
     onVoiceMessageClick: (MessageChat, ChatFile) -> Unit = { _, _ -> },
     isPollAuthor: Boolean = false,
 ) {
-    val isSystem = message.type == MessageType.SYSTEM
+    val isSystem = message.type == MessageType.SYSTEM && message.files.isEmpty()
     Row(
         modifier = Modifier
             .padding(horizontal = 10.dp)
@@ -151,15 +151,16 @@ fun ChatMessageItem(
             if (isSystem) {
                 Text(
                     text = message.text.orEmpty(),
-                    color = Color.Gray,
+                    color = NauTheme.extendedColors.chatTextSecondary,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center
                 )
             } else {
+                val chatColors = NauTheme.extendedColors
                 Column(
                     modifier = Modifier
                         .background(
-                            color = if (isMine) Color(0xFF2E83D9) else Color(0xFFF5F5F9),
+                            color = if (isMine) chatColors.accent else chatColors.chatBubbleOther,
                             shape = RoundedCornerShape(12.dp)
                         )
                         .padding(8.dp)
@@ -169,7 +170,7 @@ fun ChatMessageItem(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = message.ownerName.orEmpty(),
-                                color = Color(0xFF2E83D9),
+                                color = chatColors.accent,
                                 fontSize = 14.sp
                             )
                             if (message.ownerIsAdmin) {
@@ -177,7 +178,7 @@ fun ChatMessageItem(
                                 Text(
                                     text = stringResource(R.string.chat_admin_label),
                                     fontSize = 10.sp,
-                                    color = Color.Gray
+                                    color = chatColors.chatTextSecondary
                                 )
                             }
                         }
@@ -191,6 +192,18 @@ fun ChatMessageItem(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                     }
+
+                    val isForwarded = message.forwardedFromName != null
+                    if (isForwarded) {
+                        val forwardText = message.text?.takeIf { it.isNotBlank() }
+                            ?: describeMessageContent(message)
+                        ForwardedBlock(
+                            authorName = message.forwardedFromName!!,
+                            text = forwardText,
+                            isMine = isMine,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
                     val isPollMessage = message.type == MessageType.POLL && message.poll != null
 
                     if (isPollMessage) {
@@ -201,15 +214,15 @@ fun ChatMessageItem(
                             isMine = isMine,
                             isPollAuthor = isPollAuthor,
                             onVote = { selected -> onPollVote(message.poll!!.id, selected) },
-                            onShowResults = { onPollResults(message.poll!!.id) },
+                            onShowResults = { onPollResults(message.poll!!.id, message.poll) },
 
                             revoteTrigger = pollRevoteTrigger
                         )
                     } else {
-                        if (!message.text.isNullOrBlank()) {
+                        if (!isForwarded && !message.text.isNullOrBlank()) {
                             Text(
                                 text = message.text.orEmpty(),
-                                color = if (isMine) Color.White else Color.Black,
+                                color = if (isMine) Color.White else chatColors.chatTextOther,
                                 fontSize = 14.sp
                             )
                         }
@@ -271,7 +284,7 @@ fun ChatMessageItem(
                                                 modifier = Modifier.padding(top = 4.dp),
                                                 text = name,
                                                 fontSize = 12.sp,
-                                                color = Color.White
+                                                color = if (isMine) Color.White else chatColors.chatTextOther
                                             )
                                         }
                                     }
@@ -283,7 +296,7 @@ fun ChatMessageItem(
                                                 .clip(RoundedCornerShape(12.dp))
                                                 .fillMaxWidth()
                                                 .height(140.dp)
-                                                .background(Color(0xFF1D2239))
+                                                .background(chatColors.chatBubbleOther)
                                                 .clickable {
                                                     if (selectionMode) onSelectChange()
                                                     else onVideoClick(fileUrl)
@@ -304,10 +317,13 @@ fun ChatMessageItem(
                                                 contentAlignment = Alignment.Center,
                                             ) {
                                                 Icon(
-                                                    painter = painterResource(id = R.drawable.ic_play_voice),
-                                                    contentDescription = null,
+                                                    // Material play-triangle: ic_play_voice — это
+                                                    // композит (круг + треугольник), и сплошной белый
+                                                    // tint схлопывал его в белый круг без «play».
+                                                    imageVector = Icons.Filled.PlayArrow,
+                                                    contentDescription = stringResource(id = R.string.chat_play_video),
                                                     tint = Color.White,
-                                                    modifier = Modifier.size(24.dp),
+                                                    modifier = Modifier.size(30.dp),
                                                 )
                                             }
                                         }
@@ -316,7 +332,7 @@ fun ChatMessageItem(
                                                 modifier = Modifier.padding(top = 4.dp),
                                                 text = name,
                                                 fontSize = 12.sp,
-                                                color = if (isMine) Color.White else Color.Black,
+                                                color = if (isMine) Color.White else chatColors.chatTextOther,
                                             )
                                         }
                                     }
@@ -339,7 +355,7 @@ fun ChatMessageItem(
                             .withZone(ZoneId.systemDefault())
                             .format(message.createdAt),
                         fontSize = 10.sp,
-                        color = if (isMine) Color.White.copy(alpha = 0.8f) else Color.Gray,
+                        color = if (isMine) Color.White.copy(alpha = 0.8f) else chatColors.chatTextSecondary,
                         modifier = Modifier.align(Alignment.End)
                     )
                 }
@@ -359,10 +375,11 @@ private fun PollMessageContent(
     onShowResults: () -> Unit,
     revoteTrigger: Int = 0,
 ) {
-    val primaryTextColor = if (isMine) Color.White else Color(0xFF111827)
-    val secondaryTextColor = if (isMine) Color.White.copy(alpha = 0.75f) else Color(0xFF6F7A90)
-    val optionBackground = if (isMine) Color.White.copy(alpha = 0.12f) else Color.White
-    val accentColor = if (isMine) Color.White else Color(0xFF2E83D9)
+    val chatColors = NauTheme.extendedColors
+    val primaryTextColor = if (isMine) Color.White else chatColors.chatTextOther
+    val secondaryTextColor = if (isMine) Color.White.copy(alpha = 0.75f) else chatColors.chatTextSecondary
+    val optionBackground = if (isMine) Color.White.copy(alpha = 0.12f) else chatColors.chatBubbleOther
+    val accentColor = if (isMine) Color.White else chatColors.accent
     val buttonContentColor = Color(0xFF9CCDFF)
     val questionText = poll.subject.takeIf { it.isNotBlank() } ?: question
     val isMultiple = poll.multipleAnswers
@@ -438,6 +455,23 @@ private fun PollMessageContent(
                     color = buttonContentColor,
                 )
             }
+
+            val resultsButtonColors = ButtonDefaults.textButtonColors(
+                contentColor = if (isMine) Color.White else accentColor,
+            )
+            TextButton(
+                onClick = onShowResults,
+                colors = resultsButtonColors,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.chat_poll_view_results),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
+            }
         } else {
             val descriptionRes = if (isMultiple) {
                 R.string.chat_poll_description_multiple
@@ -495,23 +529,19 @@ private fun PollMessageContent(
                     accentColor.copy(alpha = 0.4f)
                 }
             )
-            // Detailed results (GET /dialogs/poll/:id) are author-only — hide
-            // the entry point for everyone else so they don't hit a 403.
-            if (isPollAuthor) {
-                TextButton(
-                    onClick = onShowResults,
-                    enabled = poll.options.isNotEmpty(),
-                    colors = textButtonColors,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = stringResource(R.string.chat_poll_view_results),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center
-                    )
-                }
+            TextButton(
+                onClick = onShowResults,
+                enabled = poll.options.isNotEmpty(),
+                colors = textButtonColors,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.chat_poll_view_results),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
@@ -641,13 +671,11 @@ private fun VoiceMessageContent(
     isMine: Boolean,
     onClick: () -> Unit,
 ) {
-    val titleColor = if (isMine) Color.White else Color(0xFF111827)
-    val durationColor = if (isMine) Color.White.copy(alpha = 0.75f) else Color(0xFF6F7A90)
-    // Play button = solid disc + contrasting triangle. Using a single-colour
-    // vector (Icons.PlayArrow) instead of the multi-colour ic_play_voice
-    // drawable, because Icon(tint = ...) would flatten the latter into a blob.
-    val discColor = if (isMine) Color.White else Color(0xFF2E83D9)
-    val triangleColor = if (isMine) Color(0xFF2E83D9) else Color.White
+    val chatColors = NauTheme.extendedColors
+    val durationColor = if (isMine) Color.White.copy(alpha = 0.75f) else chatColors.chatTextSecondary
+    val discColor = if (isMine) Color.White else chatColors.accent
+    val triangleColor = if (isMine) chatColors.accent else Color.White
+    val waveformTint = if (isMine) Color.White.copy(alpha = 0.6f) else chatColors.accent.copy(alpha = 0.5f)
     val durationText = formatVoiceDuration(file?.duration)
     Row(
         modifier = Modifier
@@ -671,20 +699,21 @@ private fun VoiceMessageContent(
                 modifier = Modifier.size(26.dp),
             )
         }
-        Column {
+        Image(
+            painter = painterResource(id = R.drawable.background_voice_wave),
+            contentDescription = null,
+            modifier = Modifier
+                .weight(1f)
+                .height(24.dp),
+            contentScale = ContentScale.FillWidth,
+            colorFilter = ColorFilter.tint(waveformTint),
+        )
+        if (!durationText.isNullOrBlank()) {
             Text(
-                text = stringResource(id = R.string.chat_voice_message),
-                color = titleColor,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
+                text = durationText,
+                color = durationColor,
+                fontSize = 12.sp,
             )
-            if (!durationText.isNullOrBlank()) {
-                Text(
-                    text = durationText,
-                    color = durationColor,
-                    fontSize = 12.sp,
-                )
-            }
         }
     }
 }
@@ -698,9 +727,10 @@ private fun FileAttachmentCard(
 ) {
     val context = LocalContext.current
     val interactionSource = remember { MutableInteractionSource() }
-    val backgroundColor = if (isMine) Color.White.copy(alpha = 0.1f) else Color.White
-    val accentColor = if (isMine) Color.White else Color(0xFF2E83D9)
-    val supportingColor = if (isMine) Color.White.copy(alpha = 0.75f) else Color(0xFF6F7A90)
+    val chatColors = NauTheme.extendedColors
+    val backgroundColor = if (isMine) Color.White.copy(alpha = 0.1f) else chatColors.chatBubbleOther
+    val accentColor = if (isMine) Color.White else chatColors.accent
+    val supportingColor = if (isMine) Color.White.copy(alpha = 0.75f) else chatColors.chatTextSecondary
     val fileTypeLabel = file.fileName?.substringAfterLast('.', "")?.takeIf { it.isNotBlank() }
         ?.uppercase(Locale.getDefault())
         ?: file.contentType?.substringAfterLast('/', "")?.takeIf { it.isNotBlank() }
@@ -730,7 +760,7 @@ private fun FileAttachmentCard(
                 .size(48.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(
-                    if (isMine) Color.White.copy(alpha = 0.12f) else Color(0xFFE4E8F1)
+                    if (isMine) Color.White.copy(alpha = 0.12f) else chatColors.chatFileIconBg
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -756,7 +786,7 @@ private fun FileAttachmentCard(
             )
             Text(
                 text = file.fileName.orEmpty(),
-                color = if (isMine) Color.White else Color(0xFF111827),
+                color = if (isMine) Color.White else chatColors.chatTextOther,
                 fontSize = 14.sp,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -827,7 +857,7 @@ private fun CircleCheckbox(
     checked: Boolean,
     onClick: () -> Unit,
 ) {
-    val activeColor = Color(0xFF2E83D9)
+    val activeColor = NauTheme.extendedColors.accent
     Box(
         modifier = Modifier
             .size(22.dp)
@@ -853,6 +883,23 @@ private fun CircleCheckbox(
                 modifier = Modifier.size(14.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun describeMessageContent(message: MessageChat): String? {
+    if (message.type == MessageType.POLL) return stringResource(R.string.chat_poll_label)
+    if (message.type == MessageType.VOICE) return stringResource(R.string.chat_voice_message)
+    val file = message.files.firstOrNull() ?: return null
+    val ct = file.contentType?.lowercase()
+    return when {
+        ct?.startsWith("image") == true -> stringResource(R.string.chat_last_message_image)
+        ct?.startsWith("video") == true -> stringResource(R.string.chat_last_message_video)
+        ct?.startsWith("audio") == true -> stringResource(R.string.chat_voice_message)
+        file.fileType == 1 -> stringResource(R.string.chat_last_message_image)
+        file.fileType == 30 -> stringResource(R.string.chat_last_message_video)
+        file.fileType == 21 -> stringResource(R.string.chat_voice_message)
+        else -> stringResource(R.string.chat_last_message_file)
     }
 }
 
