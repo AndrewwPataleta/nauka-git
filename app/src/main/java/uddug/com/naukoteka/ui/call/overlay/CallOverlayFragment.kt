@@ -49,6 +49,7 @@ class CallOverlayFragment : Fragment() {
                             viewModel.endCall()
                             removeSelf()
                         },
+                        onToggleMic = { viewModel.toggleMicrophone() },
                         onFinished = { removeSelf() }
                     )
                 }
