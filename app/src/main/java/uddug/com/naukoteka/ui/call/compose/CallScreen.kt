@@ -238,8 +238,13 @@ fun CallScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
+            // A group call shows the video grid when it is a video call OR the
+            // user has turned their own camera on (audio→video upgrade). This is
+            // why the camera button is always available in group calls — see
+            // CallControls(canUseCamera).
+            val useGroupVideoLayout = state.isVideoCall || state.sessionState.camOn
             if (isGroupCall) {
-                if (state.isVideoCall) {
+                if (useGroupVideoLayout) {
                     GroupVideoCallGrid(
                         participants = state.participants,
                         currentUserId = state.currentUserId,
@@ -292,7 +297,11 @@ fun CallScreen(
 
             CallControls(
                 sessionState = state.sessionState,
-                isVideoCall = state.isVideoCall,
+                // Camera is always usable in a group call (even one that started
+                // as audio, or came back as audio after a reconnect): the user
+                // can enable video at any time. In 1-to-1 calls it stays tied to
+                // the call type.
+                canUseCamera = state.isVideoCall || state.isGroupCall,
                 onToggleMicrophone = onToggleMicrophone,
                 onToggleCamera = onToggleCamera,
                 onEndCall = onEndCall,
@@ -1114,7 +1123,7 @@ private fun ParticipantCard(
 @Composable
 private fun CallControls(
     sessionState: CallSessionState,
-    isVideoCall: Boolean,
+    canUseCamera: Boolean,
     onToggleMicrophone: () -> Unit,
     onToggleCamera: () -> Unit,
     onEndCall: () -> Unit,
@@ -1138,7 +1147,7 @@ private fun CallControls(
                 contentColor = if (sessionState.micOn) Color.White else Color(0xFF8083A0),
                 onClick = onToggleMicrophone,
             )
-            if (isVideoCall) {
+            if (canUseCamera) {
                 CallActionButton(
                     iconRes = if (sessionState.camOn) R.drawable.ic_camera_on else R.drawable.ic_camera_off,
                     label = stringResource(R.string.call_camera),

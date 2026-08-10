@@ -388,14 +388,23 @@ class CallViewModel @Inject constructor(
             "localStatus=${localStream?.status} remoteStatus=${remoteStream?.status} participantStreams=${participantStreams.size}"
         )
 
-        // 1) Re-attach renderers to remote streams (they may have been detached on dispose).
+        // 1) Re-subscribe remote participants. A fresh play() re-renders video
+        // reliably; re-attaching an existing stream via switchRenderer() often
+        // leaves a black tile after returning from background or screen lock
+        // (the "участников не видно" symptom). Fall back to switchRenderer only
+        // when we have no live participant handle to replay from.
         participantRenderers.forEach { (participantId, renderer) ->
-            findStreamForParticipant(participantId)?.let { stream ->
-                runCatching { stream.switchRenderer(renderer) }.onFailure {
-                    logCallStep(
-                        "resume_switch_renderer_failed",
-                        "participantId=$participantId error=${it.message}"
-                    )
+            val handle = participantHandles[participantId]
+            if (handle != null) {
+                playParticipant(handle, participantId, renderer)
+            } else {
+                findStreamForParticipant(participantId)?.let { stream ->
+                    runCatching { stream.switchRenderer(renderer) }.onFailure {
+                        logCallStep(
+                            "resume_switch_renderer_failed",
+                            "participantId=$participantId error=${it.message}"
+                        )
+                    }
                 }
             }
         }
@@ -577,18 +586,7 @@ class CallViewModel @Inject constructor(
             return
         }
         localPublishStarted = true
-        lastCallParams?.let { params ->
-            activeCallStore.save(
-                ActiveCallState(
-                    dialogId = params.dialogId,
-                    contactName = params.contactName,
-                    avatarUrl = params.avatarUrl,
-                    callTitle = params.callTitle,
-                    isVideoCall = params.isVideoCall,
-                    isGroupCall = params.isGroupCall,
-                )
-            )
-        }
+        saveActiveCallState()
         logCallStep("publish_local_stream_start", "streamName=$streamName isVideoCall=$isVideoCall")
 
         Log.d("CallVM", "PUBLISHING STREAM: $streamName")
@@ -731,10 +729,48 @@ class CallViewModel @Inject constructor(
 
     fun toggleCamera() {
         val currentState = _uiState.value.sessionState
-        val updatedState = currentState.copy(camOn = !currentState.camOn)
+        val enabling = !currentState.camOn
+        val updatedState = currentState.copy(camOn = enabling)
         _uiState.value = _uiState.value.copy(sessionState = updatedState)
         updateCallState(updatedState)
-        applyLocalVideoState(updatedState.camOn)
+
+        // Upgrading a call that is not (yet) video to video: the published local
+        // stream has no video track, so unmuteVideo() on it is a no-op and the
+        // user would stay invisible. Republish with a video constraint and mark
+        // the call as video so the UI switches to the video layout and — via the
+        // persisted ActiveCallState — stays video across a later reconnect.
+        // Only reachable in group calls (the camera button is hidden in 1-to-1
+        // audio calls), so the "republish ends a 1-to-1 call" caveat on
+        // restartLocalStream does not apply here.
+        if (enabling && !_uiState.value.isVideoCall) {
+            logCallStep("camera_upgrade_to_video", "republishing local stream with video")
+            _uiState.value = _uiState.value.copy(isVideoCall = true)
+            lastCallParams = lastCallParams?.copy(isVideoCall = true)
+            saveActiveCallState()
+            restartLocalStream(audioEnabled = updatedState.micOn, videoEnabled = true)
+        } else {
+            applyLocalVideoState(updatedState.camOn)
+        }
+    }
+
+    /**
+     * Persists the current call so it can be restored after a process death
+     * ([ActiveCallStore]). Kept in sync with [lastCallParams] — in particular its
+     * isVideoCall flag, which is bumped to true when the user upgrades an audio
+     * call to video (see [toggleCamera]) so the restored call keeps video.
+     */
+    private fun saveActiveCallState() {
+        val params = lastCallParams ?: return
+        activeCallStore.save(
+            ActiveCallState(
+                dialogId = params.dialogId,
+                contactName = params.contactName,
+                avatarUrl = params.avatarUrl,
+                callTitle = params.callTitle,
+                isVideoCall = params.isVideoCall,
+                isGroupCall = params.isGroupCall,
+            )
+        )
     }
 
     /**
@@ -1533,15 +1569,39 @@ class CallViewModel @Inject constructor(
             "FAILED" -> {
                 localPublishStarted = false
                 hasPublishedLocalStream = false
-                logCallStep("publish_local_stream_status_failed", "status=$status")
+                logCallStep(
+                    "publish_local_stream_status_failed",
+                    "status=$status hasRetriedPublish=$hasRetriedPublish"
+                )
                 // Do NOT end the call on stream FAILED. This status commonly
                 // fires as a transient state while `restartLocalStream`
                 // unpublishes → republishes on mic/camera toggle. Ending the
                 // call here caused users to get kicked out on toggle.
-                // Surface a toast and let the user retry.
-                _uiState.value = _uiState.value.copy(
-                    toastMessage = "Не удалось обновить медиа-поток",
-                )
+                //
+                // A publish also FAILs right after a reconnect while a stale
+                // session with the same stream name ("$userId#$dialogId") is
+                // still being torn down on the server — the classic "I rejoined
+                // but nobody hears or sees me" case. Retry the publish once; by
+                // the time it runs the ghost session has usually timed out.
+                // Guarded by hasRetriedPublish so we never loop, and skipped
+                // while a deliberate restart is already in flight.
+                val canRetry = !hasRetriedPublish &&
+                    restartStreamJob?.isActive != true &&
+                    (_uiState.value.status == CallStatus.CONNECTING ||
+                        _uiState.value.status == CallStatus.IN_CALL)
+                if (canRetry) {
+                    hasRetriedPublish = true
+                    val session = _uiState.value.sessionState
+                    logCallStep("publish_local_stream_retry", "retrying after FAILED")
+                    restartLocalStream(
+                        audioEnabled = session.micOn,
+                        videoEnabled = _uiState.value.isVideoCall,
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        toastMessage = "Не удалось обновить медиа-поток",
+                    )
+                }
             }
             "UNPUBLISHED", "STOPPED" -> {
                 localPublishStarted = false

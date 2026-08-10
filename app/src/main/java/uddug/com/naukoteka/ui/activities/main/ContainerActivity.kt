@@ -50,6 +50,8 @@ import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
 import uddug.com.naukoteka.utils.NotificationPermissionRequester
 import uddug.com.naukoteka.utils.viewBinding
 import javax.inject.Inject
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -202,6 +204,69 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         // Default to chat tab on startup (graph XML also starts on nav_graph_chat).
         if (savedInstanceState == null) {
             contentView.bottomNav.menu.getItem(3).setChecked(true)
+        }
+
+        // Keep a floating "return to call" plashka on screen whenever a call is
+        // active and the user is NOT on the call screen — after pressing back,
+        // switching bottom-nav tabs, or relaunching following a crash. Reuses the
+        // same CallOverlay the minimize button shows; tapping it re-opens the
+        // full call screen. Previously the overlay appeared only via an explicit
+        // minimize, so leaving the call any other way left no way back to it.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                callViewModel.uiState
+                    .map { it.status }
+                    .distinctUntilChanged()
+                    .collect { syncCallOverlay() }
+            }
+        }
+        contentView.root.post {
+            runCatching {
+                findNavController(R.id.main_nav_host_fragment)
+                    .addOnDestinationChangedListener { _, _, _ -> syncCallOverlay() }
+            }
+        }
+    }
+
+    /**
+     * Reconciles the floating call overlay ("К звонку" plashka) with the current
+     * call status and navigation destination: shown when a call is in progress
+     * and the user is off the call screen, hidden otherwise. Idempotent — safe to
+     * call on every status change and destination change.
+     */
+    private fun syncCallOverlay() {
+        val status = callViewModel.uiState.value.status
+        val hasActiveCall = status == CallStatus.DIALING ||
+            status == CallStatus.CONNECTING ||
+            status == CallStatus.IN_CALL
+        val onCallScreen = runCatching {
+            val destinationId = findNavController(R.id.main_nav_host_fragment)
+                .currentDestination?.id
+            destinationId == R.id.singleCallFragment || destinationId == R.id.groupCallFragment
+        }.getOrDefault(false)
+
+        if (hasActiveCall && !onCallScreen) {
+            showCallOverlay()
+        } else {
+            removeCallOverlay()
+        }
+    }
+
+    private fun showCallOverlay() {
+        if (supportFragmentManager.isStateSaved) return
+        if (supportFragmentManager.findFragmentByTag(CallOverlayFragment.TAG) == null) {
+            supportFragmentManager.beginTransaction()
+                .setReorderingAllowed(true)
+                .add(android.R.id.content, CallOverlayFragment(), CallOverlayFragment.TAG)
+                .commitAllowingStateLoss()
+        }
+    }
+
+    private fun removeCallOverlay() {
+        supportFragmentManager.findFragmentByTag(CallOverlayFragment.TAG)?.let {
+            supportFragmentManager.beginTransaction()
+                .remove(it)
+                .commitAllowingStateLoss()
         }
     }
 
