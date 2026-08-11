@@ -137,6 +137,18 @@ class GroupCallFragment : Fragment() {
                         onShareLink = { shareCallLink() },
                         onLeaveCall = { viewModel.endCall() },
                         onEndForAll = { viewModel.endCallForEveryone() },
+                        onAllowParticipant = viewModel::allowParticipant,
+                        onAllowAll = viewModel::allowAllFromLobby,
+                        onKickParticipant = viewModel::kickParticipant,
+                        onAssignAdmin = viewModel::assignAdmin,
+                        onMuteAllMics = viewModel::muteAllMics,
+                        onDisableAllCameras = viewModel::disableAllCameras,
+                        onForbidAllRaiseHand = viewModel::forbidAllRaiseHand,
+                        onMuteParticipantMic = viewModel::muteParticipantMic,
+                        onDisableParticipantCamera = viewModel::disableParticipantCamera,
+                        onForbidParticipantRaiseHand = {
+                            viewModel.setParticipantHandRaiseAllowed(it, allowed = false)
+                        },
                     )
                 }
             }

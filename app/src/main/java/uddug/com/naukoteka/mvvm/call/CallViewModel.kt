@@ -905,6 +905,133 @@ class CallViewModel @Inject constructor(
         }
     }
 
+    // --- Управление участниками (экран «Участники звонка», для администраторов) ---
+
+    /** Впускает участника из комнаты ожидания (status 6 → 5) через REST. */
+    fun allowParticipant(userId: String) {
+        val dialogId = _uiState.value.dialogId ?: return
+        viewModelScope.launch {
+            runCatching { callRepository.updateStatus(dialogId, userId, STATUS_PARTICIPATING) }
+                .onSuccess {
+                    logCallStep("lobby_allow", "userId=$userId")
+                    refreshParticipants()
+                }
+                .onFailure { error ->
+                    logCallStep("lobby_allow_failed", "userId=$userId error=${error.message}")
+                    _uiState.value = _uiState.value.copy(toastMessage = toastMessageForApiError(error))
+                }
+        }
+    }
+
+    /** «Разрешить всем» — впускает всех, кто сейчас в комнате ожидания. */
+    fun allowAllFromLobby() {
+        val dialogId = _uiState.value.dialogId ?: return
+        val lobby = _uiState.value.lobbyParticipants.map { it.id }
+        if (lobby.isEmpty()) return
+        viewModelScope.launch {
+            lobby.forEach { userId ->
+                runCatching { callRepository.updateStatus(dialogId, userId, STATUS_PARTICIPATING) }
+                    .onFailure { logCallStep("lobby_allow_all_failed", "userId=$userId error=${it.message}") }
+            }
+            logCallStep("lobby_allow_all", "count=${lobby.size}")
+            refreshParticipants()
+        }
+    }
+
+    /** Исключает участника из звонка (status → 7). */
+    fun kickParticipant(userId: String) {
+        val dialogId = _uiState.value.dialogId ?: return
+        viewModelScope.launch {
+            runCatching { callRepository.updateStatus(dialogId, userId, STATUS_KICKED) }
+                .onSuccess {
+                    logCallStep("participant_kicked", "userId=$userId")
+                    refreshParticipants()
+                }
+                .onFailure { error ->
+                    logCallStep("participant_kick_failed", "userId=$userId error=${error.message}")
+                    _uiState.value = _uiState.value.copy(toastMessage = toastMessageForApiError(error))
+                }
+        }
+    }
+
+    /** Назначает участника администратором звонка (роль 37:302). Только организатор. */
+    fun assignAdmin(userId: String) {
+        val dialogId = _uiState.value.dialogId ?: return
+        viewModelScope.launch {
+            runCatching { callRepository.updatePermits(dialogId, userId, role = ROLE_ADMIN) }
+                .onSuccess {
+                    logCallStep("assign_admin", "userId=$userId")
+                    _uiState.value = _uiState.value.copy(toastMessage = "Участник назначен администратором")
+                    refreshParticipants()
+                }
+                .onFailure { error ->
+                    logCallStep("assign_admin_failed", "userId=$userId error=${error.message}")
+                    _uiState.value = _uiState.value.copy(toastMessage = toastMessageForApiError(error))
+                }
+        }
+    }
+
+    /** Запрещает/разрешает участнику поднимать руку (permit 82:604). */
+    fun setParticipantHandRaiseAllowed(userId: String, allowed: Boolean) {
+        setParticipantPermit(userId, PERMIT_RAISE_HAND, allowed)
+    }
+
+    /**
+     * Принудительно выключает микрофон/камеру участника: тянет свежий
+     * mediaSessionId участника и патчит его состояние. Требует прав
+     * администратора (иначе бэк вернёт 403 — показываем toast). Best-effort.
+     */
+    private fun forceParticipantMedia(userId: String, micOff: Boolean, camOff: Boolean) {
+        val dialogId = _uiState.value.dialogId ?: return
+        viewModelScope.launch {
+            runCatching {
+                val participant = callRepository.getParticipants(dialogId).find { it.userId == userId }
+                    ?: return@runCatching
+                val latest = participant.states.lastOrNull() ?: return@runCatching
+                val current = latest.state ?: uddug.com.domain.entities.call.CallSessionState()
+                callRepository.updateState(
+                    dialogId = dialogId,
+                    userId = userId,
+                    mediaSessionId = latest.mediaSessionId,
+                    state = current.copy(
+                        micOn = if (micOff) false else current.micOn,
+                        camOn = if (camOff) false else current.camOn,
+                    ),
+                )
+            }.onSuccess {
+                logCallStep("participant_media_forced", "userId=$userId micOff=$micOff camOff=$camOff")
+                refreshParticipants()
+            }.onFailure { error ->
+                logCallStep("participant_media_force_failed", "userId=$userId error=${error.message}")
+                _uiState.value = _uiState.value.copy(toastMessage = toastMessageForApiError(error))
+            }
+        }
+    }
+
+    fun muteParticipantMic(userId: String) = forceParticipantMedia(userId, micOff = true, camOff = false)
+    fun disableParticipantCamera(userId: String) = forceParticipantMedia(userId, micOff = false, camOff = true)
+
+    /** Массово выключает микрофоны у всех активных участников. */
+    fun muteAllMics() {
+        _uiState.value.rosterParticipants
+            .filter { it.id != profileUserId && !it.isMuted }
+            .forEach { forceParticipantMedia(it.id, micOff = true, camOff = false) }
+    }
+
+    /** Массово выключает камеры у всех активных участников. */
+    fun disableAllCameras() {
+        _uiState.value.rosterParticipants
+            .filter { it.id != profileUserId && it.camOn }
+            .forEach { forceParticipantMedia(it.id, micOff = false, camOff = true) }
+    }
+
+    /** Массово запрещает поднимать руку всем активным участникам. */
+    fun forbidAllRaiseHand() {
+        _uiState.value.rosterParticipants
+            .filter { it.id != profileUserId }
+            .forEach { setParticipantHandRaiseAllowed(it.id, allowed = false) }
+    }
+
     /**
      * Applies a mic toggle by muting/unmuting the audio track of the already
      * published local stream.
@@ -1367,10 +1494,19 @@ class CallViewModel @Inject constructor(
         const val ROLE_ORGANIZER = "37:301"
         const val ROLE_ADMIN = "37:302"
         const val PERMIT_MANAGE_PARTICIPANTS = "82:611"
+        const val PERMIT_ASSIGN_ADMIN = "82:610"
+        const val PERMIT_RAISE_HAND = "82:604"
         const val PERMIT_RECORD_CALL = "82:608"
         const val STATUS_PARTICIPATING = 5
+        const val STATUS_LOBBY = 6
+        const val STATUS_KICKED = 7
         const val CTYPE_STATE_CHANGED = 2006
         const val CTYPE_PERMITS_CHANGED = 2007
+        const val CTYPE_JOIN_CALL = 2002
+        const val CTYPE_LET_JOIN = 2003
+        const val CTYPE_CALL_USERS = 2004
+        const val CTYPE_CALL_PARTICIPATE = 2005
+        const val CTYPE_STATUS_CHANGED = 2008
         const val CTYPE_CALL_DECLINED = 6001
         // cType 8001 — уведомление об изменении статуса записи звонка.
         const val CTYPE_RECORD_STATUS = 8001
@@ -1534,7 +1670,76 @@ class CallViewModel @Inject constructor(
             CTYPE_STATE_CHANGED -> handleStateChange(json)
             CTYPE_PERMITS_CHANGED -> refreshParticipants()
             CTYPE_RECORD_STATUS -> handleRecordStatus(json)
+            CTYPE_STATUS_CHANGED -> handleStatusChange(json)
+            // Разрешение перехода из комнаты ожидания в звонок: администратор
+            // разрешил присоединиться. Если это про нас и мы ещё не в комнате
+            // WCS — подключаемся к звонку.
+            CTYPE_CALL_USERS, CTYPE_CALL_PARTICIPATE, CTYPE_LET_JOIN -> {
+                if (isSelfTargeted(json)) joinFromLobby()
+                refreshParticipants()
+            }
         }
+    }
+
+    /**
+     * cType 2008 — обновление статусов участников (комната ожидания ↔ участвует,
+     * исключение). Обновляем ростер; если исключили нас самих (status 7) —
+     * завершаем звонок локально с уведомлением.
+     */
+    private fun handleStatusChange(json: JSONObject) {
+        val selfId = profileUserId
+        val updates = json.optJSONArray("statusUpdates")
+        var selfKicked = false
+        if (updates != null && selfId != null) {
+            outer@ for (i in 0 until updates.length()) {
+                val update = updates.optJSONObject(i) ?: continue
+                if (update.optInt("status", 0) != STATUS_KICKED) continue
+                val users = update.optJSONArray("users") ?: continue
+                for (j in 0 until users.length()) {
+                    if (users.optString(j) == selfId) { selfKicked = true; break@outer }
+                }
+            }
+        }
+        if (selfKicked) {
+            logCallStep("self_kicked", "status=$STATUS_KICKED")
+            _uiState.value = _uiState.value.copy(toastMessage = "Вас исключили из звонка")
+            endCall()
+            return
+        }
+        refreshParticipants()
+    }
+
+    /** true, если событие (2003/2004/2005) адресовано текущему пользователю. */
+    private fun isSelfTargeted(json: JSONObject): Boolean {
+        val selfId = profileUserId ?: return false
+        val users = json.optJSONArray("users") ?: return false
+        for (i in 0 until users.length()) {
+            if (users.optString(i) == selfId) return true
+        }
+        return false
+    }
+
+    /**
+     * Нас выпустили из комнаты ожидания — присоединяемся к активному звонку.
+     * Если WCS-сессия уже поднята, ничего не делаем; иначе переиспользуем путь
+     * реконнекта (startCall с сохранёнными параметрами).
+     */
+    private fun joinFromLobby() {
+        if (flashphonerSessionManager.isRoomJoined()) return
+        val params = lastCallParams ?: return
+        logCallStep("join_from_lobby", "dialogId=${params.dialogId}")
+        isCallStarted = false
+        flashphonerSessionManager.reset()
+        startCall(
+            dialogId = params.dialogId,
+            contactName = params.contactName,
+            avatarUrl = params.avatarUrl,
+            participants = params.participants,
+            callTitle = params.callTitle,
+            isVideoCall = params.isVideoCall,
+            resetReconnectAttempts = true,
+            isGroupCall = params.isGroupCall,
+        )
     }
 
     /**
@@ -1635,6 +1840,7 @@ class CallViewModel @Inject constructor(
 
             val selfId = profileUserId
             val selfParticipant = apiParticipants.find { it.userId == selfId }
+            val isOrganizer = selfParticipant?.roles?.contains(ROLE_ORGANIZER) == true
             val isAdmin = selfParticipant != null && (
                 selfParticipant.roles.any { it == ROLE_ORGANIZER || it == ROLE_ADMIN } ||
                     selfParticipant.permits.contains(PERMIT_MANAGE_PARTICIPANTS)
@@ -1700,9 +1906,43 @@ class CallViewModel @Inject constructor(
                 }
                 .map { describeParticipant(it.userId, null) }
 
+            // Full roster for the «Участники звонка» screen. Maps every backend
+            // participant (including self) to a UI model, resolving names/avatars
+            // from the dialog roster. Split into active (status 5) and waiting
+            // room (status 6); other statuses are terminal and not shown.
+            fun toRoster(p: uddug.com.domain.entities.call.CallParticipant): CallParticipant {
+                val dialogUser = dialogUsers[p.userId]
+                val latestState = p.states.lastOrNull()?.state
+                return CallParticipant(
+                    id = p.userId,
+                    name = dialogUser?.fullName?.takeIf { it.isNotBlank() }
+                        ?: dialogUser?.nickname?.takeIf { it.isNotBlank() }
+                        ?: p.fullName?.takeIf { it.isNotBlank() }
+                        ?: p.userId,
+                    avatarUrl = dialogUser?.image?.takeIf { it.isNotBlank() }
+                        ?: p.imageUrl?.takeIf { it.isNotBlank() },
+                    isMuted = latestState?.micOn == false,
+                    camOn = latestState?.camOn ?: true,
+                    handUp = latestState?.handUp ?: false,
+                    roles = p.roles,
+                    permits = p.permits,
+                    status = p.status,
+                )
+            }
+            val roster = apiParticipants
+                .filter { it.status == STATUS_PARTICIPATING }
+                .map(::toRoster)
+                .sortedByDescending { it.roles.contains(ROLE_ORGANIZER) }
+            val lobby = apiParticipants
+                .filter { it.status == STATUS_LOBBY }
+                .map(::toRoster)
+
             _uiState.value = _uiState.value.copy(
                 participants = enriched + missing,
                 isCurrentUserAdmin = isAdmin,
+                isCurrentUserOrganizer = isOrganizer,
+                rosterParticipants = roster,
+                lobbyParticipants = lobby,
                 canRecordCall = canRecord,
             )
             logCallStep(
@@ -1888,6 +2128,12 @@ data class CallUiState(
     val currentUserId: String? = null,
     val isGroupCall: Boolean = false,
     val isCurrentUserAdmin: Boolean = false,
+    val isCurrentUserOrganizer: Boolean = false,
+    // Полный ростер для экрана «Участники звонка»: активные участники (status 5),
+    // включая себя, и отдельно ожидающие в комнате ожидания (status 6). Плитки
+    // видео используют [participants] (только удалённые), а этот экран — ростер.
+    val rosterParticipants: List<CallParticipant> = emptyList(),
+    val lobbyParticipants: List<CallParticipant> = emptyList(),
     val canRecordCall: Boolean = true,
     val toastMessage: String? = null,
     val audioRoutes: List<AudioRoute> = emptyList(),
@@ -1910,6 +2156,9 @@ data class CallParticipant(
     val handUp: Boolean = false,
     val roles: List<String> = emptyList(),
     val permits: List<String> = emptyList(),
+    // Статус участника в звонке (docs/calls.md #190): 5 — участвует, 6 — в
+    // комнате ожидания. Используется экраном «Участники звонка».
+    val status: Int = 5,
 ) : Parcelable
 
 enum class CallStatus {

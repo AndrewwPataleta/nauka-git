@@ -38,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -147,6 +148,18 @@ fun CallScreen(
     onShareLink: () -> Unit = {},
     onLeaveCall: () -> Unit = {},
     onEndForAll: () -> Unit = {},
+    onAllowParticipant: (String) -> Unit = {},
+    onAllowAll: () -> Unit = {},
+    onKickParticipant: (String) -> Unit = {},
+    onAssignAdmin: (String) -> Unit = {},
+    onMuteAllMics: () -> Unit = {},
+    onDisableAllCameras: () -> Unit = {},
+    onForbidAllRaiseHand: () -> Unit = {},
+    onMuteParticipantMic: (String) -> Unit = {},
+    onDisableParticipantCamera: (String) -> Unit = {},
+    onForbidParticipantRaiseHand: (String) -> Unit = {},
+    onWritePrivate: (String) -> Unit = {},
+    onOpenParticipantProfile: (String) -> Unit = {},
 ) {
     val backgroundColor = Color(0xFF0B1020)
     val context = LocalContext.current
@@ -351,11 +364,18 @@ fun CallScreen(
 
     if (isParticipantsSheetVisible) {
         ParticipantsScreen(
-            participants = state.participants,
+            roster = state.rosterParticipants,
+            lobby = state.lobbyParticipants,
+            isAdmin = state.isCurrentUserAdmin,
             onBackClick = {
                 isParticipantsSheetVisible = false
                 pickParticipantForPermits = false
             },
+            onAllow = { participant -> onAllowParticipant(participant.id) },
+            onAllowAll = onAllowAll,
+            onMuteAll = onMuteAllMics,
+            onDisableAllCameras = onDisableAllCameras,
+            onForbidAllRaiseHand = onForbidAllRaiseHand,
             onParticipantClick = { participant ->
                 if (pickParticipantForPermits) {
                     pickParticipantForPermits = false
@@ -372,8 +392,33 @@ fun CallScreen(
         ParticipantActionsSheet(
             participant = participant,
             isAdmin = state.isCurrentUserAdmin,
-            onMuteToggle = {
-                onMuteParticipant(participant.id)
+            canAssignAdmin = state.isCurrentUserOrganizer,
+            onMuteMic = {
+                onMuteParticipantMic(participant.id)
+                participantForActions = null
+            },
+            onDisableCamera = {
+                onDisableParticipantCamera(participant.id)
+                participantForActions = null
+            },
+            onForbidRaiseHand = {
+                onForbidParticipantRaiseHand(participant.id)
+                participantForActions = null
+            },
+            onWritePrivate = {
+                onWritePrivate(participant.id)
+                participantForActions = null
+            },
+            onAssignAdmin = {
+                onAssignAdmin(participant.id)
+                participantForActions = null
+            },
+            onKick = {
+                onKickParticipant(participant.id)
+                participantForActions = null
+            },
+            onOpenProfile = {
+                onOpenParticipantProfile(participant.id)
                 participantForActions = null
             },
             onDismiss = { participantForActions = null },
@@ -1476,21 +1521,29 @@ private fun CallActionButton(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ParticipantsScreen(
-    participants: List<CallParticipant>,
+    roster: List<CallParticipant>,
+    lobby: List<CallParticipant>,
+    isAdmin: Boolean,
     onBackClick: () -> Unit,
+    onAllow: (CallParticipant) -> Unit,
+    onAllowAll: () -> Unit,
+    onMuteAll: () -> Unit,
+    onDisableAllCameras: () -> Unit,
+    onForbidAllRaiseHand: () -> Unit,
     onParticipantClick: (CallParticipant) -> Unit,
 ) {
     val backgroundColor = Color(0xFF0B1020)
+    val cardColor = Color(0xFF121732)
+    val accentBlue = Color(0xFF3B82F6)
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    val filteredParticipants = remember(participants, searchQuery) {
-        val queryLower = searchQuery.trim().lowercase()
-        if (queryLower.isEmpty()) {
-            participants
-        } else {
-            participants.filter { participant ->
-                participant.name?.lowercase()?.contains(queryLower) == true
-            }
-        }
+    val query = searchQuery.trim().lowercase()
+    val filteredRoster = remember(roster, query) {
+        if (query.isEmpty()) roster
+        else roster.filter { it.name?.lowercase()?.contains(query) == true }
+    }
+    val filteredLobby = remember(lobby, query) {
+        if (query.isEmpty()) lobby
+        else lobby.filter { it.name?.lowercase()?.contains(query) == true }
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = backgroundColor) {
@@ -1520,18 +1573,36 @@ private fun ParticipantsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(horizontal = 24.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    text = stringResource(
-                        R.string.call_participants_count,
-                        participants.size
-                    ),
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                )
+                if (isAdmin) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        BulkActionButton(
+                            iconRes = R.drawable.ic_mic_off,
+                            label = stringResource(R.string.call_bulk_mute_mics),
+                            modifier = Modifier.weight(1f),
+                            onClick = onMuteAll,
+                        )
+                        BulkActionButton(
+                            iconRes = R.drawable.ic_camera_off,
+                            label = stringResource(R.string.call_bulk_disable_cameras),
+                            modifier = Modifier.weight(1f),
+                            onClick = onDisableAllCameras,
+                        )
+                        BulkActionButton(
+                            iconRes = R.drawable.ic_call_hand,
+                            label = stringResource(R.string.call_bulk_forbid_hand),
+                            modifier = Modifier.weight(1f),
+                            onClick = onForbidAllRaiseHand,
+                        )
+                    }
+                }
 
                 OutlinedTextField(
                     value = searchQuery,
@@ -1552,9 +1623,9 @@ private fun ParticipantsScreen(
                     },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFF121732),
-                        unfocusedContainerColor = Color(0xFF121732),
-                        disabledContainerColor = Color(0xFF121732),
+                        focusedContainerColor = cardColor,
+                        unfocusedContainerColor = cardColor,
+                        disabledContainerColor = cardColor,
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
                         cursorColor = Color.White,
@@ -1565,47 +1636,205 @@ private fun ParticipantsScreen(
                     shape = RoundedCornerShape(12.dp),
                 )
 
-                Surface(
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f, fill = true),
-                    color = Color(0xFF0B1020),
-                    contentColor = Color.White,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 4.dp),
                 ) {
-                    if (filteredParticipants.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = stringResource(R.string.chat_search_no_results),
-                                color = Color(0xFFB0B3C5),
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                    } else {
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(vertical = 8.dp),
-                            contentPadding = PaddingValues(vertical = 4.dp),
-                        ) {
-                            items(filteredParticipants) { participant ->
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    color = Color(0xFF121732),
-                                    shape = RoundedCornerShape(12.dp),
-                                ) {
-                                    ParticipantListItem(
-                                        participant = participant,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable { onParticipantClick(participant) }
-                                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                                    )
-                                }
+                    if (isAdmin && filteredLobby.isNotEmpty()) {
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = stringResource(
+                                        R.string.call_waiting_room_count,
+                                        filteredLobby.size,
+                                    ),
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    text = stringResource(R.string.call_allow_all),
+                                    color = accentBlue,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.clickable { onAllowAll() },
+                                )
                             }
                         }
+                        items(filteredLobby) { participant ->
+                            LobbyParticipantRow(
+                                participant = participant,
+                                accent = accentBlue,
+                                cardColor = cardColor,
+                                onAllow = { onAllow(participant) },
+                            )
+                        }
                     }
+
+                    item {
+                        Text(
+                            text = stringResource(
+                                R.string.call_participants_count,
+                                filteredRoster.size,
+                            ),
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                    items(filteredRoster) { participant ->
+                        ParticipantRosterRow(
+                            participant = participant,
+                            isAdmin = isAdmin,
+                            cardColor = cardColor,
+                            onMenuClick = { onParticipantClick(participant) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BulkActionButton(
+    iconRes: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = modifier,
+        color = Color(0xFF121732),
+        shape = RoundedCornerShape(12.dp),
+        onClick = onClick,
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(22.dp),
+            )
+            Text(
+                text = label,
+                color = Color(0xFFB0B3C5),
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
+                lineHeight = 14.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LobbyParticipantRow(
+    participant: CallParticipant,
+    accent: Color,
+    cardColor: Color,
+    onAllow: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = cardColor,
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Avatar(url = participant.avatarUrl, name = participant.name, size = 40.dp)
+            Text(
+                text = participant.name.orEmpty(),
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = stringResource(R.string.call_allow),
+                color = accent,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.clickable { onAllow() },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ParticipantRosterRow(
+    participant: CallParticipant,
+    isAdmin: Boolean,
+    cardColor: Color,
+    onMenuClick: () -> Unit,
+) {
+    val isOrganizer = participant.roles.contains("37:301")
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = cardColor,
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Avatar(url = participant.avatarUrl, name = participant.name, size = 40.dp)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = participant.name.orEmpty(),
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                if (isOrganizer) {
+                    Text(
+                        text = stringResource(R.string.call_role_organizer),
+                        color = Color(0xFFF2C94C),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+            Icon(
+                painter = painterResource(
+                    id = if (participant.isMuted) R.drawable.ic_mic_off else R.drawable.ic_mic_on,
+                ),
+                contentDescription = null,
+                tint = Color(0xFFB0B3C5),
+                modifier = Modifier.size(18.dp),
+            )
+            Icon(
+                painter = painterResource(
+                    id = if (participant.camOn) R.drawable.ic_camera_on else R.drawable.ic_camera_off,
+                ),
+                contentDescription = null,
+                tint = Color(0xFFB0B3C5),
+                modifier = Modifier.size(18.dp),
+            )
+            if (isAdmin) {
+                IconButton(onClick = onMenuClick, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_profile_more),
+                        contentDescription = null,
+                        tint = Color(0xFFB0B3C5),
+                        modifier = Modifier.size(18.dp),
+                    )
                 }
             }
         }
@@ -1673,20 +1902,19 @@ private fun ParticipantListItem(
 private fun ParticipantActionsSheet(
     participant: CallParticipant,
     isAdmin: Boolean,
-    onMuteToggle: () -> Unit,
+    canAssignAdmin: Boolean,
+    onMuteMic: () -> Unit,
+    onDisableCamera: () -> Unit,
+    onForbidRaiseHand: () -> Unit,
+    onWritePrivate: () -> Unit,
+    onAssignAdmin: () -> Unit,
+    onKick: () -> Unit,
+    onOpenProfile: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val muteActionLabel = if (participant.isMuted) {
-        stringResource(R.string.call_participant_action_unmute)
-    } else {
-        stringResource(R.string.call_participant_action_mute)
-    }
-    val muteIcon = if (participant.isMuted) {
-        R.drawable.ic_rec_mic_active
-    } else {
-        R.drawable.ic_rec_mic_inactive
-    }
+    val cardColor = Color(0xFF121732)
+    val kickRed = Color(0xFFEB5757)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1696,66 +1924,109 @@ private fun ParticipantActionsSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            ParticipantListItem(
-                participant = participant,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Text(
-                text = stringResource(R.string.call_participant_actions_title),
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_close),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.call_settings_title),
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFF121732),
-                shape = RoundedCornerShape(16.dp),
+                color = cardColor,
+                shape = RoundedCornerShape(12.dp),
+                onClick = onOpenProfile,
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    if (isAdmin) {
-                        SheetActionItem(
-                            iconRes = muteIcon,
-                            label = muteActionLabel,
-                            onClick = onMuteToggle,
-                        )
-                    }
-                    SheetActionItem(
-                        iconRes = R.drawable.ic_copy,
-                        label = stringResource(R.string.call_participant_action_copy),
-                        onClick = onDismiss,
+                    Avatar(url = participant.avatarUrl, name = participant.name, size = 40.dp)
+                    Text(
+                        text = participant.name.orEmpty(),
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f),
                     )
-                    SheetActionItem(
-                        iconRes = R.drawable.ic_profile_info,
-                        label = stringResource(R.string.call_participant_action_profile),
-                        onClick = onDismiss,
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = Color(0xFF8083A0),
+                    )
+                }
+            }
+
+            if (isAdmin) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    BulkActionButton(
+                        iconRes = R.drawable.ic_mic_off,
+                        label = stringResource(R.string.call_action_mute_mic),
+                        modifier = Modifier.weight(1f),
+                        onClick = onMuteMic,
+                    )
+                    BulkActionButton(
+                        iconRes = R.drawable.ic_camera_off,
+                        label = stringResource(R.string.call_action_disable_camera),
+                        modifier = Modifier.weight(1f),
+                        onClick = onDisableCamera,
+                    )
+                    BulkActionButton(
+                        iconRes = R.drawable.ic_call_hand,
+                        label = stringResource(R.string.call_bulk_forbid_hand),
+                        modifier = Modifier.weight(1f),
+                        onClick = onForbidRaiseHand,
                     )
                 }
             }
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFF1D2239),
-                shape = RoundedCornerShape(12.dp),
-                onClick = onDismiss,
+                color = cardColor,
+                shape = RoundedCornerShape(16.dp),
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.call_sheet_close),
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyLarge,
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    SheetActionItem(
+                        iconRes = R.drawable.ic_chat,
+                        label = stringResource(R.string.call_action_write_private),
+                        onClick = onWritePrivate,
                     )
+                    if (canAssignAdmin) {
+                        SheetActionItem(
+                            iconRes = R.drawable.ic_user_profile,
+                            label = stringResource(R.string.call_action_assign_admin),
+                            onClick = onAssignAdmin,
+                        )
+                    }
+                    if (isAdmin) {
+                        SheetActionItem(
+                            iconRes = R.drawable.ic_close,
+                            label = stringResource(R.string.call_action_kick),
+                            onClick = onKick,
+                            tint = kickRed,
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -1768,6 +2039,7 @@ private fun SheetActionItem(
     iconRes: Int,
     label: String,
     onClick: () -> Unit,
+    tint: Color = Color.White,
 ) {
     Row(
         modifier = Modifier
@@ -1780,12 +2052,12 @@ private fun SheetActionItem(
         Icon(
             painter = painterResource(id = iconRes),
             contentDescription = null,
-            tint = Color.White,
+            tint = tint,
             modifier = Modifier.size(20.dp),
         )
         Text(
             text = label,
-            color = Color.White,
+            color = tint,
             style = MaterialTheme.typography.bodyLarge,
         )
     }
