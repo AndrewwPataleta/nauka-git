@@ -69,9 +69,37 @@ Swagger UI: core — `…/api/core/swagger-ui/index.html`, chat — `…/api/cha
 
 Список диалогов, инфо диалога (+by-peer), медиа, поиск (search-messages, global/search), сообщения (update/read/pin/unpin/delete-one), папки (CRUD/reorder/set-read/dialogs), опросы (create/answer/stop/delete/get/answer-users), звонки (participants/status/permits/state/record start-stop/{id}/stop), профиль (core), загрузка файлов (`POST /api/core/files`, `?raw`), справочники cType (#109), fileType (#41), статусы прочтения (#71), роли (#37)/пермиты (#82).
 
+## Звонки (сверено с wiki «Звонки» 2026-08-11)
+
+Роли (37:301/302/303), пермиты (82:600–612), статусы участников (#190: 1–8),
+cType (2001–2008, 6001–6004, 8001), состояние сессии (`micOn/camOn/handUp/
+sharingScreen`) — **совпадают** с клиентом (CallViewModel, CallSettingsSheets
+используют ровно эти коды). ✓
+
+**Что есть в клиенте ✓:** `GET participants`, `PATCH status`, `PATCH permits`,
+`PATCH state`, `POST /calls/{callId}/stop`, `PUT record/start|stop`.
+
+**БАГ / расхождение с wiki:**
+- `CallRepository.stopCall` (`POST /calls/{callId}/stop`) заведён, но **нигде не
+  вызывается**. Красная кнопка «Завершить» → `CallViewModel.endCall()` делает
+  только `Room.leave()` (это «выход», §6.1), а не REST-завершение (§7). Для
+  **1-на-1** это значит: у собеседника звонок не завершается сразу — висит до
+  таймаута зависшего звонка (~30 сек). Фикс: в `endCall()` для 1-на-1 (и для
+  «завершить для всех» у админа/организатора) дополнительно звать
+  `POST /calls/dialog/:dialog/stop`.
+
+**Пробелы (есть в спеке/wiki, не заведены в клиенте):**
+- `POST /calls/dialog/{dialog}/stop` — завершение по dialogId (предпочтительный).
+- `GET /calls/dialog/{dialog}/participant` — статус одного участника.
+- `GET /calls/dialog/{dialog}` / `GET /calls/{id}` — чтение звонка.
+- `POST /calls/invite/dialog/{dialog}` — пригласить/дозвониться участнику.
+- `GET /calls/record/list/dialog/{dialog}` + `DELETE /calls/record/{record}` —
+  список и удаление записей (для раздела «Записи звонков»).
+
 ## TODO по итогам аудита
 
-1. Проверить v2-эндпоинты группового управления на стейдже; при 404 — перевести на v1 из спеки.
-2. Починить `PATCH dialogs/info/{id}` → `PATCH dialogs/{id}` и `PATCH folder/{id}` → `PATCH folder` (folderId в body).
-3. «Печатает…»: согласовать с бэкендом socket-событие (имя + формат) ИЛИ отложить.
-4. Опционально: invite-to-call, список/удаление записей, пакетное удаление сообщений, poll stats.
+1. **Звонки:** в `endCall()` вызывать REST-завершение (`POST /calls/dialog/:dialog/stop`) для 1-на-1 и для «завершить для всех» (админ) — иначе звонок у собеседника висит ~30 сек. (Приоритет — реальный UX-баг.)
+2. Проверить v2-эндпоинты группового управления на стейдже; при 404 — перевести на v1 из спеки.
+3. Починить `PATCH dialogs/info/{id}` → `PATCH dialogs/{id}` и `PATCH folder/{id}` → `PATCH folder` (folderId в body).
+4. «Печатает…»: на паузе — нет серверного события; согласовать с бэкендом socket-событие (имя + формат) перед реализацией.
+5. Опционально: invite-to-call, список/удаление записей звонка, пакетное удаление сообщений, poll stats.
