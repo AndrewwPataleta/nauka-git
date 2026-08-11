@@ -314,6 +314,26 @@ class CallViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Завершить звонок ДЛЯ ВСЕХ (REST `POST /calls/dialog/:dialog/stop`, см.
+     * docs/calls.md §7). Бэк рассылает cType 6 всем участникам — у собеседника
+     * звонок закрывается сразу, а не висит до таймаута зависшего звонка.
+     * Используется в 1-на-1 (кнопка «Завершить» = завершить у обоих) и как
+     * «Завершить для всех» у администратора/организатора группового звонка.
+     * После REST локально всё равно чистим состояние через [endCall].
+     */
+    fun endCallForEveryone() {
+        val dialogId = _uiState.value.dialogId
+        if (dialogId != null) {
+            viewModelScope.launch {
+                runCatching { callRepository.stopDialogCall(dialogId) }
+                    .onSuccess { logCallStep("stop_dialog_call_ok", "dialogId=$dialogId") }
+                    .onFailure { logCallStep("stop_dialog_call_failed", "error=${it.message}") }
+            }
+        }
+        endCall()
+    }
+
     fun endCall() {
         val previousStatus = _uiState.value.status
         val endedDialogId = _uiState.value.dialogId

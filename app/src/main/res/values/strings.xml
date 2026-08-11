@@ -507,6 +507,9 @@
     <string name="call_participant_action_copy">Скопировать контакт</string>
     <string name="call_participant_action_profile">Посмотреть профиль</string>
     <string name="call_sheet_close">Закрыть</string>
+    <string name="call_end_options_title">Завершение звонка</string>
+    <string name="call_end_leave">Выйти из звонка</string>
+    <string name="call_end_for_all">Завершить для всех</string>
     <string name="call_record_setup_title">Запись звонка</string>
     <string name="call_record_setup_description">После окончания запись появится в чате и будет доступна участникам звонка и тем, с кем вы поделитесь этой записью.</string>
     <string name="call_record_file_name_label">Название файла</string>

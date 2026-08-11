@@ -180,6 +180,8 @@ class SingleCallFragment : Fragment() {
                         onSetCallVolume = viewModel::setCallVolume,
                         getCallVolume = viewModel::currentCallVolume,
                         onShareLink = { shareCallLink() },
+                        onLeaveCall = { viewModel.endCall() },
+                        onEndForAll = { viewModel.endCallForEveryone() },
                     )
                 }
             }

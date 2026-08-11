@@ -138,6 +138,8 @@ fun CallScreen(
     onSetCallVolume: (Float) -> Unit = {},
     getCallVolume: () -> Float = { 0f },
     onShareLink: () -> Unit = {},
+    onLeaveCall: () -> Unit = {},
+    onEndForAll: () -> Unit = {},
 ) {
     val backgroundColor = Color(0xFF0B1020)
     val context = LocalContext.current
@@ -157,7 +159,19 @@ fun CallScreen(
     var isRecordingSetupVisible by rememberSaveable { mutableStateOf(false) }
     var isSettingsSheetVisible by rememberSaveable { mutableStateOf(false) }
     var isAudioDeviceSheetVisible by rememberSaveable { mutableStateOf(false) }
+    var isEndCallOptionsVisible by rememberSaveable { mutableStateOf(false) }
     var participantForPermits by remember { mutableStateOf<CallParticipant?>(null) }
+
+    // Красная кнопка «завершить»: в 1-на-1 завершаем у обоих (REST stop); в группе
+    // админ/организатор выбирает «Выйти» или «Завершить для всех», остальные —
+    // просто выходят. См. iOS-parity C1 / docs/calls.md §7.
+    val onEndCallPressed: () -> Unit = {
+        when {
+            !state.isGroupCall -> onEndForAll()
+            state.isCurrentUserAdmin -> isEndCallOptionsVisible = true
+            else -> onLeaveCall()
+        }
+    }
     // Когда пользователь открыл список участников из «Настройки для участников»,
     // клик по участнику ведёт в редактор прав, а не в обычные действия.
     var pickParticipantForPermits by rememberSaveable { mutableStateOf(false) }
@@ -322,7 +336,7 @@ fun CallScreen(
                 canUseCamera = state.isVideoCall || state.isGroupCall,
                 onToggleMicrophone = onToggleMicrophone,
                 onToggleCamera = onToggleCamera,
-                onEndCall = onEndCall,
+                onEndCall = onEndCallPressed,
             )
         }
     }
@@ -421,6 +435,98 @@ fun CallScreen(
             onVolumeChange = onSetCallVolume,
             onDismiss = { participantForPermits = null },
         )
+    }
+
+    if (isEndCallOptionsVisible) {
+        EndCallOptionsSheet(
+            onLeave = {
+                isEndCallOptionsVisible = false
+                onLeaveCall()
+            },
+            onEndForAll = {
+                isEndCallOptionsVisible = false
+                onEndForAll()
+            },
+            onDismiss = { isEndCallOptionsVisible = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EndCallOptionsSheet(
+    onLeave: () -> Unit,
+    onEndForAll: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color(0xFF0B1020),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.call_end_options_title),
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+            )
+            EndCallOptionButton(
+                label = stringResource(R.string.call_end_leave),
+                textColor = Color.White,
+                background = Color(0xFF1D2239),
+                onClick = onLeave,
+            )
+            EndCallOptionButton(
+                label = stringResource(R.string.call_end_for_all),
+                textColor = Color.White,
+                background = Color(0xFFE64C4C),
+                onClick = onEndForAll,
+            )
+            EndCallOptionButton(
+                label = stringResource(R.string.call_sheet_close),
+                textColor = Color(0xFFB0B3C5),
+                background = Color(0xFF121732),
+                onClick = onDismiss,
+            )
+        }
+    }
+}
+
+@Composable
+private fun EndCallOptionButton(
+    label: String,
+    textColor: Color,
+    background: Color,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = background,
+        shape = RoundedCornerShape(12.dp),
+        onClick = onClick,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = label,
+                color = textColor,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+            )
+        }
     }
 }
 

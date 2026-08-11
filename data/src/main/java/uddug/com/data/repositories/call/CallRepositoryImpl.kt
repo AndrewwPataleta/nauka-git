@@ -68,6 +68,10 @@ class CallRepositoryImpl @Inject constructor(
         callApiService.stopCall(callId)
     }
 
+    override suspend fun stopDialogCall(dialogId: Long) {
+        callApiService.stopDialogCall(dialogId)
+    }
+
     override suspend fun startRecording(dialogId: Long, name: String) {
         callApiService.startRecording(
             dialogId = dialogId,

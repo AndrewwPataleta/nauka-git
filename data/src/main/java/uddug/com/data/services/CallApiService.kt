@@ -45,6 +45,13 @@ interface CallApiService {
         @Path("callId") callId: Long,
     )
 
+    // Завершить звонок для всех по dialogId (docs/calls.md §7). Предпочтительный
+    // способ «завершить для всех» — бэк рассылает cType 6 всем участникам.
+    @POST("chat/v1/calls/dialog/{dialogId}/stop")
+    suspend fun stopDialogCall(
+        @Path("dialogId") dialogId: Long,
+    )
+
     @PUT("chat/v1/calls/record/start/dialog/{dialogId}")
     suspend fun startRecording(
         @Path("dialogId") dialogId: Long,
