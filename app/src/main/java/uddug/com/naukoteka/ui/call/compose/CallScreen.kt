@@ -8,6 +8,8 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -1025,15 +1027,22 @@ private fun GroupVideoCallGrid(
                 CircularProgressIndicator(color = Color.White)
             }
         } else {
+            // При 5+ участниках плитки на weight(1f) сжимались в нечитаемую кашу.
+            // Свыше 4 — делаем колонку вертикально-скроллящейся с фиксированной
+            // высотой строки, чтобы плитки оставались нормального размера.
+            // Column (не Lazy) сохраняет WebRTC-рендереры (movableContentOf).
+            val scrollable = tileCount > 4
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 for (rowIndex in 0 until rows) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f),
+                            .then(if (scrollable) Modifier.height(200.dp) else Modifier.weight(1f)),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         for (colIndex in 0 until columns) {
@@ -1218,16 +1227,19 @@ private fun CallParticipantsGrid(
     val totalTiles = remoteParticipants.size + 1
     val columns = if (totalTiles <= 2) 1 else 2
     val rows = (totalTiles + columns - 1) / columns
+    // Свыше 4 плиток — скроллим с фиксированной высотой строки (см. видео-сетку).
+    val scrollable = totalTiles > 4
 
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         for (rowIndex in 0 until rows) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .then(if (scrollable) Modifier.height(200.dp) else Modifier.weight(1f)),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 for (colIndex in 0 until columns) {
