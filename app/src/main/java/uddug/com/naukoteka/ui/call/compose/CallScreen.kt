@@ -367,6 +367,7 @@ fun CallScreen(
             roster = state.rosterParticipants,
             lobby = state.lobbyParticipants,
             isAdmin = state.isCurrentUserAdmin,
+            selfId = state.currentUserId,
             onBackClick = {
                 isParticipantsSheetVisible = false
                 pickParticipantForPermits = false
@@ -1524,6 +1525,7 @@ private fun ParticipantsScreen(
     roster: List<CallParticipant>,
     lobby: List<CallParticipant>,
     isAdmin: Boolean,
+    selfId: String?,
     onBackClick: () -> Unit,
     onAllow: (CallParticipant) -> Unit,
     onAllowAll: () -> Unit,
@@ -1694,7 +1696,9 @@ private fun ParticipantsScreen(
                     items(filteredRoster) { participant ->
                         ParticipantRosterRow(
                             participant = participant,
-                            isAdmin = isAdmin,
+                            // Меню действий только над другими участниками —
+                            // над собой нельзя (нельзя выгнать/назначить себя).
+                            isAdmin = isAdmin && participant.id != selfId,
                             cardColor = cardColor,
                             onMenuClick = { onParticipantClick(participant) },
                         )
