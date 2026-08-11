@@ -66,6 +66,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.decode.VideoFrameDecoder
+import coil.request.ImageRequest
+import coil.request.videoFrameMillis
 import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
 import uddug.com.domain.entities.chat.Poll
@@ -299,6 +302,18 @@ fun ChatMessageItem(
                                 }
                                 isVideo -> {
                                     Column {
+                                        val videoCtx = LocalContext.current
+                                        // Превью видео = кадр на ~2-й секунде (coil-video). Раньше в
+                                        // model передавался сам .mp4, coil не мог его декодировать
+                                        // как картинку и оставалась серая заглушка.
+                                        val videoThumb = remember(fileUrl) {
+                                            ImageRequest.Builder(videoCtx)
+                                                .data(fileUrl)
+                                                .videoFrameMillis(2000)
+                                                .decoderFactory(VideoFrameDecoder.Factory())
+                                                .crossfade(true)
+                                                .build()
+                                        }
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(12.dp))
@@ -312,7 +327,7 @@ fun ChatMessageItem(
                                             contentAlignment = Alignment.Center,
                                         ) {
                                             AsyncImage(
-                                                model = fileUrl,
+                                                model = videoThumb,
                                                 contentDescription = "video preview",
                                                 contentScale = ContentScale.Crop,
                                                 modifier = Modifier.fillMaxWidth().height(140.dp),
