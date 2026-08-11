@@ -7,6 +7,7 @@ import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -125,6 +126,13 @@ class ChatDialogViewModel @Inject constructor(
     private val _participants = MutableStateFlow<List<User>>(emptyList())
     val participants: StateFlow<List<User>> = _participants
 
+    // «Печатает…»: кто сейчас печатает в этом диалоге (по socket-событию typing).
+    // owner -> момент последнего пинга; истекает через TYPING_TTL_MS.
+    private val _typingUsers = MutableStateFlow<List<User>>(emptyList())
+    val typingUsers: StateFlow<List<User>> = _typingUsers
+    private val typingSeenAt = mutableMapOf<String, Long>()
+    private var lastTypingEmitAt = 0L
+
     private val _notificationsDisabled = MutableStateFlow(false)
     val notificationsDisabled: StateFlow<Boolean> = _notificationsDisabled
 
@@ -140,6 +148,61 @@ class ChatDialogViewModel @Inject constructor(
         socketService.setOnEvent("message", LISTENER_TAG) { message ->
             handleIncomingMessage(message)
         }
+        // Приём «печатает…». Имя события TYPING_EVENT — предположительно "typing";
+        // подтвердить с iOS/логом SocketTraffic (эмитим то же имя ниже).
+        socketService.setOnEvent(TYPING_EVENT, TYPING_TAG) { data ->
+            handleTypingEvent(data)
+        }
+        // Истечение индикатора печати.
+        viewModelScope.launch {
+            while (isActive) {
+                delay(1000)
+                if (typingSeenAt.isNotEmpty()) recomputeTypingUsers()
+            }
+        }
+    }
+
+    /**
+     * Вызывается из поля ввода при печати. Эмитим socket-событие typing не чаще
+     * раза в TYPING_EMIT_THROTTLE_MS, чтобы собеседники увидели «печатает…».
+     */
+    fun onUserTyping() {
+        val dialogId = currentDialogID ?: return
+        val ownerId = currentUser?.id ?: return
+        val now = System.currentTimeMillis()
+        if (now - lastTypingEmitAt < TYPING_EMIT_THROTTLE_MS) return
+        lastTypingEmitAt = now
+        runCatching {
+            socketService.sendMessage(
+                TYPING_EVENT,
+                mapOf("dialog" to dialogId, "owner" to ownerId),
+            )
+        }
+    }
+
+    private fun handleTypingEvent(data: Any) {
+        val json = runCatching {
+            JSONObject(if (data is JSONObject) data.toString() else data.toString())
+        }.getOrNull() ?: return
+        val dialog = json.optLong("dialog", -1L)
+        val owner = json.optString("owner")
+        if (dialog != (currentDialogID ?: -2L)) return
+        if (owner.isBlank() || owner == currentUser?.id) return
+        typingSeenAt[owner] = System.currentTimeMillis()
+        recomputeTypingUsers()
+    }
+
+    private fun recomputeTypingUsers() {
+        val now = System.currentTimeMillis()
+        val active = typingSeenAt.filterValues { now - it < TYPING_TTL_MS }.keys.toSet()
+        typingSeenAt.keys.retainAll(active)
+        _typingUsers.value = active.map { id -> resolveTypingUser(id) }
+    }
+
+    private fun resolveTypingUser(userId: String): User {
+        _participants.value.firstOrNull { it.userId == userId }?.let { return it }
+        currentDialogInfo?.interlocutor?.takeIf { it.userId == userId }?.let { return it }
+        return User(userId = userId)
     }
 
 
@@ -1313,12 +1376,19 @@ class ChatDialogViewModel @Inject constructor(
 
     override fun onCleared() {
         socketService.removeEvent("message", LISTENER_TAG)
+        socketService.removeEvent(TYPING_EVENT, TYPING_TAG)
         super.onCleared()
     }
 
     companion object {
         private const val LISTENER_TAG = "ChatDialogViewModel"
         private const val PAGE_SIZE = 30
+        // «Печатает…». TYPING_EVENT — предполагаемое имя socket-события; при
+        // необходимости заменить на реальное (одно место) после сверки с iOS.
+        private const val TYPING_EVENT = "typing"
+        private const val TYPING_TAG = "ChatDialogTyping"
+        private const val TYPING_TTL_MS = 4000L
+        private const val TYPING_EMIT_THROTTLE_MS = 2000L
     }
 }
 

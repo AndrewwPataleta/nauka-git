@@ -86,6 +86,7 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatInputBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageDateBadge
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageItem
+import uddug.com.naukoteka.ui.chat.compose.components.TypingIndicator
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.AttachOptionsBottomSheetDialog
@@ -142,6 +143,7 @@ fun ChatDialogComponent(
     val currentUserId by viewModel.currentUserId.collectAsState()
     val notificationsDisabled by viewModel.notificationsDisabled.collectAsState()
     val participants by viewModel.participants.collectAsState()
+    val typingUsers by viewModel.typingUsers.collectAsState()
     // (fullName, userId) участников — для подсветки @упоминаний в сообщениях.
     val mentionUsers = remember(participants) {
         participants.mapNotNull { u ->
@@ -658,6 +660,11 @@ fun ChatDialogComponent(
                                 onMentionClick = { userId -> viewModel.openUserProfile(userId) },
                             )
                         }
+                        if (typingUsers.isNotEmpty()) {
+                            item(key = "typing_indicator") {
+                                TypingIndicator(users = typingUsers)
+                            }
+                        }
                     }
 
                     
@@ -685,6 +692,7 @@ fun ChatDialogComponent(
                         attachedContact = state.attachedContact,
                         onMessageChange = { newMessage ->
                             viewModel.updateCurrentMessage(newMessage)
+                            if (newMessage.isNotBlank()) viewModel.onUserTyping()
                         },
                         onSendClick = {
                             scope.launch {
