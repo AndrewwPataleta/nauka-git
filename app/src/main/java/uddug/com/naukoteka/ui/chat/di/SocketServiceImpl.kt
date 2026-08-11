@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.gson.Gson
 import io.socket.client.IO
 import io.socket.client.Socket
+import io.socket.emitter.Emitter
 import io.socket.engineio.client.transports.WebSocket
 import org.json.JSONObject
 import javax.inject.Inject
@@ -48,8 +49,25 @@ class SocketServiceImpl @Inject constructor(private val cookiesCache: CookiesCac
             reconnectionDelay = RECONNECTION_DELAY_MS.toLong()
         }).also {
             setupEventListeners(it)
+            registerTrafficLogger(it)
             logConnectionParameters()
         }
+    }
+
+    // ДИАГНОСТИКА: логируем ВСЕ входящие/исходящие сокет-события, чтобы увидеть
+    // реальный словарь событий сервера (в т.ч. есть ли «печатает»/typing/presence)
+    // перед реализацией индикатора печати. Тег logcat: "SocketTraffic".
+    private fun registerTrafficLogger(socket: Socket) {
+        socket.onAnyIncoming(Emitter.Listener { args ->
+            val event = args.getOrNull(0)?.toString()
+            val payload = args.drop(1).joinToString(separator = " | ") { it?.toString() ?: "null" }
+            Log.d("SocketTraffic", "IN  event='$event' payload=$payload")
+        })
+        socket.onAnyOutgoing(Emitter.Listener { args ->
+            val event = args.getOrNull(0)?.toString()
+            val payload = args.drop(1).joinToString(separator = " | ") { it?.toString() ?: "null" }
+            Log.d("SocketTraffic", "OUT event='$event' payload=$payload")
+        })
     }
 
     override fun connect() {
