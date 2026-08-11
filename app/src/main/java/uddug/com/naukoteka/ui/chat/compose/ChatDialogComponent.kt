@@ -86,7 +86,6 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatInputBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageDateBadge
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageItem
-import uddug.com.naukoteka.ui.chat.compose.util.MentionUtils
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.AttachOptionsBottomSheetDialog
@@ -662,38 +661,19 @@ fun ChatDialogComponent(
                     }
 
                     
-                    // @упоминания: показываем участников, когда пользователь
-                    // вводит @query (только в групповом чате), исключая себя.
-                    val mentionQuery = if (isGroupChat) {
-                        MentionUtils.activeQuery(state.currentMessage)
-                    } else {
-                        null
-                    }
-                    val mentionSuggestions = remember(mentionQuery, participants, currentUserId) {
-                        if (mentionQuery == null) {
-                            emptyList()
-                        } else {
-                            participants.filter { u ->
-                                !u.userId.isNullOrBlank() &&
-                                    u.userId != currentUserId &&
-                                    !u.fullName.isNullOrBlank() &&
-                                    (mentionQuery.isBlank() ||
-                                        u.fullName!!.contains(mentionQuery, ignoreCase = true) ||
-                                        (u.nickname?.contains(mentionQuery, ignoreCase = true) == true))
-                            }.take(30)
+                    // @упоминания (только в групповом чате): кандидаты — все
+                    // участники, кроме себя. Фильтрацию по @query, вставку и
+                    // подсветку делает сам ChatInputBar (нужен контроль курсора).
+                    val mentionCandidates = remember(participants, currentUserId) {
+                        participants.filter {
+                            !it.userId.isNullOrBlank() && it.userId != currentUserId
                         }
                     }
 
                     ChatInputBar(
                         currentMessage = state.currentMessage,
-                        mentionSuggestions = mentionSuggestions,
-                        onMentionSelected = { user ->
-                            user.fullName?.let { name ->
-                                viewModel.updateCurrentMessage(
-                                    MentionUtils.applyMention(state.currentMessage, name)
-                                )
-                            }
-                        },
+                        mentionCandidates = mentionCandidates,
+                        mentionsEnabled = isGroupChat,
                         attachedFiles = state.attachedFiles,
                         replyMessage = state.replyMessage,
                         forwardMessage = state.pendingForward,

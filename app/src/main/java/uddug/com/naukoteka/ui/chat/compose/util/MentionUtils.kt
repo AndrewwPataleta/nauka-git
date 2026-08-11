@@ -10,6 +10,9 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 
@@ -27,12 +30,33 @@ object MentionUtils {
     /** Текущий вводимый @query (может быть пустым) или null, если упоминания нет. */
     fun activeQuery(text: String): String? = ACTIVE_QUERY.find(text)?.groupValues?.getOrNull(1)
 
+    /** Курсор-версия: ищем @query в тексте ДО позиции курсора. */
+    fun activeQuery(text: String, cursor: Int): String? {
+        val upto = text.substring(0, cursor.coerceIn(0, text.length))
+        return ACTIVE_QUERY.find(upto)?.groupValues?.getOrNull(1)
+    }
+
     /** Заменяет активный @query на выбранное `@fullName ` (с пробелом в конце). */
     fun applyMention(text: String, fullName: String): String {
         val match = ACTIVE_QUERY.find(text) ?: return text
         val atIndex = text.lastIndexOf('@', match.range.last)
         if (atIndex < 0) return text
         return text.substring(0, atIndex) + "@" + fullName + " "
+    }
+
+    /**
+     * Курсор-версия вставки: заменяет @query перед курсором на `@fullName ` и
+     * возвращает (новый текст, новую позицию курсора — сразу после пробела).
+     */
+    fun applyMention(text: String, cursor: Int, fullName: String): Pair<String, Int> {
+        val c = cursor.coerceIn(0, text.length)
+        val upto = text.substring(0, c)
+        ACTIVE_QUERY.find(upto) ?: return text to c
+        val at = upto.lastIndexOf('@')
+        if (at < 0) return text to c
+        val insert = "@$fullName "
+        val newText = text.substring(0, at) + insert + text.substring(c)
+        return newText to (at + insert.length)
     }
 
     data class MentionSpan(val start: Int, val end: Int, val userId: String)
@@ -68,6 +92,31 @@ object MentionUtils {
             i++
         }
         return spans
+    }
+}
+
+/**
+ * Подсвечивает синим `@Имя` прямо в поле ввода, не меняя сам текст (маппинг
+ * позиций 1:1). [names] — полные имена участников для сопоставления.
+ */
+class MentionVisualTransformation(
+    private val names: List<String>,
+    private val color: Color,
+) : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val raw = text.text
+        val spans = MentionUtils.findMentions(raw, names.map { it to "" })
+        val annotated = buildAnnotatedString {
+            append(raw)
+            spans.forEach { span ->
+                addStyle(
+                    SpanStyle(color = color, fontWeight = FontWeight.Medium),
+                    span.start,
+                    span.end,
+                )
+            }
+        }
+        return TransformedText(annotated, OffsetMapping.Identity)
     }
 }
 

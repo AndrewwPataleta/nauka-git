@@ -19,10 +19,15 @@ import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
+import uddug.com.naukoteka.ui.chat.compose.util.MentionUtils
+import uddug.com.naukoteka.ui.chat.compose.util.MentionVisualTransformation
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,8 +63,8 @@ import java.util.Locale
 fun ChatInputBar(
     modifier: Modifier = Modifier,
     currentMessage: String,
-    mentionSuggestions: List<User> = emptyList(),
-    onMentionSelected: (User) -> Unit = {},
+    mentionCandidates: List<User> = emptyList(),
+    mentionsEnabled: Boolean = false,
     attachedFiles: List<File>,
     replyMessage: MessageChat?,
     forwardMessage: PendingForward?,
@@ -85,6 +90,49 @@ fun ChatInputBar(
     onPlayRecording: () -> Unit,
     isRecordingPlaying: Boolean,
 ) {
+    // Поле держим как TextFieldValue, чтобы управлять курсором (после вставки
+    // упоминания он встаёт за именем) и подсвечивать теги синим прямо в поле.
+    var fieldValue by remember { mutableStateOf(TextFieldValue(currentMessage)) }
+    // Внешние изменения (очистка после отправки, вставка reply и т.п.) — тянем в
+    // поле, ставя курсор в конец.
+    LaunchedEffect(currentMessage) {
+        if (currentMessage != fieldValue.text) {
+            fieldValue = TextFieldValue(currentMessage, TextRange(currentMessage.length))
+        }
+    }
+
+    val mentionQuery = if (mentionsEnabled) {
+        MentionUtils.activeQuery(fieldValue.text, fieldValue.selection.start)
+    } else {
+        null
+    }
+    val mentionSuggestions = remember(mentionQuery, mentionCandidates) {
+        if (mentionQuery == null) {
+            emptyList()
+        } else {
+            mentionCandidates.filter { u ->
+                !u.fullName.isNullOrBlank() &&
+                    (mentionQuery.isBlank() ||
+                        u.fullName!!.contains(mentionQuery, ignoreCase = true) ||
+                        (u.nickname?.contains(mentionQuery, ignoreCase = true) == true))
+            }.take(30)
+        }
+    }
+    val mentionNames = remember(mentionCandidates) {
+        mentionCandidates.mapNotNull { it.fullName?.takeIf { n -> n.isNotBlank() } }
+    }
+
+    fun selectMention(user: User) {
+        val name = user.fullName ?: return
+        val (newText, newCursor) = MentionUtils.applyMention(
+            fieldValue.text,
+            fieldValue.selection.start,
+            name,
+        )
+        fieldValue = TextFieldValue(newText, TextRange(newCursor))
+        onMessageChange(newText)
+    }
+
     Column(
         modifier = modifier
             .padding(bottom = 10.dp)
@@ -93,7 +141,7 @@ fun ChatInputBar(
         if (mentionSuggestions.isNotEmpty()) {
             MentionSuggestionsList(
                 users = mentionSuggestions,
-                onSelect = onMentionSelected,
+                onSelect = { selectMention(it) },
             )
         }
 
@@ -364,8 +412,15 @@ fun ChatInputBar(
                     }
 
                     TextField(
-                        value = currentMessage,
-                        onValueChange = onMessageChange,
+                        value = fieldValue,
+                        onValueChange = { newValue ->
+                            fieldValue = newValue
+                            if (newValue.text != currentMessage) onMessageChange(newValue.text)
+                        },
+                        visualTransformation = MentionVisualTransformation(
+                            names = mentionNames,
+                            color = Color(0xFF4DA6FF),
+                        ),
                         placeholder = { Text(stringResource(R.string.chat_message_placeholder)) },
                         modifier = Modifier
                             .padding(horizontal = 6.dp)
@@ -386,7 +441,7 @@ fun ChatInputBar(
                         shape = RoundedCornerShape(12.dp),
                     )
 
-                    if (currentMessage.isBlank() && attachedFiles.isEmpty() && forwardMessage == null) {
+                    if (fieldValue.text.isBlank() && attachedFiles.isEmpty() && forwardMessage == null) {
                         IconButton(onClick = onVoiceClick) {
                             Image(
                                 painter = painterResource(id = R.drawable.ic_rec_mic_inactive),
