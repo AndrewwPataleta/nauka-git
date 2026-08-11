@@ -2,6 +2,7 @@ package uddug.com.naukoteka.ui.call
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -127,9 +128,31 @@ class GroupCallFragment : Fragment() {
                         onToastConsumed = viewModel::consumeToast,
                         onMicPermissionDenied = viewModel::onMicPermissionDenied,
                         onAudioFocusFailed = viewModel::onAudioFocusFailed,
+                        onSwitchCamera = viewModel::switchCamera,
+                        onToggleHand = viewModel::toggleHandRaise,
+                        onSelectAudioRoute = viewModel::selectAudioRoute,
+                        onSetParticipantPermit = viewModel::setParticipantPermit,
+                        onSetCallVolume = viewModel::setCallVolume,
+                        getCallVolume = viewModel::currentCallVolume,
+                        onShareLink = { shareCallLink() },
                     )
                 }
             }
+        }
+    }
+
+    private fun shareCallLink() {
+        val title = viewModel.uiState.value.callTitle
+        val text = buildString {
+            append("Присоединяйтесь к звонку в Наукотеке")
+            if (!title.isNullOrBlank()) append(": $title")
+        }
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        runCatching {
+            startActivity(Intent.createChooser(shareIntent, getString(R.string.share)))
         }
     }
 

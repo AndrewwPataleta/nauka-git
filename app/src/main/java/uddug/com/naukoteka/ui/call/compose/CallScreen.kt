@@ -41,7 +41,11 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -88,6 +92,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.call.AudioRoute
+import uddug.com.naukoteka.mvvm.call.AudioRouteType
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallUiState
@@ -125,6 +131,13 @@ fun CallScreen(
     onToastConsumed: () -> Unit,
     onMicPermissionDenied: () -> Unit,
     onAudioFocusFailed: (String) -> Unit,
+    onSwitchCamera: () -> Unit = {},
+    onToggleHand: () -> Unit = {},
+    onSelectAudioRoute: (String) -> Unit = {},
+    onSetParticipantPermit: (String, String, Boolean) -> Unit = { _, _, _ -> },
+    onSetCallVolume: (Float) -> Unit = {},
+    getCallVolume: () -> Float = { 0f },
+    onShareLink: () -> Unit = {},
 ) {
     val backgroundColor = Color(0xFF0B1020)
     val context = LocalContext.current
@@ -142,6 +155,22 @@ fun CallScreen(
     var isParticipantsSheetVisible by rememberSaveable { mutableStateOf(false) }
     var participantForActions by remember { mutableStateOf<CallParticipant?>(null) }
     var isRecordingSetupVisible by rememberSaveable { mutableStateOf(false) }
+    var isSettingsSheetVisible by rememberSaveable { mutableStateOf(false) }
+    var isAudioDeviceSheetVisible by rememberSaveable { mutableStateOf(false) }
+    var participantForPermits by remember { mutableStateOf<CallParticipant?>(null) }
+    // Когда пользователь открыл список участников из «Настройки для участников»,
+    // клик по участнику ведёт в редактор прав, а не в обычные действия.
+    var pickParticipantForPermits by rememberSaveable { mutableStateOf(false) }
+
+    // Общее действие «Запись»: используется и в шапке, и в шторке настроек.
+    val onRecordAction: () -> Unit = {
+        when {
+            state.isRecording -> onToggleRecording()
+            state.status != CallStatus.IN_CALL -> Unit
+            !state.canRecordCall -> onToggleRecording()
+            else -> isRecordingSetupVisible = true
+        }
+    }
 
     state.toastMessage?.let { message ->
         LaunchedEffect(message) {
@@ -178,19 +207,8 @@ fun CallScreen(
                 onOpenChat = {},
                 onShowParticipants = { isParticipantsSheetVisible = true },
                 isRecording = state.isRecording,
-                onRecordClick = {
-                    when {
-                        // Запись идёт — кнопка останавливает её сразу.
-                        state.isRecording -> onToggleRecording()
-                        // Записывать можно только из активного звонка.
-                        state.status != CallStatus.IN_CALL -> Unit
-                        // Нет permit 82:608 — toggleRecording покажет подсказку,
-                        // экран настройки открывать незачем.
-                        !state.canRecordCall -> onToggleRecording()
-                        // Иначе — открываем экран настройки записи.
-                        else -> isRecordingSetupVisible = true
-                    }
-                },
+                onRecordClick = onRecordAction,
+                onOpenSettings = { isSettingsSheetVisible = true },
                 onMinimize = onMinimize,
             )
         }
@@ -312,8 +330,19 @@ fun CallScreen(
     if (isParticipantsSheetVisible) {
         ParticipantsScreen(
             participants = state.participants,
-            onBackClick = { isParticipantsSheetVisible = false },
-            onParticipantClick = { participant -> participantForActions = participant },
+            onBackClick = {
+                isParticipantsSheetVisible = false
+                pickParticipantForPermits = false
+            },
+            onParticipantClick = { participant ->
+                if (pickParticipantForPermits) {
+                    pickParticipantForPermits = false
+                    isParticipantsSheetVisible = false
+                    participantForPermits = participant
+                } else {
+                    participantForActions = participant
+                }
+            },
         )
     }
 
@@ -340,6 +369,57 @@ fun CallScreen(
                 isRecordingSetupVisible = false
                 onStartRecording(fileName)
             },
+        )
+    }
+
+    if (isSettingsSheetVisible) {
+        CallSettingsSheet(
+            state = state,
+            onDismiss = { isSettingsSheetVisible = false },
+            onOpenAudioDevices = {
+                isSettingsSheetVisible = false
+                isAudioDeviceSheetVisible = true
+            },
+            onSwitchCamera = onSwitchCamera,
+            onToggleHand = onToggleHand,
+            onRecordClick = onRecordAction,
+            onOpenParticipants = {
+                isSettingsSheetVisible = false
+                isParticipantsSheetVisible = true
+            },
+            onOpenParticipantPermits = {
+                isSettingsSheetVisible = false
+                // Открываем список участников, чтобы выбрать, кому менять права.
+                pickParticipantForPermits = true
+                isParticipantsSheetVisible = true
+            },
+            onShareLink = {
+                isSettingsSheetVisible = false
+                onShareLink()
+            },
+        )
+    }
+
+    if (isAudioDeviceSheetVisible) {
+        AudioDeviceSheet(
+            routes = state.audioRoutes,
+            currentRouteId = state.currentAudioRouteId,
+            onSelect = { routeId ->
+                onSelectAudioRoute(routeId)
+            },
+            onDismiss = { isAudioDeviceSheetVisible = false },
+        )
+    }
+
+    participantForPermits?.let { participant ->
+        ParticipantPermitsSheet(
+            participant = participant,
+            initialVolume = getCallVolume(),
+            onSetPermit = { permit, grant ->
+                onSetParticipantPermit(participant.id, permit, grant)
+            },
+            onVolumeChange = onSetCallVolume,
+            onDismiss = { participantForPermits = null },
         )
     }
 }
@@ -521,6 +601,7 @@ private fun CallTopBar(
     onShowParticipants: () -> Unit,
     isRecording: Boolean,
     onRecordClick: () -> Unit,
+    onOpenSettings: () -> Unit,
     onMinimize: () -> Unit,
 ) {
     val recordingScale = if (isRecording) {
@@ -589,6 +670,14 @@ private fun CallTopBar(
                         painter = painterResource(id = R.drawable.ic_call_record),
                         contentDescription = stringResource(R.string.call_record),
                         tint = Color(0xFFFF5656),
+                    )
+                }
+
+                IconButton(onClick = onOpenSettings) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_settings),
+                        contentDescription = "Настройки",
+                        tint = Color.White,
                     )
                 }
             }

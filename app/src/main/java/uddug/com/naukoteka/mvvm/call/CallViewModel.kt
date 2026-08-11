@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flashphoner.fpwcsapi.bean.Connection
 import com.flashphoner.fpwcsapi.constraints.Constraints
+import com.flashphoner.fpwcsapi.handler.CameraSwitchHandler
 import com.flashphoner.fpwcsapi.room.Message
 import com.flashphoner.fpwcsapi.room.Participant
 import com.flashphoner.fpwcsapi.room.Room
@@ -66,7 +67,10 @@ class CallViewModel @Inject constructor(
         socketService.setOnEvent("message", SOCKET_LISTENER_TAG) { message ->
             viewModelScope.launch { handleSocketMessage(message) }
         }
+        callAudioManager.onRoutesChanged = { refreshAudioRoutes() }
     }
+
+    private var isFrontCamera: Boolean = true
 
     private var isCallStarted = false
     private var callDurationJob: Job? = null
@@ -248,6 +252,7 @@ class CallViewModel @Inject constructor(
         }
 
         callAudioManager.acquire()
+        refreshAudioRoutes()
 
         viewModelScope.launch {
             runCatching {
@@ -773,6 +778,95 @@ class CallViewModel @Inject constructor(
         )
     }
 
+    // --- Настройки звонка (шторка): аудио-устройство, камера, рука, permits ---
+
+    /** Обновляет список аудио-выходов и текущий выбранный в состоянии звонка. */
+    private fun refreshAudioRoutes() {
+        val routes = callAudioManager.availableRoutes()
+        val currentId = callAudioManager.currentRouteId()
+        val currentName = routes.firstOrNull { it.id == currentId }?.name
+        _uiState.value = _uiState.value.copy(
+            audioRoutes = routes,
+            currentAudioRouteId = currentId,
+            currentAudioRouteName = currentName,
+            currentCameraName = _uiState.value.currentCameraName ?: cameraLabel(isFrontCamera),
+        )
+    }
+
+    /** Пользователь выбрал устройство вывода в листе «Выбор устройства». */
+    fun selectAudioRoute(routeId: String) {
+        logCallStep("audio_route_selected", "routeId=$routeId")
+        callAudioManager.selectRoute(routeId)
+        refreshAudioRoutes()
+    }
+
+    /** Переключает фронтальную/основную камеру у публикуемого локального потока. */
+    fun switchCamera() {
+        val stream = localStream ?: return
+        runCatching {
+            stream.switchCamera(object : CameraSwitchHandler {
+                override fun onCameraSwitchDone(isFrontCamera: Boolean) {
+                    this@CallViewModel.isFrontCamera = isFrontCamera
+                    _uiState.value = _uiState.value.copy(
+                        currentCameraName = cameraLabel(isFrontCamera),
+                    )
+                    logCallStep("camera_switched", "isFront=$isFrontCamera")
+                }
+
+                override fun onCameraSwitchError(error: String?) {
+                    logCallStep("camera_switch_failed", "error=$error")
+                }
+            })
+        }.onFailure {
+            logCallStep("camera_switch_exception", "error=${it.message}")
+        }
+    }
+
+    private fun cameraLabel(front: Boolean): String =
+        if (front) "Фронтальная камера" else "Основная камера"
+
+    /** Поднять/опустить руку — рассылается всем через updateState (cType 2006). */
+    fun toggleHandRaise() {
+        val current = _uiState.value.sessionState
+        val updated = current.copy(handUp = !current.handUp)
+        _uiState.value = _uiState.value.copy(sessionState = updated)
+        updateCallState(updated)
+        logCallStep("hand_raise_toggled", "handUp=${updated.handUp}")
+    }
+
+    /** Регулировка громкости звонка (STREAM_VOICE_CALL) из листа участника. */
+    fun setCallVolume(fraction: Float) {
+        callAudioManager.setCallVolume(fraction)
+    }
+
+    fun currentCallVolume(): Float = callAudioManager.getCallVolume()
+
+    /**
+     * Выдаёт/забирает разрешение участнику (лист «Что может участник»).
+     * Доступно только администраторам/организатору; бэк вернёт 403 иначе.
+     */
+    fun setParticipantPermit(userId: String, permit: String, grant: Boolean) {
+        val dialogId = _uiState.value.dialogId ?: return
+        viewModelScope.launch {
+            runCatching {
+                callRepository.updatePermits(
+                    dialogId = dialogId,
+                    userId = userId,
+                    addPermits = if (grant) listOf(permit) else null,
+                    delPermits = if (grant) null else listOf(permit),
+                )
+            }.onSuccess {
+                logCallStep("participant_permit_set", "userId=$userId permit=$permit grant=$grant")
+                refreshParticipants()
+            }.onFailure { error ->
+                logCallStep("participant_permit_failed", "userId=$userId permit=$permit error=${error.message}")
+                _uiState.value = _uiState.value.copy(
+                    toastMessage = toastMessageForApiError(error),
+                )
+            }
+        }
+    }
+
     /**
      * Applies a mic toggle by muting/unmuting the audio track of the already
      * published local stream.
@@ -1247,6 +1341,7 @@ class CallViewModel @Inject constructor(
 
     override fun onCleared() {
         socketService.removeEvent("message", SOCKET_LISTENER_TAG)
+        callAudioManager.onRoutesChanged = null
         callAudioManager.release()
         clearVideoStreams()
         flashphonerSessionManager.reset()
@@ -1516,6 +1611,8 @@ class CallViewModel @Inject constructor(
                     } else {
                         fallback?.isMuted ?: false
                     },
+                    roles = rest?.roles ?: fallback?.roles ?: emptyList(),
+                    permits = rest?.permits ?: fallback?.permits ?: emptyList(),
                 )
             }
 
@@ -1690,6 +1787,10 @@ data class CallUiState(
     val isCurrentUserAdmin: Boolean = false,
     val canRecordCall: Boolean = true,
     val toastMessage: String? = null,
+    val audioRoutes: List<AudioRoute> = emptyList(),
+    val currentAudioRouteId: String? = null,
+    val currentAudioRouteName: String? = null,
+    val currentCameraName: String? = null,
 )
 
 @Parcelize
@@ -1698,6 +1799,8 @@ data class CallParticipant(
     val name: String?,
     val avatarUrl: String?,
     val isMuted: Boolean = false,
+    val roles: List<String> = emptyList(),
+    val permits: List<String> = emptyList(),
 ) : Parcelable
 
 enum class CallStatus {
