@@ -6,7 +6,11 @@ val Primary = Color(0xFF2E83D9)
 val PrimaryVariant = Color(0xFF0C1F5D)
 val BackgroundLight = Color(0xFFFFFFFF)
 val BackgroundDark = Color(0xFF242535)
-val SurfaceLight = Color(0xFFEAEAF2)
+// Фон экранов в светлой теме должен быть белым (как раньше). Серый #EAEAF2
+// давал «грязный» фон на экранах, берущих цвет из MaterialTheme.colors.surface
+// (напр. «Добавить опрос»). Поля ввода/карточки используют отдельные константы
+// (InputBackgroundLight/BackgroundMoreInfoLight), их серость сохраняется.
+val SurfaceLight = Color(0xFFFFFFFF)
 val SurfaceDark = Color(0xFF1A1B2B)
 val TextPrimaryLight = Color(0xFF10101C)
 val TextPrimaryDark = Color(0xFFFFFFFF)
