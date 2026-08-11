@@ -215,7 +215,7 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 callViewModel.uiState
-                    .map { it.status }
+                    .map { it.status to it.dialogId }
                     .distinctUntilChanged()
                     .collect { syncCallOverlay() }
             }
@@ -235,10 +235,17 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
      * call on every status change and destination change.
      */
     private fun syncCallOverlay() {
-        val status = callViewModel.uiState.value.status
-        val hasActiveCall = status == CallStatus.DIALING ||
-            status == CallStatus.CONNECTING ||
-            status == CallStatus.IN_CALL
+        val callState = callViewModel.uiState.value
+        val status = callState.status
+        // dialogId is null until a call is actually started. Guard on it so the
+        // default CallUiState (status defaults to DIALING with no dialog) is not
+        // mistaken for an in-progress call — otherwise the "К звонку" plashka
+        // would hang on screen the moment the app opens, with no call running.
+        val hasActiveCall = callState.dialogId != null && (
+            status == CallStatus.DIALING ||
+                status == CallStatus.CONNECTING ||
+                status == CallStatus.IN_CALL
+            )
         val onCallScreen = runCatching {
             val destinationId = findNavController(R.id.main_nav_host_fragment)
                 .currentDestination?.id
