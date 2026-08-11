@@ -440,6 +440,8 @@ fun UserProfileFullInfoDto.toDomain(): UserProfileFullInfo {
         },
         addresses = this.addresses.map { it.toDomain(this.uref.orEmpty()) },
         feedState = this.feedStateDto?.toDomain(),
-        settings = this.settings
+        // Профиль по userId (GET core/user_profile/:userId) может прийти без
+        // settings — доменная модель требует non-null, поэтому подстраховываемся.
+        settings = this.settings ?: mutableMapOf()
     )
 }

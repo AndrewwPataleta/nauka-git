@@ -10,6 +10,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
@@ -148,7 +149,13 @@ fun MessageText(
                 spans.forEach { span ->
                     if (span.start > cursor) append(text.substring(cursor, span.start))
                     pushStringAnnotation(MENTION_TAG, span.userId)
-                    withStyle(SpanStyle(color = mentionColor, fontWeight = FontWeight.Medium)) {
+                    withStyle(
+                        SpanStyle(
+                            color = mentionColor,
+                            fontWeight = FontWeight.Medium,
+                            textDecoration = TextDecoration.Underline,
+                        )
+                    ) {
                         append(text.substring(span.start, span.end))
                     }
                     pop()

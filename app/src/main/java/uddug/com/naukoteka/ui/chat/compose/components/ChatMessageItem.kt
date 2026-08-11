@@ -229,6 +229,9 @@ fun ChatMessageItem(
                                 fontSize = 14.sp,
                                 mentionUsers = mentionUsers,
                                 onMentionClick = onMentionClick,
+                                // На своём (синем) баббле синий тег сливается —
+                                // делаем его белым, у собеседников оставляем синим.
+                                mentionColor = if (isMine) Color.White else Color(0xFF4DA6FF),
                             )
                         }
 
