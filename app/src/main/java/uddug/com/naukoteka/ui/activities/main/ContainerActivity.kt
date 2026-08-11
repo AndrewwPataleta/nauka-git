@@ -46,6 +46,7 @@ import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationVi
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerPresenter
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerView
 import uddug.com.naukoteka.ui.call.SingleCallFragment
+import uddug.com.naukoteka.ui.chat.ChatDialogFragment
 import uddug.com.naukoteka.ui.call.overlay.CallOverlayFragment
 import uddug.com.naukoteka.utils.NotificationPermissionRequester
 import uddug.com.naukoteka.utils.viewBinding
@@ -598,8 +599,16 @@ class ContainerActivity : BaseActivity(), ContainerView, ContainerNavigationView
         val navController = findNavController(R.id.main_nav_host_fragment)
         val destinationId = navController.currentDestination?.id
         if (destinationId == R.id.singleCallFragment || destinationId == R.id.groupCallFragment) {
-            val popped = navController.popBackStack(R.id.chatListFragment, false)
-            if (!popped) navController.navigate(R.id.chatListFragment)
+            // Возвращаемся в ЧАТ, где шёл звонок, а не в список диалогов.
+            if (!navController.popBackStack(R.id.chatDialogFragment, false)) {
+                navController.popBackStack(R.id.chatListFragment, false)
+                if (dialogId > 0) {
+                    navController.navigate(
+                        R.id.chatDialogFragment,
+                        Bundle().apply { putLong(ChatDialogFragment.DIALOG_ID, dialogId) },
+                    )
+                }
+            }
         }
     }
 

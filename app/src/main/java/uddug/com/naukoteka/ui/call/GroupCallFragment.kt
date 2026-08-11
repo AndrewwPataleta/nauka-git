@@ -207,14 +207,9 @@ class GroupCallFragment : Fragment() {
         hasHandledCallFinish = true
         viewModel.endCall()
         removeFloatingCall()
-        runCatching {
-            val navController = findNavController()
-            // Pop only while this call screen is still the current destination —
-            // see SingleCallFragment.handleCallFinished for the over-pop rationale.
-            if (navController.currentDestination?.id == R.id.groupCallFragment) {
-                navController.popBackStack()
-            }
-        }
+        // После завершения звонка открываем ЧАТ, где шёл звонок, а не список
+        // диалогов (popBackStack мог возвращать в список).
+        navigateBackToChatList()
     }
 
     private fun showFloatingCall() {

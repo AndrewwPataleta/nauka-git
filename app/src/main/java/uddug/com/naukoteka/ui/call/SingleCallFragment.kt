@@ -249,17 +249,8 @@ class SingleCallFragment : Fragment() {
         hasHandledCallFinish = true
         viewModel.endCall()
         removeFloatingCall()
-        runCatching {
-            val navController = findNavController()
-            // Pop only while this call screen is still the current destination.
-            // The call can also be torn down by ContainerActivity.handleCallEnded
-            // (cType=6 socket event), which already pops back to the chat list.
-            // A blind popBackStack() here would then over-pop past chatListFragment,
-            // collapse the back stack to the root graph, and crash the next navigate().
-            if (navController.currentDestination?.id == R.id.singleCallFragment) {
-                navController.popBackStack()
-            }
-        }
+        // После завершения звонка открываем ЧАТ, где шёл звонок, а не список.
+        navigateBackToChatList()
     }
 
     // При сворачивании звонка возвращаемся в ленту чата, где идёт звонок, а не в

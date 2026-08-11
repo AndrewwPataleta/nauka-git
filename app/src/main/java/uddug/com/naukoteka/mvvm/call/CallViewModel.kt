@@ -1291,9 +1291,13 @@ class CallViewModel @Inject constructor(
     }
 
     private suspend fun resolveWcsLogin(): String {
-        val id = withContext(Dispatchers.IO) { userProfileRepository.getProfileInfo().await() }.id
+        val profile = withContext(Dispatchers.IO) { userProfileRepository.getProfileInfo().await() }
+        val id = profile.id
         profileUserId = id
-        _uiState.value = _uiState.value.copy(currentUserId = id)
+        _uiState.value = _uiState.value.copy(
+            currentUserId = id,
+            currentUserAvatarUrl = profile.image?.path,
+        )
         return normalizeWcsLogin(id)
             ?: error("User ID from profile API is null or invalid: '$id'")
     }
@@ -1547,18 +1551,29 @@ class CallViewModel @Inject constructor(
             val micOn = stateInner.optBoolean("micOn", true)
 
             if (userId == selfId) {
-                if (!micOn && _uiState.value.sessionState.micOn) {
-                    _uiState.value = _uiState.value.copy(
-                        sessionState = _uiState.value.sessionState.copy(micOn = false),
-                        toastMessage = "Администратор отключил ваш микрофон",
-                    )
+                val selfState = _uiState.value.sessionState
+                val handUp = stateInner.optBoolean("handUp", selfState.handUp)
+                var newSelf = selfState.copy(handUp = handUp)
+                var toast: String? = null
+                if (!micOn && selfState.micOn) {
+                    newSelf = newSelf.copy(micOn = false)
+                    toast = "Администратор отключил ваш микрофон"
                 }
+                // Админ опустил вашу руку (была поднята, стала опущена).
+                if (!handUp && selfState.handUp) {
+                    toast = "Администратор опустил вашу руку"
+                }
+                _uiState.value = _uiState.value.copy(
+                    sessionState = newSelf,
+                    toastMessage = toast ?: _uiState.value.toastMessage,
+                )
             } else {
                 val participant = _uiState.value.participants.find { it.id == userId }
                 if (participant != null) {
                     val camOn = stateInner.optBoolean("camOn", participant.camOn)
+                    val handUp = stateInner.optBoolean("handUp", participant.handUp)
                     val updatedParticipants = _uiState.value.participants.map {
-                        if (it.id == userId) it.copy(isMuted = !micOn, camOn = camOn) else it
+                        if (it.id == userId) it.copy(isMuted = !micOn, camOn = camOn, handUp = handUp) else it
                     }
                     _uiState.value = _uiState.value.copy(participants = updatedParticipants)
                 }
@@ -1637,6 +1652,7 @@ class CallViewModel @Inject constructor(
                         fallback?.isMuted ?: false
                     },
                     camOn = latestState?.camOn ?: fallback?.camOn ?: true,
+                    handUp = latestState?.handUp ?: fallback?.handUp ?: false,
                     roles = rest?.roles ?: fallback?.roles ?: emptyList(),
                     permits = rest?.permits ?: fallback?.permits ?: emptyList(),
                 )
@@ -1817,6 +1833,7 @@ data class CallUiState(
     val currentAudioRouteId: String? = null,
     val currentAudioRouteName: String? = null,
     val currentCameraName: String? = null,
+    val currentUserAvatarUrl: String? = null,
 )
 
 @Parcelize
@@ -1828,6 +1845,8 @@ data class CallParticipant(
     // Включена ли камера участника (cType 2006 / participants-API). Когда false —
     // в плитке видеозвонка показываем аватар с затемнением, а не видео/loading.
     val camOn: Boolean = true,
+    // Поднята ли рука участника (handUp из cType 2006) — показываем wave-бейдж.
+    val handUp: Boolean = false,
     val roles: List<String> = emptyList(),
     val permits: List<String> = emptyList(),
 ) : Parcelable

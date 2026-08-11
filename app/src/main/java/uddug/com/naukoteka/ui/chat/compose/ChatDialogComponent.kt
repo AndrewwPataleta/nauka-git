@@ -910,7 +910,7 @@ fun ChatDialogComponent(
             ModalBottomSheet(
                 onDismissRequest = { showCallOptions = false },
                 sheetState = callSheetState,
-                containerColor = MaterialTheme.colors.background,
+                containerColor = colorResource(id = R.color.main_background),
             ) {
                 Column(
                     modifier = Modifier

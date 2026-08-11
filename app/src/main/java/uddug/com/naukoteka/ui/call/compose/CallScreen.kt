@@ -287,6 +287,7 @@ fun CallScreen(
                     GroupVideoCallGrid(
                         participants = state.participants,
                         currentUserId = state.currentUserId,
+                        selfAvatarUrl = state.currentUserAvatarUrl,
                         sessionState = state.sessionState,
                         status = state.status,
                         modifier = Modifier
@@ -343,7 +344,6 @@ fun CallScreen(
                 canUseCamera = state.isVideoCall || state.isGroupCall,
                 onToggleMicrophone = onToggleMicrophone,
                 onToggleCamera = onToggleCamera,
-                onSwitchCamera = onSwitchCamera,
                 onEndCall = onEndCallPressed,
             )
         }
@@ -986,6 +986,7 @@ private fun FlashphonerVideoView(
 private fun GroupVideoCallGrid(
     participants: List<CallParticipant>,
     currentUserId: String?,
+    selfAvatarUrl: String?,
     sessionState: CallSessionState,
     status: CallStatus,
     modifier: Modifier = Modifier,
@@ -1017,6 +1018,7 @@ private fun GroupVideoCallGrid(
                     avatarUrl = p.avatarUrl,
                     isMuted = p.isMuted,
                     camOn = p.camOn,
+                    handUp = p.handUp,
                     modifier = tileModifier,
                     onRendererReady = { renderer -> onBindParticipantRenderer(p.id, renderer) },
                     onRendererReleased = { onReleaseParticipantRenderer(p.id) },
@@ -1093,7 +1095,7 @@ private fun GroupVideoCallGrid(
                 )
             } else {
                 NoVideoAvatar(
-                    avatarUrl = null,
+                    avatarUrl = selfAvatarUrl,
                     name = "Вы",
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -1124,6 +1126,7 @@ private fun VideoParticipantTile(
     avatarUrl: String?,
     isMuted: Boolean,
     camOn: Boolean,
+    handUp: Boolean,
     modifier: Modifier = Modifier,
     onRendererReady: (FPSurfaceViewRenderer) -> Unit,
     onRendererReleased: () -> Unit,
@@ -1161,6 +1164,45 @@ private fun VideoParticipantTile(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(8.dp),
+        )
+
+        // Поднятая рука — пульсирующий бейдж (bottom-start), как в дизайне.
+        if (handUp) {
+            RaisedHandBadge(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(8.dp),
+            )
+        }
+    }
+}
+
+/** Бейдж «поднята рука» с волновой пульсацией. */
+@Composable
+private fun RaisedHandBadge(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "hand")
+    val scale by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.18f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "hand_scale",
+    )
+    Box(
+        modifier = modifier
+            .scale(scale)
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(Color.White),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_call_hand),
+            contentDescription = null,
+            tint = Color(0xFF2E83D9),
+            modifier = Modifier.size(18.dp),
         )
     }
 }
@@ -1360,7 +1402,6 @@ private fun CallControls(
     canUseCamera: Boolean,
     onToggleMicrophone: () -> Unit,
     onToggleCamera: () -> Unit,
-    onSwitchCamera: () -> Unit,
     onEndCall: () -> Unit,
 ) {
     Surface(
@@ -1375,17 +1416,6 @@ private fun CallControls(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Переключение фронтальной/основной камеры — доступно, когда камера
-            // включена (иначе переключать нечего).
-            if (canUseCamera && sessionState.camOn) {
-                CallActionButton(
-                    iconRes = R.drawable.ic_call_switch_camera,
-                    label = stringResource(R.string.call_switch_camera),
-                    containerColor = Color(0xFF50515c),
-                    contentColor = Color.White,
-                    onClick = onSwitchCamera,
-                )
-            }
             CallActionButton(
                 iconRes = if (sessionState.micOn) R.drawable.ic_mic_on else R.drawable.ic_mic_off,
                 label = stringResource(R.string.call_microphone),

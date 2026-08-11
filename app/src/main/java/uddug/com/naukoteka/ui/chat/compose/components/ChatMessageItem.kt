@@ -303,12 +303,12 @@ fun ChatMessageItem(
                                 isVideo -> {
                                     Column {
                                         val videoCtx = LocalContext.current
-                                        // Превью видео = кадр на ~2-й секунде (coil-video). Раньше в
-                                        // model передавался сам .mp4, coil не мог его декодировать
-                                        // как картинку и оставалась серая заглушка.
+                                        // Превью видео: сначала пробуем серверное превью
+                                        // (?preview — первый ключевой кадр, лёгкое), с фоллбэком
+                                        // на кадр из видео на ~2с (coil-video), если превью нет.
                                         val videoThumb = remember(fileUrl) {
                                             ImageRequest.Builder(videoCtx)
-                                                .data(fileUrl)
+                                                .data("$fileUrl?preview")
                                                 .videoFrameMillis(2000)
                                                 .decoderFactory(VideoFrameDecoder.Factory())
                                                 .crossfade(true)
