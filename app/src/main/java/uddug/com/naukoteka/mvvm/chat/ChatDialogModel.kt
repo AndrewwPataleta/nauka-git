@@ -26,6 +26,7 @@ import uddug.com.domain.entities.chat.MessageChat
 import uddug.com.domain.entities.chat.MessageType
 import uddug.com.domain.entities.chat.Poll
 import uddug.com.domain.entities.chat.PollOption
+import uddug.com.domain.entities.chat.User
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.domain.interactors.chat.ChatInteractor
 import uddug.com.domain.repositories.call.CallRepository
@@ -119,6 +120,11 @@ class ChatDialogViewModel @Inject constructor(
     val currentUserId: StateFlow<String?> = _currentUserId
     val currentUserName: String? get() = currentUser?.fullName
 
+    // Участники текущего диалога — источник для @упоминаний (подсказки + разбор
+    // тегов в сообщениях). Обновляется при загрузке инфо о диалоге.
+    private val _participants = MutableStateFlow<List<User>>(emptyList())
+    val participants: StateFlow<List<User>> = _participants
+
     private val _notificationsDisabled = MutableStateFlow(false)
     val notificationsDisabled: StateFlow<Boolean> = _notificationsDisabled
 
@@ -157,6 +163,7 @@ class ChatDialogViewModel @Inject constructor(
 
                 val info = chatInteractor.getDialogInfo(dialogId)
                 currentDialogInfo = info
+                _participants.value = info.users.orEmpty()
                 currentDialogID = dialogId
                 _currentDialogId.value = dialogId
 
@@ -289,6 +296,7 @@ class ChatDialogViewModel @Inject constructor(
 
                 val info = chatInteractor.getDialogInfoByPeer(interlocutorId)
                 currentDialogInfo = info
+                _participants.value = info.users.orEmpty()
                 val dialogId = info.id
                 _currentDialogId.value = dialogId
 
@@ -428,6 +436,7 @@ class ChatDialogViewModel @Inject constructor(
             try {
                 val info = chatInteractor.getDialogInfo(dialogId)
                 currentDialogInfo = info
+                _participants.value = info.users.orEmpty()
                 _currentDialogId.value = dialogId
                 _isCurrentUserAdmin.value = computeIsCurrentUserAdmin(info, currentUser?.id)
                 val isGroup = (info.users?.size ?: 0) > 2
@@ -472,6 +481,22 @@ class ChatDialogViewModel @Inject constructor(
         val currentState = _uiState.value
         if (currentState is ChatDialogUiState.Success) {
             _uiState.value = currentState.copy(currentMessage = newMessage)
+        }
+    }
+
+    /**
+     * Тап по @упоминанию: тянем полный профиль пользователя по id
+     * (GET core/user_profile/:userId) и просим экран показать его.
+     */
+    fun openUserProfile(userId: String) {
+        viewModelScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) { userRepository.getProfileInfo(userId).await() }
+            }.onSuccess { profile ->
+                _events.emit(ChatDialogEvents.OpenUserProfile(profile))
+            }.onFailure {
+                Log.e("ChatViewModel", "openUserProfile failed: ${it.message}")
+            }
         }
     }
 
@@ -1356,6 +1381,10 @@ private fun isAdminRole(role: String?): Boolean {
 sealed class ChatDialogEvents {
     data class OpenChatProfileDetail(val dialogId: Long, val dialogInfo: DialogInfo) :
         ChatDialogEvents()
+
+    // Открыть профиль пользователя (тап по @упоминанию). Профиль уже загружен
+    // через GET core/user_profile/:userId.
+    data class OpenUserProfile(val profile: UserProfileFullInfo) : ChatDialogEvents()
 }
 
 sealed class ChatDialogUiState {

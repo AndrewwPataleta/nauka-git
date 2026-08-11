@@ -73,6 +73,7 @@ import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.ui.theme.NauTheme
 import uddug.com.naukoteka.ui.chat.compose.util.formatVoiceDuration
+import uddug.com.naukoteka.ui.chat.compose.util.MessageText
 import uddug.com.domain.entities.chat.File as ChatFile
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -95,6 +96,8 @@ fun ChatMessageItem(
     onVideoClick: (url: String) -> Unit = {},
     onVoiceMessageClick: (MessageChat, ChatFile) -> Unit = { _, _ -> },
     isPollAuthor: Boolean = false,
+    mentionUsers: List<Pair<String, String>> = emptyList(),
+    onMentionClick: (String) -> Unit = {},
 ) {
     val isSystem = message.type == MessageType.SYSTEM && message.files.isEmpty()
     Row(
@@ -220,10 +223,12 @@ fun ChatMessageItem(
                         )
                     } else {
                         if (!isForwarded && !message.text.isNullOrBlank()) {
-                            Text(
+                            MessageText(
                                 text = message.text.orEmpty(),
-                                color = if (isMine) Color.White else chatColors.chatTextOther,
-                                fontSize = 14.sp
+                                baseColor = if (isMine) Color.White else chatColors.chatTextOther,
+                                fontSize = 14.sp,
+                                mentionUsers = mentionUsers,
+                                onMentionClick = onMentionClick,
                             )
                         }
 

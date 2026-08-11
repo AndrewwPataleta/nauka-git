@@ -25,6 +25,7 @@ interface UserProfileRepository {
     fun validateProfile(): Completable
     fun checkNickname(nickname: String): Observable<Boolean>
     fun getProfileInfo(): Single<UserProfileFullInfo>
+    fun getProfileInfo(userId: String): Single<UserProfileFullInfo>
     fun updateNickname(
         id: String,
         nickname: String,

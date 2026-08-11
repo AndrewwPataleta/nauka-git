@@ -31,6 +31,7 @@ import uddug.com.naukoteka.mvvm.chat.ChatListUiState
 import uddug.com.naukoteka.mvvm.chat.ChatListViewModel
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.chat.ChatDetailDialogFragment.Companion.DIALOG_DETAIL
+import uddug.com.naukoteka.ui.fragments.profile.ProfileFullInfoBottomSheetFragment
 import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_MESSAGE_ID
 import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_MESSAGE_IDS
 import uddug.com.naukoteka.ui.chat.ForwardMessageFragment.Companion.ARG_FORWARD_TEXT
@@ -173,6 +174,12 @@ class ChatDialogFragment : Fragment() {
                                 putParcelable(DIALOG_DETAIL, state.dialogInfo)
                             }
                         )
+                    }
+
+                    is ChatDialogEvents.OpenUserProfile -> {
+                        ProfileFullInfoBottomSheetFragment
+                            .newInstance(state.profile)
+                            .show(childFragmentManager, "user_profile")
                     }
                 }
             }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -46,6 +47,7 @@ import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
 import uddug.com.naukoteka.R
 import uddug.com.domain.entities.chat.MessageChat
+import uddug.com.domain.entities.chat.User
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
 import uddug.com.naukoteka.mvvm.chat.PendingForward
@@ -56,6 +58,8 @@ import java.util.Locale
 fun ChatInputBar(
     modifier: Modifier = Modifier,
     currentMessage: String,
+    mentionSuggestions: List<User> = emptyList(),
+    onMentionSelected: (User) -> Unit = {},
     attachedFiles: List<File>,
     replyMessage: MessageChat?,
     forwardMessage: PendingForward?,
@@ -86,6 +90,13 @@ fun ChatInputBar(
             .padding(bottom = 10.dp)
             .fillMaxWidth()
     ) {
+        if (mentionSuggestions.isNotEmpty()) {
+            MentionSuggestionsList(
+                users = mentionSuggestions,
+                onSelect = onMentionSelected,
+            )
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -580,6 +591,48 @@ fun RecordedAudioPreview(duration: String, isPlaying: Boolean, onPlay: () -> Uni
                 contentScale = ContentScale.FillWidth
             )
             Text(text = duration, color = Color.White)
+        }
+    }
+}
+
+@Composable
+private fun MentionSuggestionsList(
+    users: List<User>,
+    onSelect: (User) -> Unit,
+) {
+    Surface(color = colorResource(R.color.main_background)) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 220.dp)
+        ) {
+            items(users) { user ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelect(user) }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Avatar(
+                        url = user.image,
+                        name = user.fullName,
+                        size = 36.dp
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = user.fullName ?: user.nickname.orEmpty(),
+                        color = colorResource(R.color.main_text),
+                        fontSize = 15.sp
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(colorResource(R.color.main_background_input_stroke))
+                )
+            }
         }
     }
 }

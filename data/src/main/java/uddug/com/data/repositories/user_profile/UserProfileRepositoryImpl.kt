@@ -49,6 +49,10 @@ class UserProfileRepositoryImpl(
         return profileApiService.getUserInfo().map { it.toDomain() }
     }
 
+    override fun getProfileInfo(userId: String): Single<UserProfileFullInfo> {
+        return profileApiService.getUserInfoById(userId).map { it.toDomain() }
+    }
+
     override fun updateNickname(
         id: String,
         nickname: String,

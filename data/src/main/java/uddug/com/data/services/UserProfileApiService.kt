@@ -47,6 +47,14 @@ interface UserProfileApiService {
     @GET("core/user_profile")
     fun getUserInfo(): Single<UserProfileFullInfoDto>
 
+    // Профиль любого пользователя по его id (docs/chats.md — «Данные
+    // пользователя»: GET /api/core/user_profile/:userId). Та же схема ответа,
+    // что и у своего профиля — используется при тапе на @упоминание.
+    @GET("core/user_profile/{userId}")
+    fun getUserInfoById(
+        @Path("userId") userId: String,
+    ): Single<UserProfileFullInfoDto>
+
     @POST("core/user_profile/info/check-nickname-free")
     fun checkNickName(
         @Body nickName: NickNameCheckRequestDto

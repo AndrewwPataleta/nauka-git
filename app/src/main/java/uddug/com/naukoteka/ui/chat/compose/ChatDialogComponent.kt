@@ -86,6 +86,7 @@ import uddug.com.naukoteka.ui.chat.compose.components.ChatInputBar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageDateBadge
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import uddug.com.naukoteka.ui.chat.compose.components.ChatMessageItem
+import uddug.com.naukoteka.ui.chat.compose.util.MentionUtils
 import uddug.com.naukoteka.ui.chat.compose.components.ChatDetailMoreSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.MessageFunctionsBottomSheetDialog
 import uddug.com.naukoteka.ui.chat.compose.components.AttachOptionsBottomSheetDialog
@@ -141,6 +142,15 @@ fun ChatDialogComponent(
     val isCurrentUserAdmin by viewModel.isCurrentUserAdmin.collectAsState()
     val currentUserId by viewModel.currentUserId.collectAsState()
     val notificationsDisabled by viewModel.notificationsDisabled.collectAsState()
+    val participants by viewModel.participants.collectAsState()
+    // (fullName, userId) участников — для подсветки @упоминаний в сообщениях.
+    val mentionUsers = remember(participants) {
+        participants.mapNotNull { u ->
+            val name = u.fullName
+            val id = u.userId
+            if (!name.isNullOrBlank() && !id.isNullOrBlank()) name to id else null
+        }
+    }
     val pollRevoteTriggers = remember { mutableStateMapOf<String, Int>() }
     val isGroupChat = when (val state = uiState) {
         is ChatDialogUiState.Success -> state.isGroup
@@ -645,13 +655,45 @@ fun ChatDialogComponent(
                                 },
                                 isPollAuthor = message.poll?.authorId != null &&
                                     message.poll?.authorId == currentUserId,
+                                mentionUsers = mentionUsers,
+                                onMentionClick = { userId -> viewModel.openUserProfile(userId) },
                             )
                         }
                     }
 
                     
+                    // @упоминания: показываем участников, когда пользователь
+                    // вводит @query (только в групповом чате), исключая себя.
+                    val mentionQuery = if (isGroupChat) {
+                        MentionUtils.activeQuery(state.currentMessage)
+                    } else {
+                        null
+                    }
+                    val mentionSuggestions = remember(mentionQuery, participants, currentUserId) {
+                        if (mentionQuery == null) {
+                            emptyList()
+                        } else {
+                            participants.filter { u ->
+                                !u.userId.isNullOrBlank() &&
+                                    u.userId != currentUserId &&
+                                    !u.fullName.isNullOrBlank() &&
+                                    (mentionQuery.isBlank() ||
+                                        u.fullName!!.contains(mentionQuery, ignoreCase = true) ||
+                                        (u.nickname?.contains(mentionQuery, ignoreCase = true) == true))
+                            }.take(30)
+                        }
+                    }
+
                     ChatInputBar(
                         currentMessage = state.currentMessage,
+                        mentionSuggestions = mentionSuggestions,
+                        onMentionSelected = { user ->
+                            user.fullName?.let { name ->
+                                viewModel.updateCurrentMessage(
+                                    MentionUtils.applyMention(state.currentMessage, name)
+                                )
+                            }
+                        },
                         attachedFiles = state.attachedFiles,
                         replyMessage = state.replyMessage,
                         forwardMessage = state.pendingForward,
