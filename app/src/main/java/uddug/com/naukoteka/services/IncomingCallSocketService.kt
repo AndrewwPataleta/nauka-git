@@ -56,7 +56,7 @@ class IncomingCallSocketService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannels()
-        startForeground(FOREGROUND_NOTIFICATION_ID, buildForegroundNotification())
+        ensureForeground()
 
         disposables.add(
             userRepository.getProfileInfo()
@@ -86,7 +86,19 @@ class IncomingCallSocketService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Каждый старт через startForegroundService() ОБЯЗАН вызвать
+        // startForeground() в течение ~5с, иначе система убивает сервис с
+        // RemoteServiceException. onCreate вызывается не при каждом старте
+        // (START_STICKY / повторный старт живого сервиса), поэтому дублируем тут.
+        ensureForeground()
         return START_STICKY
+    }
+
+    private fun ensureForeground() {
+        runCatching {
+            createNotificationChannels()
+            startForeground(FOREGROUND_NOTIFICATION_ID, buildForegroundNotification())
+        }.onFailure { Log.e(TAG, "startForeground failed", it) }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
