@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -303,6 +304,8 @@ fun CallScreen(
                         selfAvatarUrl = state.currentUserAvatarUrl,
                         sessionState = state.sessionState,
                         status = state.status,
+                        speakingIds = state.speakingParticipantIds,
+                        selfSpeaking = state.isSelfSpeaking,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f, fill = true),
@@ -316,6 +319,8 @@ fun CallScreen(
                         participants = state.participants,
                         currentUserId = state.currentUserId,
                         sessionState = state.sessionState,
+                        speakingIds = state.speakingParticipantIds,
+                        selfSpeaking = state.isSelfSpeaking,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f, fill = true),
@@ -1035,6 +1040,8 @@ private fun GroupVideoCallGrid(
     selfAvatarUrl: String?,
     sessionState: CallSessionState,
     status: CallStatus,
+    speakingIds: Set<String>,
+    selfSpeaking: Boolean,
     modifier: Modifier = Modifier,
     onBindLocalRenderer: (FPSurfaceViewRenderer) -> Unit,
     onReleaseLocalRenderer: () -> Unit,
@@ -1054,17 +1061,18 @@ private fun GroupVideoCallGrid(
     // Обычный key() этого не даёт — при смене родительской Row тайл пересоздаётся,
     // рвётся подписка на стрим и у соседа "отваливается" камера. movableContentOf
     // переносит тайл без dispose/recreate.
-    val participantTiles = remember { mutableMapOf<String, @Composable (CallParticipant, Modifier) -> Unit>() }
+    val participantTiles = remember { mutableMapOf<String, @Composable (CallParticipant, Boolean, Modifier) -> Unit>() }
     participantTiles.keys.retainAll(remoteParticipants.mapTo(HashSet()) { it.id })
     remoteParticipants.forEach { participant ->
         participantTiles.getOrPut(participant.id) {
-            movableContentOf { p, tileModifier ->
+            movableContentOf { p, speaking, tileModifier ->
                 VideoParticipantTile(
                     label = p.name ?: p.id,
                     avatarUrl = p.avatarUrl,
                     isMuted = p.isMuted,
                     camOn = p.camOn,
                     handUp = p.handUp,
+                    speaking = speaking,
                     modifier = tileModifier,
                     onRendererReady = { renderer -> onBindParticipantRenderer(p.id, renderer) },
                     onRendererReleased = { onReleaseParticipantRenderer(p.id) },
@@ -1110,7 +1118,11 @@ private fun GroupVideoCallGrid(
                                         .fillMaxHeight(),
                                 ) {
                                     participantTiles.getValue(participant.id)
-                                        .invoke(participant, Modifier.fillMaxSize())
+                                        .invoke(
+                                            participant,
+                                            participant.id in speakingIds,
+                                            Modifier.fillMaxSize(),
+                                        )
                                 }
                             } else {
                                 Spacer(modifier = Modifier.weight(1f))
@@ -1128,7 +1140,14 @@ private fun GroupVideoCallGrid(
                 .padding(12.dp)
                 .size(width = 100.dp, height = 140.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF121732)),
+                .background(Color(0xFF121732))
+                .then(
+                    if (selfSpeaking && sessionState.camOn) {
+                        Modifier.border(3.dp, Color(0xFF4DA6FF), RoundedCornerShape(12.dp))
+                    } else {
+                        Modifier
+                    }
+                ),
             contentAlignment = Alignment.Center,
         ) {
             if (sessionState.camOn) {
@@ -1144,6 +1163,7 @@ private fun GroupVideoCallGrid(
                     avatarUrl = selfAvatarUrl,
                     name = "Вы",
                     modifier = Modifier.fillMaxSize(),
+                    speaking = selfSpeaking,
                 )
             }
             CallTileBadge(
@@ -1173,14 +1193,23 @@ private fun VideoParticipantTile(
     isMuted: Boolean,
     camOn: Boolean,
     handUp: Boolean,
+    speaking: Boolean,
     modifier: Modifier = Modifier,
     onRendererReady: (FPSurfaceViewRenderer) -> Unit,
     onRendererReleased: () -> Unit,
 ) {
+    // При включённой камере обводим говорящего синей рамкой (у выключенной —
+    // пульсирует кольцо вокруг аватара в NoVideoAvatar).
+    val speakingBorder = if (speaking && camOn) {
+        Modifier.border(3.dp, Color(0xFF4DA6FF), RoundedCornerShape(16.dp))
+    } else {
+        Modifier
+    }
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFF121732)),
+            .background(Color(0xFF121732))
+            .then(speakingBorder),
     ) {
         // Видео-слой (рендерер биндится всегда, чтобы вернуть видео при включении
         // камеры). SurfaceView непрозрачен, поэтому когда камера выключена —
@@ -1200,6 +1229,7 @@ private fun VideoParticipantTile(
                 avatarUrl = avatarUrl,
                 name = label,
                 modifier = Modifier.fillMaxSize(),
+                speaking = speaking,
             )
         }
 
@@ -1254,6 +1284,50 @@ private fun RaisedHandBadge(modifier: Modifier = Modifier) {
 }
 
 /**
+ * Пульсирующее синее кольцо-индикатор «говорит» (VU-метр). Оборачивает аватар
+ * заданного размера: кольцо чуть больше аватара, его прозрачность/масштаб
+ * анимируются в такт речи. Когда [speaking] == false — рисуем только аватар.
+ */
+@Composable
+private fun SpeakingAvatar(
+    avatarUrl: String?,
+    name: String?,
+    size: Dp,
+    speaking: Boolean,
+) {
+    Box(contentAlignment = Alignment.Center) {
+        if (speaking) {
+            val transition = rememberInfiniteTransition(label = "vu")
+            val ringScale by transition.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.14f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(500, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "vu_scale",
+            )
+            val ringAlpha by transition.animateFloat(
+                initialValue = 0.35f,
+                targetValue = 0.9f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(500, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "vu_alpha",
+            )
+            Box(
+                modifier = Modifier
+                    .size(size + 10.dp)
+                    .scale(ringScale)
+                    .border(3.dp, Color(0xFF4DA6FF).copy(alpha = ringAlpha), CircleShape),
+            )
+        }
+        Avatar(url = avatarUrl, name = name, size = size)
+    }
+}
+
+/**
  * Плитка участника без трансляции: фон — размытая/затемнённая аватарка (или
  * градиент, если фото нет), по центру круглый аватар (фото либо инициалы с
  * градиентом). Blur работает на API 31+, ниже — тёмный scrim (дизайн допускает
@@ -1264,6 +1338,7 @@ private fun NoVideoAvatar(
     avatarUrl: String?,
     name: String?,
     modifier: Modifier = Modifier,
+    speaking: Boolean = false,
 ) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         if (!avatarUrl.isNullOrEmpty()) {
@@ -1292,7 +1367,7 @@ private fun NoVideoAvatar(
                     .background(Color(0x660B1020)),
             )
         }
-        Avatar(url = avatarUrl, name = name, size = 96.dp)
+        SpeakingAvatar(avatarUrl = avatarUrl, name = name, size = 96.dp, speaking = speaking)
     }
 }
 
@@ -1333,6 +1408,8 @@ private fun CallParticipantsGrid(
     participants: List<CallParticipant>,
     currentUserId: String?,
     sessionState: CallSessionState,
+    speakingIds: Set<String>,
+    selfSpeaking: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val remoteParticipants = remember(participants, currentUserId) {
@@ -1371,6 +1448,7 @@ private fun CallParticipantsGrid(
                                         name = "Вы",
                                         avatarUrl = null,
                                         isMuted = !sessionState.micOn,
+                                        speaking = selfSpeaking,
                                     )
                                 }
                             } else {
@@ -1380,6 +1458,7 @@ private fun CallParticipantsGrid(
                                         name = participant.name,
                                         avatarUrl = participant.avatarUrl,
                                         isMuted = participant.isMuted,
+                                        speaking = participant.id in speakingIds,
                                     )
                                 }
                             }
@@ -1398,6 +1477,7 @@ private fun ParticipantCard(
     name: String?,
     avatarUrl: String?,
     isMuted: Boolean,
+    speaking: Boolean = false,
 ) {
     Box(
         modifier = Modifier
@@ -1424,10 +1504,11 @@ private fun ParticipantCard(
                     .padding(3.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Avatar(
-                    url = avatarUrl,
+                SpeakingAvatar(
+                    avatarUrl = avatarUrl,
                     name = name,
                     size = 72.dp,
+                    speaking = speaking,
                 )
             }
         }

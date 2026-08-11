@@ -74,6 +74,11 @@ class CallViewModel @Inject constructor(
 
     private var isCallStarted = false
     private var callDurationJob: Job? = null
+    private var vuMeterJob: Job? = null
+    // Последние замеры уровня звука по участнику (audioLevel 0..1 из WebRTC
+    // getStats). Пишется из колбэков getStats (webrtc-поток), читается в тике
+    // VU-метра — потому ConcurrentHashMap.
+    private val speakingLevels = java.util.concurrent.ConcurrentHashMap<String, Double>()
     private var callStartedAtMs: Long? = null
     private var mediaSessionId: String? = null
     private var lastCallParams: CallParams? = null
@@ -468,12 +473,78 @@ class CallViewModel @Inject constructor(
                 delay(1_000)
             }
         }
+        startVuMeter()
     }
 
     private fun stopCallTimer() {
         callDurationJob?.cancel()
         callDurationJob = null
         callStartedAtMs = null
+        stopVuMeter()
+    }
+
+    /**
+     * VU-метр: раз в ~200 мс опрашивает уровень звука публикуемого и удалённых
+     * потоков (WebRTC audioLevel через Stream.getStats) и помечает «говорящих».
+     * Порог отсекает фоновый шум. Своё значение учитываем только при включённом
+     * микрофоне. UI рисует пульсацию на аватарке говорящего.
+     */
+    private fun startVuMeter() {
+        vuMeterJob?.cancel()
+        vuMeterJob = viewModelScope.launch {
+            while (isActive) {
+                requestAudioLevelSamples()
+                val selfId = profileUserId
+                val micOn = _uiState.value.sessionState.micOn
+                val speakers = speakingLevels
+                    .filter { it.value > SPEAKING_THRESHOLD }
+                    .keys
+                    .toMutableSet()
+                val selfSpeaking = selfId != null &&
+                    micOn &&
+                    (speakingLevels[selfId] ?: 0.0) > SPEAKING_THRESHOLD
+                if (selfId != null) speakers.remove(selfId)
+                _uiState.value = _uiState.value.copy(
+                    isSelfSpeaking = selfSpeaking,
+                    speakingParticipantIds = speakers,
+                )
+                delay(VU_METER_INTERVAL_MS)
+            }
+        }
+    }
+
+    private fun stopVuMeter() {
+        vuMeterJob?.cancel()
+        vuMeterJob = null
+        speakingLevels.clear()
+        _uiState.value = _uiState.value.copy(
+            isSelfSpeaking = false,
+            speakingParticipantIds = emptySet(),
+        )
+    }
+
+    /** Асинхронно запрашивает getStats у локального и удалённых потоков. */
+    private fun requestAudioLevelSamples() {
+        val selfId = profileUserId
+        val local = localStream
+        if (selfId != null && local != null) {
+            runCatching {
+                local.getStats { stats -> speakingLevels[selfId] = audioLevelOf(stats) }
+            }
+        }
+        participantHandles.forEach { (participantId, handle) ->
+            val key = handle.streamName ?: participantId
+            val stream = participantStreams[key] ?: return@forEach
+            runCatching {
+                stream.getStats { stats -> speakingLevels[participantId] = audioLevelOf(stats) }
+            }
+        }
+    }
+
+    private fun audioLevelOf(stats: com.flashphoner.fpwcsapi.session.StreamStats?): Double {
+        val rtc = stats?.audioStats ?: return 0.0
+        val level = runCatching { rtc.members?.get("audioLevel") }.getOrNull()
+        return (level as? Number)?.toDouble() ?: 0.0
     }
 
     private fun createRoomManagerEvent(
@@ -1518,6 +1589,9 @@ class CallViewModel @Inject constructor(
         const val RECORD_STATUS_ERROR = 4
         const val SOCKET_LISTENER_TAG = "CallViewModel"
         const val STREAM_RESTART_DELAY_MS = 500L
+        // VU-метр: период опроса и порог «говорит» по WebRTC audioLevel (0..1).
+        const val VU_METER_INTERVAL_MS = 200L
+        const val SPEAKING_THRESHOLD = 0.06
     }
 
     private fun buildStreamName(dialogId: Long, username: String): String {
@@ -2141,6 +2215,9 @@ data class CallUiState(
     val currentAudioRouteName: String? = null,
     val currentCameraName: String? = null,
     val currentUserAvatarUrl: String? = null,
+    // VU-метр: говорю ли сейчас я и кто из участников говорит (для пульсации).
+    val isSelfSpeaking: Boolean = false,
+    val speakingParticipantIds: Set<String> = emptySet(),
 )
 
 @Parcelize

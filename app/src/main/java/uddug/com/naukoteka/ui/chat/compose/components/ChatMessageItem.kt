@@ -372,20 +372,53 @@ fun ChatMessageItem(
                         }
                     }
 
-                    Text(
-                        text = DateTimeFormatter
-                            .ofPattern("HH:mm")
-                            .withZone(ZoneId.systemDefault())
-                            .format(message.createdAt),
-                        fontSize = 10.sp,
-                        color = if (isMine) Color.White.copy(alpha = 0.8f) else chatColors.chatTextSecondary,
-                        modifier = Modifier.align(Alignment.End)
-                    )
+                    Row(
+                        modifier = Modifier.align(Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = DateTimeFormatter
+                                .ofPattern("HH:mm")
+                                .withZone(ZoneId.systemDefault())
+                                .format(message.createdAt),
+                            fontSize = 10.sp,
+                            color = if (isMine) Color.White.copy(alpha = 0.8f) else chatColors.chatTextSecondary,
+                        )
+                        // Статус доставки — только для своих сообщений
+                        // (readCount: 1 отправлено, 2 доставлено, 3 прочитано).
+                        if (isMine) {
+                            MessageStatusTick(status = message.readCount)
+                        }
+                    }
                 }
             }
 
         }
     }
+}
+
+/**
+ * Индикатор статуса своего сообщения: 1 — отправлено (одна галочка), 2 —
+ * доставлено (двойная серая), 3 — прочитано (двойная синяя). Пусто, пока статус
+ * не пришёл (null/0).
+ */
+@Composable
+private fun MessageStatusTick(status: Int?) {
+    val readColor = Color(0xFF9FE7FF)
+    val dimColor = Color.White.copy(alpha = 0.8f)
+    val (iconRes, tint) = when (status) {
+        3 -> R.drawable.ic_readed to readColor
+        2 -> R.drawable.ic_readed to dimColor
+        1 -> R.drawable.ic_done to dimColor
+        else -> return
+    }
+    Icon(
+        painter = painterResource(id = iconRes),
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(14.dp),
+    )
 }
 
 @Composable
