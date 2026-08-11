@@ -102,6 +102,13 @@ class CallViewModel @Inject constructor(
     private var currentStreamName: String? = null
     private var currentLogin: String? = null
     private var localPublishStarted = false
+    // Опубликован ли локальный поток С видео-дорожкой (даже если камера
+    // выключена — дорожка есть, но muteVideo). В групповых звонках публикуем
+    // видео сразу (замьюченным), чтобы включение камеры было простым unmuteVideo,
+    // а не разрушительным unpublish→republish (последний заставляет сервер
+    // считать нас вышедшими и завершает звонок — источник «включаю камеру → всё
+    // падает»). false — упали в аудио-only (нет права на камеру).
+    private var publishedWithVideo = false
     private var hasPublishedLocalStream = false
     private var hasRetriedPublish = false
     private var profileUserId: String? = null
@@ -210,6 +217,7 @@ class CallViewModel @Inject constructor(
         isCallStarted = true
         lastParticipantsCount = 0
         localPublishStarted = false
+        publishedWithVideo = false
         hasPublishedLocalStream = false
         hasRetriedPublish = false
 
@@ -369,6 +377,7 @@ class CallViewModel @Inject constructor(
         isCallStarted = false
         stopParticipantWatchdog()
         localPublishStarted = false
+        publishedWithVideo = false
         callOperationId = null
         currentConfig = null
         currentRoomName = null
@@ -685,34 +694,79 @@ class CallViewModel @Inject constructor(
         }
         localPublishStarted = true
         saveActiveCallState()
-        logCallStep("publish_local_stream_start", "streamName=$streamName isVideoCall=$isVideoCall")
 
-        Log.d("CallVM", "PUBLISHING STREAM: $streamName")
+        // В групповом звонке публикуем видео-дорожку СРАЗУ (даже в аудио-звонке),
+        // чтобы позже включить камеру простым unmuteVideo без unpublish→republish.
+        // Камера при этом будет замьючена, если camOn=false — «наружу» видео не
+        // идёт. Требует права CAMERA (в группе запрашиваем его на старте); если
+        // права нет и публикация с видео упадёт — откатываемся в аудио-only.
+        val isGroup = _uiState.value.isGroupCall
+        val wantVideoTrack = isVideoCall || isGroup
+        val camOn = _uiState.value.sessionState.camOn
         logCallStep(
-            "publish_local_stream_params",
-            "roomName=${currentRoomName ?: "n/a"} mediaSessionId=${mediaSessionId ?: "n/a"} customParams=constraints(audio=$audioEnabled,video=$isVideoCall)"
+            "publish_local_stream_start",
+            "streamName=$streamName isVideoCall=$isVideoCall isGroup=$isGroup wantVideoTrack=$wantVideoTrack audio=$audioEnabled camOn=$camOn"
+        )
+        Log.d("CallVM", "PUBLISHING STREAM: $streamName video=$wantVideoTrack")
+        doPublish(streamName, audioEnabled, wantVideoTrack, camOn, allowAudioFallback = wantVideoTrack)
+    }
+
+    /**
+     * Единая точка публикации локального потока с подробным логом каждого шага.
+     * При [allowAudioFallback] и падении публикации с видео — повторяет попытку
+     * без видео (частый случай: нет разрешения CAMERA), не роняя звонок.
+     */
+    private fun doPublish(
+        streamName: String,
+        audioEnabled: Boolean,
+        videoEnabled: Boolean,
+        camOn: Boolean,
+        allowAudioFallback: Boolean,
+    ) {
+        logCallStep(
+            "publish_attempt",
+            "streamName=$streamName video=$videoEnabled audio=$audioEnabled camOn=$camOn fallback=$allowAudioFallback roomJoined=${flashphonerSessionManager.isRoomJoined()}"
         )
         runCatching {
             localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
-                constraints = Constraints(audioEnabled, isVideoCall)
+                constraints = Constraints(audioEnabled, videoEnabled)
             }
         }.onSuccess {
+            publishedWithVideo = videoEnabled
             val actualMediaSessionId = localStream?.id
             if (!actualMediaSessionId.isNullOrBlank()) {
                 mediaSessionId = actualMediaSessionId
             }
             logCallStep(
-                "publish_local_stream_identifiers",
-                "requestedStreamName=$streamName actualStreamName=${localStream?.name ?: "n/a"} actualMediaSessionId=${localStream?.id ?: "n/a"}"
+                "publish_success",
+                "streamName=$streamName video=$videoEnabled actualName=${localStream?.name ?: "n/a"} msid=${localStream?.id ?: "n/a"}"
             )
-            logCallStep("publish_local_stream_callback_started", "streamName=$streamName")
+            // Приводим дорожки к текущему UI-состоянию: если камера выключена —
+            // мьютим видео (дорожка есть, но не транслируется); если микрофон
+            // выключен — мьютим аудио.
+            if (videoEnabled && !camOn) {
+                runCatching { localStream?.muteVideo() }
+                    .onFailure { logCallStep("post_publish_mute_video_failed", "error=${it.message}") }
+            }
+            if (!audioEnabled) {
+                runCatching { localStream?.muteAudio() }
+                    .onFailure { logCallStep("post_publish_mute_audio_failed", "error=${it.message}") }
+            }
             attachStreamDiagnostics(localStream, "local_publish")
             _uiState.value = _uiState.value.copy(status = CallStatus.CONNECTING)
-        }.onFailure {
-            localPublishStarted = false
-            Log.e("CallVM", "publishLocalStream failed", it)
-            logCallStep("publish_local_stream_failure", "streamName=$streamName error=${it.message}")
-            handleCallFailure("Failed to publish local media.")
+        }.onFailure { error ->
+            Log.e("CallVM", "publish failed video=$videoEnabled", error)
+            logCallStep("publish_failed", "streamName=$streamName video=$videoEnabled error=${error.message}")
+            if (allowAudioFallback && videoEnabled) {
+                // Не роняем звонок: пробуем аудио-only (нет права CAMERA и т.п.).
+                logCallStep("publish_audio_fallback", "retrying without video")
+                doPublish(streamName, audioEnabled, videoEnabled = false, camOn = false, allowAudioFallback = false)
+            } else {
+                localPublishStarted = false
+                publishedWithVideo = false
+                logCallStep("publish_local_stream_failure", "streamName=$streamName error=${error.message}")
+                handleCallFailure("Failed to publish local media.")
+            }
         }
     }
 
@@ -765,9 +819,10 @@ class CallViewModel @Inject constructor(
                 }
                 hasPublishedLocalStream = false
                 localPublishStarted = true
+                publishedWithVideo = videoEnabled
                 logCallStep(
                     "publish_local_stream_restart_identifiers",
-                    "requestedStreamName=$streamName actualStreamName=${localStream?.name ?: "n/a"} actualMediaSessionId=${localStream?.id ?: "n/a"}"
+                    "requestedStreamName=$streamName actualStreamName=${localStream?.name ?: "n/a"} actualMediaSessionId=${localStream?.id ?: "n/a"} video=$videoEnabled"
                 )
                 attachStreamDiagnostics(localStream, "local_publish")
             }.onFailure {
@@ -847,17 +902,30 @@ class CallViewModel @Inject constructor(
         val updatedState = currentState.copy(camOn = enabling)
         _uiState.value = _uiState.value.copy(sessionState = updatedState)
         updateCallState(updatedState)
+        logCallStep(
+            "toggle_camera",
+            "enabling=$enabling publishedWithVideo=$publishedWithVideo isVideoCall=${_uiState.value.isVideoCall} roomJoined=${flashphonerSessionManager.isRoomJoined()}"
+        )
 
-        // Upgrading a call that is not (yet) video to video: the published local
-        // stream has no video track, so unmuteVideo() on it is a no-op and the
-        // user would stay invisible. Republish with a video constraint and mark
-        // the call as video so the UI switches to the video layout and — via the
-        // persisted ActiveCallState — stays video across a later reconnect.
-        // Only reachable in group calls (the camera button is hidden in 1-to-1
-        // audio calls), so the "republish ends a 1-to-1 call" caveat on
-        // restartLocalStream does not apply here.
-        if (enabling && !_uiState.value.isVideoCall) {
-            logCallStep("camera_upgrade_to_video", "republishing local stream with video")
+        // Видео-дорожка уже опубликована (в группе публикуем её сразу): просто
+        // мьютим/размьютим — сессия не рвётся, звонок не падает. Помечаем звонок
+        // видео, чтобы сетка переключилась и переживала реконнект.
+        if (publishedWithVideo) {
+            if (enabling && !_uiState.value.isVideoCall) {
+                _uiState.value = _uiState.value.copy(isVideoCall = true)
+                lastCallParams = lastCallParams?.copy(isVideoCall = true)
+                saveActiveCallState()
+            }
+            applyLocalVideoState(updatedState.camOn)
+            return
+        }
+
+        // Фолбэк (публиковались аудио-only, напр. не было права CAMERA): дорожки
+        // видео нет, нужен республиш. Это разрушительный путь (unpublish→publish),
+        // поэтому по возможности его избегаем — сюда попадаем только если старт
+        // прошёл без видео.
+        if (enabling) {
+            logCallStep("camera_upgrade_republish", "no video track, republishing (fallback)")
             _uiState.value = _uiState.value.copy(isVideoCall = true)
             lastCallParams = lastCallParams?.copy(isVideoCall = true)
             saveActiveCallState()
@@ -1485,6 +1553,7 @@ class CallViewModel @Inject constructor(
         isCallStarted = false
         stopParticipantWatchdog()
         localPublishStarted = false
+        publishedWithVideo = false
         callOperationId = null
         currentConfig = null
         currentRoomName = null
@@ -2003,9 +2072,40 @@ class CallViewModel @Inject constructor(
                     status = p.status,
                 )
             }
-            val roster = apiParticipants
+            val restRoster = apiParticipants
                 .filter { it.status == STATUS_PARTICIPATING }
                 .map(::toRoster)
+            val restRosterIds = restRoster.mapTo(HashSet()) { it.id }
+
+            // Себя показываем ВСЕГДА: если REST не вернул участников (частый флейк
+            // на активном звонке) — экран не должен быть пустым. Собираем self из
+            // профиля/сессии, если его нет в ответе REST.
+            val selfEntry: CallParticipant? = when {
+                selfId == null -> null
+                restRosterIds.contains(selfId) -> null
+                else -> CallParticipant(
+                    id = selfId,
+                    name = dialogUsers[selfId]?.fullName?.takeIf { it.isNotBlank() }
+                        ?: selfParticipant?.fullName?.takeIf { it.isNotBlank() }
+                        ?: "Вы",
+                    avatarUrl = _uiState.value.currentUserAvatarUrl
+                        ?: dialogUsers[selfId]?.image,
+                    isMuted = !_uiState.value.sessionState.micOn,
+                    camOn = _uiState.value.sessionState.camOn,
+                    handUp = _uiState.value.sessionState.handUp,
+                    roles = selfParticipant?.roles ?: emptyList(),
+                    permits = selfParticipant?.permits ?: emptyList(),
+                    status = STATUS_PARTICIPATING,
+                )
+            }
+
+            // Фолбэк по удалённым: если REST не отдал активных участников, но у нас
+            // есть плитки (из room-событий Flashphoner) — показываем их, чтобы
+            // ростер соответствовал реально идущему звонку.
+            val tileFallback = enriched.filter { it.id != selfId && it.id !in restRosterIds }
+
+            val roster = (listOfNotNull(selfEntry) + restRoster + tileFallback)
+                .distinctBy { it.id }
                 .sortedByDescending { it.roles.contains(ROLE_ORGANIZER) }
             val lobby = apiParticipants
                 .filter { it.status == STATUS_LOBBY }
@@ -2021,8 +2121,9 @@ class CallViewModel @Inject constructor(
             )
             logCallStep(
                 "participants_refreshed",
-                "dialogId=$dialogId participants=${enriched.size + missing.size} " +
-                    "apiCount=${apiParticipants.size} rosterCount=${dialogUsers.size} isAdmin=$isAdmin"
+                "dialogId=$dialogId tiles=${enriched.size + missing.size} " +
+                    "apiCount=${apiParticipants.size} rosterCount=${roster.size} lobbyCount=${lobby.size} " +
+                    "isAdmin=$isAdmin isOrg=$isOrganizer selfInRest=${restRosterIds.contains(selfId)}"
             )
         }
     }

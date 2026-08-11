@@ -274,7 +274,11 @@ class GroupCallFragment : Fragment() {
             if (!isPermissionGranted(Manifest.permission.RECORD_AUDIO)) {
                 add(Manifest.permission.RECORD_AUDIO)
             }
-            if (isVideoCall && !isPermissionGranted(Manifest.permission.CAMERA)) {
+            // Групповой звонок всегда может апнуться в видео (кнопка камеры
+            // доступна), поэтому CAMERA запрашиваем сразу — так локальный поток
+            // публикуется с видео-дорожкой (замьюченной), и включение камеры не
+            // требует разрушительного republish. См. CallViewModel.publishLocalStream.
+            if (!isPermissionGranted(Manifest.permission.CAMERA)) {
                 add(Manifest.permission.CAMERA)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
