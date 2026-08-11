@@ -343,6 +343,7 @@ fun CallScreen(
                 canUseCamera = state.isVideoCall || state.isGroupCall,
                 onToggleMicrophone = onToggleMicrophone,
                 onToggleCamera = onToggleCamera,
+                onSwitchCamera = onSwitchCamera,
                 onEndCall = onEndCallPressed,
             )
         }
@@ -1359,6 +1360,7 @@ private fun CallControls(
     canUseCamera: Boolean,
     onToggleMicrophone: () -> Unit,
     onToggleCamera: () -> Unit,
+    onSwitchCamera: () -> Unit,
     onEndCall: () -> Unit,
 ) {
     Surface(
@@ -1373,6 +1375,17 @@ private fun CallControls(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Переключение фронтальной/основной камеры — доступно, когда камера
+            // включена (иначе переключать нечего).
+            if (canUseCamera && sessionState.camOn) {
+                CallActionButton(
+                    iconRes = R.drawable.ic_call_switch_camera,
+                    label = stringResource(R.string.call_switch_camera),
+                    containerColor = Color(0xFF50515c),
+                    contentColor = Color.White,
+                    onClick = onSwitchCamera,
+                )
+            }
             CallActionButton(
                 iconRes = if (sessionState.micOn) R.drawable.ic_mic_on else R.drawable.ic_mic_off,
                 label = stringResource(R.string.call_microphone),

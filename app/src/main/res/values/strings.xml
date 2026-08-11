@@ -507,6 +507,7 @@
     <string name="call_participant_action_copy">Скопировать контакт</string>
     <string name="call_participant_action_profile">Посмотреть профиль</string>
     <string name="call_sheet_close">Закрыть</string>
+    <string name="call_switch_camera">Камера</string>
     <string name="call_end_options_title">Завершение звонка</string>
     <string name="call_end_leave">Выйти из звонка</string>
     <string name="call_end_for_all">Завершить для всех</string>
