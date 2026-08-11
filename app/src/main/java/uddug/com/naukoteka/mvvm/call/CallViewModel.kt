@@ -82,6 +82,8 @@ class CallViewModel @Inject constructor(
     private val participantStreams = mutableMapOf<String, Stream>()
     private val participantRenderers = mutableMapOf<String, SurfaceViewRenderer>()
     private val participantHandles = mutableMapOf<String, Participant>()
+    private val remoteResubscribeAttempts = mutableMapOf<String, Int>()
+    private val remoteResubscribeJobs = mutableMapOf<String, Job>()
     private var primaryStreamKey: String? = null
     private var localRenderer: SurfaceViewRenderer? = null
     private var localStream: Stream? = null
@@ -719,19 +721,35 @@ class CallViewModel @Inject constructor(
         }
 
         reconnectAttempts++
-        logCallStep("reconnect_attempt", "attempt=$reconnectAttempts")
+        val attempt = reconnectAttempts
+        logCallStep("reconnect_attempt", "attempt=$attempt")
         isCallStarted = false
         flashphonerSessionManager.reset()
-        startCall(
-            dialogId = params.dialogId,
-            contactName = params.contactName,
-            avatarUrl = params.avatarUrl,
-            participants = params.participants,
-            callTitle = params.callTitle,
-            isVideoCall = params.isVideoCall,
-            resetReconnectAttempts = false,
-            isGroupCall = params.isGroupCall,
-        )
+        // Back off before rejoining: a WCS session that dropped on a transient
+        // network blip lingers server-side for a few seconds. Rejoining
+        // immediately republishes under the same stream name and FAILs against
+        // the ghost session ("I rejoined but nobody hears me"). The delay grows
+        // per attempt so later retries wait longer for the ghost to time out.
+        viewModelScope.launch {
+            delay(RECONNECT_BASE_DELAY_MS * attempt)
+            // The user may have hung up (or the server ended the call) during
+            // the back-off — lastCallParams is nulled on end. Bail if so.
+            val stillActive = lastCallParams
+            if (stillActive == null) {
+                logCallStep("reconnect_cancelled", "call ended during backoff attempt=$attempt")
+                return@launch
+            }
+            startCall(
+                dialogId = stillActive.dialogId,
+                contactName = stillActive.contactName,
+                avatarUrl = stillActive.avatarUrl,
+                participants = stillActive.participants,
+                callTitle = stillActive.callTitle,
+                isVideoCall = stillActive.isVideoCall,
+                resetReconnectAttempts = false,
+                isGroupCall = stillActive.isGroupCall,
+            )
+        }
     }
 
     fun onAudioFocusFailed(message: String) {
@@ -1150,6 +1168,7 @@ class CallViewModel @Inject constructor(
         }
         attachStreamDiagnostics(stream, "remote_play:$key")
         markRemoteParticipantConnected()
+        remoteResubscribeAttempts.remove(participantId)
         logCallStep("remote_play_started", "participant=$participantId key=$key")
     }
 
@@ -1240,6 +1259,9 @@ class CallViewModel @Inject constructor(
         participantStreams.clear()
         participantRenderers.clear()
         participantHandles.clear()
+        remoteResubscribeJobs.values.forEach { it.cancel() }
+        remoteResubscribeJobs.clear()
+        remoteResubscribeAttempts.clear()
         primaryStreamKey = null
         localStream = null
         remoteStream = null
@@ -1336,7 +1358,10 @@ class CallViewModel @Inject constructor(
     )
 
     private companion object {
-        const val MAX_RECONNECT_ATTEMPTS = 1
+        const val MAX_RECONNECT_ATTEMPTS = 3
+        const val RECONNECT_BASE_DELAY_MS = 1_500L
+        const val MAX_REMOTE_RESUBSCRIBE = 3
+        const val REMOTE_RESUBSCRIBE_DELAY_MS = 1_500L
         const val PARTICIPANT_WAIT_TIMEOUT_MS = 10_000L
         const val LOG_TAG = "CallFlow"
         const val ROLE_ORGANIZER = "37:301"
@@ -1691,9 +1716,45 @@ class CallViewModel @Inject constructor(
     private fun attachStreamDiagnostics(stream: Stream?, label: String) {
         if (stream == null) return
         stream.on { _, status ->
-            logCallStep("stream_status", "label=$label status=$status")
-            handleLocalPublishStatus(label, status.toString())
+            val statusText = status.toString()
+            logCallStep("stream_status", "label=$label status=$statusText")
+            handleLocalPublishStatus(label, statusText)
+            if (label.startsWith("remote_play:") && statusText.equals("FAILED", ignoreCase = true)) {
+                scheduleRemoteResubscribe(label.removePrefix("remote_play:"))
+            }
             maybeSanitizeRemoteSdp(stream, label)
+        }
+    }
+
+    /**
+     * A remote participant's WebRTC stream can transiently drop to FAILED on a
+     * network blip (their side reconnecting, packet loss). Without recovery the
+     * tile freezes forever ("I can't see/hear the others"). Re-subscribe to that
+     * participant after a short delay, capped per participant so a genuinely
+     * gone stream does not loop. The counter is reset on a successful play so a
+     * later, unrelated blip gets a fresh budget.
+     */
+    private fun scheduleRemoteResubscribe(streamKey: String) {
+        val participant = participantHandles.values.firstOrNull { p ->
+            (p.streamName ?: p.name) == streamKey ||
+                p.name?.let { streamKey.contains(it) } == true
+        } ?: return
+        val pid = participant.name ?: return
+        val attempts = remoteResubscribeAttempts.getOrDefault(pid, 0)
+        if (attempts >= MAX_REMOTE_RESUBSCRIBE) {
+            logCallStep("remote_resubscribe_giveup", "participant=$pid attempts=$attempts")
+            return
+        }
+        if (remoteResubscribeJobs[pid]?.isActive == true) return
+        remoteResubscribeJobs[pid] = viewModelScope.launch {
+            delay(REMOTE_RESUBSCRIBE_DELAY_MS)
+            if (_uiState.value.status != CallStatus.IN_CALL &&
+                _uiState.value.status != CallStatus.CONNECTING
+            ) return@launch
+            val handle = participantHandles[pid] ?: return@launch
+            remoteResubscribeAttempts[pid] = attempts + 1
+            logCallStep("remote_resubscribe", "participant=$pid attempt=${attempts + 1}")
+            forceResubscribeParticipant(handle)
         }
     }
 
