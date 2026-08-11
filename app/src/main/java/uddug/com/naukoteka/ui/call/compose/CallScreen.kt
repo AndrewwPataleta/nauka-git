@@ -64,9 +64,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import uddug.com.naukoteka.BuildConfig
+import uddug.com.naukoteka.ui.chat.compose.components.getGradientForName
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -1010,6 +1015,7 @@ private fun GroupVideoCallGrid(
                     label = p.name ?: p.id,
                     avatarUrl = p.avatarUrl,
                     isMuted = p.isMuted,
+                    camOn = p.camOn,
                     modifier = tileModifier,
                     onRendererReady = { renderer -> onBindParticipantRenderer(p.id, renderer) },
                     onRendererReleased = { onReleaseParticipantRenderer(p.id) },
@@ -1085,10 +1091,10 @@ private fun GroupVideoCallGrid(
                     onRendererReleased = onReleaseLocalRenderer,
                 )
             } else {
-                Avatar(
-                    url = null,
+                NoVideoAvatar(
+                    avatarUrl = null,
                     name = "Вы",
-                    size = 48.dp,
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
             CallTileBadge(
@@ -1116,59 +1122,36 @@ private fun VideoParticipantTile(
     label: String,
     avatarUrl: String?,
     isMuted: Boolean,
+    camOn: Boolean,
     modifier: Modifier = Modifier,
     onRendererReady: (FPSurfaceViewRenderer) -> Unit,
     onRendererReleased: () -> Unit,
 ) {
-    var hasVideoFrame by remember { mutableStateOf(false) }
-
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .background(Color(0xFF121732)),
     ) {
-        // Avatar fallback — always rendered, visible when no video
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(
-                        brush = Brush.linearGradient(
-                            listOf(Color(0xFF2A3A6A), Color(0xFF1A2550))
-                        )
-                    )
-                    .padding(3.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF121732))
-                    .padding(3.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Avatar(
-                    url = avatarUrl,
-                    name = label,
-                    size = 72.dp,
-                )
-            }
-        }
-
-        // Video layer on top — covers avatar when camera stream has frames
+        // Видео-слой (рендерер биндится всегда, чтобы вернуть видео при включении
+        // камеры). SurfaceView непрозрачен, поэтому когда камера выключена —
+        // накрываем его аватар-визуалом ниже.
         FlashphonerVideoView(
             modifier = Modifier.fillMaxSize(),
             isMirror = false,
             isOverlay = false,
-            onRendererReady = { renderer ->
-                hasVideoFrame = true
-                onRendererReady(renderer)
-            },
-            onRendererReleased = {
-                hasVideoFrame = false
-                onRendererReleased()
-            },
+            onRendererReady = onRendererReady,
+            onRendererReleased = onRendererReleased,
         )
+
+        // Камера выключена — вместо видео/спиннера показываем аватар участника
+        // с размытым/затемнённым фоном (нет фото → инициалы + градиент).
+        if (!camOn) {
+            NoVideoAvatar(
+                avatarUrl = avatarUrl,
+                name = label,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
 
         // Name + mic badge (top-start)
         CallTileBadge(
@@ -1178,6 +1161,49 @@ private fun VideoParticipantTile(
                 .align(Alignment.TopStart)
                 .padding(8.dp),
         )
+    }
+}
+
+/**
+ * Плитка участника без трансляции: фон — размытая/затемнённая аватарка (или
+ * градиент, если фото нет), по центру круглый аватар (фото либо инициалы с
+ * градиентом). Blur работает на API 31+, ниже — тёмный scrim (дизайн допускает
+ * «блюр или тёмная alpha»).
+ */
+@Composable
+private fun NoVideoAvatar(
+    avatarUrl: String?,
+    name: String?,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        if (!avatarUrl.isNullOrEmpty()) {
+            AsyncImage(
+                model = BuildConfig.IMAGE_SERVER_URL + avatarUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .matchParentSize()
+                    .blur(24.dp),
+            )
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color(0xCC0B1020)),
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(getGradientForName(name.orEmpty())),
+            )
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color(0x660B1020)),
+            )
+        }
+        Avatar(url = avatarUrl, name = name, size = 96.dp)
     }
 }
 

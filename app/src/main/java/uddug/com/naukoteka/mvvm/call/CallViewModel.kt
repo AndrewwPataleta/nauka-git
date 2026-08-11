@@ -1556,8 +1556,9 @@ class CallViewModel @Inject constructor(
             } else {
                 val participant = _uiState.value.participants.find { it.id == userId }
                 if (participant != null) {
+                    val camOn = stateInner.optBoolean("camOn", participant.camOn)
                     val updatedParticipants = _uiState.value.participants.map {
-                        if (it.id == userId) it.copy(isMuted = !micOn) else it
+                        if (it.id == userId) it.copy(isMuted = !micOn, camOn = camOn) else it
                     }
                     _uiState.value = _uiState.value.copy(participants = updatedParticipants)
                 }
@@ -1635,6 +1636,7 @@ class CallViewModel @Inject constructor(
                     } else {
                         fallback?.isMuted ?: false
                     },
+                    camOn = latestState?.camOn ?: fallback?.camOn ?: true,
                     roles = rest?.roles ?: fallback?.roles ?: emptyList(),
                     permits = rest?.permits ?: fallback?.permits ?: emptyList(),
                 )
@@ -1823,6 +1825,9 @@ data class CallParticipant(
     val name: String?,
     val avatarUrl: String?,
     val isMuted: Boolean = false,
+    // Включена ли камера участника (cType 2006 / participants-API). Когда false —
+    // в плитке видеозвонка показываем аватар с затемнением, а не видео/loading.
+    val camOn: Boolean = true,
     val roles: List<String> = emptyList(),
     val permits: List<String> = emptyList(),
 ) : Parcelable
