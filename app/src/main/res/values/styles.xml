@@ -4,8 +4,12 @@
     <style name="AppTheme" parent="BaseTheme" />
 
     <style name="ContainerAppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <item name="android:windowBackground">@color/dark_main_background</item>
-        <item name="android:statusBarColor">@color/dark_main_background</item>
+        <!-- Фон окна/статус-бара в светлой теме должен быть белым. Раньше стоял
+             @color/dark_main_background (в свете = #EAEAF2, серый) — из-за этого
+             экраны, не рисующие свой фон, выглядели серыми. Night-версия темы
+             (values-night/styles.xml) задаёт тёмный фон отдельно. -->
+        <item name="android:windowBackground">@color/main_background</item>
+        <item name="android:statusBarColor">@color/main_background</item>
         <item name="android:navigationBarColor">@color/main_background</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>

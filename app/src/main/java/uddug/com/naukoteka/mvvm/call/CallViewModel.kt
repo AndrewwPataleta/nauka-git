@@ -1211,7 +1211,7 @@ class CallViewModel @Inject constructor(
     private fun removeParticipantStream(participant: Participant) {
         val key = participant.streamName ?: participant.name ?: return
         val removed = participantStreams.remove(key) ?: return
-        removed.switchRenderer(null)
+        runCatching { removed.switchRenderer(null) }
         if (remoteStream == removed) {
             remoteStream = null
         }
@@ -1219,10 +1219,10 @@ class CallViewModel @Inject constructor(
             primaryStreamKey = participantStreams.keys.firstOrNull()
             val nextStream = primaryStreamKey?.let { participantStreams[it] }
             if (remoteRenderer != null && nextStream != null) {
-                nextStream.switchRenderer(remoteRenderer)
+                runCatching { nextStream.switchRenderer(remoteRenderer) }
             }
         }
-        removed.stop()
+        runCatching { removed.stop() }
     }
 
     private fun clearVideoStreams() {
@@ -1233,8 +1233,8 @@ class CallViewModel @Inject constructor(
         }
 
         streamsToStop.forEach {
-            it.switchRenderer(null)
-            it.stop()
+            runCatching { it.switchRenderer(null) }
+            runCatching { it.stop() }
         }
 
         participantStreams.clear()
@@ -1370,7 +1370,11 @@ class CallViewModel @Inject constructor(
 
     fun bindLocalRenderer(renderer: SurfaceViewRenderer) {
         localRenderer = renderer
-        localStream?.switchRenderer(renderer)
+        // switchRenderer() кидает NPE, если у стрима ещё/уже нет живого
+        // MediaConnection (не опубликован после аудио→видео републиша или
+        // реконнекта) — крашило при включении камеры. Гасим.
+        runCatching { localStream?.switchRenderer(renderer) }
+            .onFailure { logCallStep("bind_local_renderer_failed", "error=${it.message}") }
     }
 
     fun bindRemoteRenderer(renderer: SurfaceViewRenderer) {
@@ -1386,7 +1390,7 @@ class CallViewModel @Inject constructor(
                 return
             }
         }
-        remoteStream?.switchRenderer(renderer)
+        runCatching { remoteStream?.switchRenderer(renderer) }
         if (remoteStream == null) {
             pendingRemoteParticipant?.let { participant ->
                 remoteStream = runCatching { participant.play(renderer) }.getOrNull()
@@ -1401,12 +1405,12 @@ class CallViewModel @Inject constructor(
     }
 
     fun clearLocalRenderer() {
-        localStream?.switchRenderer(null)
+        runCatching { localStream?.switchRenderer(null) }
         localRenderer = null
     }
 
     fun clearRemoteRenderer() {
-        remoteStream?.switchRenderer(null)
+        runCatching { remoteStream?.switchRenderer(null) }
         remoteRenderer = null
     }
 
@@ -1419,13 +1423,13 @@ class CallViewModel @Inject constructor(
             // Re-play onto it so video is restored — see playParticipant().
             playParticipant(handle, participantId, renderer)
         } else {
-            findStreamForParticipant(participantId)?.switchRenderer(renderer)
+            runCatching { findStreamForParticipant(participantId)?.switchRenderer(renderer) }
         }
     }
 
     fun releaseParticipantRenderer(participantId: String) {
         participantRenderers.remove(participantId)
-        findStreamForParticipant(participantId)?.switchRenderer(null)
+        runCatching { findStreamForParticipant(participantId)?.switchRenderer(null) }
     }
 
     private fun findStreamForParticipant(participantId: String): Stream? {
