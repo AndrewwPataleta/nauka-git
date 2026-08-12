@@ -71,18 +71,6 @@ class CallViewModel @Inject constructor(
     }
 
     private var isFrontCamera: Boolean = true
-    // На эмуляторе камера/видео-HAL (и раньше BT/audio) падают под нагрузкой
-    // WebRTC и утягивают всю систему. Реального видео на эмуляторе всё равно нет,
-    // поэтому там камеру не открываем и не перечисляем — звонок только аудио.
-    private val isEmulator: Boolean = run {
-        val fp = android.os.Build.FINGERPRINT.orEmpty()
-        val hw = android.os.Build.HARDWARE.orEmpty()
-        val product = android.os.Build.PRODUCT.orEmpty()
-        val model = android.os.Build.MODEL.orEmpty()
-        fp.startsWith("generic") || fp.contains("emulator", true) ||
-            hw.contains("goldfish") || hw.contains("ranchu") ||
-            product.contains("sdk", true) || model.contains("Android SDK built for", true)
-    }
 
     private var isCallStarted = false
     private var callDurationJob: Job? = null
@@ -183,7 +171,7 @@ class CallViewModel @Inject constructor(
             participants = resolvedParticipants,
             status = CallStatus.INCOMING,
             isVideoCall = isVideoCall,
-            sessionState = CallSessionState(micOn = true, camOn = isVideoCall && !isEmulator),
+            sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
             isRecording = false,
             errorMessage = null,
             isGroupCall = isGroupCall,
@@ -267,7 +255,7 @@ class CallViewModel @Inject constructor(
             participants = resolvedParticipants,
             status = initialStatus,
             isVideoCall = isVideoCall,
-            sessionState = CallSessionState(micOn = true, camOn = isVideoCall && !isEmulator),
+            sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
             isRecording = false,
             errorMessage = null,
             isGroupCall = isGroupCall,
@@ -726,9 +714,7 @@ class CallViewModel @Inject constructor(
         // по явному включению камеры (там уже есть аудио-фолбэк при провале).
         val isGroup = _uiState.value.isGroupCall
         val camOn = _uiState.value.sessionState.camOn
-        // На эмуляторе видео НЕ публикуем вообще — открытие камеры роняет
-        // camera-HAL эмулятора и всю систему. Звонок остаётся аудио.
-        val wantVideoTrack = (isVideoCall || camOn) && !isEmulator
+        val wantVideoTrack = isVideoCall || camOn
         logCallStep(
             "publish_local_stream_start",
             "streamName=$streamName isVideoCall=$isVideoCall isGroup=$isGroup wantVideoTrack=$wantVideoTrack audio=$audioEnabled camOn=$camOn"
@@ -779,7 +765,10 @@ class CallViewModel @Inject constructor(
                     .onFailure { logCallStep("post_publish_mute_audio_failed", "error=${it.message}") }
             }
             attachStreamDiagnostics(localStream, "local_publish")
-            if (videoEnabled) refreshCameras()
+            if (videoEnabled) {
+                refreshCameras()
+                applyPreferredCamera()
+            }
             _uiState.value = _uiState.value.copy(status = CallStatus.CONNECTING)
         }.onFailure { error ->
             Log.e("CallVM", "publish failed video=$videoEnabled", error)
@@ -852,6 +841,7 @@ class CallViewModel @Inject constructor(
                     "requestedStreamName=$streamName actualStreamName=${localStream?.name ?: "n/a"} actualMediaSessionId=${localStream?.id ?: "n/a"} video=$videoEnabled"
                 )
                 attachStreamDiagnostics(localStream, "local_publish")
+                if (videoEnabled) applyPreferredCamera()
             }.onFailure {
                 Log.e("CallVM", "restartLocalStream failed", it)
                 logCallStep("restart_republish_failed", "error=${it.message}")
@@ -924,14 +914,6 @@ class CallViewModel @Inject constructor(
     }
 
     fun toggleCamera() {
-        // На эмуляторе камеру не открываем (роняет camera-HAL и всю систему).
-        if (isEmulator) {
-            logCallStep("toggle_camera_blocked_emulator", "camera disabled on emulator")
-            _uiState.value = _uiState.value.copy(
-                toastMessage = "Видео недоступно на эмуляторе",
-            )
-            return
-        }
         val currentState = _uiState.value.sessionState
         val enabling = !currentState.camOn
         val updatedState = currentState.copy(camOn = enabling)
@@ -1017,12 +999,6 @@ class CallViewModel @Inject constructor(
      * WebRTC CameraEnumerator из Flashphoner. Показывается в листе выбора камеры.
      */
     private fun refreshCameras() {
-        // Не перечисляем камеры на эмуляторе — обращение к camera-HAL
-        // (getCameraEnumerator/getDeviceNames) может уронить его и всю систему.
-        if (isEmulator) {
-            logCallStep("cameras_skip_emulator", "camera enumeration disabled on emulator")
-            return
-        }
         val cameras = runCatching {
             val enumerator = com.flashphoner.fpwcsapi.Flashphoner.getCameraEnumerator()
             val names = enumerator.deviceNames ?: emptyArray()
@@ -1123,6 +1099,37 @@ class CallViewModel @Inject constructor(
 
     private fun cameraLabel(front: Boolean): String =
         if (front) "Фронтальная камера" else "Основная камера"
+
+    /**
+     * ВРЕМЕННО для тестов ([PREFER_BACK_CAMERA]): после публикации видео, если мы
+     * на фронталке — переключаемся на заднюю камеру (тестировщика не видно).
+     * Небольшая задержка — дать камере запуститься перед switchCamera.
+     */
+    private fun applyPreferredCamera() {
+        if (!PREFER_BACK_CAMERA || !isFrontCamera) return
+        viewModelScope.launch {
+            delay(700)
+            val stream = localStream ?: return@launch
+            if (!isFrontCamera) return@launch
+            runCatching {
+                stream.switchCamera(object : CameraSwitchHandler {
+                    override fun onCameraSwitchDone(isFrontCamera: Boolean) {
+                        this@CallViewModel.isFrontCamera = isFrontCamera
+                        val dev = _uiState.value.availableCameras.firstOrNull { it.isFront == isFrontCamera }
+                        _uiState.value = _uiState.value.copy(
+                            currentCameraId = dev?.id ?: _uiState.value.currentCameraId,
+                            currentCameraName = dev?.name ?: cameraLabel(isFrontCamera),
+                        )
+                        logCallStep("preferred_camera_applied", "isFront=$isFrontCamera")
+                    }
+
+                    override fun onCameraSwitchError(error: String?) {
+                        logCallStep("preferred_camera_failed", "error=$error")
+                    }
+                })
+            }.onFailure { logCallStep("preferred_camera_exception", "error=${it.message}") }
+        }
+    }
 
     /** Поднять/опустить руку — рассылается всем через updateState (cType 2006). */
     fun toggleHandRaise() {
@@ -1804,6 +1811,9 @@ class CallViewModel @Inject constructor(
         const val RECORD_STATUS_ERROR = 4
         const val SOCKET_LISTENER_TAG = "CallViewModel"
         const val STREAM_RESTART_DELAY_MS = 500L
+        // ВРЕМЕННО для тестов: публиковать заднюю камеру по умолчанию (чтобы
+        // тестировщика не было видно). Позже вернуть в false → будет фронталка.
+        const val PREFER_BACK_CAMERA = true
         // VU-метр: период опроса и порог «говорит» по WebRTC audioLevel (0..1).
         const val VU_METER_INTERVAL_MS = 200L
         const val SPEAKING_THRESHOLD = 0.06
