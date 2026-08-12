@@ -1803,6 +1803,9 @@ class CallViewModel @Inject constructor(
         // ReadThread) и/или WS-сессию комнаты → весь звонок падает. Дадим призраку
         // сессии протухнуть по keep-alive и попробуем один раз аудио-only.
         const val LOCAL_REPUBLISH_MAX_ATTEMPTS = 1
+        // Коллизия имени/сессии со старой сессией (реджойн): сервер освободит имя,
+        // поэтому ждём и повторяем несколько раз с backoff.
+        const val LOCAL_REPUBLISH_MAX_ATTEMPTS_COLLISION = 5
         const val LOCAL_REPUBLISH_BASE_DELAY_MS = 6_000L
         const val PARTICIPANT_WAIT_TIMEOUT_MS = 10_000L
         const val LOG_TAG = "CallFlow"
@@ -2321,7 +2324,7 @@ class CallViewModel @Inject constructor(
                     runCatching { stream.getInfo() }.getOrNull()
                 } else null
                 logCallStep("stream_status", "label=$label status=$statusText" + (info?.let { " info=$it" } ?: ""))
-                handleLocalPublishStatus(label, statusText)
+                handleLocalPublishStatus(label, statusText, info)
                 if (label.startsWith("remote_play:") && statusText.equals("FAILED", ignoreCase = true)) {
                     scheduleRemoteResubscribe(label.removePrefix("remote_play:"))
                 }
@@ -2368,7 +2371,7 @@ class CallViewModel @Inject constructor(
         }
     }
 
-    private fun handleLocalPublishStatus(label: String, status: String) {
+    private fun handleLocalPublishStatus(label: String, status: String, info: String? = null) {
         if (label != "local_publish") return
         when (status.uppercase()) {
             "PUBLISHING" -> logCallStep("publish_local_stream_status_publishing", "status=$status")
@@ -2383,9 +2386,9 @@ class CallViewModel @Inject constructor(
                 hasPublishedLocalStream = false
                 logCallStep(
                     "publish_local_stream_status_failed",
-                    "status=$status attempts=$localRepublishAttempts"
+                    "status=$status info=$info attempts=$localRepublishAttempts"
                 )
-                scheduleLocalRepublish()
+                scheduleLocalRepublish(info)
             }
             "UNPUBLISHED", "STOPPED" -> {
                 localPublishStarted = false
@@ -2404,13 +2407,25 @@ class CallViewModel @Inject constructor(
      * снова видят» без тоста-провала. Тост показываем только когда попытки
      * исчерпаны. Не роняем звонок и не крутим бесконечно.
      */
-    private fun scheduleLocalRepublish() {
+    private fun scheduleLocalRepublish(failInfo: String? = null) {
         val status = _uiState.value.status
         if (status != CallStatus.CONNECTING && status != CallStatus.IN_CALL) return
         if (localRepublishJob?.isActive == true) return
         if (restartStreamJob?.isActive == true) return
-        if (localRepublishAttempts >= LOCAL_REPUBLISH_MAX_ATTEMPTS) {
-            logCallStep("local_republish_giveup", "attempts=$localRepublishAttempts")
+        // Причина FAILED определяет стратегию повтора:
+        // - имя/сессия ещё заняты старой сессией (STREAM_NAME_ALREADY_IN_USE и т.п.)
+        //   — сервер освободит по мере реапа старой сессии, поэтому имеет смысл
+        //   ПОДОЖДАТЬ и повторить несколько раз с backoff (реджойн «меня не видят»).
+        // - ICE/прочее — повтор не поможет, лишний churn роняет HAL эмулятора,
+        //   поэтому одна попытка.
+        val collision = failInfo?.let {
+            it.contains("ALREADY_IN_USE", true) ||
+                it.contains("SESSION_NOT_READY", true) ||
+                it.contains("STREAM_NOT_FOUND", true)
+        } ?: false
+        val maxAttempts = if (collision) LOCAL_REPUBLISH_MAX_ATTEMPTS_COLLISION else LOCAL_REPUBLISH_MAX_ATTEMPTS
+        if (localRepublishAttempts >= maxAttempts) {
+            logCallStep("local_republish_giveup", "attempts=$localRepublishAttempts collision=$collision")
             _uiState.value = _uiState.value.copy(toastMessage = "Не удалось обновить медиа-поток")
             return
         }
