@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
 import uddug.com.naukoteka.BuildConfig
+import uddug.com.naukoteka.mvvm.chat.CallMemberPreview
 import uddug.com.naukoteka.mvvm.chat.ChatDialogUiState
 import uddug.com.naukoteka.mvvm.chat.ChatDialogViewModel
 import uddug.com.naukoteka.mvvm.chat.ContactInfo
@@ -576,7 +577,7 @@ fun ChatDialogComponent(
                         OngoingCallBanner(
                             isVideoCall = isVideoCall,
                             participantsCount = state.activeCallParticipantsCount,
-                            participantAvatars = state.activeCallParticipantAvatars,
+                            members = state.activeCallMembers,
                             avatarUrl = state.chatImage,
                             callTitle = state.chatName,
                             onJoinClick = {
@@ -961,7 +962,7 @@ fun ChatDialogComponent(
 private fun OngoingCallBanner(
     isVideoCall: Boolean,
     participantsCount: Int,
-    participantAvatars: List<String>,
+    members: List<CallMemberPreview>,
     avatarUrl: String?,
     callTitle: String?,
     onJoinClick: () -> Unit,
@@ -1027,10 +1028,10 @@ private fun OngoingCallBanner(
             }
         }
 
-        // Кластер аватарок тех, кто сейчас в звонке (внахлёст). Если участников
-        // ещё не подтянули — показываем аватар чата как запасной вариант.
-        if (participantAvatars.isNotEmpty()) {
-            CallParticipantsCluster(avatars = participantAvatars)
+        // Кластер аватарок тех, кто сейчас в звонке (внахлёст, инициалы если нет
+        // фото). Если участников ещё не подтянули — аватар чата как запасной.
+        if (members.isNotEmpty()) {
+            CallParticipantsCluster(members = members)
         } else {
             Avatar(url = avatarUrl, name = callTitle, size = 40.dp)
         }
@@ -1057,14 +1058,14 @@ private fun OngoingCallBanner(
  * фона между ними. Показывается в баннере «К звонку» вместо иконки группы.
  */
 @Composable
-private fun CallParticipantsCluster(avatars: List<String>) {
-    val shown = avatars.take(3)
-    val extra = avatars.size - shown.size
+private fun CallParticipantsCluster(members: List<CallMemberPreview>) {
+    val shown = members.take(3)
+    val extra = members.size - shown.size
     Row(
         horizontalArrangement = Arrangement.spacedBy((-12).dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        shown.forEach { url ->
+        shown.forEach { m ->
             Box(
                 modifier = Modifier
                     .size(38.dp)
@@ -1073,7 +1074,7 @@ private fun CallParticipantsCluster(avatars: List<String>) {
                     .padding(2.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Avatar(url = url, name = null, size = 34.dp)
+                Avatar(url = m.imageUrl, name = m.name, size = 34.dp)
             }
         }
         if (extra > 0) {

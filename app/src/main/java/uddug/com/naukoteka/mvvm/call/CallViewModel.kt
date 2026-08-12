@@ -83,6 +83,10 @@ class CallViewModel @Inject constructor(
     private var mediaSessionId: String? = null
     private var lastCallParams: CallParams? = null
     private var reconnectAttempts = 0
+    // Поколение звонка: растёт на каждый старт. Отложенный «мягкий» disconnect
+    // при выходе (см. endCall) срабатывает, только если поколение не изменилось —
+    // иначе быстрый повторный вход («К звонку» за <500мс) уронил бы новую сессию.
+    private var callGeneration = 0
     private var remoteRenderer: SurfaceViewRenderer? = null
     private val participantStreams = mutableMapOf<String, Stream>()
     private val participantRenderers = mutableMapOf<String, SurfaceViewRenderer>()
@@ -219,6 +223,7 @@ class CallViewModel @Inject constructor(
             return
         }
         isCallStarted = true
+        callGeneration++
         lastParticipantsCount = 0
         localPublishStarted = false
         publishedWithVideo = false
@@ -379,9 +384,16 @@ class CallViewModel @Inject constructor(
         // STREAM_NAME_ALREADY_IN_USE, «меня не видят». См. docs/calls.md + ресерч.
         runCatching { flashphonerSessionManager.unpublishCurrentStream() }
         runCatching { flashphonerSessionManager.leaveRoom() }
+        val leaveGeneration = callGeneration
         viewModelScope.launch {
             delay(500)
-            runCatching { flashphonerSessionManager.disconnectRoom() }
+            // Не закрываем сессию, если за это время начался новый звонок
+            // («К звонку» сразу после выхода) — иначе уроним свежую сессию.
+            if (callGeneration == leaveGeneration) {
+                runCatching { flashphonerSessionManager.disconnectRoom() }
+            } else {
+                logCallStep("leave_disconnect_skipped", "new call started (gen changed)")
+            }
         }
         callAudioManager.release()
         _uiState.value = _uiState.value.copy(

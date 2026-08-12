@@ -364,15 +364,22 @@ class ChatDialogViewModel @Inject constructor(
                 emptyList()
             }
             val participantsCount = activeParticipants.size
-            // Аватарки тех, кто реально в звонке — для кластера в баннере «К звонку».
-            val participantAvatars = activeParticipants
-                .mapNotNull { it.imageUrl?.takeIf { url -> url.isNotBlank() } }
+            // Участники, реально в звонке — для кластера аватарок в баннере
+            // «К звонку». Берём и имя (для инициалов, если нет фото), и картинку —
+            // иначе у тест-юзеров без аватарок кластер был пуст и показывался
+            // аватар группы.
+            val members = activeParticipants.map { p ->
+                CallMemberPreview(
+                    name = p.fullName?.takeIf { it.isNotBlank() },
+                    imageUrl = p.imageUrl?.takeIf { it.isNotBlank() },
+                )
+            }
             val current = _uiState.value
             if (current is ChatDialogUiState.Success) {
                 _uiState.value = current.copy(
                     activeCall = activeCall,
                     activeCallParticipantsCount = participantsCount,
-                    activeCallParticipantAvatars = participantAvatars,
+                    activeCallMembers = members,
                 )
             }
         }
@@ -1535,11 +1542,17 @@ sealed class ChatDialogUiState {
         val pinnedMessages: List<uddug.com.domain.entities.chat.PinnedMessagePreview> = emptyList(),
         val activeCall: ActiveCall? = null,
         val activeCallParticipantsCount: Int = 0,
-        val activeCallParticipantAvatars: List<String> = emptyList(),
+        val activeCallMembers: List<CallMemberPreview> = emptyList(),
     ) : ChatDialogUiState()
 
     data class Error(val message: String) : ChatDialogUiState()
 }
+
+/** Участник активного звонка для кластера аватарок в баннере «К звонку». */
+data class CallMemberPreview(
+    val name: String?,
+    val imageUrl: String?,
+)
 
 data class PendingForward(
     val messageIds: List<Long>,
