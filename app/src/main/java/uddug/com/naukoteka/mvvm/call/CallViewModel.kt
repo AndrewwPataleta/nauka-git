@@ -2097,6 +2097,42 @@ class CallViewModel @Inject constructor(
         refreshParticipants()
     }
 
+    /**
+     * Бэкенд терминировал нашу публикацию при повторном входе (статус был
+     * терминальный 2). Организатора/админа впускаем БЕЗ запроса — сами меняем свой
+     * статус на 5 (это доступно только при праве управлять участниками) и
+     * публикуемся. Обычному участнику — шлём 2002 и ждём разрешения из лобби.
+     */
+    private fun handleTerminatedRejoin() {
+        val dialogId = _uiState.value.dialogId
+        val selfId = profileUserId
+        if (dialogId == null || selfId == null) {
+            awaitingJoinApproval = false
+            return
+        }
+        viewModelScope.launch {
+            val selfAdmitted = runCatching {
+                callRepository.updateStatus(dialogId, selfId, STATUS_PARTICIPATING)
+            }.isSuccess
+            if (selfAdmitted) {
+                logCallStep("self_admit_on_rejoin", "org/admin self-approved")
+                // Бэкенд может прислать 2004/2005 → joinFromLobby. Подстраховка:
+                // если сигнала нет — публикуемся сами через паузу.
+                delay(1200)
+                if (!hasPublishedLocalStream && awaitingJoinApproval) {
+                    logCallStep("self_admit_republish_fallback", "")
+                    joinFromLobby()
+                }
+            } else {
+                logCallStep("join_request_await", "not admin/org — waiting approval")
+                requestJoinCall(dialogId)
+                _uiState.value = _uiState.value.copy(
+                    toastMessage = "Ожидаем разрешения на вход в звонок",
+                )
+            }
+        }
+    }
+
     /** true, если событие (2003/2004/2005) адресовано текущему пользователю. */
     private fun isSelfTargeted(json: JSONObject): Boolean {
         val selfId = profileUserId ?: return false
@@ -2475,11 +2511,7 @@ class CallViewModel @Inject constructor(
                 if (info?.contains("terminate", true) == true && !awaitingJoinApproval) {
                     awaitingJoinApproval = true
                     localRepublishJob?.cancel()
-                    val dialogId = _uiState.value.dialogId
-                    if (dialogId != null) requestJoinCall(dialogId)
-                    _uiState.value = _uiState.value.copy(
-                        toastMessage = "Ожидаем разрешения на вход в звонок",
-                    )
+                    handleTerminatedRejoin()
                     return
                 }
                 scheduleLocalRepublish(info)

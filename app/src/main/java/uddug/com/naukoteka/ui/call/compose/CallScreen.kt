@@ -346,7 +346,9 @@ fun CallScreen(
             // Баннер «X хочет войти» — приходит админу, когда участник в комнате
             // ожидания (status 6). Кнопки Разрешить/Нет прямо в звонке (дизайн).
             if (state.isCurrentUserAdmin) {
-                state.lobbyParticipants.firstOrNull()?.let { pending ->
+                // Себя из запросов на вход исключаем (иначе организатору при
+                // возврате показывался бы запрос на самого себя).
+                state.lobbyParticipants.firstOrNull { it.id != state.currentUserId }?.let { pending ->
                     JoinRequestBanner(
                         participant = pending,
                         onAllow = { onAllowParticipant(pending.id) },
