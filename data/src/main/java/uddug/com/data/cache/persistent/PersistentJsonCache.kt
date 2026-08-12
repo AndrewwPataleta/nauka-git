@@ -55,4 +55,22 @@ class PersistentJsonCache @Inject constructor(
             }
         }
     }
+
+    /** Возвращает закэшированный ОБЪЕКТ под [key] или null при промахе/ошибке. */
+    suspend fun <T> getObject(key: String, type: Type): T? = withContext(Dispatchers.IO) {
+        runCatching {
+            val entry = dao.get(key) ?: return@runCatching null
+            gson.fromJson<T>(entry.json, type)
+        }.getOrNull()
+    }
+
+    /** Кладёт произвольный объект [value] под [key]. Ошибки молча проглатываются. */
+    suspend fun putObject(key: String, value: Any) {
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val json = gson.toJson(value)
+                dao.put(CacheEntry(key = key, json = json, updatedAt = System.currentTimeMillis()))
+            }
+        }
+    }
 }
