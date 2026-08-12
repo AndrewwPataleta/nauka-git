@@ -1033,18 +1033,19 @@ class CallViewModel @Inject constructor(
     fun selectCamera(cameraId: String) {
         val target = _uiState.value.availableCameras.firstOrNull { it.id == cameraId } ?: return
         logCallStep("camera_select", "id=$cameraId isFront=${target.isFront} currentFront=$isFrontCamera")
-        if (target.isFront == isFrontCamera) {
-            _uiState.value = _uiState.value.copy(
-                currentCameraId = cameraId,
-                currentCameraName = target.name,
-            )
-            return
-        }
+        // Оптимистично отмечаем выбор в UI сразу (галочка/подпись меняются),
+        // даже если физического переключения не будет (видео не опубликовано).
+        _uiState.value = _uiState.value.copy(
+            currentCameraId = cameraId,
+            currentCameraName = target.name,
+        )
+        // Уже на этой стороне — переключать нечего.
+        if (target.isFront == isFrontCamera) return
+        // Нет опубликованного видео-потока — переключать физически нечего
+        // (камера появится при включении видео). Выбор уже отмечен выше.
         val stream = localStream
-        if (stream == null) {
-            _uiState.value = _uiState.value.copy(
-                toastMessage = "Камера доступна только когда включено видео",
-            )
+        if (stream == null || !publishedWithVideo) {
+            isFrontCamera = target.isFront
             return
         }
         runCatching {
@@ -1739,13 +1740,13 @@ class CallViewModel @Inject constructor(
         // чтобы пережить «призрачную» сессию с тем же именем (RoomApi публикует
         // под фиксированным roomId-login, так что уникальным именем не обойти —
         // ждём, пока сервер снимет старую по keep-alive). См. ресерч по WCS.
-        // Мало попыток и большой интервал: частый republish (unpublish→publish)
-        // раскачивает WS-сессию комнаты и роняет ВЕСЬ звонок (room disconnected).
-        // 1-я попытка — с видео; последняя — АУДИО-ONLY (на эмуляторе/слабой сети
-        // видео-публикация может стабильно падать по ICE, а аудио поднимется →
-        // звонок жив, «меня слышат», видео можно включить позже).
-        const val LOCAL_REPUBLISH_MAX_ATTEMPTS = 2
-        const val LOCAL_REPUBLISH_BASE_DELAY_MS = 5_000L
+        // ТОЛЬКО одна отложенная попытка, без цикла. Каждый republish
+        // (unpublish→publish) заново открывает захват микрофона; частый churn
+        // роняет аудио-HAL эмулятора («Assertion failed: !mSource» в mic
+        // ReadThread) и/или WS-сессию комнаты → весь звонок падает. Дадим призраку
+        // сессии протухнуть по keep-alive и попробуем один раз аудио-only.
+        const val LOCAL_REPUBLISH_MAX_ATTEMPTS = 1
+        const val LOCAL_REPUBLISH_BASE_DELAY_MS = 6_000L
         const val PARTICIPANT_WAIT_TIMEOUT_MS = 10_000L
         const val LOG_TAG = "CallFlow"
         const val ROLE_ORGANIZER = "37:301"

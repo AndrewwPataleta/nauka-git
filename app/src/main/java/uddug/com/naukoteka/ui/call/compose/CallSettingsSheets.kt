@@ -274,18 +274,10 @@ private fun CameraDeviceRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(vertical = 12.dp),
+            .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Icon(
-            painter = painterResource(
-                id = if (camera.isFront) R.drawable.ic_call_switch_camera else R.drawable.ic_camera,
-            ),
-            contentDescription = null,
-            tint = if (selected) Accent else Color.White,
-            modifier = Modifier.size(22.dp),
-        )
         Text(
             text = camera.name,
             color = if (selected) Accent else Color.White,
