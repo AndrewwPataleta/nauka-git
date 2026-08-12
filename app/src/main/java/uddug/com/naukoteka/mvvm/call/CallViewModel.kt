@@ -1737,8 +1737,13 @@ class CallViewModel @Inject constructor(
         // чтобы пережить «призрачную» сессию с тем же именем (RoomApi публикует
         // под фиксированным roomId-login, так что уникальным именем не обойти —
         // ждём, пока сервер снимет старую по keep-alive). См. ресерч по WCS.
-        const val LOCAL_REPUBLISH_MAX_ATTEMPTS = 4
-        const val LOCAL_REPUBLISH_BASE_DELAY_MS = 3_000L
+        // Мало попыток и большой интервал: частый republish (unpublish→publish)
+        // раскачивает WS-сессию комнаты и роняет ВЕСЬ звонок (room disconnected).
+        // 1-я попытка — с видео; последняя — АУДИО-ONLY (на эмуляторе/слабой сети
+        // видео-публикация может стабильно падать по ICE, а аудио поднимется →
+        // звонок жив, «меня слышат», видео можно включить позже).
+        const val LOCAL_REPUBLISH_MAX_ATTEMPTS = 2
+        const val LOCAL_REPUBLISH_BASE_DELAY_MS = 5_000L
         const val PARTICIPANT_WAIT_TIMEOUT_MS = 10_000L
         const val LOG_TAG = "CallFlow"
         const val ROLE_ORGANIZER = "37:301"
@@ -2335,6 +2340,11 @@ class CallViewModel @Inject constructor(
         }
         val attempt = localRepublishAttempts + 1
         localRepublishAttempts = attempt
+        // Republish ВСЕГДА аудио-only: раз первичная видео-публикация упала, повтор
+        // с видео — это только лишний churn (unpublish→publish), который роняет
+        // сессию комнаты и весь звонок. Поднимаем стабильное аудио, звонок жив,
+        // «меня слышат», видео пользователь включит вручную позже.
+        val withVideo = false
         val delayMs = LOCAL_REPUBLISH_BASE_DELAY_MS * attempt
         localRepublishJob = viewModelScope.launch {
             delay(delayMs)
@@ -2346,10 +2356,17 @@ class CallViewModel @Inject constructor(
             }
             if (hasPublishedLocalStream) return@launch
             val session = _uiState.value.sessionState
-            logCallStep("local_republish", "attempt=$attempt delayMs=$delayMs")
+            logCallStep("local_republish", "attempt=$attempt withVideo=$withVideo delayMs=$delayMs")
+            // Если ушли в аудио-only — отражаем «камера выключена» в UI, чтобы
+            // кнопка и локальная плитка соответствовали реальности.
+            if (!withVideo && session.camOn) {
+                _uiState.value = _uiState.value.copy(
+                    sessionState = session.copy(camOn = false),
+                )
+            }
             restartLocalStream(
                 audioEnabled = session.micOn,
-                videoEnabled = publishedWithVideo || _uiState.value.isVideoCall,
+                videoEnabled = withVideo,
             )
         }
     }
