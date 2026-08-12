@@ -111,6 +111,10 @@ class CallViewModel @Inject constructor(
     private var publishedWithVideo = false
     private var hasPublishedLocalStream = false
     private var hasRetriedPublish = false
+    // Счётчик и джоба backoff-переиздания локального потока после FAILED (чтобы
+    // пережить призрачную сессию с тем же именем на сервере).
+    private var localRepublishAttempts = 0
+    private var localRepublishJob: Job? = null
     private var profileUserId: String? = null
 
     fun showIncomingCall(
@@ -220,6 +224,8 @@ class CallViewModel @Inject constructor(
         publishedWithVideo = false
         hasPublishedLocalStream = false
         hasRetriedPublish = false
+        localRepublishAttempts = 0
+        localRepublishJob?.cancel()
 
         val resolvedParticipants = if (isGroupCall) {
             emptyList()
@@ -386,6 +392,8 @@ class CallViewModel @Inject constructor(
         profileUserId = null
         hasPublishedLocalStream = false
         hasRetriedPublish = false
+        localRepublishAttempts = 0
+        localRepublishJob?.cancel()
         clearVideoState()
     }
 
@@ -1594,16 +1602,24 @@ class CallViewModel @Inject constructor(
     }
 
     private fun clearVideoStreams() {
+        // Crash-safety (ресерч WCS/WebRTC): getStats/renderer нельзя дёргать по
+        // потоку, который останавливается — иначе нативный SIGABRT
+        // (!env->ExceptionCheck) на signaling-треде. Гасим VU-метр и запланированные
+        // пере-подписки/переиздания ДО stop() потоков.
+        stopVuMeter()
+        localRepublishJob?.cancel()
+        remoteResubscribeJobs.values.forEach { it.cancel() }
+
         val streamsToStop = LinkedHashSet<Stream>().apply {
             addAll(participantStreams.values)
             localStream?.let(::add)
             remoteStream?.let(::add)
         }
 
-        streamsToStop.forEach {
-            runCatching { it.switchRenderer(null) }
-            runCatching { it.stop() }
-        }
+        // Сначала снимаем рендерер со ВСЕХ потоков, только потом останавливаем —
+        // не переиспользуем рендерер, который ещё в середине teardown.
+        streamsToStop.forEach { runCatching { it.switchRenderer(null) } }
+        streamsToStop.forEach { runCatching { it.stop() } }
 
         participantStreams.clear()
         participantRenderers.clear()
@@ -1710,8 +1726,19 @@ class CallViewModel @Inject constructor(
     private companion object {
         const val MAX_RECONNECT_ATTEMPTS = 3
         const val RECONNECT_BASE_DELAY_MS = 1_500L
-        const val MAX_REMOTE_RESUBSCRIBE = 3
-        const val REMOTE_RESUBSCRIBE_DELAY_MS = 1_500L
+        // Пере-подписка на упавший чужой поток. Flashphoner рекомендует 3с и одну
+        // попытку в полёте (агрессивные ~1.5с складывают полу-снесённые
+        // PeerConnection'ы → нестабильность, нативный SIGABRT и в итоге сервер
+        // завершает звонок). Экспоненциальный backoff, потолок задержки и попыток.
+        const val MAX_REMOTE_RESUBSCRIBE = 8
+        const val REMOTE_RESUBSCRIBE_DELAY_MS = 3_000L
+        const val REMOTE_RESUBSCRIBE_MAX_DELAY_MS = 15_000L
+        // Republish локального потока после FAILED: несколько попыток с backoff,
+        // чтобы пережить «призрачную» сессию с тем же именем (RoomApi публикует
+        // под фиксированным roomId-login, так что уникальным именем не обойти —
+        // ждём, пока сервер снимет старую по keep-alive). См. ресерч по WCS.
+        const val LOCAL_REPUBLISH_MAX_ATTEMPTS = 4
+        const val LOCAL_REPUBLISH_BASE_DELAY_MS = 3_000L
         const val PARTICIPANT_WAIT_TIMEOUT_MS = 10_000L
         const val LOG_TAG = "CallFlow"
         const val ROLE_ORGANIZER = "37:301"
@@ -2244,14 +2271,18 @@ class CallViewModel @Inject constructor(
             return
         }
         if (remoteResubscribeJobs[pid]?.isActive == true) return
+        // Экспоненциальный backoff (3с, 6с, 9с… с потолком), одна попытка в
+        // полёте — как рекомендует Flashphoner. Не долбим по 1.5с.
+        val delayMs = (REMOTE_RESUBSCRIBE_DELAY_MS * (attempts + 1))
+            .coerceAtMost(REMOTE_RESUBSCRIBE_MAX_DELAY_MS)
         remoteResubscribeJobs[pid] = viewModelScope.launch {
-            delay(REMOTE_RESUBSCRIBE_DELAY_MS)
+            delay(delayMs)
             if (_uiState.value.status != CallStatus.IN_CALL &&
                 _uiState.value.status != CallStatus.CONNECTING
             ) return@launch
             val handle = participantHandles[pid] ?: return@launch
             remoteResubscribeAttempts[pid] = attempts + 1
-            logCallStep("remote_resubscribe", "participant=$pid attempt=${attempts + 1}")
+            logCallStep("remote_resubscribe", "participant=$pid attempt=${attempts + 1} delayMs=$delayMs")
             forceResubscribeParticipant(handle)
         }
     }
@@ -2262,6 +2293,8 @@ class CallViewModel @Inject constructor(
             "PUBLISHING" -> logCallStep("publish_local_stream_status_publishing", "status=$status")
             "PUBLISHED" -> {
                 hasPublishedLocalStream = true
+                localRepublishAttempts = 0
+                localRepublishJob?.cancel()
                 logCallStep("publish_local_stream_success", "status=$status")
             }
             "FAILED" -> {
@@ -2269,43 +2302,55 @@ class CallViewModel @Inject constructor(
                 hasPublishedLocalStream = false
                 logCallStep(
                     "publish_local_stream_status_failed",
-                    "status=$status hasRetriedPublish=$hasRetriedPublish"
+                    "status=$status attempts=$localRepublishAttempts"
                 )
-                // Do NOT end the call on stream FAILED. This status commonly
-                // fires as a transient state while `restartLocalStream`
-                // unpublishes → republishes on mic/camera toggle. Ending the
-                // call here caused users to get kicked out on toggle.
-                //
-                // A publish also FAILs right after a reconnect while a stale
-                // session with the same stream name ("$userId#$dialogId") is
-                // still being torn down on the server — the classic "I rejoined
-                // but nobody hears or sees me" case. Retry the publish once; by
-                // the time it runs the ghost session has usually timed out.
-                // Guarded by hasRetriedPublish so we never loop, and skipped
-                // while a deliberate restart is already in flight.
-                val canRetry = !hasRetriedPublish &&
-                    restartStreamJob?.isActive != true &&
-                    (_uiState.value.status == CallStatus.CONNECTING ||
-                        _uiState.value.status == CallStatus.IN_CALL)
-                if (canRetry) {
-                    hasRetriedPublish = true
-                    val session = _uiState.value.sessionState
-                    logCallStep("publish_local_stream_retry", "retrying after FAILED")
-                    restartLocalStream(
-                        audioEnabled = session.micOn,
-                        videoEnabled = _uiState.value.isVideoCall,
-                    )
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        toastMessage = "Не удалось обновить медиа-поток",
-                    )
-                }
+                scheduleLocalRepublish()
             }
             "UNPUBLISHED", "STOPPED" -> {
                 localPublishStarted = false
                 hasPublishedLocalStream = false
                 logCallStep("publish_local_stream_status_unpublished", "status=$status")
             }
+        }
+    }
+
+    /**
+     * Локальная публикация упала. Частая причина после реконнекта —
+     * STREAM_NAME_ALREADY_IN_USE: на сервере ещё жива старая («призрачная»)
+     * сессия с тем же именем потока (RoomApi публикует под фиксированным
+     * roomId-login, уникальным именем не обойти). Сервер снимет её по keep-alive,
+     * поэтому переиздаём поток с нарастающим backoff несколько раз — так «меня
+     * снова видят» без тоста-провала. Тост показываем только когда попытки
+     * исчерпаны. Не роняем звонок и не крутим бесконечно.
+     */
+    private fun scheduleLocalRepublish() {
+        val status = _uiState.value.status
+        if (status != CallStatus.CONNECTING && status != CallStatus.IN_CALL) return
+        if (localRepublishJob?.isActive == true) return
+        if (restartStreamJob?.isActive == true) return
+        if (localRepublishAttempts >= LOCAL_REPUBLISH_MAX_ATTEMPTS) {
+            logCallStep("local_republish_giveup", "attempts=$localRepublishAttempts")
+            _uiState.value = _uiState.value.copy(toastMessage = "Не удалось обновить медиа-поток")
+            return
+        }
+        val attempt = localRepublishAttempts + 1
+        localRepublishAttempts = attempt
+        val delayMs = LOCAL_REPUBLISH_BASE_DELAY_MS * attempt
+        localRepublishJob = viewModelScope.launch {
+            delay(delayMs)
+            val st = _uiState.value.status
+            if (st != CallStatus.CONNECTING && st != CallStatus.IN_CALL) return@launch
+            if (!flashphonerSessionManager.isRoomJoined()) {
+                logCallStep("local_republish_skipped_no_room", "attempt=$attempt")
+                return@launch
+            }
+            if (hasPublishedLocalStream) return@launch
+            val session = _uiState.value.sessionState
+            logCallStep("local_republish", "attempt=$attempt delayMs=$delayMs")
+            restartLocalStream(
+                audioEnabled = session.micOn,
+                videoEnabled = publishedWithVideo || _uiState.value.isVideoCall,
+            )
         }
     }
 
