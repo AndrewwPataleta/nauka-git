@@ -372,7 +372,17 @@ class CallViewModel @Inject constructor(
         activeCallStore.clear()
         lastCallParams = null
         clearVideoStreams()
-        flashphonerSessionManager.disconnectRoom()
+        // Чистый выход из комнаты: сперва unpublish + Room.leave (сервер снимает
+        // нашего паблишера), и только ПОСЛЕ паузы закрываем WS-сессию. Иначе
+        // disconnect обгоняет leave-сообщение, сервер держит «призрака» с тем же
+        // именем потока, и повторный вход («К звонку») не публикуется —
+        // STREAM_NAME_ALREADY_IN_USE, «меня не видят». См. docs/calls.md + ресерч.
+        runCatching { flashphonerSessionManager.unpublishCurrentStream() }
+        runCatching { flashphonerSessionManager.leaveRoom() }
+        viewModelScope.launch {
+            delay(500)
+            runCatching { flashphonerSessionManager.disconnectRoom() }
+        }
         callAudioManager.release()
         _uiState.value = _uiState.value.copy(
             status = CallStatus.FINISHED,
