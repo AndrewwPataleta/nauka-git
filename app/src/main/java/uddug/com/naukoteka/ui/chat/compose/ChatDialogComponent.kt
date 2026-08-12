@@ -15,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -575,6 +576,7 @@ fun ChatDialogComponent(
                         OngoingCallBanner(
                             isVideoCall = isVideoCall,
                             participantsCount = state.activeCallParticipantsCount,
+                            participantAvatars = state.activeCallParticipantAvatars,
                             avatarUrl = state.chatImage,
                             callTitle = state.chatName,
                             onJoinClick = {
@@ -959,6 +961,7 @@ fun ChatDialogComponent(
 private fun OngoingCallBanner(
     isVideoCall: Boolean,
     participantsCount: Int,
+    participantAvatars: List<String>,
     avatarUrl: String?,
     callTitle: String?,
     onJoinClick: () -> Unit,
@@ -1024,7 +1027,13 @@ private fun OngoingCallBanner(
             }
         }
 
-        Avatar(url = avatarUrl, name = callTitle, size = 40.dp)
+        // Кластер аватарок тех, кто сейчас в звонке (внахлёст). Если участников
+        // ещё не подтянули — показываем аватар чата как запасной вариант.
+        if (participantAvatars.isNotEmpty()) {
+            CallParticipantsCluster(avatars = participantAvatars)
+        } else {
+            Avatar(url = avatarUrl, name = callTitle, size = 40.dp)
+        }
 
         Box(
             modifier = Modifier
@@ -1039,6 +1048,58 @@ private fun OngoingCallBanner(
                 fontWeight = FontWeight.Medium,
                 fontSize = 14.sp,
             )
+        }
+    }
+}
+
+/**
+ * Кластер аватарок участников звонка внахлёст (до 3 + «+N»), с тонким кольцом
+ * фона между ними. Показывается в баннере «К звонку» вместо иконки группы.
+ */
+@Composable
+private fun CallParticipantsCluster(avatars: List<String>) {
+    val shown = avatars.take(3)
+    val extra = avatars.size - shown.size
+    Row(
+        horizontalArrangement = Arrangement.spacedBy((-12).dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        shown.forEach { url ->
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(colorResource(id = R.color.main_background))
+                    .padding(2.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Avatar(url = url, name = null, size = 34.dp)
+            }
+        }
+        if (extra > 0) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(colorResource(id = R.color.main_background))
+                    .padding(2.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(colorResource(id = R.color.main_background_input)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "+$extra",
+                        color = colorResource(id = R.color.main_text),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
         }
     }
 }

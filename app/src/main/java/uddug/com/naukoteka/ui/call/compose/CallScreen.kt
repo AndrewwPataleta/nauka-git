@@ -291,41 +291,28 @@ fun CallScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // A group call shows the video grid when it is a video call OR the
-            // user has turned their own camera on (audio→video upgrade). This is
-            // why the camera button is always available in group calls — see
-            // CallControls(canUseCamera).
-            val useGroupVideoLayout = state.isVideoCall || state.sessionState.camOn
+            // Групповой звонок ВСЕГДА показывает видео-сетку: она сама рисует
+            // аватар (NoVideoAvatar) для тех, у кого камера выключена, и видео —
+            // у кого включена. Раньше при перезаходе в «аудио»-звонок (где
+            // участники по факту с камерами) показывалась аудио-сетка и чужое
+            // видео не рендерилось вовсе («никого не вижу, как аудиозвонок»).
             if (isGroupCall) {
-                if (useGroupVideoLayout) {
-                    GroupVideoCallGrid(
-                        participants = state.participants,
-                        currentUserId = state.currentUserId,
-                        selfAvatarUrl = state.currentUserAvatarUrl,
-                        sessionState = state.sessionState,
-                        status = state.status,
-                        speakingIds = state.speakingParticipantIds,
-                        selfSpeaking = state.isSelfSpeaking,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f, fill = true),
-                        onBindLocalRenderer = onBindLocalRenderer,
-                        onReleaseLocalRenderer = onReleaseLocalRenderer,
-                        onBindParticipantRenderer = onBindParticipantRenderer,
-                        onReleaseParticipantRenderer = onReleaseParticipantRenderer,
-                    )
-                } else {
-                    CallParticipantsGrid(
-                        participants = state.participants,
-                        currentUserId = state.currentUserId,
-                        sessionState = state.sessionState,
-                        speakingIds = state.speakingParticipantIds,
-                        selfSpeaking = state.isSelfSpeaking,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f, fill = true),
-                    )
-                }
+                GroupVideoCallGrid(
+                    participants = state.participants,
+                    currentUserId = state.currentUserId,
+                    selfAvatarUrl = state.currentUserAvatarUrl,
+                    sessionState = state.sessionState,
+                    status = state.status,
+                    speakingIds = state.speakingParticipantIds,
+                    selfSpeaking = state.isSelfSpeaking,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = true),
+                    onBindLocalRenderer = onBindLocalRenderer,
+                    onReleaseLocalRenderer = onReleaseLocalRenderer,
+                    onBindParticipantRenderer = onBindParticipantRenderer,
+                    onReleaseParticipantRenderer = onReleaseParticipantRenderer,
+                )
             } else {
                 if (state.isVideoCall) {
                     SingleParticipantVideo(

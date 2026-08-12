@@ -308,19 +308,24 @@ class ChatDialogViewModel @Inject constructor(
             val activeCall = runCatching {
                 chatInteractor.getDialogActiveCall(dialogId)
             }.getOrNull()
-            val participantsCount = if (activeCall != null) {
+            val activeParticipants = if (activeCall != null) {
                 runCatching {
                     callRepository.getParticipants(dialogId)
-                        .count { it.status == CALL_STATUS_PARTICIPATING }
-                }.getOrDefault(0)
+                        .filter { it.status == CALL_STATUS_PARTICIPATING }
+                }.getOrDefault(emptyList())
             } else {
-                0
+                emptyList()
             }
+            val participantsCount = activeParticipants.size
+            // Аватарки тех, кто реально в звонке — для кластера в баннере «К звонку».
+            val participantAvatars = activeParticipants
+                .mapNotNull { it.imageUrl?.takeIf { url -> url.isNotBlank() } }
             val current = _uiState.value
             if (current is ChatDialogUiState.Success) {
                 _uiState.value = current.copy(
                     activeCall = activeCall,
                     activeCallParticipantsCount = participantsCount,
+                    activeCallParticipantAvatars = participantAvatars,
                 )
             }
         }
@@ -1483,6 +1488,7 @@ sealed class ChatDialogUiState {
         val pinnedMessages: List<uddug.com.domain.entities.chat.PinnedMessagePreview> = emptyList(),
         val activeCall: ActiveCall? = null,
         val activeCallParticipantsCount: Int = 0,
+        val activeCallParticipantAvatars: List<String> = emptyList(),
     ) : ChatDialogUiState()
 
     data class Error(val message: String) : ChatDialogUiState()

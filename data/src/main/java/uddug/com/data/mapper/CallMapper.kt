@@ -14,9 +14,9 @@ fun CallParticipantDto.toDomain(): CallParticipant = CallParticipant(
     fullName = fullName,
     imageUrl = imageUrl,
     status = status,
-    states = states.map { it.toDomain() },
-    roles = roles,
-    permits = permits,
+    states = states.orEmpty().map { it.toDomain() },
+    roles = roles.orEmpty(),
+    permits = permits.orEmpty(),
 )
 
 fun CallParticipantStateDto.toDomain(): CallParticipantState = CallParticipantState(
