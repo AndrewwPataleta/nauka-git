@@ -71,6 +71,18 @@ class CallViewModel @Inject constructor(
     }
 
     private var isFrontCamera: Boolean = true
+    // На эмуляторе камера/видео-HAL (и раньше BT/audio) падают под нагрузкой
+    // WebRTC и утягивают всю систему. Реального видео на эмуляторе всё равно нет,
+    // поэтому там камеру не открываем и не перечисляем — звонок только аудио.
+    private val isEmulator: Boolean = run {
+        val fp = android.os.Build.FINGERPRINT.orEmpty()
+        val hw = android.os.Build.HARDWARE.orEmpty()
+        val product = android.os.Build.PRODUCT.orEmpty()
+        val model = android.os.Build.MODEL.orEmpty()
+        fp.startsWith("generic") || fp.contains("emulator", true) ||
+            hw.contains("goldfish") || hw.contains("ranchu") ||
+            product.contains("sdk", true) || model.contains("Android SDK built for", true)
+    }
 
     private var isCallStarted = false
     private var callDurationJob: Job? = null
@@ -171,7 +183,7 @@ class CallViewModel @Inject constructor(
             participants = resolvedParticipants,
             status = CallStatus.INCOMING,
             isVideoCall = isVideoCall,
-            sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
+            sessionState = CallSessionState(micOn = true, camOn = isVideoCall && !isEmulator),
             isRecording = false,
             errorMessage = null,
             isGroupCall = isGroupCall,
@@ -255,7 +267,7 @@ class CallViewModel @Inject constructor(
             participants = resolvedParticipants,
             status = initialStatus,
             isVideoCall = isVideoCall,
-            sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
+            sessionState = CallSessionState(micOn = true, camOn = isVideoCall && !isEmulator),
             isRecording = false,
             errorMessage = null,
             isGroupCall = isGroupCall,
@@ -714,7 +726,9 @@ class CallViewModel @Inject constructor(
         // по явному включению камеры (там уже есть аудио-фолбэк при провале).
         val isGroup = _uiState.value.isGroupCall
         val camOn = _uiState.value.sessionState.camOn
-        val wantVideoTrack = isVideoCall || camOn
+        // На эмуляторе видео НЕ публикуем вообще — открытие камеры роняет
+        // camera-HAL эмулятора и всю систему. Звонок остаётся аудио.
+        val wantVideoTrack = (isVideoCall || camOn) && !isEmulator
         logCallStep(
             "publish_local_stream_start",
             "streamName=$streamName isVideoCall=$isVideoCall isGroup=$isGroup wantVideoTrack=$wantVideoTrack audio=$audioEnabled camOn=$camOn"
@@ -910,6 +924,14 @@ class CallViewModel @Inject constructor(
     }
 
     fun toggleCamera() {
+        // На эмуляторе камеру не открываем (роняет camera-HAL и всю систему).
+        if (isEmulator) {
+            logCallStep("toggle_camera_blocked_emulator", "camera disabled on emulator")
+            _uiState.value = _uiState.value.copy(
+                toastMessage = "Видео недоступно на эмуляторе",
+            )
+            return
+        }
         val currentState = _uiState.value.sessionState
         val enabling = !currentState.camOn
         val updatedState = currentState.copy(camOn = enabling)
@@ -995,6 +1017,12 @@ class CallViewModel @Inject constructor(
      * WebRTC CameraEnumerator из Flashphoner. Показывается в листе выбора камеры.
      */
     private fun refreshCameras() {
+        // Не перечисляем камеры на эмуляторе — обращение к camera-HAL
+        // (getCameraEnumerator/getDeviceNames) может уронить его и всю систему.
+        if (isEmulator) {
+            logCallStep("cameras_skip_emulator", "camera enumeration disabled on emulator")
+            return
+        }
         val cameras = runCatching {
             val enumerator = com.flashphoner.fpwcsapi.Flashphoner.getCameraEnumerator()
             val names = enumerator.deviceNames ?: emptyArray()
