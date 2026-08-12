@@ -119,6 +119,9 @@ class CallViewModel @Inject constructor(
     // пережить призрачную сессию с тем же именем на сервере).
     private var localRepublishAttempts = 0
     private var localRepublishJob: Job? = null
+    // true, когда после реджойна бэкенд терминировал нашу публикацию и мы отправили
+    // 2002 (ждём разрешения из лобби). В это время не долбим republish — ждём 2004/2005.
+    private var awaitingJoinApproval = false
     private var profileUserId: String? = null
 
     fun showIncomingCall(
@@ -230,6 +233,7 @@ class CallViewModel @Inject constructor(
         hasPublishedLocalStream = false
         hasRetriedPublish = false
         localRepublishAttempts = 0
+        awaitingJoinApproval = false
         localRepublishJob?.cancel()
 
         val resolvedParticipants = if (isGroupCall) {
@@ -415,8 +419,38 @@ class CallViewModel @Inject constructor(
         hasPublishedLocalStream = false
         hasRetriedPublish = false
         localRepublishAttempts = 0
+        awaitingJoinApproval = false
         localRepublishJob?.cancel()
         clearVideoState()
+    }
+
+    /**
+     * Запрос на присоединение к активному звонку (docs/calls.md §4). Нужен при
+     * повторном входе после выхода: бэкенд ставит вышедшему терминальный статус 2
+     * и терминирует прямую публикацию (info=Stopped by rest /terminate). Правильный
+     * путь — отправить 2002, попасть в комнату ожидания (status 6) и дождаться
+     * разрешения (2004/2005), после чего опубликоваться (joinFromLobby).
+     */
+    private fun requestJoinCall(dialogId: Long) {
+        viewModelScope.launch {
+            runCatching {
+                val ownerId = profileUserId
+                    ?: withContext(Dispatchers.IO) {
+                        userProfileRepository.getProfileInfo().await()
+                    }.id
+                socketService.sendMessage(
+                    "message",
+                    ChatSocketMessage(
+                        dialog = dialogId,
+                        cType = CTYPE_JOIN_CALL,
+                        owner = ownerId,
+                    ),
+                )
+                logCallStep("join_call_requested", "dialogId=$dialogId (2002)")
+            }.onFailure {
+                logCallStep("join_call_request_failed", "error=${it.message}")
+            }
+        }
     }
 
     private fun notifyIncomingCallDeclined(dialogId: Long) {
@@ -1992,7 +2026,7 @@ class CallViewModel @Inject constructor(
 
         when (cType) {
             CTYPE_STATE_CHANGED -> handleStateChange(json)
-            CTYPE_PERMITS_CHANGED -> refreshParticipants()
+            CTYPE_PERMITS_CHANGED -> handlePermitsChange(json)
             CTYPE_RECORD_STATUS -> handleRecordStatus(json)
             CTYPE_STATUS_CHANGED -> handleStatusChange(json)
             // Разрешение перехода из комнаты ожидания в звонок: администратор
@@ -2033,6 +2067,24 @@ class CallViewModel @Inject constructor(
         refreshParticipants()
     }
 
+    /**
+     * cType 2007 — изменение прав/ролей. Если админом назначили НАС — показываем
+     * уведомление «Вас назначили администратором» (дизайн). Затем обновляем ростер.
+     */
+    private fun handlePermitsChange(json: JSONObject) {
+        val selfId = profileUserId
+        val update = json.optJSONObject("permitsUpdate")
+        val user = update?.optString("user")
+        val role = update?.optString("role")
+        if (selfId != null && user == selfId && role == ROLE_ADMIN) {
+            logCallStep("self_assigned_admin", "role=$role")
+            _uiState.value = _uiState.value.copy(
+                toastMessage = "Вас назначили администратором",
+            )
+        }
+        refreshParticipants()
+    }
+
     /** true, если событие (2003/2004/2005) адресовано текущему пользователю. */
     private fun isSelfTargeted(json: JSONObject): Boolean {
         val selfId = profileUserId ?: return false
@@ -2049,7 +2101,22 @@ class CallViewModel @Inject constructor(
      * реконнекта (startCall с сохранёнными параметрами).
      */
     private fun joinFromLobby() {
-        if (flashphonerSessionManager.isRoomJoined()) return
+        awaitingJoinApproval = false
+        // Если мы всё ещё в WCS-комнате (после реджойна публикацию терминировали,
+        // но комната не разорвана) — не перезаходим, а просто ПУБЛИКУЕМСЯ снова:
+        // теперь сервер разрешил (status→5), терминации не будет.
+        if (flashphonerSessionManager.isRoomJoined()) {
+            logCallStep("join_from_lobby", "already in room → republish")
+            localPublishStarted = false
+            hasPublishedLocalStream = false
+            localRepublishAttempts = 0
+            val session = _uiState.value.sessionState
+            restartLocalStream(
+                audioEnabled = session.micOn,
+                videoEnabled = _uiState.value.isVideoCall,
+            )
+            return
+        }
         val params = lastCallParams ?: return
         logCallStep("join_from_lobby", "dialogId=${params.dialogId}")
         isCallStarted = false
@@ -2378,6 +2445,7 @@ class CallViewModel @Inject constructor(
             "PUBLISHED" -> {
                 hasPublishedLocalStream = true
                 localRepublishAttempts = 0
+                awaitingJoinApproval = false
                 localRepublishJob?.cancel()
                 logCallStep("publish_local_stream_success", "status=$status")
             }
@@ -2388,6 +2456,20 @@ class CallViewModel @Inject constructor(
                     "publish_local_stream_status_failed",
                     "status=$status info=$info attempts=$localRepublishAttempts"
                 )
+                // Бэкенд терминировал нашу публикацию (реджойн из терминального
+                // статуса 2). Долбить republish бесполезно — сервер снова
+                // терминирует. Идём по докам §4: шлём 2002 и ждём разрешения из
+                // комнаты ожидания (2004/2005 → joinFromLobby опубликует).
+                if (info?.contains("terminate", true) == true && !awaitingJoinApproval) {
+                    awaitingJoinApproval = true
+                    localRepublishJob?.cancel()
+                    val dialogId = _uiState.value.dialogId
+                    if (dialogId != null) requestJoinCall(dialogId)
+                    _uiState.value = _uiState.value.copy(
+                        toastMessage = "Ожидаем разрешения на вход в звонок",
+                    )
+                    return
+                }
                 scheduleLocalRepublish(info)
             }
             "UNPUBLISHED", "STOPPED" -> {
@@ -2408,6 +2490,8 @@ class CallViewModel @Inject constructor(
      * исчерпаны. Не роняем звонок и не крутим бесконечно.
      */
     private fun scheduleLocalRepublish(failInfo: String? = null) {
+        // Ждём разрешения из лобби (2002 отправлен) — republish бесполезен.
+        if (awaitingJoinApproval) return
         val status = _uiState.value.status
         if (status != CallStatus.CONNECTING && status != CallStatus.IN_CALL) return
         if (localRepublishJob?.isActive == true) return

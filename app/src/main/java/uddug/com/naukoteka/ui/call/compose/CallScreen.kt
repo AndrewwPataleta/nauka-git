@@ -81,6 +81,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -338,6 +339,19 @@ fun CallScreen(
                     onRemoteRendererReleased = clearRemoteRenderer,modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f, fill = true),
+                    )
+                }
+            }
+
+            // Баннер «X хочет войти» — приходит админу, когда участник в комнате
+            // ожидания (status 6). Кнопки Разрешить/Нет прямо в звонке (дизайн).
+            if (state.isCurrentUserAdmin) {
+                state.lobbyParticipants.firstOrNull()?.let { pending ->
+                    JoinRequestBanner(
+                        participant = pending,
+                        onAllow = { onAllowParticipant(pending.id) },
+                        onDeny = { onKickParticipant(pending.id) },
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     )
                 }
             }
@@ -1521,6 +1535,59 @@ private fun ParticipantCard(
                 .align(Alignment.TopStart)
                 .padding(8.dp),
         )
+    }
+}
+
+/**
+ * Баннер «X хочет войти» в звонке (для админа/организатора). Аватар + имя +
+ * «Разрешить» (впустить из лобби) / «Нет» (отклонить). Дизайн — карточка внизу
+ * над панелью управления.
+ */
+@Composable
+private fun JoinRequestBanner(
+    participant: CallParticipant,
+    onAllow: () -> Unit,
+    onDeny: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = Color(0xFF1B2036),
+        shape = RoundedCornerShape(14.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Avatar(url = participant.avatarUrl, name = participant.name, size = 36.dp)
+            Text(
+                text = stringResource(R.string.call_wants_to_join, participant.name ?: ""),
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = stringResource(R.string.call_allow_join),
+                color = Color(0xFF4DA6FF),
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .clickable { onAllow() }
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+            )
+            Text(
+                text = stringResource(R.string.call_deny_join),
+                color = Color(0xFFEB5757),
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .clickable { onDeny() }
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+            )
+        }
     }
 }
 
