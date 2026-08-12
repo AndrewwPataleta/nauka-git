@@ -2314,7 +2314,13 @@ class CallViewModel @Inject constructor(
             // SIGABRT (весь процесс падает). Оборачиваем ВСЁ тело в runCatching.
             runCatching {
                 val statusText = status.toString()
-                logCallStep("stream_status", "label=$label status=$statusText")
+                // На FAILED вытаскиваем ТОЧНУЮ причину (getInfo): STREAM_NAME_ALREADY_IN_USE,
+                // FAILED_BY_ICE_*, MEDIASESSION_ID_ALREADY_IN_USE и т.п. — чтобы чинить
+                // прицельно, а не гадать.
+                val info = if (statusText.equals("FAILED", ignoreCase = true)) {
+                    runCatching { stream.getInfo() }.getOrNull()
+                } else null
+                logCallStep("stream_status", "label=$label status=$statusText" + (info?.let { " info=$it" } ?: ""))
                 handleLocalPublishStatus(label, statusText)
                 if (label.startsWith("remote_play:") && statusText.equals("FAILED", ignoreCase = true)) {
                     scheduleRemoteResubscribe(label.removePrefix("remote_play:"))
