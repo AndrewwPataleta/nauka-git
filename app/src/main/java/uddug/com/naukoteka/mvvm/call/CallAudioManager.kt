@@ -24,6 +24,22 @@ class CallAudioManager @Inject constructor(
     private val audioManager: AudioManager? =
         context.getSystemService(AudioManager::class.java)
 
+    // На эмуляторах Bluetooth-стек битый: старт SCO / перечисление BT-устройств
+    // упирается в HCI-таймаут (LE_SET_EXTENDED_SCAN_ENABLE), что роняет весь
+    // system_server эмулятора — и вместе с ним наше приложение («либо крашится,
+    // либо само закрывается»). Реальных BT-устройств на эмуляторе всё равно нет,
+    // поэтому там BT-роутинг полностью выключаем.
+    private val isEmulator: Boolean = run {
+        val fp = Build.FINGERPRINT.orEmpty()
+        val model = Build.MODEL.orEmpty()
+        val product = Build.PRODUCT.orEmpty()
+        val hw = Build.HARDWARE.orEmpty()
+        fp.startsWith("generic") || fp.contains("emulator", true) ||
+            hw.contains("goldfish") || hw.contains("ranchu") ||
+            product.contains("sdk", true) || model.contains("emulator", true) ||
+            model.contains("Android SDK built for", true)
+    }
+
     private var focusRequest: AudioFocusRequest? = null
     private var previousMode: Int? = null
     private var previousSpeakerphoneOn: Boolean? = null
@@ -128,6 +144,7 @@ class CallAudioManager @Inject constructor(
                         AudioRoute(device.id.toString(), routeName(device, type), type)
                     }
                 }
+                .filterNot { isEmulator && it.type == AudioRouteType.BLUETOOTH }
                 .distinctBy { it.id }
         }
 
@@ -139,7 +156,7 @@ class CallAudioManager @Inject constructor(
             when (d.type) {
                 in WIRED_OUTPUT_TYPES -> routes += AudioRoute(ID_WIRED, NAME_WIRED, AudioRouteType.WIRED)
                 in BLUETOOTH_OUTPUT_TYPES ->
-                    routes += AudioRoute(ID_BT_PREFIX + d.id, btName(d), AudioRouteType.BLUETOOTH)
+                    if (!isEmulator) routes += AudioRoute(ID_BT_PREFIX + d.id, btName(d), AudioRouteType.BLUETOOTH)
             }
         }
         return routes.distinctBy { it.id }
@@ -250,7 +267,8 @@ class CallAudioManager @Inject constructor(
             manualRouteId = null
         }
 
-        val hasBluetooth = hasOutputOfTypes(BLUETOOTH_OUTPUT_TYPES)
+        // На эмуляторе BT не трогаем (крашит систему) — считаем, что его нет.
+        val hasBluetooth = !isEmulator && hasOutputOfTypes(BLUETOOTH_OUTPUT_TYPES)
         val hasWired = hasOutputOfTypes(WIRED_OUTPUT_TYPES)
 
         when {
