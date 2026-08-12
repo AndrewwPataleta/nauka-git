@@ -48,6 +48,7 @@ import uddug.com.naukoteka.mvvm.call.AudioRoute
 import uddug.com.naukoteka.mvvm.call.AudioRouteType
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallUiState
+import uddug.com.naukoteka.mvvm.call.CameraDevice
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 
 private val SheetBackground = Color(0xFF0B1020)
@@ -68,7 +69,7 @@ fun CallSettingsSheet(
     state: CallUiState,
     onDismiss: () -> Unit,
     onOpenAudioDevices: () -> Unit,
-    onSwitchCamera: () -> Unit,
+    onOpenCameraDevices: () -> Unit,
     onToggleHand: () -> Unit,
     onRecordClick: () -> Unit,
     onOpenParticipants: () -> Unit,
@@ -138,7 +139,7 @@ fun CallSettingsSheet(
                         iconRes = R.drawable.ic_camera,
                         title = "Камера",
                         subtitle = state.currentCameraName ?: "Основная камера",
-                        onClick = onSwitchCamera,
+                        onClick = onOpenCameraDevices,
                     )
                 }
                 SettingsNavRow(
@@ -209,6 +210,97 @@ fun AudioDeviceSheet(
                     }
                 }
             }
+        }
+    }
+}
+
+/** Лист «Выбор камеры» — фронтальная/основная/внешние (BT). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CameraDeviceSheet(
+    cameras: List<CameraDevice>,
+    currentCameraId: String?,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = SheetBackground,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SheetHeader(title = "Выбор камеры", onClose = onDismiss)
+
+            if (cameras.isEmpty()) {
+                Text(
+                    text = "Нет доступных камер",
+                    color = Muted,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    cameras.forEach { camera ->
+                        CameraDeviceRow(
+                            camera = camera,
+                            selected = camera.id == currentCameraId,
+                            onClick = {
+                                onSelect(camera.id)
+                                onDismiss()
+                            },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CameraDeviceRow(
+    camera: CameraDevice,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Icon(
+            painter = painterResource(
+                id = if (camera.isFront) R.drawable.ic_call_switch_camera else R.drawable.ic_camera,
+            ),
+            contentDescription = null,
+            tint = if (selected) Accent else Color.White,
+            modifier = Modifier.size(22.dp),
+        )
+        Text(
+            text = camera.name,
+            color = if (selected) Accent else Color.White,
+            fontSize = 16.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (selected) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_check),
+                contentDescription = null,
+                tint = Accent,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }

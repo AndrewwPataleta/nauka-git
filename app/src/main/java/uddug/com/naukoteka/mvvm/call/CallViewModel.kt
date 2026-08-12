@@ -755,6 +755,7 @@ class CallViewModel @Inject constructor(
                     .onFailure { logCallStep("post_publish_mute_audio_failed", "error=${it.message}") }
             }
             attachStreamDiagnostics(localStream, "local_publish")
+            if (videoEnabled) refreshCameras()
             _uiState.value = _uiState.value.copy(status = CallStatus.CONNECTING)
         }.onFailure { error ->
             Log.e("CallVM", "publish failed video=$videoEnabled", error)
@@ -979,15 +980,95 @@ class CallViewModel @Inject constructor(
         refreshAudioRoutes()
     }
 
-    /** Переключает фронтальную/основную камеру у публикуемого локального потока. */
+    /**
+     * Перечисляет доступные камеры (фронтальная/основная/внешние-BT) через
+     * WebRTC CameraEnumerator из Flashphoner. Показывается в листе выбора камеры.
+     */
+    private fun refreshCameras() {
+        val cameras = runCatching {
+            val enumerator = com.flashphoner.fpwcsapi.Flashphoner.getCameraEnumerator()
+            val names = enumerator.deviceNames ?: emptyArray()
+            var frontIdx = 0
+            var backIdx = 0
+            names.map { name ->
+                val front = runCatching { enumerator.isFrontFacing(name) }.getOrDefault(false)
+                val back = runCatching { enumerator.isBackFacing(name) }.getOrDefault(false)
+                val label = when {
+                    front -> if (++frontIdx == 1) "Фронтальная камера" else "Фронтальная камера $frontIdx"
+                    back -> if (++backIdx == 1) "Основная камера" else "Основная камера $backIdx"
+                    else -> name
+                }
+                CameraDevice(id = name, name = label, isFront = front)
+            }
+        }.onFailure { logCallStep("camera_enumerate_failed", "error=${it.message}") }
+            .getOrDefault(emptyList())
+        val currentId = _uiState.value.currentCameraId
+            ?: cameras.firstOrNull { it.isFront == isFrontCamera }?.id
+            ?: cameras.firstOrNull()?.id
+        val currentName = cameras.firstOrNull { it.id == currentId }?.name
+            ?: cameraLabel(isFrontCamera)
+        _uiState.value = _uiState.value.copy(
+            availableCameras = cameras,
+            currentCameraId = currentId,
+            currentCameraName = _uiState.value.currentCameraName ?: currentName,
+        )
+        logCallStep("cameras_refreshed", "count=${cameras.size} current=$currentId")
+    }
+
+    /**
+     * Выбор камеры из листа. Stream.switchCamera умеет только фронт↔тыл, поэтому
+     * если выбранная камера другой ориентации — переключаем. Для той же
+     * ориентации (тот же/другой девайс той же стороны) просто отмечаем выбор.
+     */
+    fun selectCamera(cameraId: String) {
+        val target = _uiState.value.availableCameras.firstOrNull { it.id == cameraId } ?: return
+        logCallStep("camera_select", "id=$cameraId isFront=${target.isFront} currentFront=$isFrontCamera")
+        if (target.isFront == isFrontCamera) {
+            _uiState.value = _uiState.value.copy(
+                currentCameraId = cameraId,
+                currentCameraName = target.name,
+            )
+            return
+        }
+        val stream = localStream
+        if (stream == null) {
+            _uiState.value = _uiState.value.copy(
+                toastMessage = "Камера доступна только когда включено видео",
+            )
+            return
+        }
+        runCatching {
+            stream.switchCamera(object : CameraSwitchHandler {
+                override fun onCameraSwitchDone(isFrontCamera: Boolean) {
+                    this@CallViewModel.isFrontCamera = isFrontCamera
+                    val dev = _uiState.value.availableCameras.firstOrNull { it.isFront == isFrontCamera }
+                    _uiState.value = _uiState.value.copy(
+                        currentCameraId = dev?.id ?: cameraId,
+                        currentCameraName = dev?.name ?: cameraLabel(isFrontCamera),
+                    )
+                    logCallStep("camera_switched", "isFront=$isFrontCamera")
+                }
+
+                override fun onCameraSwitchError(error: String?) {
+                    logCallStep("camera_switch_failed", "error=$error")
+                }
+            })
+        }.onFailure {
+            logCallStep("camera_switch_exception", "error=${it.message}")
+        }
+    }
+
+    /** Переключает фронтальную/основную камеру (быстрый тоггл, если понадобится). */
     fun switchCamera() {
         val stream = localStream ?: return
         runCatching {
             stream.switchCamera(object : CameraSwitchHandler {
                 override fun onCameraSwitchDone(isFrontCamera: Boolean) {
                     this@CallViewModel.isFrontCamera = isFrontCamera
+                    val dev = _uiState.value.availableCameras.firstOrNull { it.isFront == isFrontCamera }
                     _uiState.value = _uiState.value.copy(
-                        currentCameraName = cameraLabel(isFrontCamera),
+                        currentCameraId = dev?.id ?: _uiState.value.currentCameraId,
+                        currentCameraName = dev?.name ?: cameraLabel(isFrontCamera),
                     )
                     logCallStep("camera_switched", "isFront=$isFrontCamera")
                 }
@@ -2317,6 +2398,8 @@ data class CallUiState(
     val currentAudioRouteId: String? = null,
     val currentAudioRouteName: String? = null,
     val currentCameraName: String? = null,
+    val availableCameras: List<CameraDevice> = emptyList(),
+    val currentCameraId: String? = null,
     val currentUserAvatarUrl: String? = null,
     // VU-метр: говорю ли сейчас я и кто из участников говорит (для пульсации).
     val isSelfSpeaking: Boolean = false,
@@ -2348,3 +2431,10 @@ enum class CallStatus {
     IN_CALL,
     FINISHED,
 }
+
+/** Камера в листе выбора: id = имя устройства из WebRTC-энумератора. */
+data class CameraDevice(
+    val id: String,
+    val name: String,
+    val isFront: Boolean,
+)

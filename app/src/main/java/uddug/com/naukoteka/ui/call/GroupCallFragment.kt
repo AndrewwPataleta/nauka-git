@@ -129,6 +129,7 @@ class GroupCallFragment : Fragment() {
                         onMicPermissionDenied = viewModel::onMicPermissionDenied,
                         onAudioFocusFailed = viewModel::onAudioFocusFailed,
                         onSwitchCamera = viewModel::switchCamera,
+                        onSelectCamera = viewModel::selectCamera,
                         onToggleHand = viewModel::toggleHandRaise,
                         onSelectAudioRoute = viewModel::selectAudioRoute,
                         onSetParticipantPermit = viewModel::setParticipantPermit,

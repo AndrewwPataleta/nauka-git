@@ -141,6 +141,7 @@ fun CallScreen(
     onMicPermissionDenied: () -> Unit,
     onAudioFocusFailed: (String) -> Unit,
     onSwitchCamera: () -> Unit = {},
+    onSelectCamera: (String) -> Unit = {},
     onToggleHand: () -> Unit = {},
     onSelectAudioRoute: (String) -> Unit = {},
     onSetParticipantPermit: (String, String, Boolean) -> Unit = { _, _, _ -> },
@@ -180,6 +181,7 @@ fun CallScreen(
     var isRecordingSetupVisible by rememberSaveable { mutableStateOf(false) }
     var isSettingsSheetVisible by rememberSaveable { mutableStateOf(false) }
     var isAudioDeviceSheetVisible by rememberSaveable { mutableStateOf(false) }
+    var isCameraDeviceSheetVisible by rememberSaveable { mutableStateOf(false) }
     var isEndCallOptionsVisible by rememberSaveable { mutableStateOf(false) }
     var participantForPermits by remember { mutableStateOf<CallParticipant?>(null) }
 
@@ -440,7 +442,10 @@ fun CallScreen(
                 isSettingsSheetVisible = false
                 isAudioDeviceSheetVisible = true
             },
-            onSwitchCamera = onSwitchCamera,
+            onOpenCameraDevices = {
+                isSettingsSheetVisible = false
+                isCameraDeviceSheetVisible = true
+            },
             onToggleHand = onToggleHand,
             onRecordClick = onRecordAction,
             onOpenParticipants = {
@@ -468,6 +473,15 @@ fun CallScreen(
                 onSelectAudioRoute(routeId)
             },
             onDismiss = { isAudioDeviceSheetVisible = false },
+        )
+    }
+
+    if (isCameraDeviceSheetVisible) {
+        CameraDeviceSheet(
+            cameras = state.availableCameras,
+            currentCameraId = state.currentCameraId,
+            onSelect = { cameraId -> onSelectCamera(cameraId) },
+            onDismiss = { isCameraDeviceSheetVisible = false },
         )
     }
 
