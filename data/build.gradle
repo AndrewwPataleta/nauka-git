@@ -31,5 +31,14 @@ dependencies {
     implementation 'androidx.fragment:fragment-ktx:1.6.2'
     implementation "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.5.0"
 
+    // Room. NB: the room-compiler shipped with 2.6.1 jarjars a kotlinx-metadata
+    // reader that only understands Kotlin metadata <= 2.0.0 and hard-fails under
+    // kapt on this project's Kotlin 2.1.10 (@Metadata version 2.1.0). Room 2.7.x
+    // is the first line whose compiler reads 2.1.x metadata, so we build against
+    // it while keeping the plain kapt setup used everywhere else in the module.
+    implementation "androidx.room:room-runtime:2.7.1"
+    implementation "androidx.room:room-ktx:2.7.1"
+    kapt "androidx.room:room-compiler:2.7.1"
+
 
 }

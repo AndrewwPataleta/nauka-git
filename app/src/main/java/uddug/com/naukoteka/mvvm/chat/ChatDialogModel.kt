@@ -234,7 +234,7 @@ class ChatDialogViewModel @Inject constructor(
         // звонка) — сразу показываем прошлые сообщения без спиннера, а свежие
         // подтянем в фоне ниже. Иначе — обычный Loading.
         val cached = chatDialogCache.get(dialogId)
-        val showedCache = cached != null
+        var showedCache = cached != null
         if (cached != null) {
             currentDialogID = dialogId
             _currentDialogId.value = dialogId
@@ -246,6 +246,18 @@ class ChatDialogViewModel @Inject constructor(
         val startTime = System.currentTimeMillis()
         viewModelScope.launch {
             try {
+                // Холодный старт: in-memory кэша нет, но список сообщений мог
+                // сохраниться в persistent-кэше (Room). Показываем его сразу, до
+                // сетевого запроса, чтобы диалог не открывался пустым спиннером.
+                if (!showedCache) {
+                    val persisted = chatDialogCache.getPersisted(dialogId)
+                    if (persisted != null) {
+                        currentDialogID = dialogId
+                        _currentDialogId.value = dialogId
+                        _uiState.value = persisted
+                        showedCache = true
+                    }
+                }
                 val user = withContext(Dispatchers.IO) { userRepository.getProfileInfo().await() }
                 currentUser = user
                 _currentUserId.value = user.id

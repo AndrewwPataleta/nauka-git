@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.google.gson.reflect.TypeToken
+import uddug.com.data.cache.persistent.PersistentJsonCache
 import uddug.com.data.cache.user_id.UserIdCache
 import uddug.com.data.cache.user_uuid.UserUUIDCache
 import uddug.com.domain.entities.chat.ActiveCall
@@ -37,7 +39,11 @@ class ChatListViewModel @Inject constructor(
     userIdCache: UserIdCache,
     userUUIDCache: UserUUIDCache,
     private val socketService: SocketService,
+    private val persistentCache: PersistentJsonCache,
 ) : ViewModel() {
+
+    private fun dialogsCacheKey(folderId: Long?): String =
+        "dialogs:${folderId ?: "all"}"
 
     private val currentUserIds: Set<String> = listOfNotNull(
         userIdCache.entity?.takeIf { it.isNotBlank() },
@@ -167,19 +173,38 @@ class ChatListViewModel @Inject constructor(
     }
 
     fun loadChats(folderId: Long? = _currentFolderId.value) {
-        _uiState.value = ChatListUiState.Loading
         loadChatsJob?.cancel()
         val startTime = System.currentTimeMillis()
         _currentFolderId.value = folderId
+        val cacheKey = dialogsCacheKey(folderId)
         loadChatsJob = viewModelScope.launch {
+            // Offline-first: если есть закэшированный список — показываем его сразу
+            // (без спиннера), а свежий подтягиваем в фоне ниже. Cold miss — Loading.
+            val cached = persistentCache.getList<Chat>(
+                cacheKey,
+                object : TypeToken<List<Chat>>() {}.type,
+            )
+            val showedCache = !cached.isNullOrEmpty()
+            if (showedCache) {
+                _uiState.value = ChatListUiState.Success(cached!!)
+                refreshActiveCalls(cached)
+            } else {
+                _uiState.value = ChatListUiState.Loading
+            }
             try {
                 val chats = chatRepository.getChats(folderId)
-                val elapsed = System.currentTimeMillis() - startTime
-                if (elapsed < 500L) delay(500L - elapsed)
+                if (!showedCache) {
+                    val elapsed = System.currentTimeMillis() - startTime
+                    if (elapsed < 500L) delay(500L - elapsed)
+                }
                 _uiState.value = ChatListUiState.Success(chats)
+                persistentCache.putList(cacheKey, chats)
                 refreshActiveCalls(chats)
             } catch (e: Exception) {
-                _uiState.value = ChatListUiState.Error(e.message ?: "Unknown error")
+                // Не затираем показанный из кэша контент ошибкой — он полезнее.
+                if (!showedCache) {
+                    _uiState.value = ChatListUiState.Error(e.message ?: "Unknown error")
+                }
             }
         }
     }
