@@ -83,6 +83,7 @@ class ChatDialogViewModel @Inject constructor(
     private val socketService: SocketService,
     private val chatStatusFormatter: ChatStatusFormatter,
     private val callRepository: CallRepository,
+    private val chatDialogCache: ChatDialogCache,
     ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ChatDialogUiState>(ChatDialogUiState.Loading())
@@ -144,6 +145,16 @@ class ChatDialogViewModel @Inject constructor(
     private var hasMoreOlder: Boolean = true
 
     init {
+        // Держим кэш диалога свежим: любое новое Success (входящие/отправленные
+        // сообщения, правки) кладём в кэш, чтобы при следующем открытии показать
+        // самое актуальное состояние мгновенно.
+        viewModelScope.launch {
+            _uiState.collect { st ->
+                if (st is ChatDialogUiState.Success) {
+                    currentDialogID?.let { chatDialogCache.put(it, st) }
+                }
+            }
+        }
         socketService.connect()
         socketService.setOnEvent("message", LISTENER_TAG) { message ->
             handleIncomingMessage(message)
@@ -215,7 +226,18 @@ class ChatDialogViewModel @Inject constructor(
         if (currentState is ChatDialogUiState.Success && currentDialogID == dialogId) {
             return
         }
-        _uiState.value = ChatDialogUiState.Loading()
+        // Кэш: если этот диалог уже открывали в этой сессии (напр. вернулись из
+        // звонка) — сразу показываем прошлые сообщения без спиннера, а свежие
+        // подтянем в фоне ниже. Иначе — обычный Loading.
+        val cached = chatDialogCache.get(dialogId)
+        val showedCache = cached != null
+        if (cached != null) {
+            currentDialogID = dialogId
+            _currentDialogId.value = dialogId
+            _uiState.value = cached
+        } else {
+            _uiState.value = ChatDialogUiState.Loading()
+        }
         hasMoreOlder = true
         val startTime = System.currentTimeMillis()
         viewModelScope.launch {
@@ -259,13 +281,16 @@ class ChatDialogViewModel @Inject constructor(
                     }
                 }
 
-                _uiState.value = ChatDialogUiState.Loading(
-                    chatName = name,
-                    chatImage = image,
-                    isGroup = isGroup,
-                    firstParticipantName = firstParticipantName,
-                    status = status
-                )
+                // Не затираем показанный из кэша контент промежуточным Loading.
+                if (!showedCache) {
+                    _uiState.value = ChatDialogUiState.Loading(
+                        chatName = name,
+                        chatImage = image,
+                        isGroup = isGroup,
+                        firstParticipantName = firstParticipantName,
+                        status = status
+                    )
+                }
 
                 val currentUserId = user.id ?: return@launch
                 val messages = chatInteractor.getMessagesWithOwnerInfo(
@@ -275,9 +300,13 @@ class ChatDialogViewModel @Inject constructor(
                     lastMessageId = null,
                 ).sortedBy { it.createdAt }
                 hasMoreOlder = messages.size >= PAGE_SIZE
-                val elapsed = System.currentTimeMillis() - startTime
-                if (elapsed < 500L) delay(500L - elapsed)
-                _uiState.value = ChatDialogUiState.Success(
+                // Артиф. задержку против мигания спиннера делаем только когда
+                // реально показывали спиннер (нет кэша).
+                if (!showedCache) {
+                    val elapsed = System.currentTimeMillis() - startTime
+                    if (elapsed < 500L) delay(500L - elapsed)
+                }
+                val success = ChatDialogUiState.Success(
                     chats = messages,
                     chatName = name,
                     chatImage = image,
@@ -287,6 +316,8 @@ class ChatDialogViewModel @Inject constructor(
                     attachedFiles = attachedFiles.toList(),
                     pinnedMessages = info.pinnedMessages,
                 )
+                _uiState.value = success
+                chatDialogCache.put(dialogId, success)
                 applyPendingForwardIfAny()
                 markMessagesRead(dialogId, messages)
                 refreshActiveCall(dialogId)
