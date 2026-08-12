@@ -2076,11 +2076,23 @@ class CallViewModel @Inject constructor(
         val update = json.optJSONObject("permitsUpdate")
         val user = update?.optString("user")
         val role = update?.optString("role")
-        if (selfId != null && user == selfId && role == ROLE_ADMIN) {
-            logCallStep("self_assigned_admin", "role=$role")
-            _uiState.value = _uiState.value.copy(
-                toastMessage = "Вас назначили администратором",
-            )
+        if (selfId != null && user == selfId) {
+            // Роль сменили нам. Организатором делает передача при выходе прежнего
+            // организатора (docs §Постобработка: первого админа → в организаторы).
+            when (role) {
+                ROLE_ADMIN -> {
+                    logCallStep("self_assigned_admin", "role=$role")
+                    _uiState.value = _uiState.value.copy(
+                        toastMessage = "Вас назначили администратором",
+                    )
+                }
+                ROLE_ORGANIZER -> {
+                    logCallStep("self_assigned_organizer", "role=$role")
+                    _uiState.value = _uiState.value.copy(
+                        toastMessage = "Вы стали организатором звонка",
+                    )
+                }
+            }
         }
         refreshParticipants()
     }
