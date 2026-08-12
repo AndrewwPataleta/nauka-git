@@ -705,14 +705,16 @@ class CallViewModel @Inject constructor(
         localPublishStarted = true
         saveActiveCallState()
 
-        // В групповом звонке публикуем видео-дорожку СРАЗУ (даже в аудио-звонке),
-        // чтобы позже включить камеру простым unmuteVideo без unpublish→republish.
-        // Камера при этом будет замьючена, если camOn=false — «наружу» видео не
-        // идёт. Требует права CAMERA (в группе запрашиваем его на старте); если
-        // права нет и публикация с видео упадёт — откатываемся в аудио-only.
+        // Публикуем видео-дорожку ТОЛЬКО когда звонок реально видео или камера
+        // включена. Форсить видео в групповом аудиозвонке нельзя: на эмуляторе/
+        // слабом железе видео-энкодер стабильно валит публикацию (PUBLISHING→
+        // FAILED), поток рушится, сервер видит битого паблишера и завершает звонок
+        // (cType 6) — «камера выкл, никто не видит, при включении всё падает».
+        // Аудио публикуется стабильно → база звонка живёт; видео поднимаем только
+        // по явному включению камеры (там уже есть аудио-фолбэк при провале).
         val isGroup = _uiState.value.isGroupCall
-        val wantVideoTrack = isVideoCall || isGroup
         val camOn = _uiState.value.sessionState.camOn
+        val wantVideoTrack = isVideoCall || camOn
         logCallStep(
             "publish_local_stream_start",
             "streamName=$streamName isVideoCall=$isVideoCall isGroup=$isGroup wantVideoTrack=$wantVideoTrack audio=$audioEnabled camOn=$camOn"
