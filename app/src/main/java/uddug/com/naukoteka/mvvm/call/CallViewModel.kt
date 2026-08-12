@@ -532,22 +532,24 @@ class CallViewModel @Inject constructor(
         )
     }
 
-    /** Асинхронно запрашивает getStats у локального и удалённых потоков. */
+    /**
+     * Запрашивает уровень звука ТОЛЬКО у локального потока и ТОЛЬКО когда звонок
+     * уже стабильно активен. Опрашивать удалённые потоки через getStats нельзя:
+     * их PeerConnection может ещё договариваться (setRemoteSDP), и колбэк
+     * getStats на signaling-треде роняет нативный WebRTC с
+     * `Check failed: !env->ExceptionCheck()` (SIGABRT). Поэтому пульсацию
+     * driver'им только для «я говорю».
+     */
     private fun requestAudioLevelSamples() {
-        val selfId = profileUserId
-        val local = localStream
-        if (selfId != null && local != null) {
-            runCatching {
-                local.getStats { stats -> speakingLevels[selfId] = audioLevelOf(stats) }
+        if (_uiState.value.status != CallStatus.IN_CALL) return
+        val selfId = profileUserId ?: return
+        val local = localStream ?: return
+        if (!hasPublishedLocalStream) return
+        runCatching {
+            local.getStats { stats ->
+                runCatching { speakingLevels[selfId] = audioLevelOf(stats) }
             }
-        }
-        participantHandles.forEach { (participantId, handle) ->
-            val key = handle.streamName ?: participantId
-            val stream = participantStreams[key] ?: return@forEach
-            runCatching {
-                stream.getStats { stats -> speakingLevels[participantId] = audioLevelOf(stats) }
-            }
-        }
+        }.onFailure { logCallStep("vu_getstats_failed", "error=${it.message}") }
     }
 
     private fun audioLevelOf(stats: com.flashphoner.fpwcsapi.session.StreamStats?): Double {
