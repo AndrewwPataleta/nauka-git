@@ -2248,13 +2248,20 @@ class CallViewModel @Inject constructor(
     private fun attachStreamDiagnostics(stream: Stream?, label: String) {
         if (stream == null) return
         stream.on { _, status ->
-            val statusText = status.toString()
-            logCallStep("stream_status", "label=$label status=$statusText")
-            handleLocalPublishStatus(label, statusText)
-            if (label.startsWith("remote_play:") && statusText.equals("FAILED", ignoreCase = true)) {
-                scheduleRemoteResubscribe(label.removePrefix("remote_play:"))
+            // ЭТОТ колбэк выполняется на нативном WebRTC-треде через JNI. Любое
+            // непойманное Java-исключение здесь = `!env->ExceptionCheck()` →
+            // SIGABRT (весь процесс падает). Оборачиваем ВСЁ тело в runCatching.
+            runCatching {
+                val statusText = status.toString()
+                logCallStep("stream_status", "label=$label status=$statusText")
+                handleLocalPublishStatus(label, statusText)
+                if (label.startsWith("remote_play:") && statusText.equals("FAILED", ignoreCase = true)) {
+                    scheduleRemoteResubscribe(label.removePrefix("remote_play:"))
+                }
+                maybeSanitizeRemoteSdp(stream, label)
+            }.onFailure {
+                logCallStep("stream_status_callback_error", "label=$label error=${it.message}")
             }
-            maybeSanitizeRemoteSdp(stream, label)
         }
     }
 
