@@ -224,6 +224,10 @@ class ChatDialogViewModel @Inject constructor(
         // the shimmer and takes a noticeable delay.
         val currentState = _uiState.value
         if (currentState is ChatDialogUiState.Success && currentDialogID == dialogId) {
+            // Даже без перезагрузки списка — обновляем статус активного звонка,
+            // чтобы после выхода из звонка баннер «К звонку» появлялся СРАЗУ, а не
+            // через минуты (иначе рано-return пропускал refreshActiveCall).
+            refreshActiveCall(dialogId)
             return
         }
         // Кэш: если этот диалог уже открывали в этой сессии (напр. вернулись из
