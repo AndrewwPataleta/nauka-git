@@ -1,17 +1,21 @@
 package uddug.com.naukoteka.ui.chat.compose.components
 
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -21,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -52,7 +57,7 @@ fun ChatActivityStatus(
     ) {
         when (line.icon) {
             ChatActivityIcon.TYPING -> TypingDots(accent)
-            ChatActivityIcon.SENDING -> SendingArrow(accent)
+            ChatActivityIcon.SENDING -> HorizontalLoading(accent)
             ChatActivityIcon.VOICE -> VoiceWaves(accent)
         }
         Text(
@@ -136,7 +141,7 @@ private fun firstName(user: uddug.com.domain.entities.chat.User): String =
 @Composable
 private fun TypingDots(color: Color) {
     val transition = rememberInfiniteTransition(label = "typing_header")
-    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(2.5.dp)) {
         repeat(3) { index ->
             val alpha by transition.animateFloat(
                 initialValue = 0.3f,
@@ -155,7 +160,7 @@ private fun TypingDots(color: Color) {
             )
             Box(
                 modifier = Modifier
-                    .size(4.dp)
+                    .size(3.dp)
                     .clip(CircleShape)
                     .alpha(alpha)
                     .background(color, CircleShape),
@@ -164,32 +169,42 @@ private fun TypingDots(color: Color) {
     }
 }
 
+/**
+ * Маленький indeterminate-индикатор загрузки для статуса «отправляет файл/фото/
+ * видео»: скруглённая дорожка + бегающий по ней акцентный сегмент.
+ */
 @Composable
-private fun SendingArrow(color: Color) {
-    Canvas(modifier = Modifier.size(14.dp)) {
-        val w = size.width
-        val h = size.height
-        val cy = h / 2f
-        val stroke = Stroke(width = w * 0.11f)
-        // Горизонтальная линия
-        drawLine(
-            color = color,
-            start = Offset(w * 0.08f, cy),
-            end = Offset(w * 0.86f, cy),
-            strokeWidth = stroke.width,
+private fun HorizontalLoading(color: Color) {
+    val transition = rememberInfiniteTransition(label = "sending")
+    val progress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "seg",
+    )
+    Canvas(
+        modifier = Modifier
+            .width(16.dp)
+            .height(3.dp),
+    ) {
+        val r = size.height / 2f
+        val radius = CornerRadius(r, r)
+        // Дорожка
+        drawRoundRect(
+            color = color.copy(alpha = 0.25f),
+            cornerRadius = radius,
         )
-        // Наконечник
-        drawLine(
+        // Бегущий сегмент (~45% ширины)
+        val segW = size.width * 0.45f
+        val x = (size.width - segW) * progress
+        drawRoundRect(
             color = color,
-            start = Offset(w * 0.58f, h * 0.24f),
-            end = Offset(w * 0.9f, cy),
-            strokeWidth = stroke.width,
-        )
-        drawLine(
-            color = color,
-            start = Offset(w * 0.58f, h * 0.76f),
-            end = Offset(w * 0.9f, cy),
-            strokeWidth = stroke.width,
+            topLeft = Offset(x, 0f),
+            size = Size(segW, size.height),
+            cornerRadius = radius,
         )
     }
 }

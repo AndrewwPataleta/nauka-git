@@ -55,8 +55,17 @@ class ProfileFragment : BaseFragment(R.layout.fragment_profile), ProfileView {
         onFeedContainerClick = { presenter.onPostDetailClick(it) },
         onPostMenuClick = { presenter.onPostMenuClick(it) },
         onPostImageClick = { presenter.onPostImageClick(it) },
-        onLikeClick = { presenter.onLikeClick(it) }
+        onLikeClick = { presenter.onLikeClick(it) },
+        onAuthorClick = { userId -> openOtherProfile(userId) }
     )
+
+    private fun openOtherProfile(userId: String?) {
+        val id = userId?.takeIf { it.isNotBlank() } ?: return
+        findNavController().navigate(
+            R.id.otherProfileFragment,
+            Bundle().apply { putString("userId", id) }
+        )
+    }
 
     @ProvidePresenter
     fun providePresenter(): ProfilePresenter =

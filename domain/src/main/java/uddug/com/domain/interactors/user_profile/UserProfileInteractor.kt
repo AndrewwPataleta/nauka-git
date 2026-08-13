@@ -38,6 +38,20 @@ class UserProfileInteractor(
             .observeOn(schedulers.ui())
     }
 
+    // Профиль другого пользователя по id (экран «Чужой профиль»).
+    fun getUserProfile(userId: String): Single<UserProfileFullInfo> {
+        return userProfileRepository.getProfileInfo(userId)
+            .subscribeOn(schedulers.io())
+            .observeOn(schedulers.ui())
+    }
+
+    // Подписаться/отписаться. uref берём из UserProfileFullInfo.uref.
+    fun setSubscribed(uref: String, subscribed: Boolean): Completable {
+        return userProfileRepository.setSubscribed(uref, subscribed)
+            .subscribeOn(schedulers.io())
+            .observeOn(schedulers.ui())
+    }
+
     fun validateUser(): Completable {
         return userProfileRepository.validateProfile()
             .subscribeOn(schedulers.io())

@@ -42,6 +42,14 @@ class ChatDetailDialogSearchFragment : Fragment() {
                                 putLong(ARG_MESSAGE_ID, messageId)
                             }
                             findNavController().navigate(R.id.chatDialogFragment, args)
+                        },
+                        onUserClick = { userId ->
+                            if (userId.isNotBlank()) {
+                                findNavController().navigate(
+                                    R.id.otherProfileFragment,
+                                    Bundle().apply { putString("userId", userId) }
+                                )
+                            }
                         }
                     )
                 }

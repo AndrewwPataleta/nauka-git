@@ -115,6 +115,14 @@ class ChatDetailDialogFragment : Fragment() {
                         },
                         onChatDeleted = {
 
+                        },
+                        onUserClick = { userId ->
+                            if (userId.isNotBlank()) {
+                                findNavController().navigate(
+                                    R.id.otherProfileFragment,
+                                    Bundle().apply { putString("userId", userId) }
+                                )
+                            }
                         }
                     )
                 }

@@ -50,6 +50,7 @@ fun ChatListComponent(
     onFolderSettings: () -> Unit,
     onChangeFolderOrder: () -> Unit,
     onEditFolder: (Long) -> Unit,
+    onUserClick: (String) -> Unit = {},
 ) {
     var selectedDialogId by remember { mutableStateOf<Long?>(null) }
     val isSelectionMode by viewModel.isSelectionMode.collectAsState()
@@ -132,7 +133,8 @@ fun ChatListComponent(
                 onTabSelected = { selectedSearchTab = it },
                 results = searchResults,
                 isLoading = isSearchLoading,
-                onResultClick = { viewModel.onChatClick(it) }
+                onResultClick = { viewModel.onChatClick(it) },
+                onUserClick = onUserClick
             )
         }
     }
@@ -175,6 +177,7 @@ private fun SearchResultsContent(
     results: SearchResults,
     isLoading: Boolean,
     onResultClick: (Long) -> Unit,
+    onUserClick: (String) -> Unit = {},
 ) {
     Column(
             modifier = modifier
@@ -257,7 +260,8 @@ private fun SearchResultsContent(
                                 SearchResultItem(
                                     result = result,
                                     query = query,
-                                    onClick = onResultClick
+                                    onClick = onResultClick,
+                                    onUserClick = onUserClick
                                 )
                             }
                         }

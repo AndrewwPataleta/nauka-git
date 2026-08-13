@@ -101,13 +101,20 @@ fun ChatMessageItem(
     isPollAuthor: Boolean = false,
     mentionUsers: List<Pair<String, String>> = emptyList(),
     onMentionClick: (String) -> Unit = {},
+    onUserClick: (String) -> Unit = {},
 ) {
     val isSystem = message.type == MessageType.SYSTEM && message.files.isEmpty()
-    // Пустое системное сообщение (без текста и файлов) — обычно транзиентное
-    // событие звонка, которое сервер тут же заменяет/убирает. Раньше оно на
-    // секунду мигало пустой строкой в ленте при входе/выходе из звонка. Ничего
-    // не рисуем — информации оно не несёт.
-    if (isSystem && message.text.isNullOrBlank()) return
+    // Пустое сообщение без текста/файлов/опроса/реплая — обычно транзиентное
+    // событие звонка (вход/выход), которое сервер тут же заменяет/убирает. Раньше
+    // оно висело пустым баблом/строкой в ленте у того, кто вышел из звонка, и
+    // пропадало только по завершении звонка. Ничего не рисуем — контента нет.
+    val hasNothingToShow = message.text.isNullOrBlank() &&
+        message.files.isEmpty() &&
+        message.poll == null &&
+        message.replyTo == null &&
+        message.forwardedFromName == null &&
+        message.type != MessageType.VOICE
+    if (hasNothingToShow) return
     Row(
         modifier = Modifier
             .padding(horizontal = 10.dp)
@@ -155,7 +162,19 @@ fun ChatMessageItem(
         ) {
             if (!isMine && !isSystem) {
 
-                Avatar(url = message.ownerAvatarUrl, name = message.ownerName)
+                val senderId = message.ownerId
+                Box(
+                    modifier = if (!senderId.isNullOrBlank()) {
+                        Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { onUserClick(senderId) }
+                    } else {
+                        Modifier
+                    }
+                ) {
+                    Avatar(url = message.ownerAvatarUrl, name = message.ownerName)
+                }
                 Spacer(modifier = Modifier.width(8.dp))
             }
 
@@ -178,11 +197,20 @@ fun ChatMessageItem(
                         .widthIn(max = 300.dp)
                 ) {
                     if (!isMine && message.ownerName?.isNotEmpty() == true) {
+                        val senderId = message.ownerId
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = message.ownerName.orEmpty(),
                                 color = chatColors.accent,
-                                fontSize = 14.sp
+                                fontSize = 14.sp,
+                                modifier = if (!senderId.isNullOrBlank()) {
+                                    Modifier.clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) { onUserClick(senderId) }
+                                } else {
+                                    Modifier
+                                },
                             )
                             if (message.ownerIsAdmin) {
                                 Spacer(modifier = Modifier.width(6.dp))

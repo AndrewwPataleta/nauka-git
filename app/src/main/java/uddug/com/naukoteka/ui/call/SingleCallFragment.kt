@@ -182,9 +182,27 @@ class SingleCallFragment : Fragment() {
                         onShareLink = { shareCallLink() },
                         onLeaveCall = { viewModel.endCall() },
                         onEndForAll = { viewModel.endCallForEveryone() },
+                        onBindPreviewRenderer = viewModel::bindPreviewRenderer,
+                        onReleasePreviewRenderer = viewModel::releasePreviewRenderer,
+                        onConfirmPreJoin = viewModel::confirmPreJoin,
+                        onCancelPreJoin = viewModel::abortPreJoin,
+                        onFlipPreviewCamera = viewModel::flipPreviewCamera,
+                        onOpenParticipantProfile = { userId -> openOtherProfile(userId) },
                     )
                 }
             }
+        }
+    }
+
+    // Тап по участнику звонка открывает его «Чужой профиль» (глобальный пункт
+    // nav-графа). Пустой id игнорируем; тап по себе обрабатывает сам экран.
+    private fun openOtherProfile(userId: String) {
+        if (userId.isBlank()) return
+        runCatching {
+            findNavController().navigate(
+                R.id.otherProfileFragment,
+                Bundle().apply { putString("userId", userId) },
+            )
         }
     }
 
@@ -328,16 +346,31 @@ class SingleCallFragment : Fragment() {
     }
 
     private fun startCall(request: PendingStartCallRequest) {
-        viewModel.startCall(
-            dialogId = request.dialogId,
-            contactName = request.contactName,
-            avatarUrl = request.avatarUrl,
-            participants = request.participants,
-            callTitle = request.callTitle,
-            isVideoCall = request.isVideoCall,
-            isAcceptingIncomingCall = request.isAcceptingIncomingCall,
-            isGroupCall = request.isGroupCall,
-        )
+        // ВИДЕОзвонок (исходящий ИЛИ приём входящего) — сначала пре-экран настройки,
+        // реальный вход/оповещение только по «Присоединиться». Аудио — как раньше.
+        if (request.isVideoCall) {
+            viewModel.enterPreJoin(
+                dialogId = request.dialogId,
+                contactName = request.contactName,
+                avatarUrl = request.avatarUrl,
+                callTitle = request.callTitle,
+                isVideoCall = true,
+                isGroupCall = request.isGroupCall,
+                participants = request.participants,
+                isAcceptingIncomingCall = request.isAcceptingIncomingCall,
+            )
+        } else {
+            viewModel.startCall(
+                dialogId = request.dialogId,
+                contactName = request.contactName,
+                avatarUrl = request.avatarUrl,
+                participants = request.participants,
+                callTitle = request.callTitle,
+                isVideoCall = request.isVideoCall,
+                isAcceptingIncomingCall = request.isAcceptingIncomingCall,
+                isGroupCall = request.isGroupCall,
+            )
+        }
     }
 
     private fun showMicrophonePermissionAlert() {

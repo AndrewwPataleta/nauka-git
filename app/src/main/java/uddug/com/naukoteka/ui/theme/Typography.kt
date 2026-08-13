@@ -8,7 +8,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import uddug.com.naukoteka.R
 
-private val GolosFontFamily = FontFamily(
+val GolosFontFamily = FontFamily(
     Font(resId = R.font.golos_text_regular, weight = FontWeight.Normal),
     Font(resId = R.font.golos_text_medium, weight = FontWeight.Medium),
     Font(resId = R.font.golos_text_demi_bold, weight = FontWeight.SemiBold),

@@ -83,6 +83,7 @@ fun ChatGroupDetailComponent(
     onAddParticipantsClick: (Long) -> Unit,
     onCallClick: (String?, String?, Boolean) -> Unit,
     onViewAvatar: (String) -> Unit,
+    onUserClick: (String) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
@@ -218,6 +219,7 @@ fun ChatGroupDetailComponent(
                         onParticipantMoreClick = { participant ->
                             selectedParticipant = participant
                         },
+                        onParticipantUserClick = onUserClick,
                         onAvatarClick = {
                             if (state.isCurrentUserAdmin && !state.isAvatarUpdating) {
                                 showAvatarDialog = true
@@ -358,6 +360,7 @@ private fun ParticipantsTabContent(
     onAddParticipantClick: () -> Unit,
     participants: List<Participant>,
     onParticipantMoreClick: (Participant) -> Unit,
+    onParticipantUserClick: (String) -> Unit = {},
     onAvatarClick: () -> Unit,
     onCallClick: () -> Unit,
 ) {
@@ -393,7 +396,8 @@ private fun ParticipantsTabContent(
             onClearSearch = onClearSearch,
             onAddParticipantClick = onAddParticipantClick,
             participants = participants,
-            onParticipantMoreClick = onParticipantMoreClick
+            onParticipantMoreClick = onParticipantMoreClick,
+            onParticipantUserClick = onParticipantUserClick
         )
     }
 }
@@ -646,6 +650,7 @@ private fun LazyListScope.participantsList(
     onAddParticipantClick: () -> Unit,
     participants: List<Participant>,
     onParticipantMoreClick: (Participant) -> Unit,
+    onParticipantUserClick: (String) -> Unit = {},
 ) {
     if (isCurrentUserAdmin) {
         item {
@@ -701,7 +706,8 @@ private fun LazyListScope.participantsList(
             ParticipantRow(
                 participant = participant,
                 isCurrentUserAdmin = isCurrentUserAdmin,
-                onMoreClick = onParticipantMoreClick
+                onMoreClick = onParticipantMoreClick,
+                onUserClick = onParticipantUserClick
             )
             Divider(color = MaterialTheme.colorScheme.surfaceVariant)
         }
@@ -713,11 +719,14 @@ private fun ParticipantRow(
     participant: Participant,
     isCurrentUserAdmin: Boolean,
     onMoreClick: (Participant) -> Unit,
+    onUserClick: (String) -> Unit = {},
 ) {
     val canManageParticipant = isCurrentUserAdmin &&
         !participant.isCurrentUser &&
         !participant.isOwner &&
         participant.user.userId != null
+
+    val participantUserId = participant.user.userId
 
     Row(
         modifier = Modifier
@@ -725,14 +734,36 @@ private fun ParticipantRow(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Avatar(
-            url =participant.user.image,
-            name = participant.user.fullName,
-            size = 44.dp
-        )
+        Box(
+            modifier = if (!participantUserId.isNullOrBlank()) {
+                Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) { onUserClick(participantUserId) }
+            } else {
+                Modifier
+            }
+        ) {
+            Avatar(
+                url = participant.user.image,
+                name = participant.user.fullName,
+                size = 44.dp
+            )
+        }
         Spacer(modifier = Modifier.width(12.dp))
         Column(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .then(
+                    if (!participantUserId.isNullOrBlank()) {
+                        Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { onUserClick(participantUserId) }
+                    } else {
+                        Modifier
+                    }
+                ),
             verticalArrangement = Arrangement.Center
         ) {
             Text(

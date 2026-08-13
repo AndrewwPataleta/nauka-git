@@ -6,6 +6,8 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,10 +36,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.MaterialTheme
@@ -83,6 +89,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -107,6 +114,7 @@ import uddug.com.naukoteka.mvvm.call.AudioRouteType
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallUiState
+import uddug.com.naukoteka.mvvm.call.PreJoinPhase
 import uddug.com.domain.entities.call.CallSessionState
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
 import com.flashphoner.fpwcsapi.Flashphoner
@@ -151,6 +159,11 @@ fun CallScreen(
     onShareLink: () -> Unit = {},
     onLeaveCall: () -> Unit = {},
     onEndForAll: () -> Unit = {},
+    onBindPreviewRenderer: (SurfaceViewRenderer) -> Unit = {},
+    onReleasePreviewRenderer: () -> Unit = {},
+    onConfirmPreJoin: () -> Unit = {},
+    onCancelPreJoin: () -> Unit = {},
+    onFlipPreviewCamera: () -> Unit = {},
     onAllowParticipant: (String) -> Unit = {},
     onAllowAll: () -> Unit = {},
     onKickParticipant: (String) -> Unit = {},
@@ -184,6 +197,7 @@ fun CallScreen(
     var isAudioDeviceSheetVisible by rememberSaveable { mutableStateOf(false) }
     var isCameraDeviceSheetVisible by rememberSaveable { mutableStateOf(false) }
     var isEndCallOptionsVisible by rememberSaveable { mutableStateOf(false) }
+    var isPreJoinSettingsVisible by rememberSaveable { mutableStateOf(false) }
     var participantForPermits by remember { mutableStateOf<CallParticipant?>(null) }
 
     // Красная кнопка «завершить»: в 1-на-1 завершаем у обоих (REST stop); в группе
@@ -233,6 +247,64 @@ fun CallScreen(
             onAcceptCall = onAcceptCall,
             onDeclineCall = onDeclineCall,
         )
+        return
+    }
+
+    // Пре-экран «до входа в звонок»: локальное превью камеры + проверка устройств.
+    // Реального входа в комнату ещё нет — только по «Присоединиться».
+    state.preJoinPhase?.takeIf { state.status != CallStatus.FINISHED }?.let { phase ->
+        PreJoinContent(
+            callTitle = resolvedCallTitle,
+            participantsCount = state.activeCallParticipantsCount,
+            sessionState = state.sessionState,
+            phase = phase,
+            onToggleMicrophone = onToggleMicrophone,
+            onToggleCamera = onToggleCamera,
+            onOpenSettings = { isPreJoinSettingsVisible = true },
+            onFlipCamera = onFlipPreviewCamera,
+            onBindPreviewRenderer = onBindPreviewRenderer,
+            onReleasePreviewRenderer = onReleasePreviewRenderer,
+            onConfirmJoin = onConfirmPreJoin,
+            onCancel = onCancelPreJoin,
+            onMinimize = onMinimize,
+        )
+        if (isPreJoinSettingsVisible) {
+            PreJoinSettingsSheet(
+                audioRouteName = state.currentAudioRouteName,
+                cameraName = state.currentCameraName,
+                onOpenAudioDevices = {
+                    isPreJoinSettingsVisible = false
+                    isAudioDeviceSheetVisible = true
+                },
+                onOpenCameraDevices = {
+                    isPreJoinSettingsVisible = false
+                    isCameraDeviceSheetVisible = true
+                },
+                onShareLink = {
+                    isPreJoinSettingsVisible = false
+                    onShareLink()
+                },
+                onDismiss = { isPreJoinSettingsVisible = false },
+            )
+        }
+        if (isAudioDeviceSheetVisible) {
+            PreJoinDeviceSheet(
+                title = stringResource(R.string.call_prejoin_mic_speaker),
+                items = state.audioRoutes.map { it.id to it.name },
+                currentId = state.currentAudioRouteId,
+                onSelect = { routeId -> onSelectAudioRoute(routeId) },
+                onDismiss = { isAudioDeviceSheetVisible = false },
+            )
+        }
+        if (isCameraDeviceSheetVisible) {
+            PreJoinDeviceSheet(
+                title = stringResource(R.string.call_prejoin_camera),
+                items = state.availableCameras.map { it.id to it.name },
+                currentId = state.currentCameraId,
+                onSelect = { cameraId -> onSelectCamera(cameraId) },
+                onDismiss = { isCameraDeviceSheetVisible = false },
+            )
+        }
         return
     }
 
@@ -315,6 +387,7 @@ fun CallScreen(
                     onReleaseLocalRenderer = onReleaseLocalRenderer,
                     onBindParticipantRenderer = onBindParticipantRenderer,
                     onReleaseParticipantRenderer = onReleaseParticipantRenderer,
+                    onParticipantClick = onOpenParticipantProfile,
                 )
             } else {
                 if (state.isVideoCall) {
@@ -322,6 +395,8 @@ fun CallScreen(
                         participant = primaryParticipant,
                         status = state.status,
                         isLocalVideoEnabled = state.sessionState.camOn,
+                        selfAvatarUrl = state.currentUserAvatarUrl,
+                        selfMicOn = state.sessionState.micOn,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f, fill = true),
@@ -861,19 +936,21 @@ private fun CallTopBar(
                     )
                 }
 
-                IconButton(onClick = onOpenSettings) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = "Настройки",
-                        tint = Color.White,
-                    )
-                }
             }
 
             IconButton(onClick = onMinimize) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_show_preview),
                     contentDescription = stringResource(R.string.call_minimize),
+                    tint = Color.White,
+                )
+            }
+
+            // Настройки звонка — «три точки» справа (как в макете), после свернуть.
+            IconButton(onClick = onOpenSettings) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Настройки",
                     tint = Color.White,
                 )
             }
@@ -969,48 +1046,92 @@ private fun SingleParticipantVideo(
     participant: CallParticipant?,
     status: CallStatus,
     isLocalVideoEnabled: Boolean,
+    selfAvatarUrl: String?,
+    selfMicOn: Boolean,
     modifier: Modifier = Modifier,
     onBindLocalRenderer: (FPSurfaceViewRenderer) -> Unit,
     onBindRemoteRenderer: (FPSurfaceViewRenderer) -> Unit,
     onReleaseLocalRenderer: () -> Unit,
     onReleaseRemoteRenderer: () -> Unit,
 ) {
+    // Пока собеседник не подключился — показываем СЕБЯ крупно (как в групповом
+    // «один в звонке»). Когда вошёл — он крупно, я в PiP; тап по PiP меняет фокус.
+    // Поверхности фиксированы (big=база, pip=оверлей сверху), меняем только какой
+    // поток на какую поверхность идёт (switchRenderer) — z-order не ломается.
+    val remotePresent = status == CallStatus.IN_CALL
+    var selfFocused by remember { mutableStateOf(false) }
+    val selfOnBig = selfFocused || !remotePresent
+    var bigRenderer by remember { mutableStateOf<FPSurfaceViewRenderer?>(null) }
+    var pipRenderer by remember { mutableStateOf<FPSurfaceViewRenderer?>(null) }
+
+    LaunchedEffect(selfOnBig, bigRenderer, pipRenderer) {
+        bigRenderer?.let { if (selfOnBig) onBindLocalRenderer(it) else onBindRemoteRenderer(it) }
+        pipRenderer?.let { if (selfOnBig) onBindRemoteRenderer(it) else onBindLocalRenderer(it) }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            onReleaseLocalRenderer()
+            onReleaseRemoteRenderer()
+        }
+    }
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(24.dp))
             .background(Color(0xFF121732)),
         contentAlignment = Alignment.Center,
     ) {
+        // Большая поверхность (база).
         FlashphonerVideoView(
             modifier = Modifier.fillMaxSize(),
             isMirror = false,
             isOverlay = false,
-            onRendererReady = onBindRemoteRenderer,
-            onRendererReleased = onReleaseRemoteRenderer,
+            onRendererReady = { bigRenderer = it },
+            onRendererReleased = { bigRenderer = null },
+            cornerRadius = 24.dp,
         )
-        if (isLocalVideoEnabled) {
-            FlashphonerVideoView(
+
+        // На большом мы сами и камера выключена — аватар+блюр вместо чёрного.
+        if (selfOnBig && !isLocalVideoEnabled) {
+            NoVideoAvatar(
+                avatarUrl = selfAvatarUrl,
+                name = "Вы",
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        // Маленький PiP — только когда есть собеседник (иначе пустой чёрный PiP при
+        // ожидании). Тап меняет фокус.
+        if (isLocalVideoEnabled && remotePresent) {
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(12.dp)
                     .size(width = 120.dp, height = 160.dp)
-                    .clip(RoundedCornerShape(16.dp)),
-                isMirror = true,
-                isOverlay = true,
-                onRendererReady = onBindLocalRenderer,
-                onRendererReleased = onReleaseLocalRenderer,
-            )
-        }
-        if (status == CallStatus.DIALING || status == CallStatus.CONNECTING) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Avatar(
-                    url = participant?.avatarUrl,
-                    name = participant?.name,
-                    size = 100.dp,
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { selfFocused = !selfFocused },
+                contentAlignment = Alignment.Center,
+            ) {
+                FlashphonerVideoView(
+                    modifier = Modifier.fillMaxSize(),
+                    isMirror = true,
+                    isOverlay = true,
+                    onRendererReady = { pipRenderer = it },
+                    onRendererReleased = { pipRenderer = null },
+                    cornerRadius = 16.dp,
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                CircularProgressIndicator(color = Color.White)
             }
+        }
+
+        // Бейдж «Вы» когда показываем себя крупно.
+        if (selfOnBig) {
+            CallTileBadge(
+                label = "Вы",
+                isMuted = !selfMicOn,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(8.dp),
+            )
         }
     }
 }
@@ -1022,8 +1143,11 @@ private fun FlashphonerVideoView(
     isOverlay: Boolean,
     onRendererReady: (FPSurfaceViewRenderer) -> Unit,
     onRendererReleased: () -> Unit,
+    cornerRadius: Dp = 0.dp,
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
+    val radiusPx = with(density) { cornerRadius.toPx() }
     val readyCallback by rememberUpdatedState(onRendererReady)
     val releaseCallback by rememberUpdatedState(onRendererReleased)
     val renderer = remember(context, isMirror, isOverlay) {
@@ -1035,6 +1159,20 @@ private fun FlashphonerVideoView(
             if (isOverlay) {
                 setZOrderMediaOverlay(true)
             }
+        }
+    }
+    // SurfaceView не обрезается clip() родителя — скругляем сам сёрфейс через
+    // outline, иначе видео торчит квадратными углами из скруглённой плитки.
+    LaunchedEffect(renderer, radiusPx) {
+        if (radiusPx > 0f) {
+            renderer.clipToOutline = true
+            renderer.outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(view: android.view.View, outline: android.graphics.Outline) {
+                    outline.setRoundRect(0, 0, view.width, view.height, radiusPx)
+                }
+            }
+        } else {
+            renderer.clipToOutline = false
         }
     }
 
@@ -1070,6 +1208,7 @@ private fun GroupVideoCallGrid(
     onReleaseLocalRenderer: () -> Unit,
     onBindParticipantRenderer: (String, FPSurfaceViewRenderer) -> Unit,
     onReleaseParticipantRenderer: (String) -> Unit,
+    onParticipantClick: (String) -> Unit = {},
 ) {
     val remoteParticipants = remember(participants, currentUserId) {
         if (currentUserId != null) participants.filter { it.id != currentUserId }
@@ -1099,24 +1238,63 @@ private fun GroupVideoCallGrid(
                     modifier = tileModifier,
                     onRendererReady = { renderer -> onBindParticipantRenderer(p.id, renderer) },
                     onRendererReleased = { onReleaseParticipantRenderer(p.id) },
+                    onClick = { onParticipantClick(p.id) },
                 )
             }
         }
     }
 
-    Box(modifier = modifier) {
-        if (tileCount == 0) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(color = Color.White)
+    BoxWithConstraints(modifier = modifier) {
+        val alone = tileCount == 0
+        val fullWidth = maxWidth
+        val fullHeight = maxHeight
+        // Пока в звонке один — показываем СЕБЯ на весь экран (своё видео либо
+        // аватар+блюр). Когда входит собеседник — плавно ужимаем свой тайл в
+        // маленький угловой PiP и открываем сетку. Никакого чёрного экрана/спиннера.
+        val selfWidth by animateDpAsState(if (alone) fullWidth else 100.dp, tween(350), label = "selfW")
+        val selfHeight by animateDpAsState(if (alone) fullHeight else 140.dp, tween(350), label = "selfH")
+        val selfPadding by animateDpAsState(if (alone) 0.dp else 12.dp, tween(350), label = "selfPad")
+        val selfCorner by animateDpAsState(if (alone) 0.dp else 16.dp, tween(350), label = "selfCorner")
+
+        // Один и тот же локальный рендерер переезжает из полноэкранного вида в PiP
+        // без пересоздания (movableContentOf) — иначе рвётся привязка своей камеры.
+        // Меняющееся состояние передаём ПАРАМЕТРАМИ (не через замыкание), иначе
+        // тайл застрянет на первом снимке sessionState.
+        val selfTile = remember {
+            movableContentOf { session: CallSessionState, speaking: Boolean, avatar: String?, radius: Dp ->
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    if (session.camOn) {
+                        FlashphonerVideoView(
+                            modifier = Modifier.fillMaxSize(),
+                            isMirror = true,
+                            isOverlay = true,
+                            onRendererReady = onBindLocalRenderer,
+                            onRendererReleased = onReleaseLocalRenderer,
+                            cornerRadius = radius,
+                        )
+                    } else {
+                        NoVideoAvatar(
+                            avatarUrl = avatar,
+                            name = "Вы",
+                            modifier = Modifier.fillMaxSize(),
+                            speaking = speaking,
+                        )
+                    }
+                    CallTileBadge(
+                        label = "Вы",
+                        isMuted = !session.micOn,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(4.dp),
+                    )
+                }
             }
-        } else {
+        }
+
+        // Сетка собеседников (под своим тайлом), когда кто-то вошёл.
+        if (!alone) {
             // При 5+ участниках плитки на weight(1f) сжимались в нечитаемую кашу.
-            // Свыше 4 — делаем колонку вертикально-скроллящейся с фиксированной
-            // высотой строки, чтобы плитки оставались нормального размера.
-            // Column (не Lazy) сохраняет WebRTC-рендереры (movableContentOf).
+            // Свыше 4 — колонка вертикально-скроллится с фиксированной высотой строки.
             val scrollable = tileCount > 4
             Column(
                 modifier = Modifier
@@ -1156,55 +1334,23 @@ private fun GroupVideoCallGrid(
             }
         }
 
-        // Local PiP overlay — bottom-end
+        // Свой тайл: полноэкранный когда один, угловой PiP когда есть собеседники.
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(12.dp)
-                .size(width = 100.dp, height = 140.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF121732))
+                .padding(selfPadding)
+                .size(width = selfWidth, height = selfHeight)
+                .clip(RoundedCornerShape(selfCorner))
+                .then(if (!alone) Modifier.background(Color(0xFF121732)) else Modifier)
                 .then(
-                    if (selfSpeaking && sessionState.camOn) {
-                        Modifier.border(3.dp, Color(0xFF4DA6FF), RoundedCornerShape(12.dp))
+                    if (!alone && selfSpeaking && sessionState.camOn) {
+                        Modifier.border(3.dp, Color(0xFF4DA6FF), RoundedCornerShape(selfCorner))
                     } else {
                         Modifier
                     }
                 ),
-            contentAlignment = Alignment.Center,
         ) {
-            if (sessionState.camOn) {
-                FlashphonerVideoView(
-                    modifier = Modifier.fillMaxSize(),
-                    isMirror = true,
-                    isOverlay = true,
-                    onRendererReady = onBindLocalRenderer,
-                    onRendererReleased = onReleaseLocalRenderer,
-                )
-            } else {
-                NoVideoAvatar(
-                    avatarUrl = selfAvatarUrl,
-                    name = "Вы",
-                    modifier = Modifier.fillMaxSize(),
-                    speaking = selfSpeaking,
-                )
-            }
-            CallTileBadge(
-                label = "Вы",
-                isMuted = !sessionState.micOn,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(4.dp),
-            )
-        }
-
-        if (status == CallStatus.DIALING || status == CallStatus.CONNECTING) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(color = Color.White)
-            }
+            selfTile(sessionState, selfSpeaking, selfAvatarUrl, selfCorner)
         }
     }
 }
@@ -1220,6 +1366,7 @@ private fun VideoParticipantTile(
     modifier: Modifier = Modifier,
     onRendererReady: (FPSurfaceViewRenderer) -> Unit,
     onRendererReleased: () -> Unit,
+    onClick: () -> Unit = {},
 ) {
     // При включённой камере обводим говорящего синей рамкой (у выключенной —
     // пульсирует кольцо вокруг аватара в NoVideoAvatar).
@@ -1232,7 +1379,10 @@ private fun VideoParticipantTile(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .background(Color(0xFF121732))
-            .then(speakingBorder),
+            .then(speakingBorder)
+            // Тап по плитке участника открывает «Чужой профиль». Кладём clickable
+            // на контейнер, поверх видео-слоя (SurfaceView) — рендер не трогаем.
+            .clickable { onClick() },
     ) {
         // Видео-слой (рендерер биндится всегда, чтобы вернуть видео при включении
         // камеры). SurfaceView непрозрачен, поэтому когда камера выключена —
@@ -1243,6 +1393,7 @@ private fun VideoParticipantTile(
             isOverlay = false,
             onRendererReady = onRendererReady,
             onRendererReleased = onRendererReleased,
+            cornerRadius = 16.dp,
         )
 
         // Камера выключена — вместо видео/спиннера показываем аватар участника
@@ -2251,4 +2402,382 @@ private fun formatCallDuration(callDurationSeconds: Int): String {
 private fun defaultRecordingFileName(callTitle: String): String {
     val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     return "$callTitle $date".trim()
+}
+
+// --- Пре-экран «до входа в звонок» (device-check) ---------------------------
+
+@Composable
+private fun PreJoinContent(
+    callTitle: String,
+    participantsCount: Int,
+    sessionState: CallSessionState,
+    phase: PreJoinPhase,
+    onToggleMicrophone: () -> Unit,
+    onToggleCamera: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onFlipCamera: () -> Unit,
+    onBindPreviewRenderer: (SurfaceViewRenderer) -> Unit,
+    onReleasePreviewRenderer: () -> Unit,
+    onConfirmJoin: () -> Unit,
+    onCancel: () -> Unit,
+    onMinimize: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colorResource(id = R.color.main_background))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        // Шапка: название звонка + счётчик участников, справа — свернуть.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = callTitle,
+                    color = colorResource(id = R.color.main_text),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 17.sp,
+                )
+                if (participantsCount > 0) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = pluralStringResource(
+                            id = R.plurals.call_prejoin_participants,
+                            count = participantsCount,
+                            participantsCount,
+                        ),
+                        color = colorResource(id = R.color.secondary_text),
+                        fontSize = 13.sp,
+                    )
+                }
+            }
+            IconButton(onClick = onMinimize) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_show_preview),
+                    contentDescription = stringResource(R.string.call_minimize),
+                    tint = colorResource(id = R.color.secondary_text),
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Превью камеры + элементы управления поверх.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .clip(RoundedCornerShape(20.dp))
+                .background(colorResource(id = R.color.main_background_input)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (sessionState.camOn) {
+                FlashphonerVideoView(
+                    modifier = Modifier.fillMaxSize(),
+                    isMirror = true,
+                    isOverlay = false,
+                    onRendererReady = { onBindPreviewRenderer(it) },
+                    onRendererReleased = onReleasePreviewRenderer,
+                )
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_camera_off),
+                        contentDescription = null,
+                        tint = colorResource(id = R.color.secondary_text),
+                        modifier = Modifier.size(40.dp),
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = stringResource(R.string.call_prejoin_camera_hint),
+                        color = colorResource(id = R.color.secondary_text),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                // Флип фронт/тыл — только когда камера включена (есть что переключать).
+                if (sessionState.camOn) {
+                    PreJoinCircleButton(
+                        iconRes = R.drawable.ic_flip_camera,
+                        active = true,
+                        onClick = onFlipCamera,
+                    )
+                }
+                PreJoinCircleButton(
+                    iconRes = if (sessionState.camOn) R.drawable.ic_camera_on else R.drawable.ic_camera_off,
+                    active = sessionState.camOn,
+                    onClick = onToggleCamera,
+                )
+                PreJoinCircleButton(
+                    iconRes = if (sessionState.micOn) R.drawable.ic_mic_on else R.drawable.ic_mic_off,
+                    active = sessionState.micOn,
+                    onClick = onToggleMicrophone,
+                )
+                PreJoinCircleButton(
+                    iconRes = R.drawable.ic_settings,
+                    active = true,
+                    onClick = onOpenSettings,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Кнопка входа / индикатор фазы.
+        when (phase) {
+            PreJoinPhase.PREVIEW -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(colorResource(id = R.color.object_main))
+                        .clickable { onConfirmJoin() }
+                        .padding(vertical = 15.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.call_prejoin_join),
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 16.sp,
+                    )
+                }
+            }
+            else -> {
+                val label = if (phase == PreJoinPhase.AWAITING_APPROVAL) {
+                    stringResource(R.string.call_prejoin_awaiting)
+                } else {
+                    stringResource(R.string.call_prejoin_joining)
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = colorResource(id = R.color.object_main),
+                        strokeWidth = 2.dp,
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = label,
+                        color = colorResource(id = R.color.secondary_text),
+                        fontSize = 14.sp,
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onCancel() }
+                .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(R.string.call_prejoin_leave),
+                color = Color(0xFFEB5757),
+                fontWeight = FontWeight.Medium,
+                fontSize = 15.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PreJoinCircleButton(
+    iconRes: Int,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
+    // Круги как в макете: плотный тёмно-серый фон, иконки всегда белые (состояние
+    // вкл/выкл читается по самому глифу — перечёркнутая камера/микрофон).
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(Color(0xFF3A3D4A))
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PreJoinSettingsSheet(
+    audioRouteName: String?,
+    cameraName: String?,
+    onOpenAudioDevices: () -> Unit,
+    onOpenCameraDevices: () -> Unit,
+    onShareLink: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = colorResource(id = R.color.main_background),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.call_prejoin_settings_title),
+                color = colorResource(id = R.color.main_text),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+            PreJoinSettingsRow(
+                iconRes = R.drawable.ic_mic_on,
+                title = stringResource(R.string.call_prejoin_mic_speaker),
+                subtitle = audioRouteName,
+                onClick = onOpenAudioDevices,
+            )
+            PreJoinSettingsRow(
+                iconRes = R.drawable.ic_camera,
+                title = stringResource(R.string.call_prejoin_camera),
+                subtitle = cameraName,
+                onClick = onOpenCameraDevices,
+            )
+            PreJoinSettingsRow(
+                iconRes = R.drawable.ic_share,
+                title = stringResource(R.string.call_prejoin_share_link),
+                subtitle = null,
+                onClick = onShareLink,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PreJoinDeviceSheet(
+    title: String,
+    items: List<Pair<String, String>>,
+    currentId: String?,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = colorResource(id = R.color.main_background),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp),
+        ) {
+            Text(
+                text = title,
+                color = colorResource(id = R.color.main_text),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+            if (items.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.call_no_devices),
+                    color = colorResource(id = R.color.secondary_text),
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(vertical = 12.dp),
+                )
+            } else {
+                items.forEach { (id, name) ->
+                    val selected = id == currentId
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onSelect(id)
+                                onDismiss()
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = name,
+                            color = colorResource(id = R.color.main_text),
+                            fontSize = 15.sp,
+                            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (selected) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_check),
+                                contentDescription = null,
+                                tint = colorResource(id = R.color.object_main),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreJoinSettingsRow(
+    iconRes: Int,
+    title: String,
+    subtitle: String?,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = colorResource(id = R.color.main_text),
+            modifier = Modifier.size(22.dp),
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(
+                text = title,
+                color = colorResource(id = R.color.main_text),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Text(
+                    text = subtitle,
+                    color = colorResource(id = R.color.secondary_text),
+                    fontSize = 13.sp,
+                )
+            }
+        }
+    }
 }

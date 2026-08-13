@@ -197,6 +197,14 @@ class ChatListFragment : Fragment() {
                                 putLong(ChatEditFolderViewModel.FOLDER_ID_ARG, folderId)
                             }
                             findNavController().navigate(R.id.chatEditFolderFragment, args)
+                        },
+                        onUserClick = { userId ->
+                            if (userId.isNotBlank()) {
+                                findNavController().navigate(
+                                    R.id.otherProfileFragment,
+                                    Bundle().apply { putString("userId", userId) }
+                                )
+                            }
                         }
                     )
                 }

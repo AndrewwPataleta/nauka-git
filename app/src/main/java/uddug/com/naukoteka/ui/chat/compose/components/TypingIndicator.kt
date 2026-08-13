@@ -20,11 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
-import uddug.com.naukoteka.R
 import uddug.com.domain.entities.chat.User
+import uddug.com.naukoteka.ui.theme.NauTheme
 
 /**
  * Индикатор «печатает…»: аватар автора + бабл с анимацией трёх точек. Ставится
@@ -42,21 +40,22 @@ fun TypingIndicator(
 ) {
     if (users.isEmpty()) return
     Row(
-        modifier = modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+        modifier = modifier.padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Avatar(
             url = users.first().image,
             name = users.first().fullName,
-            size = 32.dp,
+            size = 34.dp,
         )
         Surface(
-            color = colorResource(R.color.main_background_input_stroke),
-            shape = RoundedCornerShape(16.dp),
+            // Тот же светлый фон, что у входящих сообщений — не «серый».
+            color = NauTheme.extendedColors.chatBubbleOther,
+            shape = RoundedCornerShape(18.dp),
         ) {
             ThreeDots(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
             )
         }
     }
@@ -65,10 +64,10 @@ fun TypingIndicator(
 @Composable
 private fun ThreeDots(modifier: Modifier = Modifier) {
     val transition = rememberInfiniteTransition(label = "typing")
-    val dotColor = Color(0xFF4DA6FF)
+    val dotColor = NauTheme.extendedColors.accent
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         repeat(3) { index ->
@@ -90,7 +89,7 @@ private fun ThreeDots(modifier: Modifier = Modifier) {
             )
             Box(
                 modifier = Modifier
-                    .size(7.dp)
+                    .size(4.5.dp)
                     .clip(CircleShape)
                     .alpha(alpha)
                     .background(dotColor, CircleShape),

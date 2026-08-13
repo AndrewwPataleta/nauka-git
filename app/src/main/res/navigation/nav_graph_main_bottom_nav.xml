@@ -8,4 +8,13 @@
     <include app:graph="@navigation/nav_graph_sphere" />
     <include app:graph="@navigation/nav_graph_chat" />
 
+    <!-- Чужой профиль: глобальный пункт, доступен из любого таба (чат/лента/звонок). -->
+    <fragment
+        android:id="@+id/otherProfileFragment"
+        android:name="uddug.com.naukoteka.ui.fragments.profile.other.OtherProfileFragment">
+        <argument
+            android:name="userId"
+            app:argType="string" />
+    </fragment>
+
 </navigation>

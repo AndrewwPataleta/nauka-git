@@ -4,6 +4,7 @@ import android.os.Parcelable
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.flashphoner.fpwcsapi.Flashphoner
 import com.flashphoner.fpwcsapi.bean.Connection
 import com.flashphoner.fpwcsapi.constraints.Constraints
 import com.flashphoner.fpwcsapi.handler.CameraSwitchHandler
@@ -183,6 +184,204 @@ class CallViewModel @Inject constructor(
             errorMessage = null,
             isGroupCall = isGroupCall,
         )
+    }
+
+    // --- Пре-экран «до входа в звонок» (device-check перед реальным входом) ------
+
+    /** Параметры, с которыми войдём в звонок после «Присоединиться» из пре-экрана. */
+    private var preJoinParams: CallParams? = null
+
+    /** Принимаем ли входящий звонок (для confirmPreJoin → startCall). */
+    private var preJoinAccepting = false
+
+    /** Локальный рендерер превью камеры (getLocalMediaAccess), пока не в комнате. */
+    private var previewRenderer: SurfaceViewRenderer? = null
+
+    /** Сторож против вечного «Входим в звонок…», если publish не поднялся. */
+    private var preJoinWatchdogJob: Job? = null
+
+    /**
+     * Открывает пре-экран настройки перед входом в ВИДЕОзвонок (групповой или
+     * 1-на-1). В комнату НЕ входим и НИКОГО не оповещаем — только локальное превью
+     * камеры и проверка устройств. Реальный вход (и звонок пользователям) — только
+     * по «Присоединиться» ([confirmPreJoin]). Годится и для исходящего, и для
+     * приёма входящего (isAccepting): принявший тоже сначала настраивает.
+     */
+    fun enterPreJoin(
+        dialogId: Long,
+        contactName: String?,
+        avatarUrl: String?,
+        callTitle: String?,
+        isVideoCall: Boolean,
+        isGroupCall: Boolean,
+        participants: List<CallParticipant>? = null,
+        isAcceptingIncomingCall: Boolean = false,
+    ) {
+        if (dialogId <= 0) return
+        isFrontCamera = true
+        preJoinAccepting = isAcceptingIncomingCall
+        preJoinParams = CallParams(
+            dialogId = dialogId,
+            contactName = contactName,
+            avatarUrl = avatarUrl,
+            participants = participants,
+            callTitle = callTitle,
+            isVideoCall = isVideoCall,
+            isGroupCall = isGroupCall,
+        )
+        _uiState.value = CallUiState(
+            dialogId = dialogId,
+            callTitle = callTitle ?: contactName,
+            status = CallStatus.DIALING,
+            isVideoCall = isVideoCall,
+            isGroupCall = isGroupCall,
+            sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
+            preJoinPhase = PreJoinPhase.PREVIEW,
+        )
+        // Аудио-маршруты и камеры доступны без сессии — наполняем шторку настроек.
+        callAudioManager.acquire()
+        refreshAudioRoutes()
+        refreshCameras()
+        // Счётчик «В звонке N участника» — из REST, без входа в комнату.
+        viewModelScope.launch {
+            val count = runCatching {
+                callRepository.getParticipants(dialogId)
+                    .count { it.status == STATUS_PARTICIPATING }
+            }.getOrDefault(0)
+            if (_uiState.value.preJoinPhase != null) {
+                _uiState.value = _uiState.value.copy(activeCallParticipantsCount = count)
+            }
+        }
+    }
+
+    /** Привязывает рендерер превью и запускает локальный доступ к камере, если она включена. */
+    fun bindPreviewRenderer(renderer: SurfaceViewRenderer) {
+        previewRenderer = renderer
+        applyPreview()
+    }
+
+    /**
+     * Освобождает превью-рендерер. Камеру отпускаем ТОЛЬКО пока мы в фазе превью
+     * (пользователь ушёл с пре-экрана). После «Присоединиться» (JOINING/в звонке)
+     * ту же камеру уже держит опубликованный поток — освобождать нельзя, иначе
+     * порвём видео и publish зависнет.
+     */
+    fun releasePreviewRenderer() {
+        previewRenderer = null
+        if (_uiState.value.preJoinPhase == PreJoinPhase.PREVIEW) {
+            runCatching { Flashphoner.releaseLocalMediaAccess() }
+        }
+    }
+
+    /** Приводит локальное превью к текущему состоянию камеры (вкл → доступ, выкл → релиз). */
+    private fun applyPreview() {
+        if (_uiState.value.preJoinPhase != PreJoinPhase.PREVIEW) return
+        val renderer = previewRenderer ?: return
+        val camOn = _uiState.value.sessionState.camOn
+        runCatching {
+            if (camOn) {
+                val constraints = Constraints(false, true)
+                cameraIndexFor(isFrontCamera)?.let { constraints.videoConstraints?.cameraId = it }
+                Flashphoner.getLocalMediaAccess(constraints, renderer)
+            } else {
+                Flashphoner.releaseLocalMediaAccess()
+            }
+        }.onFailure { logCallStep("prejoin_preview_failed", "error=${it.message}") }
+    }
+
+    /** Флип камеры на пре-экране (фронт/тыл) — переключает превью и запоминает выбор. */
+    fun flipPreviewCamera() {
+        if (_uiState.value.preJoinPhase != PreJoinPhase.PREVIEW) return
+        isFrontCamera = !isFrontCamera
+        val dev = _uiState.value.availableCameras.firstOrNull { it.isFront == isFrontCamera }
+        _uiState.value = _uiState.value.copy(
+            currentCameraId = dev?.id ?: _uiState.value.currentCameraId,
+            currentCameraName = dev?.name ?: cameraLabel(isFrontCamera),
+        )
+        applyPreview()
+        logCallStep("prejoin_camera_flip", "isFront=$isFrontCamera")
+    }
+
+    /**
+     * «Присоединиться» из пре-экрана: реально входим в звонок. КАМЕРУ НЕ ОСВОБОЖДАЕМ —
+     * publish переиспользует уже открытый через getLocalMediaAccess капчурер (WCS-
+     * паттерн). Раньше здесь был releaseLocalMediaAccess()+delay, из-за чего камера
+     * не успевала освободиться и publish зависал навсегда («Входим в звонок…»).
+     * Именно здесь впервые уходит сигнал пользователям (бэкенд шлёт cType 2/3 на
+     * onPublish) — до этого момента никто не оповещён.
+     */
+    fun confirmPreJoin() {
+        val params = preJoinParams ?: return
+        val session = _uiState.value.sessionState
+        _uiState.value = _uiState.value.copy(preJoinPhase = PreJoinPhase.JOINING)
+        startCall(
+            dialogId = params.dialogId,
+            contactName = params.contactName,
+            avatarUrl = params.avatarUrl,
+            participants = params.participants,
+            callTitle = params.callTitle,
+            isVideoCall = params.isVideoCall,
+            isAcceptingIncomingCall = preJoinAccepting,
+            isGroupCall = params.isGroupCall,
+        )
+        // КЛЮЧЕВОЕ для «Вы»: отдаём превью-рендерер как локальный, чтобы publish
+        // (он произойдёт по onJoined, асинхронно) опубликовался С рендерером —
+        // тогда локальный видео-пайплайн инициализирован и последующий
+        // switchRenderer на in-call surface покажет своё видео (а не чёрное). Без
+        // этого publish уходил с localRenderer=null и «Вы» оставалось чёрным.
+        if (session.camOn) {
+            previewRenderer?.let { localRenderer = it }
+        }
+        // Переносим выбор пользователя (камера/микрофон) из пре-экрана и держим
+        // фазу JOINING, пока не придёт PUBLISHED (там preJoinPhase сбросится в null).
+        _uiState.value = _uiState.value.copy(
+            sessionState = session,
+            preJoinPhase = PreJoinPhase.JOINING,
+        )
+        applyLocalAudioState(session.micOn)
+        // Сторож: если за 20с не поднялись (publish не прошёл), не висим вечно.
+        preJoinWatchdogJob?.cancel()
+        preJoinWatchdogJob = viewModelScope.launch {
+            delay(20_000)
+            if (_uiState.value.preJoinPhase == PreJoinPhase.JOINING) {
+                logCallStep("prejoin_join_timeout", "publish not up in 20s")
+                _uiState.value = _uiState.value.copy(
+                    toastMessage = "Не удалось войти в звонок, попробуйте ещё раз",
+                )
+                endCall()
+            }
+        }
+    }
+
+    /**
+     * «Выйти из звонка» с пре-экрана. В фазе PREVIEW ничего не публиковали —
+     * просто отпускаем камеру; в JOINING/AWAITING уже подключались — кладём трубку.
+     */
+    fun abortPreJoin() {
+        preJoinWatchdogJob?.cancel()
+        if (_uiState.value.preJoinPhase == PreJoinPhase.PREVIEW) {
+            cancelPreJoin()
+        } else {
+            endCall()
+        }
+    }
+
+    /** «Выйти из звонка» с пре-экрана — ничего не публиковали, просто отпускаем камеру. */
+    fun cancelPreJoin() {
+        preJoinWatchdogJob?.cancel()
+        // Если это был приём входящего и мы вышли из настроек, не опубликовавшись —
+        // шлём звонящему «отклонено» (cType 6001), иначе у него звонок висит до
+        // таймаута.
+        val dialogId = _uiState.value.dialogId
+        if (preJoinAccepting && dialogId != null) {
+            notifyIncomingCallDeclined(dialogId)
+        }
+        preJoinParams = null
+        preJoinAccepting = false
+        previewRenderer = null
+        runCatching { Flashphoner.releaseLocalMediaAccess() }
+        callAudioManager.release()
+        _uiState.value = CallUiState(status = CallStatus.FINISHED)
     }
 
     fun startCall(
@@ -404,6 +603,7 @@ class CallViewModel @Inject constructor(
             status = CallStatus.FINISHED,
             isRecording = false,
             errorMessage = null,
+            preJoinPhase = null,
         )
         stopCallTimer()
         isCallStarted = false
@@ -797,7 +997,7 @@ class CallViewModel @Inject constructor(
         )
         runCatching {
             localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
-                constraints = Constraints(audioEnabled, videoEnabled)
+                constraints = Constraints(audioEnabled, videoEnabled).also { c -> if (videoEnabled) cameraIndexFor(isFrontCamera)?.let { c.videoConstraints?.cameraId = it } }
             }
         }.onSuccess {
             publishedWithVideo = videoEnabled
@@ -882,7 +1082,7 @@ class CallViewModel @Inject constructor(
             )
             runCatching {
                 localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
-                    constraints = Constraints(audioEnabled, videoEnabled)
+                    constraints = Constraints(audioEnabled, videoEnabled).also { c -> if (videoEnabled) cameraIndexFor(isFrontCamera)?.let { c.videoConstraints?.cameraId = it } }
                 }
             }.onSuccess {
                 val actualMediaSessionId = localStream?.id
@@ -965,6 +1165,8 @@ class CallViewModel @Inject constructor(
         val currentState = _uiState.value.sessionState
         val updatedState = currentState.copy(micOn = !currentState.micOn)
         _uiState.value = _uiState.value.copy(sessionState = updatedState)
+        // Пре-экран: сессии ещё нет — только запоминаем выбор, применим при входе.
+        if (_uiState.value.preJoinPhase == PreJoinPhase.PREVIEW) return
         updateCallState(updatedState)
         applyLocalAudioState(updatedState.micOn)
     }
@@ -974,6 +1176,11 @@ class CallViewModel @Inject constructor(
         val enabling = !currentState.camOn
         val updatedState = currentState.copy(camOn = enabling)
         _uiState.value = _uiState.value.copy(sessionState = updatedState)
+        // Пре-экран: стрима ещё нет — просто переприменяем локальное превью камеры.
+        if (_uiState.value.preJoinPhase == PreJoinPhase.PREVIEW) {
+            applyPreview()
+            return
+        }
         updateCallState(updatedState)
         logCallStep(
             "toggle_camera",
@@ -1155,6 +1362,14 @@ class CallViewModel @Inject constructor(
 
     private fun cameraLabel(front: Boolean): String =
         if (front) "Фронтальная камера" else "Основная камера"
+
+    /** Индекс камеры (cameraId для VideoConstraints) по фронт/тыл — из энумератора. */
+    private fun cameraIndexFor(front: Boolean): Int? = runCatching {
+        val enumerator = Flashphoner.getCameraEnumerator()
+        enumerator.deviceNames
+            .indexOfFirst { runCatching { enumerator.isFrontFacing(it) }.getOrDefault(false) == front }
+            .takeIf { it >= 0 }
+    }.getOrNull()
 
     /**
      * ВРЕМЕННО для тестов ([PREFER_BACK_CAMERA]): после публикации видео, если мы
@@ -1870,9 +2085,9 @@ class CallViewModel @Inject constructor(
         const val RECORD_STATUS_ERROR = 4
         const val SOCKET_LISTENER_TAG = "CallViewModel"
         const val STREAM_RESTART_DELAY_MS = 500L
-        // ВРЕМЕННО для тестов: публиковать заднюю камеру по умолчанию (чтобы
-        // тестировщика не было видно). Позже вернуть в false → будет фронталка.
-        const val PREFER_BACK_CAMERA = true
+        // Тестовый хак «после входа переключаться на заднюю камеру» — ВЫКЛ.
+        // Из-за него выбор фронталки в пре-экране сбрасывался на тыловую в звонке.
+        const val PREFER_BACK_CAMERA = false
         // VU-метр: период опроса и порог «говорит» по WebRTC audioLevel (0..1).
         const val VU_METER_INTERVAL_MS = 200L
         const val SPEAKING_THRESHOLD = 0.06
@@ -1893,6 +2108,10 @@ class CallViewModel @Inject constructor(
 
     fun bindLocalRenderer(renderer: SurfaceViewRenderer) {
         localRenderer = renderer
+        // ВАЖНО: не звать здесь Flashphoner.getLocalMediaAccess повторно — это
+        // пересоздаёт локальную медиа-сессию мид-звонка и рвёт ИСХОДЯЩИЙ поток
+        // (собеседники начинают видеть чёрное). Локальный рендер только через
+        // switchRenderer опубликованного стрима.
         // switchRenderer() кидает NPE, если у стрима ещё/уже нет живого
         // MediaConnection (не опубликован после аудио→видео републиша или
         // реконнекта) — крашило при включении камеры. Гасим.
@@ -2489,12 +2708,27 @@ class CallViewModel @Inject constructor(
     private fun handleLocalPublishStatus(label: String, status: String, info: String? = null) {
         if (label != "local_publish") return
         when (status.uppercase()) {
-            "PUBLISHING" -> logCallStep("publish_local_stream_status_publishing", "status=$status")
+            "PUBLISHING" -> {
+                logCallStep("publish_local_stream_status_publishing", "status=$status")
+                // Сервер подтвердил публикацию (published:true) — мы в звонке.
+                // Закрываем пре-экран уже здесь: статус PUBLISHED приходит не всегда
+                // (напр. пока нет второго участника), а обычный экран звонка и так
+                // показывается на PUBLISHING. Иначе «Входим…» висит до watchdog.
+                preJoinWatchdogJob?.cancel()
+                if (_uiState.value.preJoinPhase == PreJoinPhase.JOINING) {
+                    _uiState.value = _uiState.value.copy(preJoinPhase = null)
+                }
+            }
             "PUBLISHED" -> {
                 hasPublishedLocalStream = true
                 localRepublishAttempts = 0
                 awaitingJoinApproval = false
                 localRepublishJob?.cancel()
+                // Опубликовались = реально вошли в звонок: закрываем пре-экран.
+                preJoinWatchdogJob?.cancel()
+                if (_uiState.value.preJoinPhase != null) {
+                    _uiState.value = _uiState.value.copy(preJoinPhase = null)
+                }
                 logCallStep("publish_local_stream_success", "status=$status")
             }
             "FAILED" -> {
@@ -2511,6 +2745,12 @@ class CallViewModel @Inject constructor(
                 if (info?.contains("terminate", true) == true && !awaitingJoinApproval) {
                     awaitingJoinApproval = true
                     localRepublishJob?.cancel()
+                    // Пре-экран: ждём, пока админ впустит из лобби («Ожидаем разрешение…»).
+                    if (_uiState.value.preJoinPhase != null) {
+                        _uiState.value = _uiState.value.copy(
+                            preJoinPhase = PreJoinPhase.AWAITING_APPROVAL,
+                        )
+                    }
                     handleTerminatedRejoin()
                     return
                 }
@@ -2685,7 +2925,21 @@ data class CallUiState(
     // VU-метр: говорю ли сейчас я и кто из участников говорит (для пульсации).
     val isSelfSpeaking: Boolean = false,
     val speakingParticipantIds: Set<String> = emptySet(),
+    // Пре-экран «до входа в звонок» (device-check). Пока не null — показываем
+    // PreJoinScreen поверх обычного экрана: локальное превью камеры + настройка
+    // устройств, реальный вход в комнату только по «Присоединиться». null =
+    // обычный поток звонка. См. [[naukoteka-prejoin-screen]].
+    val preJoinPhase: PreJoinPhase? = null,
+    val activeCallParticipantsCount: Int = 0,
 )
+
+/**
+ * Фаза пре-экрана входа в групповой видеозвонок:
+ * - PREVIEW — проверяем камеру/микрофон/устройства, ещё не в комнате;
+ * - JOINING — нажали «Присоединиться», подключаемся/публикуемся («Входим…»);
+ * - AWAITING_APPROVAL — ждём, пока админ впустит из лобби («Ожидаем разрешение…»).
+ */
+enum class PreJoinPhase { PREVIEW, JOINING, AWAITING_APPROVAL }
 
 @Parcelize
 data class CallParticipant(

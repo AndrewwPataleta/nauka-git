@@ -4,6 +4,7 @@ import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import okhttp3.MultipartBody
+import uddug.com.data.services.models.request.user_profile.EntitySubscriptionDto
 import uddug.com.data.services.models.request.user_profile.NickNameCheckRequestDto
 import uddug.com.data.services.models.request.user_profile.UserProfileRequestDto
 import uddug.com.data.services.models.response.user_profile.CheckNickNameResponseDto
@@ -46,6 +47,13 @@ interface UserProfileApiService {
 
     @GET("core/user_profile")
     fun getUserInfo(): Single<UserProfileFullInfoDto>
+
+    // Подписка/отписка на пользователя. rEntity = uref профиля.
+    // (docs/api/core-openapi: PATCH /user_subscription, тело — массив EntitySubscription.)
+    @PATCH("core/user_subscription")
+    fun setSubscriptions(
+        @Body items: List<EntitySubscriptionDto>
+    ): Completable
 
     // Профиль любого пользователя по его id (docs/chats.md — «Данные
     // пользователя»: GET /api/core/user_profile/:userId). Та же схема ответа,

@@ -71,6 +71,7 @@ fun ChatTabBar(
     val currentFolderId by viewModel.currentFolderId.collectAsState()
 
     val uiState by viewModel.uiState.collectAsState()
+    val typingByDialog by viewModel.typingByDialog.collectAsState()
 
     val mainFolderId = folders.firstOrNull()?.id
     var folderActionsTarget by remember { mutableStateOf<FolderActionsTarget?>(null) }
@@ -324,6 +325,7 @@ fun ChatTabBar(
                                     isSelected = selectedChats.contains(chat.dialogId),
                                     messageType = messageType,
                                     hasActiveCall = chat.activeCall != null,
+                                    activity = typingByDialog[chat.dialogId].orEmpty(),
                                     onSelectChange = { onChatSelect(chat.dialogId) },
                                     onChatClick = {
                                         viewModel.onChatClick(it)

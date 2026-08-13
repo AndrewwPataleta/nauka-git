@@ -135,6 +135,14 @@ class ChatGroupDetailFragment : Fragment() {
                                 R.id.chatAvatarPreviewFragment,
                                 Bundle().apply { putString(ARG_AVATAR_PATH, avatarPath) }
                             )
+                        },
+                        onUserClick = { userId ->
+                            if (userId.isNotBlank()) {
+                                findNavController().navigate(
+                                    R.id.otherProfileFragment,
+                                    Bundle().apply { putString("userId", userId) }
+                                )
+                            }
                         }
                     )
                 }

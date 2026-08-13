@@ -55,6 +55,7 @@ fun ChatDetailDialogSearchComponent(
     viewModel: ChatDialogDetailViewModel,
     onBackPressed: () -> Unit,
     onMessageSelected: (dialogId: Long, messageId: Long) -> Unit,
+    onUserClick: (String) -> Unit = {},
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedTabIndex by remember { mutableStateOf(0) }
@@ -181,7 +182,8 @@ fun ChatDetailDialogSearchComponent(
                                 },
                                 onClick = { _ ->
                                     onMessageSelected(message.dialogId, message.messageId)
-                                }
+                                },
+                                onUserClick = onUserClick
                             )
                         }
                     }

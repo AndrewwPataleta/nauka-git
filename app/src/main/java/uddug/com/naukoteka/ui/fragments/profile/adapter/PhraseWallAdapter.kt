@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import uddug.com.domain.entities.feed.FeedContainer
+import uddug.com.domain.entities.feed.resolveUserId
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.databinding.ItemMyFeedWallBinding
@@ -20,7 +21,8 @@ class FeedContainerAdapter(
     private val onFeedContainerClick: (FeedContainer) -> Unit,
     private val onPostMenuClick: (FeedContainer) -> Unit,
     private val onLikeClick: (FeedContainer) -> Unit,
-    private val onPostImageClick: (FeedContainer) -> Unit
+    private val onPostImageClick: (FeedContainer) -> Unit,
+    private val onAuthorClick: (String) -> Unit = {}
 ) : ListAdapter<FeedContainer, FeedContainerAdapter.ViewHolder>(
     object : DiffUtil.ItemCallback<FeedContainer>() {
         override fun areItemsTheSame(oldItem: FeedContainer, newItem: FeedContainer): Boolean =
@@ -37,6 +39,7 @@ class FeedContainerAdapter(
             onPostMenuClick = onPostMenuClick,
             onLikeClick = onLikeClick,
             onPostImageClick = onPostImageClick,
+            onAuthorClick = onAuthorClick,
             binding = ItemMyFeedWallBinding.inflate(
                 LayoutInflater.from(parent.context),
                 parent,
@@ -54,12 +57,22 @@ class FeedContainerAdapter(
         private val onFeedContainerClick: (FeedContainer) -> Unit,
         private val onPostMenuClick: (FeedContainer) -> Unit,
         private val onLikeClick: (FeedContainer) -> Unit,
-        private val onPostImageClick: (FeedContainer) -> Unit
+        private val onPostImageClick: (FeedContainer) -> Unit,
+        private val onAuthorClick: (String) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: FeedContainer) {
             binding.root.setOnClickListener { onFeedContainerClick(item) }
             binding.moreDots.setOnClickListener { onPostMenuClick(item) }
+
+            val authorUserId = item.body?.authorInfo.resolveUserId(item.body?.rAuthorId)
+            binding.name.setOnClickListener {
+                authorUserId?.takeIf { id -> id.isNotBlank() }?.let(onAuthorClick)
+            }
+            binding.profileImage.setOnClickListener {
+                authorUserId?.takeIf { id -> id.isNotBlank() }?.let(onAuthorClick)
+            }
+
             binding.postImage.isVisible = false
             binding.name.text = item.body?.authorInfo?.fullName ?: ""
             binding.postTitle.text = item.body?.title

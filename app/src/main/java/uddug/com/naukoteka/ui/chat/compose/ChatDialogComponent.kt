@@ -27,6 +27,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -124,6 +129,7 @@ fun ChatDialogComponent(
     onForwardSelected: (Set<Long>) -> Unit = {},
     onEditGroup: (Long) -> Unit,
     onChatDeleted: () -> Unit,
+    onUserClick: (String) -> Unit = {},
     initialMessageId: Long? = null,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -193,6 +199,8 @@ fun ChatDialogComponent(
             recordedAudio = null
             recordingTime = 0L
             isRecording = true
+            // #189:2 — «записывает голосовое» для собеседников.
+            viewModel.startUserActivity(2)
         }
     }
 
@@ -484,6 +492,19 @@ fun ChatDialogComponent(
                             pendingMessageId = null
                         }
                     }
+                    // Индикатор «печатает…» — футер списка. Чтобы он появлялся
+                    // одновременно с шапкой (а не «под сгибом»), при появлении
+                    // активности подскроллим к низу, если пользователь уже там.
+                    LaunchedEffect(typingUsers.isNotEmpty()) {
+                        if (typingUsers.isNotEmpty() && messages.isNotEmpty()) {
+                            val li = scrollState.layoutInfo
+                            val lastVisible = li.visibleItemsInfo.lastOrNull()?.index ?: 0
+                            val nearBottom = lastVisible >= li.totalItemsCount - 2
+                            if (nearBottom) {
+                                scrollState.animateScrollToItem(li.totalItemsCount)
+                            }
+                        }
+                    }
                     val playbackMessage = voicePlayingMessage
                     val playbackFile = voicePlayingFile
 
@@ -662,12 +683,24 @@ fun ChatDialogComponent(
                                 isPollAuthor = message.poll?.authorId != null &&
                                     message.poll?.authorId == currentUserId,
                                 mentionUsers = mentionUsers,
-                                onMentionClick = { userId -> viewModel.openUserProfile(userId) },
+                                onMentionClick = { userId -> onUserClick(userId) },
+                                onUserClick = { userId -> onUserClick(userId) },
                             )
                         }
-                        if (typingUsers.isNotEmpty()) {
-                            item(key = "typing_indicator") {
-                                TypingIndicator(users = typingUsers.map { it.user })
+                        // Индикатор всегда в списке — плавно появляется/сворачивается
+                        // (fade + shrink), чтобы окончание печати не «дёргало» ленту.
+                        item(key = "typing_indicator") {
+                            val typingVisible = typingUsers.isNotEmpty()
+                            var lastTypingUsers by remember {
+                                mutableStateOf(emptyList<uddug.com.domain.entities.chat.User>())
+                            }
+                            if (typingVisible) lastTypingUsers = typingUsers.map { it.user }
+                            AnimatedVisibility(
+                                visible = typingVisible,
+                                enter = fadeIn() + expandVertically(),
+                                exit = fadeOut() + shrinkVertically(),
+                            ) {
+                                TypingIndicator(users = lastTypingUsers)
                             }
                         }
                     }
@@ -710,6 +743,7 @@ fun ChatDialogComponent(
                             if (isRecording) {
                                 recordedAudio = audioRecorder.stop()
                                 isRecording = false
+                                viewModel.stopUserActivity()
                             } else {
                                 audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                             }
@@ -719,6 +753,7 @@ fun ChatDialogComponent(
                             recordedAudio = null
                             recordingTime = 0L
                             isRecording = false
+                            viewModel.stopUserActivity()
                         },
                         onAttachClick = {
                             showAttachmentSheet = true

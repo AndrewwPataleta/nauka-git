@@ -26,6 +26,7 @@ interface UserProfileRepository {
     fun checkNickname(nickname: String): Observable<Boolean>
     fun getProfileInfo(): Single<UserProfileFullInfo>
     fun getProfileInfo(userId: String): Single<UserProfileFullInfo>
+    fun setSubscribed(uref: String, subscribed: Boolean): Completable
     fun updateNickname(
         id: String,
         nickname: String,

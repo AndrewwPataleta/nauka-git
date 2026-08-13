@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import uddug.com.domain.entities.feed.PostComment
+import uddug.com.domain.entities.feed.resolveUserId
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.databinding.ItemCommentWallBinding
@@ -17,7 +18,9 @@ import uddug.com.naukoteka.utils.ui.load
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-class CommentsWallAdapter : ListAdapter<PostComment, CommentsWallAdapter.ViewHolder>(
+class CommentsWallAdapter(
+    private val onAuthorClick: (String) -> Unit = {}
+) : ListAdapter<PostComment, CommentsWallAdapter.ViewHolder>(
     object : DiffUtil.ItemCallback<PostComment>() {
         override fun areItemsTheSame(oldItem: PostComment, newItem: PostComment): Boolean =
             oldItem.id == newItem.id
@@ -48,6 +51,14 @@ class CommentsWallAdapter : ListAdapter<PostComment, CommentsWallAdapter.ViewHol
             binding.postImage.isVisible = false
             binding.name.text = item.authorInfo?.fullName.orEmpty()
             binding.commentText.text = item.text
+
+            val authorUserId = item.authorInfo.resolveUserId(item.rAuthorId)
+            binding.name.setOnClickListener {
+                authorUserId?.takeIf { id -> id.isNotBlank() }?.let(onAuthorClick)
+            }
+            binding.profileImage.setOnClickListener {
+                authorUserId?.takeIf { id -> id.isNotBlank() }?.let(onAuthorClick)
+            }
             if (item.authorInfo?.imageUrl.isNotNullOrEmpty()) {
                 binding.profileImage.load(
                     withAnimation = false,

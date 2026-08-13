@@ -30,7 +30,9 @@ import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
 import uddug.com.naukoteka.core.deeplink.formatMessageTime
 import uddug.com.domain.entities.chat.MessageType
+import uddug.com.naukoteka.mvvm.chat.ChatActivity
 import uddug.com.naukoteka.ui.chat.compose.components.Avatar
+import uddug.com.naukoteka.ui.chat.compose.components.ChatActivityStatus
 
 enum class ChatAttachmentType {
     IMAGE,
@@ -64,6 +66,7 @@ fun ChatCard(
     selectionMode: Boolean = false,
     isSelected: Boolean = false,
     messageType: MessageType = MessageType.TEXT,
+    activity: List<ChatActivity> = emptyList(),
     onSelectChange: (Boolean) -> Unit = {},
     onChatClick: (Long) -> Unit,
     onChatLongClick: (Long) -> Unit
@@ -125,8 +128,14 @@ fun ChatCard(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
 
-                
-                Column(modifier = Modifier.weight(1f)) {
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        // Плавная смена высоты при появлении/исчезновении статуса
+                        // активности (1 строка) ↔ превью (имя+текст), без «прыжка».
+                        .animateContentSize()
+                ) {
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -162,7 +171,7 @@ fun ChatCard(
 
 
                     
-                    val messageText = when {
+                    val baseText = when {
                         isRepost -> stringResource(R.string.chat_last_message_repost, message)
                         messageType == MessageType.POLL -> {
                             val question = message.ifBlank { "" }
@@ -178,55 +187,75 @@ fun ChatCard(
                             ChatAttachmentType.FILE -> message.takeIf { it.isNotBlank() }
                                 ?: stringResource(R.string.chat_last_message_file)
                         }
-                        !isGroupChat && isFromMe -> stringResource(R.string.chat_last_message_from_me, message)
+                        // Системное сообщение без текста (событие звонка) — раньше
+                        // давало пустой превью / «Вы: ». Показываем «Звонок завершен».
+                        messageType == MessageType.SYSTEM && message.isBlank() ->
+                            stringResource(R.string.call_status_finished)
                         else -> message
+                    }
+                    // Префикс «Вы: » добавляем только к непустому тексту, иначе
+                    // получалось висящее «Вы: » без содержимого.
+                    val messageText = when {
+                        !isGroupChat && isFromMe && baseText.isNotBlank() ->
+                            stringResource(R.string.chat_last_message_from_me, baseText)
+                        else -> baseText
                     }.ifBlank { stringResource(R.string.chat_no_messages) }
 
-                    if (isGroupChat) {
-                        val authorLabel = if (isFromMe) {
-                            stringResource(R.string.chat_last_message_author_you)
-                        } else {
-                            authorName.orEmpty()
-                        }
-                        if (authorLabel.isNotBlank()) {
-                            Text(
-                                text = authorLabel,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = Color(0xFF2E83D9),
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = if (isGroupChat) 4.dp else 0.dp)
-                    ) {
-                        attachmentPreview
-                            ?.takeUnless { it.type == ChatAttachmentType.FILE }
-                            ?.let { preview ->
-                                AttachmentPreview(
-                                    preview = preview,
-                                    modifier = Modifier.padding(end = 8.dp)
+                    if (activity.isNotEmpty()) {
+                        // Кто-то печатает/шлёт медиа в этом чате — показываем статус
+                        // активности вместо превью последнего сообщения.
+                        ChatActivityStatus(
+                            activity = activity,
+                            isGroup = isGroupChat,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    } else {
+                        if (isGroupChat) {
+                            val authorLabel = if (isFromMe) {
+                                stringResource(R.string.chat_last_message_author_you)
+                            } else {
+                                authorName.orEmpty()
+                            }
+                            if (authorLabel.isNotBlank()) {
+                                Text(
+                                    text = authorLabel,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = Color(0xFF2E83D9),
+                                        fontWeight = FontWeight.Medium
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 4.dp)
                                 )
                             }
-                        Text(
-                            text = messageText,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = if (!isGroupChat && isFromMe) {
-                                    Color(0xFF2E83D9)
-                                } else {
-                                    colorResource(id = R.color.secondary_text)
-                                },
-                                fontWeight = if (isRepost) FontWeight.SemiBold else FontWeight.Normal
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = if (isGroupChat) 4.dp else 0.dp)
+                        ) {
+                            attachmentPreview
+                                ?.takeUnless { it.type == ChatAttachmentType.FILE }
+                                ?.let { preview ->
+                                    AttachmentPreview(
+                                        preview = preview,
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
+                                }
+                            Text(
+                                text = messageText,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = if (!isGroupChat && isFromMe) {
+                                        Color(0xFF2E83D9)
+                                    } else {
+                                        colorResource(id = R.color.secondary_text)
+                                    },
+                                    fontWeight = if (isRepost) FontWeight.SemiBold else FontWeight.Normal
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
                 Column(

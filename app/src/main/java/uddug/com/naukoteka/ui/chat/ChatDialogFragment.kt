@@ -177,9 +177,12 @@ class ChatDialogFragment : Fragment() {
                     }
 
                     is ChatDialogEvents.OpenUserProfile -> {
-                        ProfileFullInfoBottomSheetFragment
-                            .newInstance(state.profile)
-                            .show(childFragmentManager, "user_profile")
+                        state.profile.id?.takeIf { it.isNotBlank() }?.let { userId ->
+                            findNavController().navigate(
+                                R.id.otherProfileFragment,
+                                Bundle().apply { putString("userId", userId) }
+                            )
+                        }
                     }
                 }
             }
@@ -282,6 +285,14 @@ class ChatDialogFragment : Fragment() {
                         onChatDeleted = {
                             findNavController().previousBackStackEntry?.savedStateHandle?.set("refreshChats", true)
                             findNavController().popBackStack()
+                        },
+                        onUserClick = { userId ->
+                            if (userId.isNotBlank()) {
+                                findNavController().navigate(
+                                    R.id.otherProfileFragment,
+                                    Bundle().apply { putString("userId", userId) }
+                                )
+                            }
                         }
                     )
                 }

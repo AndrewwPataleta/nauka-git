@@ -141,9 +141,11 @@ class ChatDialogViewModel @Inject constructor(
     private val typingAction = mutableMapOf<String, Int>()
     // userId -> серверный ts последнего 189:7 (для debounce приоритета «стоп»).
     private val typingStoppedTs = mutableMapOf<String, Long>()
-    // Троттлинг исходящих 189:3 (пинг раз в 3с) и авто-стоп по простою.
-    private var lastTypingPingAt = 0L
-    private var typingIdleStopJob: Job? = null
+    // Исходящая активность (мы печатаем/пишем голос/шлём файл): текущий код #189,
+    // пинг-джоба (шлём каждые 3с) и авто-стоп по простою (для текста).
+    private var outgoingActivity: Int? = null
+    private var activityPingJob: Job? = null
+    private var activityIdleStopJob: Job? = null
     // Подписка social на текущий чат + её продление (живёт ~1 мин на сервере).
     private var socialSubscribedDialogId: Long? = null
     private var socialResubJob: Job? = null
@@ -196,30 +198,50 @@ class ChatDialogViewModel @Inject constructor(
      */
     fun onUserTyping() {
         val dialogId = currentDialogID ?: return
-        val now = System.currentTimeMillis()
-        if (now - lastTypingPingAt >= TYPING_PING_MS) {
-            lastTypingPingAt = now
-            emitActivity(dialogId, ACT_TYPING)
-        }
-        typingIdleStopJob?.cancel()
-        typingIdleStopJob = viewModelScope.launch {
+        startPinging(dialogId, ACT_TYPING)
+        // Текст: если перестал печатать и не отправил — через 5с шлём 189:7.
+        activityIdleStopJob?.cancel()
+        activityIdleStopJob = viewModelScope.launch {
             delay(TYPING_IDLE_STOP_MS)
-            emitActivity(dialogId, ACT_STOP)
-            lastTypingPingAt = 0L
+            stopUserActivity()
         }
     }
 
     /**
-     * Терминатор набора: вызывается при отправке сообщения (из emitChatMessage).
-     * Шлём 189:7, только если до этого действительно печатали — иначе не спамим.
+     * Явный старт активности с чётким началом/концом (запись голосового 189:2,
+     * отправка файла 189:4 / фото 189:5 / видео 189:1). Без idle-таймера — стоп
+     * вызывается вручную (stopUserActivity) или при отправке (emitChatMessage).
      */
-    private fun emitTypingStop() {
+    fun startUserActivity(action: Int) {
         val dialogId = currentDialogID ?: return
-        typingIdleStopJob?.cancel()
-        typingIdleStopJob = null
-        if (lastTypingPingAt == 0L) return
-        lastTypingPingAt = 0L
+        activityIdleStopJob?.cancel()
+        activityIdleStopJob = null
+        startPinging(dialogId, action)
+    }
+
+    /** Терминатор активности: шлём 189:7 и глушим пинг. Идемпотентно. */
+    fun stopUserActivity() {
+        activityPingJob?.cancel()
+        activityPingJob = null
+        activityIdleStopJob?.cancel()
+        activityIdleStopJob = null
+        if (outgoingActivity == null) return
+        outgoingActivity = null
+        val dialogId = currentDialogID ?: return
         emitActivity(dialogId, ACT_STOP)
+    }
+
+    // Пинг активности: первый эмит сразу, далее каждые 3с, пока не остановят.
+    private fun startPinging(dialogId: Long, action: Int) {
+        if (outgoingActivity == action && activityPingJob?.isActive == true) return
+        outgoingActivity = action
+        activityPingJob?.cancel()
+        activityPingJob = viewModelScope.launch {
+            while (isActive) {
+                emitActivity(dialogId, action)
+                delay(TYPING_PING_MS)
+            }
+        }
     }
 
     private fun emitActivity(dialogId: Long, code: Int) {
@@ -752,6 +774,8 @@ class ChatDialogViewModel @Inject constructor(
         if (currentState is ChatDialogUiState.Success) {
             _uiState.value = currentState.copy(attachedFiles = attachedFiles.toList())
         }
+        // Пока вложение висит в композере — собеседник видит «отправляет фото/файл».
+        if (files.isNotEmpty()) startUserActivity(activityCodeForFiles(files))
     }
 
     fun clearAttachedFiles() {
@@ -760,6 +784,7 @@ class ChatDialogViewModel @Inject constructor(
         if (currentState is ChatDialogUiState.Success) {
             _uiState.value = currentState.copy(attachedFiles = emptyList())
         }
+        stopUserActivity()
     }
 
     fun removeAttachedFile(file: File) {
@@ -767,6 +792,17 @@ class ChatDialogViewModel @Inject constructor(
         val currentState = _uiState.value
         if (currentState is ChatDialogUiState.Success) {
             _uiState.value = currentState.copy(attachedFiles = attachedFiles.toList())
+        }
+        if (attachedFiles.isEmpty()) stopUserActivity()
+    }
+
+    /** Код активности #189 по типу первого вложения: фото/видео/файл. */
+    private fun activityCodeForFiles(files: List<File>): Int {
+        val ext = files.firstOrNull()?.extension?.lowercase().orEmpty()
+        return when (ext) {
+            in IMAGE_EXTENSIONS -> ACT_PHOTO
+            in VIDEO_EXTENSIONS -> ACT_VIDEO
+            else -> ACT_FILE
         }
     }
 
@@ -1021,8 +1057,8 @@ class ChatDialogViewModel @Inject constructor(
             ownerAvatarUrl = null,
         )
         socketService.sendMessage("message", sanitized)
-        // Отправили сообщение → завершаем индикатор набора терминатором 189:7.
-        emitTypingStop()
+        // Отправили сообщение → завершаем любую активность терминатором 189:7.
+        stopUserActivity()
     }
 
     fun sendMessage(text: String) {
@@ -1547,7 +1583,8 @@ class ChatDialogViewModel @Inject constructor(
     override fun onCleared() {
         socketService.removeEvent("message", LISTENER_TAG)
         socketService.removeEvent(SOCIAL_EVENT, SOCIAL_TAG)
-        typingIdleStopJob?.cancel()
+        activityPingJob?.cancel()
+        activityIdleStopJob?.cancel()
         unsubscribeSocial()
         super.onCleared()
     }
@@ -1562,8 +1599,14 @@ class ChatDialogViewModel @Inject constructor(
         private const val CHAT_UREF_TYPE = "312"
         // Справочник cSubType #189: 3 = пишет сообщение, 7 = действие прекращено.
         private const val ACTIVITY_DICT = "189"
+        private const val ACT_VIDEO = 1
+        private const val ACT_VOICE = 2
         private const val ACT_TYPING = 3
+        private const val ACT_FILE = 4
+        private const val ACT_PHOTO = 5
         private const val ACT_STOP = 7
+        private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "webp", "heic", "bmp")
+        private val VIDEO_EXTENSIONS = setOf("mp4", "mov", "mkv", "avi", "webm", "3gp", "m4v")
         // Серверная подписка живёт ~1 мин — продлеваем раньше срока.
         private const val SUBSTATS_TTL_MS = 45_000L
         // Автор шлёт 189:3 не чаще раза в 3с; при простое 5с — авто-стоп 189:7.

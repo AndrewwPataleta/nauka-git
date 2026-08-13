@@ -138,6 +138,11 @@ class GroupCallFragment : Fragment() {
                         onShareLink = { shareCallLink() },
                         onLeaveCall = { viewModel.endCall() },
                         onEndForAll = { viewModel.endCallForEveryone() },
+                        onBindPreviewRenderer = viewModel::bindPreviewRenderer,
+                        onReleasePreviewRenderer = viewModel::releasePreviewRenderer,
+                        onConfirmPreJoin = viewModel::confirmPreJoin,
+                        onCancelPreJoin = viewModel::abortPreJoin,
+                        onFlipPreviewCamera = viewModel::flipPreviewCamera,
                         onAllowParticipant = viewModel::allowParticipant,
                         onAllowAll = viewModel::allowAllFromLobby,
                         onKickParticipant = viewModel::kickParticipant,
@@ -150,9 +155,22 @@ class GroupCallFragment : Fragment() {
                         onForbidParticipantRaiseHand = {
                             viewModel.setParticipantHandRaiseAllowed(it, allowed = false)
                         },
+                        onOpenParticipantProfile = { userId -> openOtherProfile(userId) },
                     )
                 }
             }
+        }
+    }
+
+    // Тап по участнику звонка открывает его «Чужой профиль» (глобальный пункт
+    // nav-графа). Пустой id игнорируем; тап по себе обрабатывает сам экран.
+    private fun openOtherProfile(userId: String) {
+        if (userId.isBlank()) return
+        runCatching {
+            findNavController().navigate(
+                R.id.otherProfileFragment,
+                Bundle().apply { putString("userId", userId) },
+            )
         }
     }
 
@@ -307,14 +325,27 @@ class GroupCallFragment : Fragment() {
     }
 
     private fun startCall(request: PendingStartCallRequest) {
-        viewModel.startCall(
-            dialogId = request.dialogId,
-            contactName = request.contactName,
-            avatarUrl = request.avatarUrl,
-            callTitle = request.callTitle,
-            isVideoCall = request.isVideoCall,
-            isGroupCall = true,
-        )
+        // Групповой ВИДЕОзвонок: сначала пре-экран настройки (device-check), в
+        // комнату входим только по «Присоединиться». Аудио — сразу как раньше.
+        if (request.isVideoCall) {
+            viewModel.enterPreJoin(
+                dialogId = request.dialogId,
+                contactName = request.contactName,
+                avatarUrl = request.avatarUrl,
+                callTitle = request.callTitle,
+                isVideoCall = true,
+                isGroupCall = true,
+            )
+        } else {
+            viewModel.startCall(
+                dialogId = request.dialogId,
+                contactName = request.contactName,
+                avatarUrl = request.avatarUrl,
+                callTitle = request.callTitle,
+                isVideoCall = request.isVideoCall,
+                isGroupCall = true,
+            )
+        }
     }
 
     private fun showMicrophonePermissionAlert() {

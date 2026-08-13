@@ -45,10 +45,11 @@ fun SearchResultItem(
     query: String,
     modifier: Modifier = Modifier,
     onClick: (Long) -> Unit,
+    onUserClick: (String) -> Unit = {},
 ) {
     when (result) {
         is SearchResult.Dialog -> SearchDialogResultCard(dialog = result.data, modifier = modifier, onClick = onClick)
-        is SearchResult.Message -> SearchMessageResultCard(result = result.data, query = query, modifier = modifier, onClick = onClick)
+        is SearchResult.Message -> SearchMessageResultCard(result = result.data, query = query, modifier = modifier, onClick = onClick, onUserClick = onUserClick)
     }
 }
 
@@ -83,10 +84,12 @@ private fun SearchMessageResultCard(
     query: String,
     modifier: Modifier = Modifier,
     onClick: (Long) -> Unit,
+    onUserClick: (String) -> Unit = {},
 ) {
     val highlightColor = Color(0xFF2E83D9)
     val createdAtIso = remember(result.createdAt) { result.createdAt.toString() }
     val messageText = result.text.orEmpty()
+    val userId = result.userId
 
     Column(
         modifier = modifier
@@ -99,7 +102,15 @@ private fun SearchMessageResultCard(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            Avatar(url = result.image, name = result.fullName, size = 40.dp)
+            Box(
+                modifier = if (userId.isNotBlank()) {
+                    Modifier.clickable { onUserClick(userId) }
+                } else {
+                    Modifier
+                }
+            ) {
+                Avatar(url = result.image, name = result.fullName, size = 40.dp)
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Row(
@@ -115,7 +126,15 @@ private fun SearchMessageResultCard(
                             fontWeight = FontWeight.SemiBold
                         ),
                         highlightColor = highlightColor,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(
+                                if (userId.isNotBlank()) {
+                                    Modifier.clickable { onUserClick(userId) }
+                                } else {
+                                    Modifier
+                                }
+                            )
                     )
                     Text(
                         text = formatMessageTime(createdAtIso),

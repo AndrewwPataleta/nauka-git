@@ -10,6 +10,7 @@ import toothpick.InjectConstructor
 import uddug.com.data.cache.user_uuid.UserUUIDCache
 import uddug.com.data.services.UserProfileApiService
 import uddug.com.data.services.models.request.user_profile.AddUserAcademicDegreesDto
+import uddug.com.data.services.models.request.user_profile.EntitySubscriptionDto
 import uddug.com.data.services.models.request.user_profile.NickNameChangeRequestDto
 import uddug.com.data.services.models.request.user_profile.NickNameCheckRequestDto
 import uddug.com.data.services.models.request.user_profile.UpdateUserAuthorInfoDto
@@ -51,6 +52,12 @@ class UserProfileRepositoryImpl(
 
     override fun getProfileInfo(userId: String): Single<UserProfileFullInfo> {
         return profileApiService.getUserInfoById(userId).map { it.toDomain() }
+    }
+
+    override fun setSubscribed(uref: String, subscribed: Boolean): Completable {
+        return profileApiService.setSubscriptions(
+            listOf(EntitySubscriptionDto(rEntity = uref, subscribed = subscribed))
+        )
     }
 
     override fun updateNickname(

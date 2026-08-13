@@ -13,3 +13,17 @@ data class AuthorInfo (
   @SerializedName("image"    ) var image    : String? = null
 
 ): Parcelable
+
+/**
+ * Derives the user UUID to open the "Чужой профиль" screen.
+ * Prefers [rAuthorId] (raw user id) when available; otherwise parses the UUID
+ * out of [rEntity] which is a "N:UUID" ref (takes the substring after ':').
+ * Returns null when nothing usable is present.
+ */
+fun AuthorInfo?.resolveUserId(rAuthorId: String? = null): String? {
+    val fromAuthorId = rAuthorId?.takeIf { it.isNotBlank() }
+    if (fromAuthorId != null) return fromAuthorId
+    val ref = this?.rEntity?.takeIf { it.isNotBlank() } ?: return null
+    val uuid = ref.substringAfter(':', ref)
+    return uuid.takeIf { it.isNotBlank() }
+}

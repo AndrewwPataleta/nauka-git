@@ -15,6 +15,7 @@ import moxy.presenter.ProvidePresenter
 import uddug.com.domain.entities.feed.AuthorInfo
 import uddug.com.domain.entities.feed.FeedContainer
 import uddug.com.domain.entities.feed.PostComment
+import uddug.com.domain.entities.feed.resolveUserId
 import uddug.com.domain.entities.profile.UserProfileFullInfo
 import uddug.com.naukoteka.BuildConfig
 import uddug.com.naukoteka.R
@@ -45,7 +46,9 @@ class WallDetailFragment : BaseFragment(R.layout.fragment_wall_detail), WallDeta
     lateinit var presenter: WallDetailPresenter
 
     private var navigationView: ContainerNavigationView? = null
-    private var commentsWallAdapter: CommentsWallAdapter = CommentsWallAdapter()
+    private var commentsWallAdapter: CommentsWallAdapter = CommentsWallAdapter(
+        onAuthorClick = { userId -> openOtherProfile(userId) }
+    )
 
     @ProvidePresenter
     fun providePresenter(): WallDetailPresenter =
@@ -100,6 +103,11 @@ class WallDetailFragment : BaseFragment(R.layout.fragment_wall_detail), WallDeta
                     initialsView = initials
                 )
 
+                val authorUserId = body.authorInfo.resolveUserId(body.rAuthorId)
+                val openAuthor = { openOtherProfile(authorUserId) }
+                name.setOnClickListener { openAuthor() }
+                profileImage.setOnClickListener { openAuthor() }
+
                 body.files?.forEach { file ->
                     file.contentType?.let { contentType ->
                         when (detectContentType(contentType)) {
@@ -137,6 +145,14 @@ class WallDetailFragment : BaseFragment(R.layout.fragment_wall_detail), WallDeta
                 }
             }
         }
+    }
+
+    private fun openOtherProfile(userId: String?) {
+        val id = userId?.takeIf { it.isNotBlank() } ?: return
+        findNavController().navigate(
+            R.id.otherProfileFragment,
+            Bundle().apply { putString("userId", id) }
+        )
     }
 
     private fun formatPostDate(pubDate: String): String {

@@ -142,17 +142,21 @@ fun CallSettingsSheet(
                         onClick = onOpenCameraDevices,
                     )
                 }
-                SettingsNavRow(
-                    iconRes = R.drawable.ic_call_people,
-                    title = "Участники звонка",
-                    onClick = onOpenParticipants,
-                )
-                if (state.isCurrentUserAdmin) {
+                // «Участники звонка» и управление участниками — только в групповом
+                // звонке. В 1-на-1 и так понятно, кто в звонке.
+                if (state.isGroupCall) {
                     SettingsNavRow(
-                        iconRes = R.drawable.ic_settings,
-                        title = "Настройки для участников",
-                        onClick = onOpenParticipantPermits,
+                        iconRes = R.drawable.ic_call_people,
+                        title = "Участники звонка",
+                        onClick = onOpenParticipants,
                     )
+                    if (state.isCurrentUserAdmin) {
+                        SettingsNavRow(
+                            iconRes = R.drawable.ic_settings,
+                            title = "Настройки для участников",
+                            onClick = onOpenParticipantPermits,
+                        )
+                    }
                 }
                 SettingsNavRow(
                     iconRes = R.drawable.ic_share,

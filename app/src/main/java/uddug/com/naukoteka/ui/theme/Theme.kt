@@ -12,6 +12,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.material.LocalTextStyle as Material2LocalTextStyle
+import androidx.compose.material3.LocalTextStyle as Material3LocalTextStyle
 
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
@@ -142,8 +145,21 @@ fun NaukotekaTheme(
             Material2Theme(
                 colors = materialColors,
                 typography = NaukotekaMaterialTypography,
-                content = content,
-            )
+            ) {
+                // Многие экраны рисуют голый Text() без style — по умолчанию это
+                // Roboto (жирнее и менее аккуратно, чем в макете). Проставляем Golos
+                // дефолтным LocalTextStyle для обоих Material-миров, чтобы шрифт был
+                // единым по всему приложению.
+                CompositionLocalProvider(
+                    Material2LocalTextStyle provides Material2LocalTextStyle.current.copy(
+                        fontFamily = GolosFontFamily,
+                    ),
+                    Material3LocalTextStyle provides Material3LocalTextStyle.current.copy(
+                        fontFamily = GolosFontFamily,
+                    ),
+                    content = content,
+                )
+            }
         }
     }
 }

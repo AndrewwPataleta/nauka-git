@@ -64,8 +64,17 @@ class NauSphereFragment : BaseFragment(R.layout.fragment_naushpere), NauSphereVi
         },
         onLikeClick = {
             presenter.onLikeClick(it)
-        }
+        },
+        onAuthorClick = { userId -> openOtherProfile(userId) }
     )
+
+    private fun openOtherProfile(userId: String?) {
+        val id = userId?.takeIf { it.isNotBlank() } ?: return
+        findNavController().navigate(
+            R.id.otherProfileFragment,
+            Bundle().apply { putString("userId", id) }
+        )
+    }
 
     @ProvidePresenter
     fun providePresenter(): NauSpherePresenter {
