@@ -440,6 +440,7 @@ fun ChatDialogComponent(
                         image = state.chatImage,
                         isGroup = state.isGroup,
                         status = state.status,
+                        activity = typingUsers,
                         firstParticipantName = state.firstParticipantName,
                         onDetailClick = {},
                         onBackPressed = { onBackPressed() },
@@ -546,6 +547,7 @@ fun ChatDialogComponent(
                             image = state.chatImage,
                             isGroup = state.isGroup,
                             status = state.status,
+                            activity = typingUsers,
                             firstParticipantName = state.firstParticipantName,
                             onDetailClick = {
                                 viewModel.onChatDetailClick()
@@ -665,7 +667,7 @@ fun ChatDialogComponent(
                         }
                         if (typingUsers.isNotEmpty()) {
                             item(key = "typing_indicator") {
-                                TypingIndicator(users = typingUsers)
+                                TypingIndicator(users = typingUsers.map { it.user })
                             }
                         }
                     }
@@ -986,7 +988,7 @@ private fun OngoingCallBanner(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column {
             Text(
                 text = stringResource(
                     if (isVideoCall) R.string.chat_ongoing_call_video
@@ -1028,13 +1030,18 @@ private fun OngoingCallBanner(
             }
         }
 
+        Spacer(modifier = Modifier.weight(1f))
+
         // Кластер аватарок тех, кто сейчас в звонке (внахлёст, инициалы если нет
-        // фото). Если участников ещё не подтянули — аватар чата как запасной.
+        // фото), по центру между заголовком и кнопкой. Если участников ещё не
+        // подтянули — аватар чата как запасной.
         if (members.isNotEmpty()) {
-            CallParticipantsCluster(members = members)
+            CallParticipantsCluster(members = members, totalCount = participantsCount)
         } else {
             Avatar(url = avatarUrl, name = callTitle, size = 40.dp)
         }
+
+        Spacer(modifier = Modifier.weight(1f))
 
         Box(
             modifier = Modifier
@@ -1054,13 +1061,18 @@ private fun OngoingCallBanner(
 }
 
 /**
- * Кластер аватарок участников звонка внахлёст (до 3 + «+N»), с тонким кольцом
- * фона между ними. Показывается в баннере «К звонку» вместо иконки группы.
+ * Кластер аватарок участников звонка внахлёст (до 3, с тонким кольцом фона между
+ * ними для эффекта «одна на одну»). Если участников больше — вместо числа
+ * показываем кружок с тремя точками. Показывается в баннере «К звонку».
  */
 @Composable
-private fun CallParticipantsCluster(members: List<CallMemberPreview>) {
+private fun CallParticipantsCluster(
+    members: List<CallMemberPreview>,
+    totalCount: Int,
+) {
     val shown = members.take(3)
-    val extra = members.size - shown.size
+    // Overflow-индикатор («…»), если в звонке больше, чем показано аватарок.
+    val hasMore = totalCount > shown.size
     Row(
         horizontalArrangement = Arrangement.spacedBy((-12).dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1077,7 +1089,7 @@ private fun CallParticipantsCluster(members: List<CallMemberPreview>) {
                 Avatar(url = m.imageUrl, name = m.name, size = 34.dp)
             }
         }
-        if (extra > 0) {
+        if (hasMore) {
             Box(
                 modifier = Modifier
                     .size(38.dp)
@@ -1086,19 +1098,22 @@ private fun CallParticipantsCluster(members: List<CallMemberPreview>) {
                     .padding(2.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Box(
+                Row(
                     modifier = Modifier
                         .size(34.dp)
                         .clip(CircleShape)
                         .background(colorResource(id = R.color.main_background_input)),
-                    contentAlignment = Alignment.Center,
+                    horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = "+$extra",
-                        color = colorResource(id = R.color.main_text),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
+                    repeat(3) {
+                        Box(
+                            modifier = Modifier
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(colorResource(id = R.color.main_text)),
+                        )
+                    }
                 }
             }
         }

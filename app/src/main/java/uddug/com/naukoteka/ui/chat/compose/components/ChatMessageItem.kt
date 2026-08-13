@@ -103,6 +103,11 @@ fun ChatMessageItem(
     onMentionClick: (String) -> Unit = {},
 ) {
     val isSystem = message.type == MessageType.SYSTEM && message.files.isEmpty()
+    // Пустое системное сообщение (без текста и файлов) — обычно транзиентное
+    // событие звонка, которое сервер тут же заменяет/убирает. Раньше оно на
+    // секунду мигало пустой строкой в ленте при входе/выходе из звонка. Ничего
+    // не рисуем — информации оно не несёт.
+    if (isSystem && message.text.isNullOrBlank()) return
     Row(
         modifier = Modifier
             .padding(horizontal = 10.dp)

@@ -368,6 +368,7 @@ fun CallScreen(
                 onToggleMicrophone = onToggleMicrophone,
                 onToggleCamera = onToggleCamera,
                 onEndCall = onEndCallPressed,
+                onSwitchCamera = onSwitchCamera,
             )
         }
     }
@@ -517,7 +518,12 @@ fun CallScreen(
         EndCallOptionsSheet(
             onLeave = {
                 isEndCallOptionsVisible = false
-                onLeaveCall()
+                // «Выйти из звонка» = свернуть в плашку «К звонку» (звонок остаётся
+                // активным, моментальный возврат тапом по плашке), как при
+                // сворачивании/PiP. Реальный выход — крестик на самой плашке
+                // (CallOverlay.onEndCall → endCall). Раньше здесь был endCall(),
+                // из-за чего плашки не было и вернуться было нельзя.
+                onMinimize()
             },
             onEndForAll = {
                 isEndCallOptionsVisible = false
@@ -1600,6 +1606,7 @@ private fun CallControls(
     onToggleMicrophone: () -> Unit,
     onToggleCamera: () -> Unit,
     onEndCall: () -> Unit,
+    onSwitchCamera: () -> Unit = {},
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -1613,6 +1620,17 @@ private fun CallControls(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Перевернуть камеру — в видео-звонке (групповом и 1-на-1). Активна,
+            // когда камера включена (есть что переворачивать), иначе приглушена.
+            if (canUseCamera) {
+                CallActionButton(
+                    iconRes = R.drawable.ic_flip_camera,
+                    label = stringResource(R.string.call_flip_camera),
+                    containerColor = Color(0xFF50515c),
+                    contentColor = if (sessionState.camOn) Color.White else Color(0xFF8083A0),
+                    onClick = onSwitchCamera,
+                )
+            }
             CallActionButton(
                 iconRes = if (sessionState.micOn) R.drawable.ic_mic_on else R.drawable.ic_mic_off,
                 label = stringResource(R.string.call_microphone),

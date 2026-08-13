@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -127,12 +128,25 @@ class ChatDialogViewModel @Inject constructor(
     private val _participants = MutableStateFlow<List<User>>(emptyList())
     val participants: StateFlow<List<User>> = _participants
 
-    // «Печатает…»: кто сейчас печатает в этом диалоге (по socket-событию typing).
-    // owner -> момент последнего пинга; истекает через TYPING_TTL_MS.
-    private val _typingUsers = MutableStateFlow<List<User>>(emptyList())
-    val typingUsers: StateFlow<List<User>> = _typingUsers
+    // «Печатает…»: кто сейчас проявляет активность в этом диалоге. Данные идут по
+    // ОТДЕЛЬНОМУ socket-каналу `social` (не `message`!): подписка subStats на uref
+    // «312:<chatId>», приём evtChat с cSubType справочника #189 (3=пишет, 7=стоп).
+    // См. wiki «Social».
+    private val _typingUsers = MutableStateFlow<List<ChatActivity>>(emptyList())
+    val typingUsers: StateFlow<List<ChatActivity>> = _typingUsers
+
+    // userId -> локальное время последнего активного события (для TTL-очистки).
     private val typingSeenAt = mutableMapOf<String, Long>()
-    private var lastTypingEmitAt = 0L
+    // userId -> код действия из справочника #189 (3=пишет, 5=фото, 2=голос …).
+    private val typingAction = mutableMapOf<String, Int>()
+    // userId -> серверный ts последнего 189:7 (для debounce приоритета «стоп»).
+    private val typingStoppedTs = mutableMapOf<String, Long>()
+    // Троттлинг исходящих 189:3 (пинг раз в 3с) и авто-стоп по простою.
+    private var lastTypingPingAt = 0L
+    private var typingIdleStopJob: Job? = null
+    // Подписка social на текущий чат + её продление (живёт ~1 мин на сервере).
+    private var socialSubscribedDialogId: Long? = null
+    private var socialResubJob: Job? = null
 
     private val _notificationsDisabled = MutableStateFlow(false)
     val notificationsDisabled: StateFlow<Boolean> = _notificationsDisabled
@@ -159,10 +173,9 @@ class ChatDialogViewModel @Inject constructor(
         socketService.setOnEvent("message", LISTENER_TAG) { message ->
             handleIncomingMessage(message)
         }
-        // Приём «печатает…». Имя события TYPING_EVENT — предположительно "typing";
-        // подтвердить с iOS/логом SocketTraffic (эмитим то же имя ниже).
-        socketService.setOnEvent(TYPING_EVENT, TYPING_TAG) { data ->
-            handleTypingEvent(data)
+        // Приём активности чата («печатает…» и медиа-статусы) по каналу `social`.
+        socketService.setOnEvent(SOCIAL_EVENT, SOCIAL_TAG) { data ->
+            handleSocialEvent(data)
         }
         // Истечение индикатора печати.
         viewModelScope.launch {
@@ -173,33 +186,123 @@ class ChatDialogViewModel @Inject constructor(
         }
     }
 
+    // --- Исходящая активность (мы печатаем) ---------------------------------
+
     /**
-     * Вызывается из поля ввода при печати. Эмитим socket-событие typing не чаще
-     * раза в TYPING_EMIT_THROTTLE_MS, чтобы собеседники увидели «печатает…».
+     * Вызывается из поля ввода при печати. Пока пользователь печатает, шлём в
+     * канал `social` активность «пишет сообщение» (189:3) не чаще раза в 3с
+     * (TYPING_PING_MS). Если печать прекратилась, но сообщение не отправлено —
+     * через TYPING_IDLE_STOP_MS шлём терминатор 189:7.
      */
     fun onUserTyping() {
         val dialogId = currentDialogID ?: return
-        val ownerId = currentUser?.id ?: return
         val now = System.currentTimeMillis()
-        if (now - lastTypingEmitAt < TYPING_EMIT_THROTTLE_MS) return
-        lastTypingEmitAt = now
-        runCatching {
-            socketService.sendMessage(
-                TYPING_EVENT,
-                mapOf("dialog" to dialogId, "owner" to ownerId),
-            )
+        if (now - lastTypingPingAt >= TYPING_PING_MS) {
+            lastTypingPingAt = now
+            emitActivity(dialogId, ACT_TYPING)
+        }
+        typingIdleStopJob?.cancel()
+        typingIdleStopJob = viewModelScope.launch {
+            delay(TYPING_IDLE_STOP_MS)
+            emitActivity(dialogId, ACT_STOP)
+            lastTypingPingAt = 0L
         }
     }
 
-    private fun handleTypingEvent(data: Any) {
-        val json = runCatching {
-            JSONObject(if (data is JSONObject) data.toString() else data.toString())
-        }.getOrNull() ?: return
-        val dialog = json.optLong("dialog", -1L)
-        val owner = json.optString("owner")
-        if (dialog != (currentDialogID ?: -2L)) return
-        if (owner.isBlank() || owner == currentUser?.id) return
-        typingSeenAt[owner] = System.currentTimeMillis()
+    /**
+     * Терминатор набора: вызывается при отправке сообщения (из emitChatMessage).
+     * Шлём 189:7, только если до этого действительно печатали — иначе не спамим.
+     */
+    private fun emitTypingStop() {
+        val dialogId = currentDialogID ?: return
+        typingIdleStopJob?.cancel()
+        typingIdleStopJob = null
+        if (lastTypingPingAt == 0L) return
+        lastTypingPingAt = 0L
+        emitActivity(dialogId, ACT_STOP)
+    }
+
+    private fun emitActivity(dialogId: Long, code: Int) {
+        emitSocial(
+            mapOf(
+                "type" to "evt",
+                "rObjects" to listOf("$CHAT_UREF_TYPE:$dialogId"),
+                "cSubType" to "$ACTIVITY_DICT:$code",
+            )
+        )
+    }
+
+    private fun emitSocial(payload: Map<String, Any>) {
+        runCatching { socketService.sendMessage(SOCIAL_EVENT, payload) }
+    }
+
+    // --- Подписка на активность чата ----------------------------------------
+
+    /**
+     * Подписка на статусы чата по каналу `social`. Серверная подписка живёт ~1
+     * минуту, поэтому продлеваем её каждые SUBSTATS_TTL_MS, пока чат открыт.
+     */
+    private fun subscribeSocial(dialogId: Long) {
+        if (socialSubscribedDialogId == dialogId) return
+        unsubscribeSocial()
+        socialSubscribedDialogId = dialogId
+        emitSocial(mapOf("type" to "subStats", "rObjects" to listOf("$CHAT_UREF_TYPE:$dialogId")))
+        socialResubJob = viewModelScope.launch {
+            while (isActive) {
+                delay(SUBSTATS_TTL_MS)
+                val id = socialSubscribedDialogId ?: break
+                emitSocial(mapOf("type" to "subStats", "rObjects" to listOf("$CHAT_UREF_TYPE:$id")))
+            }
+        }
+    }
+
+    private fun unsubscribeSocial() {
+        val id = socialSubscribedDialogId ?: return
+        socialResubJob?.cancel()
+        socialResubJob = null
+        emitSocial(mapOf("type" to "unsubStats", "rObjects" to listOf("$CHAT_UREF_TYPE:$id")))
+        socialSubscribedDialogId = null
+        typingSeenAt.clear()
+        typingStoppedTs.clear()
+        typingAction.clear()
+        _typingUsers.value = emptyList()
+    }
+
+    // --- Входящая активность (собеседник печатает) --------------------------
+
+    private fun handleSocialEvent(data: Any) {
+        val json = runCatching { JSONObject(data.toString()) }.getOrNull() ?: return
+        when (json.optString("type")) {
+            "evtChat" -> handleChatActivity(json)
+            // evtChatPollStats — live-статистика опросов, отдельная фича ленты опросов.
+        }
+    }
+
+    private fun handleChatActivity(json: JSONObject) {
+        val dialogId = currentDialogID ?: return
+        if (json.optString("rObject") != "$CHAT_UREF_TYPE:$dialogId") return
+        val payload = json.optJSONObject("payload") ?: return
+        val user = payload.optString("user")
+        if (user.isBlank() || user == currentUser?.id) return
+        // cSubType вида "189:3" — берём код из справочника #189.
+        val code = payload.optString("cSubType").substringAfter(':', "").toIntOrNull() ?: return
+        // ts генерит веб-сервер (мс), используем только для дедупа, не для показа.
+        val ts = json.optLong("ts", System.currentTimeMillis())
+        if (code == ACT_STOP) {
+            typingStoppedTs[user] = ts
+            typingSeenAt.remove(user)
+            typingAction.remove(user)
+            recomputeTypingUsers()
+            return
+        }
+        // Debounce: 189:7 приоритетно; 189:3 в пределах <1с после стопа — отбрасываем.
+        val stoppedTs = typingStoppedTs[user]
+        if (stoppedTs != null && ts - stoppedTs in 0 until STOP_DEBOUNCE_MS) return
+        typingStoppedTs.remove(user)
+        // Запоминаем конкретное действие (пишет/фото/видео/файл/голос) — по нему
+        // шапка выбирает иконку и текст статуса.
+        typingSeenAt[user] = System.currentTimeMillis()
+        typingAction[user] = code
         recomputeTypingUsers()
     }
 
@@ -207,7 +310,10 @@ class ChatDialogViewModel @Inject constructor(
         val now = System.currentTimeMillis()
         val active = typingSeenAt.filterValues { now - it < TYPING_TTL_MS }.keys.toSet()
         typingSeenAt.keys.retainAll(active)
-        _typingUsers.value = active.map { id -> resolveTypingUser(id) }
+        typingAction.keys.retainAll(active)
+        _typingUsers.value = active.map { id ->
+            ChatActivity(resolveTypingUser(id), typingAction[id] ?: ACT_TYPING)
+        }
     }
 
     private fun resolveTypingUser(userId: String): User {
@@ -218,6 +324,9 @@ class ChatDialogViewModel @Inject constructor(
 
 
     fun loadMessages(dialogId: Long) {
+        // Подписка на активность чата по каналу `social` (идемпотентна: повторный
+        // вход в тот же диалог не переподписывается).
+        subscribeSocial(dialogId)
         // Skip reload if we're already showing this dialog in Success state —
         // e.g. user returned from CreatePoll / ForwardMessage / AvatarView and
         // the ViewModel still has a fresh list. Reloading from scratch shows
@@ -912,6 +1021,8 @@ class ChatDialogViewModel @Inject constructor(
             ownerAvatarUrl = null,
         )
         socketService.sendMessage("message", sanitized)
+        // Отправили сообщение → завершаем индикатор набора терминатором 189:7.
+        emitTypingStop()
     }
 
     fun sendMessage(text: String) {
@@ -1435,21 +1546,42 @@ class ChatDialogViewModel @Inject constructor(
 
     override fun onCleared() {
         socketService.removeEvent("message", LISTENER_TAG)
-        socketService.removeEvent(TYPING_EVENT, TYPING_TAG)
+        socketService.removeEvent(SOCIAL_EVENT, SOCIAL_TAG)
+        typingIdleStopJob?.cancel()
+        unsubscribeSocial()
         super.onCleared()
     }
 
     companion object {
         private const val LISTENER_TAG = "ChatDialogViewModel"
         private const val PAGE_SIZE = 30
-        // «Печатает…». TYPING_EVENT — предполагаемое имя socket-события; при
-        // необходимости заменить на реальное (одно место) после сверки с iOS.
-        private const val TYPING_EVENT = "typing"
-        private const val TYPING_TAG = "ChatDialogTyping"
-        private const val TYPING_TTL_MS = 4000L
-        private const val TYPING_EMIT_THROTTLE_MS = 2000L
+        // Активность чата идёт по отдельному socket-каналу `social` (wiki «Social»).
+        private const val SOCIAL_EVENT = "social"
+        private const val SOCIAL_TAG = "ChatDialogSocial"
+        // uref чата: «312:<chatId>» (312 — тип объекта «чат»).
+        private const val CHAT_UREF_TYPE = "312"
+        // Справочник cSubType #189: 3 = пишет сообщение, 7 = действие прекращено.
+        private const val ACTIVITY_DICT = "189"
+        private const val ACT_TYPING = 3
+        private const val ACT_STOP = 7
+        // Серверная подписка живёт ~1 мин — продлеваем раньше срока.
+        private const val SUBSTATS_TTL_MS = 45_000L
+        // Автор шлёт 189:3 не чаще раза в 3с; при простое 5с — авто-стоп 189:7.
+        private const val TYPING_PING_MS = 3_000L
+        private const val TYPING_IDLE_STOP_MS = 5_000L
+        // Подписчик снимает статус, если событий нет 5-7с.
+        private const val TYPING_TTL_MS = 6_000L
+        // После 189:7 игнорируем 189:3 того же автора в пределах <1с (дедуп).
+        private const val STOP_DEBOUNCE_MS = 1_000L
     }
 }
+
+/**
+ * Активность собеседника в чате: кто (`user`) и что делает (`action` — код из
+ * справочника #189: 1 видео, 2 голос, 3 пишет, 4 файл, 5 фото, 6 аудио).
+ * Питает индикатор в ленте и строку статуса в шапке.
+ */
+data class ChatActivity(val user: User, val action: Int)
 
 private fun ChatPoll.toDomain(messageId: Long?, questionFallback: String?): Poll {
     val sortedOptions = options.orEmpty().sortedBy { it.order ?: Int.MAX_VALUE }

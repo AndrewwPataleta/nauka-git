@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import uddug.com.naukoteka.R
+import uddug.com.naukoteka.mvvm.chat.ChatActivity
 
 @Composable
 fun ChatTopBar(
@@ -38,6 +39,7 @@ fun ChatTopBar(
     image: String,
     isGroup: Boolean,
     status: String?,
+    activity: List<ChatActivity> = emptyList(),
     firstParticipantName: String? = null,
     onDetailClick: () -> Unit,
     onCallClick: () -> Unit = {},
@@ -90,13 +92,19 @@ fun ChatTopBar(
                             color = MaterialTheme.colors.onBackground
                         )
                     )
-                    status?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.caption.copy(
-                                color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                    // Пока собеседник(и) что-то делают — показываем активность
+                    // (иконка + акцентный текст) вместо статуса «Онлайн»/«N участников».
+                    if (activity.isNotEmpty()) {
+                        ChatActivityStatus(activity = activity, isGroup = isGroup)
+                    } else {
+                        status?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.caption.copy(
+                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                                )
                             )
-                        )
+                        }
                     }
                 }
 
