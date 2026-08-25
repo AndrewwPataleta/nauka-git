@@ -1,5 +1,7 @@
 package uddug.com.naukoteka.flashphoner
 
+import android.content.Intent
+import android.media.projection.MediaProjection
 import android.util.Log
 import com.flashphoner.fpwcsapi.Flashphoner
 import com.flashphoner.fpwcsapi.bean.Connection
@@ -12,6 +14,8 @@ import com.flashphoner.fpwcsapi.room.RoomOptions
 import com.flashphoner.fpwcsapi.session.RestAppCommunicator
 import com.flashphoner.fpwcsapi.session.Stream
 import com.flashphoner.fpwcsapi.session.StreamOptions
+import com.flashphoner.fpwcsapi.webrtc.WebRTCMediaProvider
+import org.webrtc.ScreenCapturerAndroid
 import org.webrtc.SurfaceViewRenderer
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
@@ -110,6 +114,57 @@ class FlashphonerSessionManager @Inject constructor(
     }
 
     fun isRoomJoined(): Boolean = roomRef.get() != null
+
+    /**
+     * Подменяет источник видео на захват экрана (демонстрация экрана).
+     *
+     * [WebRTCMediaProvider] — синглтон: заданный здесь capturer применяется при
+     * СЛЕДУЮЩЕМ [publishToCurrentRoom]. Поэтому вызывающая сторона обязана после
+     * этого пере-опубликовать локальный поток (unpublish→publish), чтобы вместо
+     * камеры в дорожку пошли кадры экрана. Удалённые участники увидят экран через
+     * обычный видео-пайплайн (стрим публикующего), никакой отдельной логики на их
+     * стороне не нужно.
+     *
+     * [onStop] вызывается, когда систему демонстрации остановил сам Android
+     * (пользователь нажал «Остановить» в системной шторке) — нужно свернуть UI.
+     */
+    fun useScreenCapturer(
+        mediaProjection: MediaProjection,
+        mediaProjectionData: Intent,
+        onStop: () -> Unit,
+    ) {
+        environment.ensureInitialised()
+        val provider = WebRTCMediaProvider.getInstance()
+        provider.setMediaProjection(mediaProjection)
+        provider.setVideoCapturer(
+            ScreenCapturerAndroid(
+                mediaProjection,
+                mediaProjectionData,
+                object : MediaProjection.Callback() {
+                    override fun onStop() {
+                        super.onStop()
+                        log("screen_capturer_system_stop")
+                        onStop()
+                    }
+                },
+            )
+        )
+        log("useScreenCapturer set")
+    }
+
+    /**
+     * Возвращает источник видео к камере. `setVideoCapturer(null)` заставляет SDK
+     * при следующей публикации собрать обычный camera-capturer. Как и
+     * [useScreenCapturer], требует последующего пере-паблиша локального потока.
+     */
+    fun useCameraCapturer() {
+        val provider = WebRTCMediaProvider.getInstance()
+        runCatching { provider.setVideoCapturer(null) }
+            .onFailure { log("useCameraCapturer setVideoCapturer(null) failed error=${it.message}") }
+        runCatching { provider.setMediaProjection(null) }
+            .onFailure { log("useCameraCapturer setMediaProjection(null) failed error=${it.message}") }
+        log("useCameraCapturer set")
+    }
 
     fun publishToCurrentRoom(
         streamName: String,

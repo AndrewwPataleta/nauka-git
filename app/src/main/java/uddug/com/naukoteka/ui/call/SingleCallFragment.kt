@@ -1,9 +1,11 @@
 package uddug.com.naukoteka.ui.call
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.Context
+import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -27,6 +29,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import uddug.com.naukoteka.mvvm.call.CallParticipant
 import uddug.com.naukoteka.mvvm.call.CallStatus
 import uddug.com.naukoteka.mvvm.call.CallViewModel
+import uddug.com.naukoteka.mvvm.call.ScreenShareEvent
+import uddug.com.naukoteka.services.ScreenShareBridge
+import uddug.com.naukoteka.services.ScreenShareService
 import uddug.com.naukoteka.presentation.profile.navigation.ContainerNavigationView
 import uddug.com.naukoteka.ui.call.compose.CallScreen
 import uddug.com.naukoteka.ui.chat.ChatDialogFragment
@@ -42,6 +47,22 @@ class SingleCallFragment : Fragment() {
     private var navigationView: ContainerNavigationView? = null
     private var hasHandledCallFinish: Boolean = false
     private var pendingStartCallRequest: PendingStartCallRequest? = null
+
+    // Токен разрешения MediaProjection: саму проекцию строим только после подъёма
+    // foreground-сервиса (требование Android 14). См. GroupCallFragment.
+    private var pendingProjectionData: Intent? = null
+
+    private val screenCaptureLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+                pendingProjectionData = result.data
+                ScreenShareBridge.onForegrounded = { startScreenCaptureFromProjection() }
+                ScreenShareBridge.onStopRequested = { viewModel.stopScreenShare() }
+                ScreenShareService.start(requireContext())
+            } else {
+                Toast.makeText(requireContext(), "Демонстрация экрана отменена", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     private val callPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -180,6 +201,7 @@ class SingleCallFragment : Fragment() {
                         onSetCallVolume = viewModel::setCallVolume,
                         getCallVolume = viewModel::currentCallVolume,
                         onShareLink = { shareCallLink() },
+                        onToggleScreenShare = { viewModel.toggleScreenShare() },
                         onLeaveCall = { viewModel.endCall() },
                         onEndForAll = { viewModel.endCallForEveryone() },
                         onBindPreviewRenderer = viewModel::bindPreviewRenderer,
@@ -225,6 +247,51 @@ class SingleCallFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         observeCallState()
         observeToasts()
+        observeScreenShareEvents()
+    }
+
+    private fun observeScreenShareEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.screenShareEvents.collect { event ->
+                    when (event) {
+                        ScreenShareEvent.RequestPermission -> requestScreenCapture()
+                        ScreenShareEvent.StopService -> stopScreenShareService()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun requestScreenCapture() {
+        val mpm = requireContext()
+            .getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        runCatching { screenCaptureLauncher.launch(mpm.createScreenCaptureIntent()) }
+            .onFailure {
+                Toast.makeText(
+                    requireContext(),
+                    "Демонстрация экрана недоступна на этом устройстве",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+    }
+
+    private fun startScreenCaptureFromProjection() {
+        val data = pendingProjectionData ?: return
+        val mpm = requireContext()
+            .getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        val projection = runCatching { mpm.getMediaProjection(Activity.RESULT_OK, data) }.getOrNull()
+        if (projection == null) {
+            stopScreenShareService()
+            return
+        }
+        viewModel.startScreenShare(projection, data)
+    }
+
+    private fun stopScreenShareService() {
+        pendingProjectionData = null
+        ScreenShareBridge.clear()
+        runCatching { ScreenShareService.stop(requireContext()) }
     }
 
     private fun observeToasts() {
@@ -265,6 +332,7 @@ class SingleCallFragment : Fragment() {
         if (hasHandledCallFinish) return
 
         hasHandledCallFinish = true
+        stopScreenShareService()
         viewModel.endCall()
         removeFloatingCall()
         // После завершения звонка открываем ЧАТ, где шёл звонок, а не список.

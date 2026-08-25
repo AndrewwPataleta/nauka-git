@@ -515,6 +515,8 @@
     <string name="call_prejoin_camera">Камера</string>
     <string name="call_prejoin_share_link">Отправить ссылку</string>
     <string name="call_no_devices">Нет доступных устройств</string>
+    <string name="call_reconnecting">Восстанавливаем соединение…</string>
+    <string name="call_participant_reconnecting">Восстанавливает соединение…</string>
     <plurals name="call_prejoin_participants">
         <item quantity="one">В звонке %d участник</item>
         <item quantity="few">В звонке %d участника</item>

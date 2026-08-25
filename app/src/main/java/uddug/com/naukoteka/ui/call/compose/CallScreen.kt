@@ -35,6 +35,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.res.colorResource
@@ -123,6 +124,29 @@ import com.flashphoner.fpwcsapi.session.SessionOptions
 import com.flashphoner.fpwcsapi.room.RoomManager
 import com.flashphoner.fpwcsapi.room.RoomManagerOptions
 
+@Composable
+private fun ReconnectingBanner() {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color(0xE6202233))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(16.dp),
+            color = Color.White,
+            strokeWidth = 2.dp,
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = stringResource(R.string.call_reconnecting),
+            color = Color.White,
+            fontSize = 14.sp,
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CallScreen(
@@ -157,6 +181,7 @@ fun CallScreen(
     onSetCallVolume: (Float) -> Unit = {},
     getCallVolume: () -> Float = { 0f },
     onShareLink: () -> Unit = {},
+    onToggleScreenShare: () -> Unit = {},
     onLeaveCall: () -> Unit = {},
     onEndForAll: () -> Unit = {},
     onBindPreviewRenderer: (SurfaceViewRenderer) -> Unit = {},
@@ -330,6 +355,11 @@ fun CallScreen(
                 .padding(horizontal = if (isGroupCall) 6.dp else 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            if (state.isReconnecting) {
+                ReconnectingBanner()
+                Spacer(modifier = Modifier.height(if (isGroupCall) 6.dp else 12.dp))
+            }
+
             if (!isGroupCall) {
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -435,11 +465,10 @@ fun CallScreen(
 
             CallControls(
                 sessionState = state.sessionState,
-                // Camera is always usable in a group call (even one that started
-                // as audio, or came back as audio after a reconnect): the user
-                // can enable video at any time. In 1-to-1 calls it stays tied to
-                // the call type.
-                canUseCamera = state.isVideoCall || state.isGroupCall,
+                // Камера доступна ТОЛЬКО в видеозвонке (1:1 или групповом). В
+                // аудиозвонке (в т.ч. групповом) кнопок камеры/переворота быть не
+                // должно — это аудио-звонок.
+                canUseCamera = state.isVideoCall,
                 onToggleMicrophone = onToggleMicrophone,
                 onToggleCamera = onToggleCamera,
                 onEndCall = onEndCallPressed,
@@ -553,6 +582,10 @@ fun CallScreen(
             onShareLink = {
                 isSettingsSheetVisible = false
                 onShareLink()
+            },
+            onToggleScreenShare = {
+                isSettingsSheetVisible = false
+                onToggleScreenShare()
             },
         )
     }
@@ -984,28 +1017,41 @@ private fun SingleParticipantPreview(
             }
         }
     } else {
-        Column(
-            modifier = modifier,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Avatar(
-                url = participant?.avatarUrl,
-                name = participant?.name,
-                size = 120.dp,
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = participant?.name.orEmpty(),
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 24.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            if (status == CallStatus.DIALING || status == CallStatus.CONNECTING) {
-                CircularProgressIndicator(color = Color.White)
+        Box(modifier = modifier) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Avatar(
+                    url = participant?.avatarUrl,
+                    name = participant?.name,
+                    size = 120.dp,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = participant?.name.orEmpty(),
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 24.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                if (status == CallStatus.DIALING || status == CallStatus.CONNECTING) {
+                    CircularProgressIndicator(color = Color.White)
+                }
+            }
+            // Собеседник переподключается — бегущая полоса сверху.
+            if (participant?.isReconnecting == true) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .height(3.dp),
+                    color = Color(0xFF4DA6FF),
+                    backgroundColor = Color(0x334DA6FF),
+                )
             }
         }
     }
@@ -1054,20 +1100,20 @@ private fun SingleParticipantVideo(
     onReleaseLocalRenderer: () -> Unit,
     onReleaseRemoteRenderer: () -> Unit,
 ) {
-    // Пока собеседник не подключился — показываем СЕБЯ крупно (как в групповом
-    // «один в звонке»). Когда вошёл — он крупно, я в PiP; тап по PiP меняет фокус.
-    // Поверхности фиксированы (big=база, pip=оверлей сверху), меняем только какой
-    // поток на какую поверхность идёт (switchRenderer) — z-order не ломается.
+    // Собеседник ВСЕГДА на базовой поверхности и привязан с самого начала — иначе
+    // его поток не приходит и звонок не переходит в IN_CALL (был баг «подключаемся»
+    // навсегда: IN_CALL ставится в playParticipant при bind remote-рендерера). Своё
+    // видео — отдельный оверлей поверх: на весь экран пока ждём собеседника,
+    // плавно ужимается в угловой PiP когда он вошёл. Тап по себе разворачивает себя
+    // на весь экран и обратно.
     val remotePresent = status == CallStatus.IN_CALL
     var selfFocused by remember { mutableStateOf(false) }
-    val selfOnBig = selfFocused || !remotePresent
-    var bigRenderer by remember { mutableStateOf<FPSurfaceViewRenderer?>(null) }
-    var pipRenderer by remember { mutableStateOf<FPSurfaceViewRenderer?>(null) }
+    val selfBig = !remotePresent || selfFocused
+    var remoteRendererRef by remember { mutableStateOf<FPSurfaceViewRenderer?>(null) }
+    var selfRendererRef by remember { mutableStateOf<FPSurfaceViewRenderer?>(null) }
 
-    LaunchedEffect(selfOnBig, bigRenderer, pipRenderer) {
-        bigRenderer?.let { if (selfOnBig) onBindLocalRenderer(it) else onBindRemoteRenderer(it) }
-        pipRenderer?.let { if (selfOnBig) onBindRemoteRenderer(it) else onBindLocalRenderer(it) }
-    }
+    LaunchedEffect(remoteRendererRef) { remoteRendererRef?.let { onBindRemoteRenderer(it) } }
+    LaunchedEffect(selfRendererRef) { selfRendererRef?.let { onBindLocalRenderer(it) } }
     DisposableEffect(Unit) {
         onDispose {
             onReleaseLocalRenderer()
@@ -1075,62 +1121,74 @@ private fun SingleParticipantVideo(
         }
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .clip(RoundedCornerShape(24.dp))
             .background(Color(0xFF121732)),
-        contentAlignment = Alignment.Center,
     ) {
-        // Большая поверхность (база).
+        val fullWidth = maxWidth
+        val fullHeight = maxHeight
+        val selfWidth by animateDpAsState(if (selfBig) fullWidth else 120.dp, tween(350), label = "selfW")
+        val selfHeight by animateDpAsState(if (selfBig) fullHeight else 160.dp, tween(350), label = "selfH")
+        val selfPad by animateDpAsState(if (selfBig) 0.dp else 12.dp, tween(350), label = "selfPad")
+        val selfRadius by animateDpAsState(if (selfBig) 24.dp else 16.dp, tween(350), label = "selfR")
+
+        // База — видео собеседника (рендерер привязан всегда).
         FlashphonerVideoView(
             modifier = Modifier.fillMaxSize(),
             isMirror = false,
             isOverlay = false,
-            onRendererReady = { bigRenderer = it },
-            onRendererReleased = { bigRenderer = null },
+            onRendererReady = { remoteRendererRef = it },
+            onRendererReleased = { remoteRendererRef = null },
             cornerRadius = 24.dp,
         )
 
-        // На большом мы сами и камера выключена — аватар+блюр вместо чёрного.
-        if (selfOnBig && !isLocalVideoEnabled) {
-            NoVideoAvatar(
-                avatarUrl = selfAvatarUrl,
-                name = "Вы",
+        // Своё видео — оверлей поверх (full пока ждём, PiP когда собеседник вошёл).
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(selfPad)
+                .size(width = selfWidth, height = selfHeight)
+                .clip(RoundedCornerShape(selfRadius))
+                .then(if (!selfBig) Modifier.background(Color(0xFF121732)) else Modifier)
+                .then(if (remotePresent) Modifier.clickable { selfFocused = !selfFocused } else Modifier),
+            contentAlignment = Alignment.Center,
+        ) {
+            FlashphonerVideoView(
                 modifier = Modifier.fillMaxSize(),
+                isMirror = true,
+                isOverlay = true,
+                onRendererReady = { selfRendererRef = it },
+                onRendererReleased = { selfRendererRef = null },
+                cornerRadius = selfRadius,
             )
-        }
-
-        // Маленький PiP — только когда есть собеседник (иначе пустой чёрный PiP при
-        // ожидании). Тап меняет фокус.
-        if (isLocalVideoEnabled && remotePresent) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(12.dp)
-                    .size(width = 120.dp, height = 160.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable { selfFocused = !selfFocused },
-                contentAlignment = Alignment.Center,
-            ) {
-                FlashphonerVideoView(
+            // Камера выключена — аватар+блюр вместо чёрного.
+            if (!isLocalVideoEnabled) {
+                NoVideoAvatar(
+                    avatarUrl = selfAvatarUrl,
+                    name = "Вы",
                     modifier = Modifier.fillMaxSize(),
-                    isMirror = true,
-                    isOverlay = true,
-                    onRendererReady = { pipRenderer = it },
-                    onRendererReleased = { pipRenderer = null },
-                    cornerRadius = 16.dp,
                 )
             }
-        }
-
-        // Бейдж «Вы» когда показываем себя крупно.
-        if (selfOnBig) {
             CallTileBadge(
                 label = "Вы",
                 isMuted = !selfMicOn,
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(8.dp),
+                    .padding(if (selfBig) 8.dp else 4.dp),
+            )
+        }
+
+        // Собеседник переподключается — тонкая бегущая полоса сверху (как в группе).
+        if (participant?.isReconnecting == true) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+                color = Color(0xFF4DA6FF),
+                backgroundColor = Color(0x334DA6FF),
             )
         }
     }
@@ -1235,6 +1293,7 @@ private fun GroupVideoCallGrid(
                     camOn = p.camOn,
                     handUp = p.handUp,
                     speaking = speaking,
+                    isReconnecting = p.isReconnecting,
                     modifier = tileModifier,
                     onRendererReady = { renderer -> onBindParticipantRenderer(p.id, renderer) },
                     onRendererReleased = { onReleaseParticipantRenderer(p.id) },
@@ -1363,6 +1422,7 @@ private fun VideoParticipantTile(
     camOn: Boolean,
     handUp: Boolean,
     speaking: Boolean,
+    isReconnecting: Boolean,
     modifier: Modifier = Modifier,
     onRendererReady: (FPSurfaceViewRenderer) -> Unit,
     onRendererReleased: () -> Unit,
@@ -1422,6 +1482,21 @@ private fun VideoParticipantTile(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(8.dp),
+            )
+        }
+
+        // Участник переподключается (его поток упал) — тонкая «бегущая» полоса по
+        // верхней кромке плитки. НЕ затемняем видео/аватар: видно только аккуратный
+        // индикатор активности сверху.
+        if (isReconnecting) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                color = Color(0xFF4DA6FF),
+                backgroundColor = Color(0x334DA6FF),
             )
         }
     }

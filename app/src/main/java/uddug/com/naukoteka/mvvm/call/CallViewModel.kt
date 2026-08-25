@@ -1,5 +1,7 @@
 package uddug.com.naukoteka.mvvm.call
 
+import android.content.Intent
+import android.media.projection.MediaProjection
 import android.os.Parcelable
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -54,6 +56,7 @@ class CallViewModel @Inject constructor(
     private val callAudioManager: CallAudioManager,
     private val incomingCallStore: IncomingCallStore,
     private val activeCallStore: ActiveCallStore,
+    private val networkMonitor: CallNetworkMonitor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CallUiState())
@@ -62,6 +65,15 @@ class CallViewModel @Inject constructor(
     private val _toastEvents = MutableSharedFlow<String>(extraBufferCapacity = 5)
     val toastEvents: SharedFlow<String> = _toastEvents
 
+    // Одноразовые события демонстрации экрана для фрагмента: только он владеет
+    // Activity (запрос разрешения MediaProjection) и foreground-сервисом.
+    private val _screenShareEvents = MutableSharedFlow<ScreenShareEvent>(extraBufferCapacity = 4)
+    val screenShareEvents: SharedFlow<ScreenShareEvent> = _screenShareEvents
+
+    // Состояние камеры до старта демонстрации — чтобы корректно восстановить его
+    // после остановки показа экрана.
+    private var camOnBeforeScreenShare: Boolean = false
+
     private val gson = Gson()
 
     init {
@@ -69,6 +81,72 @@ class CallViewModel @Inject constructor(
             viewModelScope.launch { handleSocketMessage(message) }
         }
         callAudioManager.onRoutesChanged = { refreshAudioRoutes() }
+    }
+
+    // Отложенный отказ, если сеть пропала полностью и не вернулась за грейс-окно.
+    private var networkGraceJob: Job? = null
+    // Активное восстановление после смены/возврата сети. Одна попытка в полёте.
+    private var networkReconnectJob: Job? = null
+
+    private val networkListener = object : CallNetworkMonitor.Listener {
+        override fun onConnectionLost() {
+            viewModelScope.launch { handleNetworkLost() }
+        }
+
+        override fun onConnectionAvailable(switched: Boolean) {
+            viewModelScope.launch { handleNetworkAvailable(switched) }
+        }
+    }
+
+    private fun isInActiveCall(): Boolean {
+        val status = _uiState.value.status
+        return status == CallStatus.CONNECTING || status == CallStatus.IN_CALL
+    }
+
+    /**
+     * Сеть пропала целиком. Не рвём звонок сразу: показываем «Восстанавливаем
+     * соединение…» и держим грейс-окно. Если сеть вернётся раньше —
+     * [handleNetworkAvailable] отменит таймер и переустановит соединение.
+     */
+    private fun handleNetworkLost() {
+        if (!isInActiveCall()) return
+        logCallStep("network_lost", "grace window started")
+        networkLost = true
+        _uiState.value = _uiState.value.copy(isReconnecting = true)
+        // Отменяем любой идущий реконнект: без сети он всё равно упадёт (и раньше
+        // ронял звонок через connect-onFailure). Дождёмся network_available и
+        // переподключимся с чистого листа.
+        networkReconnectJob?.cancel()
+        reconnectInProgress = false
+        networkGraceJob?.cancel()
+        networkGraceJob = viewModelScope.launch {
+            delay(NETWORK_GRACE_MS)
+            if (!isInActiveCall()) return@launch
+            logCallStep("network_grace_expired", "no network within grace, ending")
+            handleCallFailure("Соединение потеряно")
+        }
+    }
+
+    /**
+     * Сеть доступна снова (вернулась после потери или сменился транспорт).
+     * Проактивно переустанавливаем сессию: сокет на старом интерфейсе мёртв, а
+     * ждать его таймаута нельзя (собеседники увидят «выпал, вызвать повторно»).
+     * Игнорируем самый первый колбэк при регистрации (звонок ещё не терял сеть).
+     */
+    private fun handleNetworkAvailable(switched: Boolean) {
+        if (!isInActiveCall()) return
+        networkGraceJob?.cancel()
+        networkGraceJob = null
+        if (!switched && !_uiState.value.isReconnecting && !networkLost) {
+            logCallStep("network_available_ignored", "initial/steady network")
+            return
+        }
+        // Сеть вернулась — снимаем флаг потери, теперь реконнект имеет смысл.
+        networkLost = false
+        logCallStep("network_available", "switched=$switched")
+        _uiState.value = _uiState.value.copy(isReconnecting = true)
+        // Свежее сетевое событие — оптимистично сбрасываем счётчик попыток.
+        scheduleReconnect(if (switched) "network_switch" else "network_regain", resetAttempts = true)
     }
 
     private var isFrontCamera: Boolean = true
@@ -84,6 +162,14 @@ class CallViewModel @Inject constructor(
     private var mediaSessionId: String? = null
     private var lastCallParams: CallParams? = null
     private var reconnectAttempts = 0
+    // Идёт запланированный ретрай пере-подключения. Держим ОДИН pending-ретрай,
+    // чтобы параллельные триггеры (смена сети + onDisconnection + join_failed от
+    // reset) не плодили гонки и не жгли попытки залпом.
+    private var reconnectInProgress = false
+    // Сеть сейчас полностью отсутствует (между network_lost и network_available).
+    // Пока true — НЕ дёргаем реконнект (попытки всё равно упадут и сожгут бюджет);
+    // держим оверлей и ждём возврата сети под защитой грейс-окна.
+    private var networkLost = false
     // Поколение звонка: растёт на каждый старт. Отложенный «мягкий» disconnect
     // при выходе (см. endCall) срабатывает, только если поколение не изменилось —
     // иначе быстрый повторный вход («К звонку» за <500мс) уронил бы новую сессию.
@@ -451,23 +537,37 @@ class CallViewModel @Inject constructor(
                 ?: emptyList()
         }
 
-        val initialStatus = if (isAcceptingIncomingCall) {
-            CallStatus.CONNECTING
+        // resetReconnectAttempts=false ⇒ это РЕКОННЕКТ, а не новый звонок.
+        val isReconnect = !resetReconnectAttempts
+        if (isReconnect) {
+            // Реконнект: НЕ пересобираем экран с нуля. Иначе status уходит в
+            // DIALING (экран «звоним»), участники/плитки сбрасываются — и выглядит
+            // как будто позвонили заново. Держим текущее состояние (участники,
+            // мьют/камера) и оверлей «Восстанавливаем соединение…», а WCS-сессию
+            // переустанавливаем под капотом.
+            _uiState.value = _uiState.value.copy(
+                status = CallStatus.CONNECTING,
+                isReconnecting = true,
+                errorMessage = null,
+            )
         } else {
-            CallStatus.DIALING
+            val initialStatus = if (isAcceptingIncomingCall) {
+                CallStatus.CONNECTING
+            } else {
+                CallStatus.DIALING
+            }
+            _uiState.value = CallUiState(
+                dialogId = dialogId,
+                callTitle = callTitle ?: contactName,
+                participants = resolvedParticipants,
+                status = initialStatus,
+                isVideoCall = isVideoCall,
+                sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
+                isRecording = false,
+                errorMessage = null,
+                isGroupCall = isGroupCall,
+            )
         }
-
-        _uiState.value = CallUiState(
-            dialogId = dialogId,
-            callTitle = callTitle ?: contactName,
-            participants = resolvedParticipants,
-            status = initialStatus,
-            isVideoCall = isVideoCall,
-            sessionState = CallSessionState(micOn = true, camOn = isVideoCall),
-            isRecording = false,
-            errorMessage = null,
-            isGroupCall = isGroupCall,
-        )
 
         // On a reconnect the call was already counting — restart the ticking
         // job so the duration doesn't freeze after the _uiState reset above.
@@ -482,6 +582,9 @@ class CallViewModel @Inject constructor(
 
         callAudioManager.acquire()
         refreshAudioRoutes()
+        // Активный мониторинг сети на время звонка (идемпотентно: повторный старт
+        // при реконнекте монитор игнорирует).
+        networkMonitor.start(networkListener)
 
         viewModelScope.launch {
             runCatching {
@@ -538,7 +641,12 @@ class CallViewModel @Inject constructor(
                     refreshParticipants()
                 }
             }.onFailure {
-                handleCallFailure("Failed to connect to call service.")
+                // Подключение к WCS упало (частая причина — сеть ещё нестабильна
+                // после переключения/возврата). НЕ роняем звонок фатально —
+                // отдаём планировщику: он либо отложит (нет сети), либо повторит
+                // с backoff, либо сдастся, исчерпав бюджет попыток.
+                logCallStep("connect_ws_failed", "error=${it.message}")
+                scheduleReconnect("connect_failed", resetAttempts = false)
             }
         }
     }
@@ -599,11 +707,17 @@ class CallViewModel @Inject constructor(
             }
         }
         callAudioManager.release()
+        networkMonitor.stop()
+        networkGraceJob?.cancel()
+        networkReconnectJob?.cancel()
+        reconnectInProgress = false
+        networkLost = false
         _uiState.value = _uiState.value.copy(
             status = CallStatus.FINISHED,
             isRecording = false,
             errorMessage = null,
             preJoinPhase = null,
+            isReconnecting = false,
         )
         stopCallTimer()
         isCallStarted = false
@@ -853,7 +967,7 @@ class CallViewModel @Inject constructor(
                     "room_manager_disconnected",
                     "status=${connection.status} reconnectAttempts=$reconnectAttempts"
                 )
-                attemptReconnectOrFail()
+                scheduleReconnect("ws_disconnected", resetAttempts = false)
             }
         }
     }
@@ -881,6 +995,9 @@ class CallViewModel @Inject constructor(
                 logCallStep("participant_joined", "participant=${participant.name}")
                 if (isSelfParticipant(participant)) {
                     Log.d("CallVM", "JOINED ROOM: $dialogId")
+                    // Успешно вошли — реконнект удался, обнуляем бюджет попыток.
+                    reconnectAttempts = 0
+                    reconnectInProgress = false
                     publishLocalStream(streamName, isVideoCall)
                     return
                 }
@@ -901,12 +1018,11 @@ class CallViewModel @Inject constructor(
                 }
                 if (!isSelfParticipant(participant)) {
                     val participantId = participant.name ?: return
-                    val leftParticipant = _uiState.value.participants.find { it.id == participantId }
-                    val displayName = leftParticipant?.name ?: participantId
-                    _uiState.value = _uiState.value.copy(
-                        participants = _uiState.value.participants.filter { it.id != participantId }
-                    )
-                    _toastEvents.tryEmit("$displayName покинул(а) звонок")
+                    // НЕ удаляем сразу: возможно, это реконнект участника, а не
+                    // уход. Держим плитку с бегущей полосой и подтверждаем уход
+                    // отложенно (бэкенд/grace).
+                    applyRemoteReconnecting(participantId, true)
+                    scheduleParticipantLeave(participantId)
                 }
             }
 
@@ -924,7 +1040,18 @@ class CallViewModel @Inject constructor(
             override fun onFailed(room: Room, error: String) {
                 Log.e("CallVM", "RoomEvent.onFailed error=$error")
                 logCallStep("join_room_failed", "room=${room.name} error=$error")
-                handleCallFailure("Room join failed: $error")
+                // Призрачная сессия: сеть переключилась (WiFi->LTE), старый сокет на
+                // мёртвом интерфейсе не закрылся, и сервер ещё держит нас в комнате
+                // под тем же логином. Это НЕ фатал — ждём протухания призрака по
+                // keep-alive и заходим снова с растущим backoff.
+                val ghostSession = error.contains("already has user", ignoreCase = true) ||
+                    error.contains("STREAM_NAME_ALREADY", ignoreCase = true)
+                if (ghostSession && lastCallParams != null) {
+                    logCallStep("join_room_ghost_retry", "attempts=$reconnectAttempts")
+                    scheduleReconnect("ghost_session", resetAttempts = false)
+                } else {
+                    handleCallFailure("Room join failed: $error")
+                }
             }
 
             override fun onMessage(message: Message) = Unit
@@ -995,9 +1122,25 @@ class CallViewModel @Inject constructor(
             "publish_attempt",
             "streamName=$streamName video=$videoEnabled audio=$audioEnabled camOn=$camOn fallback=$allowAudioFallback roomJoined=${flashphonerSessionManager.isRoomJoined()}"
         )
+        // ДИАГНОСТИКА аудио-реконнекта: не остался ли висеть старый localStream
+        // (тогда микрофон занят и новый publish отдаёт пустой SDP).
+        logCallStep(
+            "publish_preflight",
+            "oldLocalStream=${localStream?.let { "name=${it.name} id=${it.id}" } ?: "null"} " +
+                "micOn=${_uiState.value.sessionState.micOn} reconnecting=${_uiState.value.isReconnecting}"
+        )
+        // КРИТИЧНО: поток без единой дорожки = пустой SDP («SDP does not contain
+        // media description») → сервер видит битого паблишера и РУБИТ ЗВОНОК У ВСЕХ
+        // (cType 6), даже у тех, кто не терял сеть. В звонке аудио-дорожка обязана
+        // быть всегда: если и аудио, и видео выключены — принудительно публикуем
+        // аудио-трек (замьютим ниже, если микрофон реально выключен).
+        val publishAudioTrack = audioEnabled || !videoEnabled
+        if (publishAudioTrack != audioEnabled) {
+            logCallStep("publish_force_audio_track", "audioEnabled=$audioEnabled videoEnabled=$videoEnabled → forced audio track")
+        }
         runCatching {
             localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
-                constraints = Constraints(audioEnabled, videoEnabled).also { c -> if (videoEnabled) cameraIndexFor(isFrontCamera)?.let { c.videoConstraints?.cameraId = it } }
+                constraints = Constraints(publishAudioTrack, videoEnabled).also { c -> if (videoEnabled) cameraIndexFor(isFrontCamera)?.let { c.videoConstraints?.cameraId = it } }
             }
         }.onSuccess {
             publishedWithVideo = videoEnabled
@@ -1016,9 +1159,19 @@ class CallViewModel @Inject constructor(
                 runCatching { localStream?.muteVideo() }
                     .onFailure { logCallStep("post_publish_mute_video_failed", "error=${it.message}") }
             }
-            if (!audioEnabled) {
+            // Мьютим аудио, только если микрофон выключен И это НЕ реконнект. На
+            // реконнекте держим аудио живым: состояние micOn после переустановки
+            // сессии ненадёжно (слетает в false), а немой пользователь = «меня
+            // никто не слышит». Если держим живым — синхронизируем UI (micOn=true).
+            val isReconnect = _uiState.value.isReconnecting
+            if (!audioEnabled && !isReconnect) {
                 runCatching { localStream?.muteAudio() }
                     .onFailure { logCallStep("post_publish_mute_audio_failed", "error=${it.message}") }
+            } else if (!audioEnabled && isReconnect) {
+                logCallStep("reconnect_keep_audio_live", "micOn was false, keeping live + syncing UI")
+                _uiState.value = _uiState.value.copy(
+                    sessionState = _uiState.value.sessionState.copy(micOn = true),
+                )
             }
             attachStreamDiagnostics(localStream, "local_publish")
             if (videoEnabled) {
@@ -1076,13 +1229,16 @@ class CallViewModel @Inject constructor(
                 return@launch
             }
 
+            // Тот же инвариант, что в doPublish: поток без дорожек = пустой SDP →
+            // сервер рубит звонок у всех. Аудио-трек в звонке обязателен.
+            val publishAudioTrack = audioEnabled || !videoEnabled
             logCallStep(
                 "publish_local_stream_restart_params",
-                "roomName=${currentRoomName ?: "n/a"} mediaSessionId=${mediaSessionId ?: "n/a"} streamName=$streamName customParams=constraints(audio=$audioEnabled,video=$videoEnabled)"
+                "roomName=${currentRoomName ?: "n/a"} mediaSessionId=${mediaSessionId ?: "n/a"} streamName=$streamName customParams=constraints(audio=$publishAudioTrack,video=$videoEnabled) micReq=$audioEnabled"
             )
             runCatching {
                 localStream = flashphonerSessionManager.publishToCurrentRoom(streamName, localRenderer) {
-                    constraints = Constraints(audioEnabled, videoEnabled).also { c -> if (videoEnabled) cameraIndexFor(isFrontCamera)?.let { c.videoConstraints?.cameraId = it } }
+                    constraints = Constraints(publishAudioTrack, videoEnabled).also { c -> if (videoEnabled) cameraIndexFor(isFrontCamera)?.let { c.videoConstraints?.cameraId = it } }
                 }
             }.onSuccess {
                 val actualMediaSessionId = localStream?.id
@@ -1108,31 +1264,62 @@ class CallViewModel @Inject constructor(
         }
     }
 
-    private fun attemptReconnectOrFail() {
+    /**
+     * Единая точка пере-подключения после сетевого сбоя ([onDisconnection]),
+     * смены транспорта ([handleNetworkAvailable]) или отказа входа в комнату
+     * из-за призрачной сессии ([RoomEvent.onFailed]).
+     *
+     * Держит ОДИН pending-ретрай ([reconnectInProgress]) — параллельные триггеры
+     * не плодят гонки. Сохраняет [lastCallParams] и заходит заново с растущим,
+     * ограниченным сверху backoff: старый сокет на мёртвом интерфейсе живёт на
+     * сервере до keep-alive-таймаута, и до его протухания join падает с
+     * "Room already has user with such login". Сдаёмся ([handleCallFailure])
+     * только исчерпав [MAX_RECONNECT_ATTEMPTS].
+     */
+    private fun scheduleReconnect(reason: String, resetAttempts: Boolean) {
         val params = lastCallParams
-        if (params == null || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            logCallStep(
-                "reconnect_aborted",
-                "paramsAvailable=${params != null} attempts=$reconnectAttempts"
-            )
+        if (params == null) {
+            logCallStep("reconnect_aborted", "paramsAvailable=false reason=$reason")
+            handleCallFailure("Call disconnected.")
+            return
+        }
+        // Сети нет — не жжём попытки в пустоту. Держим оверлей и ждём
+        // network_available (грейс-окно завершит звонок, если сеть не вернётся).
+        if (networkLost) {
+            logCallStep("reconnect_deferred", "no network, waiting reason=$reason")
+            if (isInActiveCall()) _uiState.value = _uiState.value.copy(isReconnecting = true)
+            return
+        }
+        if (reconnectInProgress) {
+            logCallStep("reconnect_skipped", "in progress reason=$reason attempts=$reconnectAttempts")
+            return
+        }
+        if (resetAttempts) reconnectAttempts = 0
+        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+            logCallStep("reconnect_exhausted", "attempts=$reconnectAttempts reason=$reason")
             handleCallFailure("Call disconnected.")
             return
         }
 
+        reconnectInProgress = true
         reconnectAttempts++
         val attempt = reconnectAttempts
-        logCallStep("reconnect_attempt", "attempt=$attempt")
+        logCallStep("reconnect_attempt", "attempt=$attempt reason=$reason")
+        if (isInActiveCall()) {
+            _uiState.value = _uiState.value.copy(isReconnecting = true)
+        }
         isCallStarted = false
-        flashphonerSessionManager.reset()
-        // Back off before rejoining: a WCS session that dropped on a transient
-        // network blip lingers server-side for a few seconds. Rejoining
-        // immediately republishes under the same stream name and FAILs against
-        // the ghost session ("I rejoined but nobody hears me"). The delay grows
-        // per attempt so later retries wait longer for the ghost to time out.
-        viewModelScope.launch {
-            delay(RECONNECT_BASE_DELAY_MS * attempt)
-            // The user may have hung up (or the server ended the call) during
-            // the back-off — lastCallParams is nulled on end. Bail if so.
+        localRepublishJob?.cancel()
+        runCatching { flashphonerSessionManager.reset() }
+        val backoff = minOf(RECONNECT_BASE_DELAY_MS * attempt, RECONNECT_MAX_DELAY_MS)
+        networkReconnectJob?.cancel()
+        networkReconnectJob = viewModelScope.launch {
+            delay(backoff)
+            // Снимаем флаг ДО startCall: если join снова упадёт на призраке,
+            // onFailed должен иметь возможность запланировать следующую попытку.
+            reconnectInProgress = false
+            // Пользователь мог положить трубку (или сервер завершил звонок) за
+            // время backoff — lastCallParams обнуляется в end/handleCallFailure.
             val stillActive = lastCallParams
             if (stillActive == null) {
                 logCallStep("reconnect_cancelled", "call ended during backoff attempt=$attempt")
@@ -1148,6 +1335,9 @@ class CallViewModel @Inject constructor(
                 resetReconnectAttempts = false,
                 isGroupCall = stillActive.isGroupCall,
             )
+            // startCall перестраивает _uiState с нуля — возвращаем флаг оверлея,
+            // пока не подтвердится публикация (см. handleLocalPublishStatus).
+            _uiState.value = _uiState.value.copy(isReconnecting = true)
         }
     }
 
@@ -1213,6 +1403,87 @@ class CallViewModel @Inject constructor(
         } else {
             applyLocalVideoState(updatedState.camOn)
         }
+    }
+
+    /**
+     * Тап по кнопке «Расшарить экран». Если демонстрация идёт — останавливаем.
+     * Иначе просим фрагмент запустить системный запрос разрешения MediaProjection
+     * (сам ViewModel не имеет Activity). Получив проекцию, фрагмент вызовет
+     * [startScreenShare].
+     */
+    fun toggleScreenShare() {
+        if (_uiState.value.sessionState.sharingScreen) {
+            stopScreenShare()
+        } else {
+            logCallStep("screen_share_request", "roomJoined=${flashphonerSessionManager.isRoomJoined()}")
+            _screenShareEvents.tryEmit(ScreenShareEvent.RequestPermission)
+        }
+    }
+
+    /**
+     * Запускает демонстрацию экрана: подменяет источник видео на захват экрана и
+     * пере-публикует локальный поток, чтобы вместо камеры в дорожку пошли кадры
+     * экрана. Удалённые участники видят экран через обычный видео-пайплайн.
+     */
+    fun startScreenShare(mediaProjection: MediaProjection, mediaProjectionData: Intent) {
+        if (!flashphonerSessionManager.isRoomJoined()) {
+            logCallStep("screen_share_start_skipped", "no_room")
+            _screenShareEvents.tryEmit(ScreenShareEvent.StopService)
+            return
+        }
+
+        val session = _uiState.value.sessionState
+        camOnBeforeScreenShare = session.camOn
+
+        runCatching {
+            flashphonerSessionManager.useScreenCapturer(
+                mediaProjection = mediaProjection,
+                mediaProjectionData = mediaProjectionData,
+                onStop = {
+                    // Систему демонстрации остановил сам Android → сворачиваем UI.
+                    viewModelScope.launch { stopScreenShare() }
+                },
+            )
+        }.onFailure {
+            logCallStep("screen_share_start_failed", "error=${it.message}")
+            _screenShareEvents.tryEmit(ScreenShareEvent.StopService)
+            _toastEvents.tryEmit("Не удалось запустить демонстрацию экрана")
+            return
+        }
+
+        val updated = session.copy(sharingScreen = true, camOn = true)
+        _uiState.value = _uiState.value.copy(sessionState = updated, isVideoCall = true)
+        lastCallParams = lastCallParams?.copy(isVideoCall = true)
+        saveActiveCallState()
+        updateCallState(updated)
+        logCallStep("screen_share_start", "republishing with screen capturer")
+        restartLocalStream(audioEnabled = updated.micOn, videoEnabled = true)
+    }
+
+    /**
+     * Останавливает демонстрацию экрана: возвращает источник видео к камере,
+     * восстанавливает прежнее состояние камеры и просит фрагмент погасить
+     * foreground-сервис. Безопасно вызывать повторно (idempotent).
+     */
+    fun stopScreenShare() {
+        if (!_uiState.value.sessionState.sharingScreen) {
+            _screenShareEvents.tryEmit(ScreenShareEvent.StopService)
+            return
+        }
+
+        runCatching { flashphonerSessionManager.useCameraCapturer() }
+            .onFailure { logCallStep("screen_share_stop_capturer_failed", "error=${it.message}") }
+
+        val restoreCam = camOnBeforeScreenShare
+        val updated = _uiState.value.sessionState.copy(sharingScreen = false, camOn = restoreCam)
+        _uiState.value = _uiState.value.copy(sessionState = updated)
+        updateCallState(updated)
+        logCallStep("screen_share_stop", "restoreCam=$restoreCam republishing")
+
+        if (flashphonerSessionManager.isRoomJoined()) {
+            restartLocalStream(audioEnabled = updated.micOn, videoEnabled = restoreCam)
+        }
+        _screenShareEvents.tryEmit(ScreenShareEvent.StopService)
     }
 
     /**
@@ -1835,6 +2106,8 @@ class CallViewModel @Inject constructor(
         attachStreamDiagnostics(stream, "remote_play:$key")
         markRemoteParticipantConnected()
         remoteResubscribeAttempts.remove(participantId)
+        cancelParticipantLeave(participantId)
+        setRemoteReconnecting(key, false)
         logCallStep("remote_play_started", "participant=$participantId key=$key")
     }
 
@@ -1877,6 +2150,9 @@ class CallViewModel @Inject constructor(
 
     private fun addParticipantToUiState(participant: Participant) {
         val participantId = participant.name ?: return
+        // Вернулся в комнату — отменяем отложенный уход. Полосу «переподключается»
+        // НЕ гасим здесь: снимем её, когда реально потечёт медиа (remote_play).
+        cancelParticipantLeave(participantId)
         val current = _uiState.value.participants
         if (current.any { it.id == participantId }) return
         val cached = current.associateBy { it.id }
@@ -1936,6 +2212,10 @@ class CallViewModel @Inject constructor(
         remoteResubscribeJobs.values.forEach { it.cancel() }
         remoteResubscribeJobs.clear()
         remoteResubscribeAttempts.clear()
+        remoteReconnectingJobs.values.forEach { it.cancel() }
+        remoteReconnectingJobs.clear()
+        participantLeaveJobs.values.forEach { it.cancel() }
+        participantLeaveJobs.clear()
         primaryStreamKey = null
         localStream = null
         remoteStream = null
@@ -1952,10 +2232,16 @@ class CallViewModel @Inject constructor(
         clearVideoStreams()
         flashphonerSessionManager.disconnectRoom()
         callAudioManager.release()
+        networkMonitor.stop()
+        networkGraceJob?.cancel()
+        networkReconnectJob?.cancel()
+        reconnectInProgress = false
+        networkLost = false
         _uiState.value = _uiState.value.copy(
             status = CallStatus.FINISHED,
             isRecording = false,
             errorMessage = message,
+            isReconnecting = false,
         )
         stopCallTimer()
         isCallStarted = false
@@ -2033,8 +2319,18 @@ class CallViewModel @Inject constructor(
     )
 
     private companion object {
-        const val MAX_RECONNECT_ATTEMPTS = 3
-        const val RECONNECT_BASE_DELAY_MS = 1_500L
+        // Бюджет пере-подключения. Призрачная сессия на WCS (старый сокет на
+        // мёртвом интерфейсе) держит нас в комнате до keep-alive таймаута, и до
+        // его протухания join падает "Room already has user". Окно ретраев должно
+        // ЭТО пережить: растущий backoff 2s,4s,6s×10 (потолок 6s) = ~66s суммарно,
+        // всё это время висит баннер «Восстанавливаем соединение…».
+        const val MAX_RECONNECT_ATTEMPTS = 12
+        const val RECONNECT_BASE_DELAY_MS = 2_000L
+        const val RECONNECT_MAX_DELAY_MS = 6_000L
+        // Грейс-окно при полной потере сети: держим звонок и оверлей
+        // «Восстанавливаем соединение…», прежде чем сдаться. Хватает пережить
+        // лифт, метро и пересадку WiFi на моб. связь.
+        const val NETWORK_GRACE_MS = 45_000L
         // Пере-подписка на упавший чужой поток. Flashphoner рекомендует 3с и одну
         // попытку в полёте (агрессивные ~1.5с складывают полу-снесённые
         // PeerConnection'ы → нестабильность, нативный SIGABRT и в итоге сервер
@@ -2042,6 +2338,17 @@ class CallViewModel @Inject constructor(
         const val MAX_REMOTE_RESUBSCRIBE = 8
         const val REMOTE_RESUBSCRIBE_DELAY_MS = 3_000L
         const val REMOTE_RESUBSCRIBE_MAX_DELAY_MS = 15_000L
+        // Дебаунс оверлея «участник переподключается». Показ — по устойчивому
+        // FAILED (короче мигает на блипах), скрытие — по устойчивому PLAYING
+        // (иначе мигающий поток дёргает статус: показал/убрал/показал).
+        const val REMOTE_RECONNECTING_SHOW_DEBOUNCE_MS = 1_500L
+        const val REMOTE_RECONNECTING_HIDE_DEBOUNCE_MS = 2_500L
+        // Уход участника подтверждаем ОПРОСОМ бэкенда: реальный уход = участник
+        // пропал из ростера на PARTICIPANT_LEAVE_ABSENT_STREAK опросов подряд. При
+        // реконнекте он остаётся в ростере → держим плитку до grace.
+        const val PARTICIPANT_LEAVE_POLL_MS = 3_000L
+        const val PARTICIPANT_LEAVE_ABSENT_STREAK = 2
+        const val PARTICIPANT_LEAVE_GRACE_MS = 45_000L
         // Republish локального потока после FAILED: несколько попыток с backoff,
         // чтобы пережить «призрачную» сессию с тем же именем (RoomApi публикует
         // под фиксированным roomId-login, так что уникальным именем не обойти —
@@ -2101,6 +2408,9 @@ class CallViewModel @Inject constructor(
         socketService.removeEvent("message", SOCKET_LISTENER_TAG)
         callAudioManager.onRoutesChanged = null
         callAudioManager.release()
+        networkMonitor.stop()
+        networkGraceJob?.cancel()
+        networkReconnectJob?.cancel()
         clearVideoStreams()
         flashphonerSessionManager.reset()
         super.onCleared()
@@ -2544,6 +2854,8 @@ class CallViewModel @Inject constructor(
                     handUp = latestState?.handUp ?: fallback?.handUp ?: false,
                     roles = rest?.roles ?: fallback?.roles ?: emptyList(),
                     permits = rest?.permits ?: fallback?.permits ?: emptyList(),
+                    // Сохраняем индикатор реконнекта — enrich не должен его гасить.
+                    isReconnecting = fallback?.isReconnecting ?: false,
                 )
             }
 
@@ -2658,9 +2970,28 @@ class CallViewModel @Inject constructor(
                     runCatching { stream.getInfo() }.getOrNull()
                 } else null
                 logCallStep("stream_status", "label=$label status=$statusText" + (info?.let { " info=$it" } ?: ""))
+                // ДИАГНОСТИКА: при падении локальной публикации дампим SDP —
+                // сразу видно, есть ли аудио/видео m-line или SDP пустой (микрофон
+                // не отдал дорожку, «SDP does not contain media description»).
+                if (label == "local_publish" && statusText.equals("FAILED", ignoreCase = true)) {
+                    logLocalSdpState(stream, "local_publish_failed")
+                }
                 handleLocalPublishStatus(label, statusText, info)
-                if (label.startsWith("remote_play:") && statusText.equals("FAILED", ignoreCase = true)) {
-                    scheduleRemoteResubscribe(label.removePrefix("remote_play:"))
+                if (label.startsWith("remote_play:")) {
+                    val streamKey = label.removePrefix("remote_play:")
+                    when {
+                        statusText.equals("FAILED", ignoreCase = true) -> {
+                            // Чужой поток упал — участник переподключается. Помечаем
+                            // ЕГО плитку, чтобы остальные видели «Восстанавливает
+                            // соединение», а не немой фриз, и пытаемся переподписаться.
+                            setRemoteReconnecting(streamKey, true)
+                            scheduleRemoteResubscribe(streamKey)
+                        }
+                        statusText.equals("PLAYING", ignoreCase = true) -> {
+                            // Медиа снова течёт — гасим индикатор на его плитке.
+                            setRemoteReconnecting(streamKey, false)
+                        }
+                    }
                 }
                 maybeSanitizeRemoteSdp(stream, label)
             }.onFailure {
@@ -2677,6 +3008,133 @@ class CallViewModel @Inject constructor(
      * gone stream does not loop. The counter is reset on a successful play so a
      * later, unrelated blip gets a fresh budget.
      */
+    /** Резолв participantId по имени потока из label "remote_play:<key>". */
+    private fun participantIdForStreamKey(streamKey: String): String? {
+        return participantHandles.values.firstOrNull { p ->
+            (p.streamName ?: p.name) == streamKey ||
+                p.name?.let { streamKey.contains(it) } == true
+        }?.name
+    }
+
+    // Отложенный показ оверлея «переподключается» по участнику (дебаунс).
+    private val remoteReconnectingJobs = mutableMapOf<String, Job>()
+    // Отложенное подтверждение ухода участника. WCS onLeft прилетает и при
+    // реальном уходе, и при реконнекте (упала медиа-сессия) — не удаляем плитку
+    // и не шлём тост сразу, а держим её с бегущей полосой и ждём: вернётся —
+    // бесшовно, реально ушёл (подтвердил бэкенд/истёк grace) — тогда удаляем.
+    private val participantLeaveJobs = mutableMapOf<String, Job>()
+
+    /**
+     * Помечает/снимает у ЧУЖОЙ плитки статус «Восстанавливает соединение».
+     * Реконнектящийся участник сам сказать не может (у него нет сети) — поэтому
+     * выводим статус НА СТОРОНЕ НАБЛЮДАТЕЛЯ по падению/возврату его медиапотока.
+     *
+     * Показ ДЕБАУНСИМ: поток часто флапает FAILED→PLAYING на мелких блипах, и без
+     * задержки оверлей мигал бы. Включаем его, только если поток не вернулся за
+     * окно дебаунса; гасим — мгновенно.
+     */
+    private fun setRemoteReconnecting(streamKey: String, reconnecting: Boolean) {
+        val pid = participantIdForStreamKey(streamKey) ?: return
+        val shown = _uiState.value.participants.find { it.id == pid }?.isReconnecting ?: return
+        // Уже в целевом состоянии — отменяем противоположный отложенный переход
+        // (напр. пришёл FAILED, пока ждали скрытие — держим статус показанным).
+        if (reconnecting == shown) {
+            remoteReconnectingJobs.remove(pid)?.cancel()
+            return
+        }
+        // Нужен переход. Не дублируем уже запланированный.
+        if (remoteReconnectingJobs[pid]?.isActive == true) return
+        // Показ требует устойчивого FAILED, скрытие — устойчивого PLAYING. Так
+        // мигающий поток НЕ дёргает статус: короткие блипы гасятся дебаунсом, а
+        // раз показанный статус держится, пока медиа реально не устаканится.
+        val delayMs = if (reconnecting) {
+            REMOTE_RECONNECTING_SHOW_DEBOUNCE_MS
+        } else {
+            REMOTE_RECONNECTING_HIDE_DEBOUNCE_MS
+        }
+        remoteReconnectingJobs[pid] = viewModelScope.launch {
+            delay(delayMs)
+            applyRemoteReconnecting(pid, reconnecting)
+            remoteReconnectingJobs.remove(pid)
+        }
+    }
+
+    private fun applyRemoteReconnecting(pid: String, reconnecting: Boolean) {
+        val current = _uiState.value.participants
+        val target = current.find { it.id == pid } ?: return
+        if (target.isReconnecting == reconnecting) return
+        _uiState.value = _uiState.value.copy(
+            participants = current.map {
+                if (it.id == pid) it.copy(isReconnecting = reconnecting) else it
+            }
+        )
+        logCallStep("remote_reconnecting", "participant=$pid reconnecting=$reconnecting")
+    }
+
+    /**
+     * WCS сказал, что участник покинул комнату. Это неоднозначно: так выглядит и
+     * реальный уход, и падение медиа-сессии на реконнекте. Поэтому НЕ удаляем
+     * сразу: сначала (через короткую паузу) спрашиваем бэкенд — числится ли он ещё
+     * в звонке. Если нет — реальный уход, удаляем+тост. Если да — это реконнект,
+     * держим плитку до конца grace (вернётся раньше — [cancelParticipantLeave]).
+     */
+    private fun scheduleParticipantLeave(participantId: String) {
+        val dialogId = _uiState.value.dialogId ?: return
+        participantLeaveJobs[participantId]?.cancel()
+        participantLeaveJobs[participantId] = viewModelScope.launch {
+            // Опрашиваем бэкенд несколько раз. КЛЮЧЕВОЕ: реальный уход = участник
+            // ПОЛНОСТЬЮ пропал из ростера. При реконнекте он остаётся в ростере
+            // (публикация терминируется, статус на миг ≠ 5, но участник на месте) —
+            // поэтому проверяем именно ОТСУТСТВИЕ, а не статус. И требуем два
+            // подряд «отсутствует», чтобы транзиентный блик не дал ложный «покинул».
+            var absentStreak = 0
+            var waited = 0L
+            while (waited < PARTICIPANT_LEAVE_GRACE_MS) {
+                delay(PARTICIPANT_LEAVE_POLL_MS)
+                waited += PARTICIPANT_LEAVE_POLL_MS
+                val present = runCatching {
+                    callRepository.getParticipants(dialogId).any { it.userId == participantId }
+                }.getOrDefault(true) // ошибка сети → считаем, что на месте
+                if (present) {
+                    absentStreak = 0
+                    continue
+                }
+                absentStreak++
+                if (absentStreak >= PARTICIPANT_LEAVE_ABSENT_STREAK) {
+                    logCallStep("participant_leave_confirmed", "participant=$participantId absentStreak=$absentStreak")
+                    finalizeParticipantLeave(participantId)
+                    return@launch
+                }
+                logCallStep("participant_leave_reconnecting", "participant=$participantId absentStreak=$absentStreak")
+            }
+            // Грейс истёк, а по медиа он так и не вернулся — финализируем.
+            finalizeParticipantLeave(participantId)
+        }
+    }
+
+    /** Участник вернулся (или впервые появился) — отменяем отложенный уход. */
+    private fun cancelParticipantLeave(participantId: String) {
+        participantLeaveJobs.remove(participantId)?.cancel()
+    }
+
+    /** Окончательно убираем участника из звонка + тост «покинул». */
+    private fun finalizeParticipantLeave(participantId: String) {
+        participantLeaveJobs.remove(participantId)
+        // Вернулся за это время (есть активный handle) — не удаляем, гасим полосу.
+        if (participantHandles.containsKey(participantId)) {
+            applyRemoteReconnecting(participantId, false)
+            return
+        }
+        val p = _uiState.value.participants.find { it.id == participantId } ?: return
+        val name = p.name ?: participantId
+        _uiState.value = _uiState.value.copy(
+            participants = _uiState.value.participants.filter { it.id != participantId }
+        )
+        remoteReconnectingJobs.remove(participantId)?.cancel()
+        logCallStep("participant_left_finalized", "participant=$participantId")
+        _toastEvents.tryEmit("$name покинул(а) звонок")
+    }
+
     private fun scheduleRemoteResubscribe(streamKey: String) {
         val participant = participantHandles.values.firstOrNull { p ->
             (p.streamName ?: p.name) == streamKey ||
@@ -2715,8 +3173,12 @@ class CallViewModel @Inject constructor(
                 // (напр. пока нет второго участника), а обычный экран звонка и так
                 // показывается на PUBLISHING. Иначе «Входим…» висит до watchdog.
                 preJoinWatchdogJob?.cancel()
-                if (_uiState.value.preJoinPhase == PreJoinPhase.JOINING) {
-                    _uiState.value = _uiState.value.copy(preJoinPhase = null)
+                // Медиа снова течёт — реконнект завершён, гасим оверлей.
+                if (_uiState.value.preJoinPhase == PreJoinPhase.JOINING || _uiState.value.isReconnecting) {
+                    _uiState.value = _uiState.value.copy(
+                        preJoinPhase = if (_uiState.value.preJoinPhase == PreJoinPhase.JOINING) null else _uiState.value.preJoinPhase,
+                        isReconnecting = false,
+                    )
                 }
             }
             "PUBLISHED" -> {
@@ -2726,8 +3188,8 @@ class CallViewModel @Inject constructor(
                 localRepublishJob?.cancel()
                 // Опубликовались = реально вошли в звонок: закрываем пре-экран.
                 preJoinWatchdogJob?.cancel()
-                if (_uiState.value.preJoinPhase != null) {
-                    _uiState.value = _uiState.value.copy(preJoinPhase = null)
+                if (_uiState.value.preJoinPhase != null || _uiState.value.isReconnecting) {
+                    _uiState.value = _uiState.value.copy(preJoinPhase = null, isReconnecting = false)
                 }
                 logCallStep("publish_local_stream_success", "status=$status")
             }
@@ -2828,6 +3290,37 @@ class CallViewModel @Inject constructor(
                 videoEnabled = withVideo,
             )
         }
+    }
+
+    /**
+     * Диагностика: достаёт SDP локального потока (reflection) и логирует, есть ли
+     * в нём аудио/видео m-line. Пустой SDP = микрофон/камера не отдали дорожку —
+     * та самая ошибка «SDP does not contain media description» на аудио-реконнекте.
+     */
+    private fun logLocalSdpState(stream: Stream?, context: String) {
+        if (stream == null) {
+            logCallStep("local_sdp_state", "$context stream=null")
+            return
+        }
+        val sdp = runCatching {
+            val streamObject = Stream::class.java.getDeclaredField("streamObject")
+                .apply { isAccessible = true }.get(stream)
+            streamObject?.let {
+                it::class.java.getDeclaredField("sdp").apply { isAccessible = true }.get(it) as? String
+            }
+        }.getOrNull()
+        if (sdp == null) {
+            logCallStep("local_sdp_state", "$context sdp=null (not generated)")
+            return
+        }
+        val mLines = sdp.lineSequence().filter { it.startsWith("m=") }.toList()
+        logCallStep(
+            "local_sdp_state",
+            "$context len=${sdp.length} mLines=${mLines.size} " +
+                "audio=${mLines.any { it.startsWith("m=audio") }} " +
+                "video=${mLines.any { it.startsWith("m=video") }} " +
+                "heads=[${mLines.joinToString(";") { it.take(18) }}]"
+        )
     }
 
     private fun maybeSanitizeRemoteSdp(stream: Stream, label: String) {
@@ -2931,6 +3424,10 @@ data class CallUiState(
     // обычный поток звонка. См. [[naukoteka-prejoin-screen]].
     val preJoinPhase: PreJoinPhase? = null,
     val activeCallParticipantsCount: Int = 0,
+    // Идёт восстановление соединения после потери/смены сети. status при этом
+    // остаётся IN_CALL/CONNECTING (плитки не рушим), поверх показываем баннер
+    // «Восстанавливаем соединение…».
+    val isReconnecting: Boolean = false,
 )
 
 /**
@@ -2957,6 +3454,9 @@ data class CallParticipant(
     // Статус участника в звонке (docs/calls.md #190): 5 — участвует, 6 — в
     // комнате ожидания. Используется экраном «Участники звонка».
     val status: Int = 5,
+    // Поток участника упал (его сторона переподключается) — показываем на ЕГО
+    // плитке оверлей «Восстанавливает соединение», чтобы остальные не гадали.
+    val isReconnecting: Boolean = false,
 ) : Parcelable
 
 enum class CallStatus {
@@ -2973,3 +3473,15 @@ data class CameraDevice(
     val name: String,
     val isFront: Boolean,
 )
+
+/**
+ * Одноразовые команды демонстрации экрана из [CallViewModel] во фрагмент
+ * (владельца Activity и foreground-сервиса).
+ */
+sealed interface ScreenShareEvent {
+    /** Запросить у пользователя разрешение MediaProjection (системный диалог). */
+    object RequestPermission : ScreenShareEvent
+
+    /** Погасить foreground-сервис демонстрации экрана. */
+    object StopService : ScreenShareEvent
+}
